@@ -10,10 +10,8 @@ import (
 	"cfui/config"
 	"cfui/server"
 	"cfui/service"
+	"cfui/version"
 )
-
-// Version is set during build time via ldflags
-var Version = "dev"
 
 //go:embed web/dist/*
 var assets embed.FS
@@ -46,7 +44,7 @@ func main() {
 		port = "14333"
 	}
 
-	fmt.Printf("Cloudflared Web Controller %s\n", Version)
+	fmt.Printf("Cloudflared Web Controller %s\n", version.GetFullVersion())
 	fmt.Printf("Server listening on 0.0.0.0:%s\n", port)
 	fmt.Printf("Local access: http://localhost:%s\n", port)
 	fmt.Printf("Network access: http://<your-ip>:%s\n", port)

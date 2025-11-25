@@ -98,16 +98,45 @@ cloudflared-web.exe
 
 - Go 1.25 or higher
 - Git
+- Make (optional, for easier building)
 
 ### Build Steps
+
+#### Using Make (Recommended)
 
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/cloudflared-ui.git
 cd cloudflared-ui
 
-# Build
-go build -o cfui
+# Build with version info injected
+make build
+
+# Or build specific version
+VERSION=v1.0.0 make build
+
+# Run
+./cfui
+```
+
+#### Manual Build
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/cloudflared-ui.git
+cd cloudflared-ui
+
+# Build with version info
+VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S_UTC')
+GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+go build -trimpath \
+  -ldflags="-s -w \
+    -X 'cfui/version.Version=${VERSION}' \
+    -X 'cfui/version.BuildTime=${BUILD_TIME}' \
+    -X 'cfui/version.GitCommit=${GIT_COMMIT}'" \
+  -o cfui .
 
 # Run
 ./cfui
@@ -181,12 +210,34 @@ go run main.go
 
 ## Docker Build
 
+### Using Make
+
 ```bash
-# Build image
-docker build -t cfui .
+# Build Docker image with version info
+make build-docker
+
+# Or build specific version
+VERSION=v1.0.0 make build-docker
+```
+
+### Manual Docker Build
+
+```bash
+# Build image with version info
+VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S_UTC')
+GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+docker build \
+  --build-arg VERSION=${VERSION} \
+  --build-arg BUILD_TIME=${BUILD_TIME} \
+  --build-arg GIT_COMMIT=${GIT_COMMIT} \
+  -t cfui:${VERSION} \
+  -t cfui:latest \
+  .
 
 # Run container
-docker run -d -p 14333:14333 -v $(pwd)/data:/app/data cfui
+docker run -d -p 14333:14333 -v $(pwd)/data:/app/data cfui:latest
 ```
 
 ## Contributing

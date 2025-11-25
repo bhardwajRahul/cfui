@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cfui/config"
+	"cfui/version"
 
 	"github.com/cloudflare/cloudflared/cmd/cloudflared/cliutil"
 	"github.com/cloudflare/cloudflared/cmd/cloudflared/tunnel"
@@ -45,9 +46,9 @@ func NewRunner(cfgMgr *config.Manager) *Runner {
 // initTunnel initializes the cloudflared tunnel package with required build info
 func (r *Runner) initTunnel() {
 	r.initOnce.Do(func() {
-		buildInfo := cliutil.GetBuildInfo("", "dev")
+		buildInfo := cliutil.GetBuildInfo("cfui", version.GetShortVersion())
 		tunnel.Init(buildInfo, r.gracefulShutdownC)
-		log.Println("Cloudflared tunnel initialized successfully")
+		log.Printf("Cloudflared tunnel initialized successfully (version: %s)", version.GetFullVersion())
 	})
 }
 

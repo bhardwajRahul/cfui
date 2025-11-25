@@ -5,6 +5,8 @@ FROM golang:1.25-alpine AS builder
 ARG VERSION=dev
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
+ARG BUILD_TIME
+ARG GIT_COMMIT
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -21,10 +23,13 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application with embedded assets
+# Build the application with embedded assets and inject version info
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -trimpath \
-    -ldflags="-s -w -extldflags '-static' -X main.Version=${VERSION}" \
+    -ldflags="-s -w -extldflags '-static' \
+        -X 'cfui/version.Version=${VERSION}' \
+        -X 'cfui/version.BuildTime=${BUILD_TIME}' \
+        -X 'cfui/version.GitCommit=${GIT_COMMIT}'" \
     -o cfui .
 
 # Final stage
