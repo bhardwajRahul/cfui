@@ -1,0 +1,110 @@
+[status_checking]
+other = "检查中..."
+
+[status_running]
+other = "运行中"
+
+[status_stopped]
+other = "已停止"
+
+[status_error]
+other = "错误"
+
+[app_title]
+other = "CloudFlared UI"
+
+[tunnel_config]
+other = "隧道配置"
+
+[tunnel_config_subtitle]
+other = "管理您的 Cloudflare Tunnel 连接"
+
+[tunnel_token]
+other = "隧道 Token"
+
+[token_help]
+other = "输入 Cloudflare Zero Trust 仪表板提供的 Token。"
+
+[tunnel_identifier]
+other = "隧道标识符"
+
+[tunnel_identifier_help]
+other = "在 Cloudflare 仪表板中显示的自定义标识标签"
+
+[advanced_config]
+other = "高级配置"
+
+[protocol]
+other = "协议"
+
+[protocol_auto]
+other = "自动"
+
+[protocol_help]
+other = "连接到 Cloudflare 网络的协议"
+
+[grace_period]
+other = "优雅关闭时间"
+
+[grace_period_help]
+other = "关闭优雅期（例如：30s）"
+
+[region]
+other = "区域"
+
+[region_global]
+other = "全球（默认）"
+
+[region_us]
+other = "美国"
+
+[region_help]
+other = "首选连接区域"
+
+[max_retries]
+other = "最大重试次数"
+
+[max_retries_help]
+other = "最大连接重试次数"
+
+[metrics_enable]
+other = "启用指标服务器"
+
+[metrics_port]
+other = "指标端口"
+
+[metrics_port_help]
+other = "指标服务器的端口"
+
+[autostart]
+other = "启动时自动运行"
+
+[autorestart]
+other = "失败时自动重启"
+
+[start_tunnel]
+other = "启动隧道"
+
+[stop_tunnel]
+other = "停止隧道"
+
+[system_logs]
+other = "系统日志"
+
+[clear]
+other = "清除"
+
+[system_ready]
+other = "系统就绪。等待配置..."
+
+[error_token_required]
+other = "错误：启动隧道需要 Token"
+
+[command_sent]
+other = "命令已发送"
+
+[config_saved]
+other = "配置已保存"
+
+[status_changed]
+other = "状态已改变"

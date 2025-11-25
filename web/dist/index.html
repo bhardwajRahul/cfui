@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudFlared UI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo-area">
+                <svg viewBox="0 0 48 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="cf-logo">
+                    <path
+                        d="M32.51 3.38C30.68 1.25 27.96 0 25 0c-5.2 0-9.6 3.84-10.39 8.92A7.49 7.49 0 0 0 7.5 7.5a7.5 7.5 0 0 0-7.5 7.5c0 4.14 3.36 7.5 7.5 7.5h25c4.14 0 7.5-3.36 7.5-7.5 0-3.8-2.84-6.95-6.49-7.42z"
+                        fill="#F38020" />
+                </svg>
+                <h1>CloudFlared UI</h1>
+            </div>
+            <div class="header-controls">
+                <select id="lang-select" class="lang-select">
+                    <option value="en">English</option>
+                    <option value="zh">中文</option>
+                    <option value="ja">日本語</option>
+                </select>
+            </div>
+            <div class="status-badge" id="status-badge">
+                <span class="status-dot"></span>
+                <span class="status-text">Checking...</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Tunnel Configuration</h2>
+                    <p class="subtitle">Manage your Cloudflare Tunnel connection</p>
+                </div>
+
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="token-input">Tunnel Token</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="token-input" placeholder="eyJhIjoi..." spellcheck="false">
+                            <button id="toggle-visibility" class="icon-btn" title="Toggle Visibility">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="help-text">Enter the token provided by the Cloudflare Zero Trust dashboard.</p>
+                    </div>
+
+                    <!-- Advanced Configuration Section -->
+                    <details class="advanced-section">
+                        <summary class="advanced-toggle">Advanced Configuration</summary>
+
+                        <div class="advanced-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="custom-version-input">Tunnel Identifier</label>
+                                    <input type="text" id="custom-version-input" placeholder="e.g., MyApp-v1.0" spellcheck="false">
+                                    <p class="help-text">Custom identifier tag shown in Cloudflare dashboard</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="protocol-select">Protocol</label>
+                                    <select id="protocol-select" class="form-select">
+                                        <option value="auto">Auto</option>
+                                        <option value="http2">HTTP/2</option>
+                                        <option value="quic">QUIC</option>
+                                    </select>
+                                    <p class="help-text">Connection protocol to Cloudflare network</p>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="grace-period-input">Grace Period</label>
+                                    <input type="text" id="grace-period-input" placeholder="30s" value="30s">
+                                    <p class="help-text">Shutdown grace period (e.g., 30s)</p>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="region-select">Region</label>
+                                    <select id="region-select" class="form-select">
+                                        <option value="">Global (Default)</option>
+                                        <option value="us">United States</option>
+                                    </select>
+                                    <p class="help-text">Preferred connection region</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="retries-input">Max Retries</label>
+                                    <input type="number" id="retries-input" min="0" max="100" value="5">
+                                    <p class="help-text">Maximum connection retry attempts</p>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <div class="toggle-container">
+                                        <label class="switch">
+                                            <input type="checkbox" id="metrics-enable-toggle">
+                                            <span class="slider round"></span>
+                                        </label>
+                                        <span class="label-text">Enable Metrics Server</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="metrics-port-input">Metrics Port</label>
+                                    <input type="number" id="metrics-port-input" min="1024" max="65535" value="60123">
+                                    <p class="help-text">Port for metrics server</p>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="control-row">
+                        <div class="toggle-container">
+                            <label class="switch">
+                                <input type="checkbox" id="autostart-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="label-text">Auto-start on launch</span>
+                        </div>
+
+                        <div class="toggle-container">
+                            <label class="switch">
+                                <input type="checkbox" id="autorestart-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="label-text">Auto-restart on failure</span>
+                        </div>
+
+                        <button id="action-btn" class="btn btn-primary">Start Tunnel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card logs-card">
+                <div class="card-header">
+                    <h2>System Logs</h2>
+                    <button id="clear-logs" class="btn btn-sm btn-ghost">Clear</button>
+                </div>
+                <div class="logs-container" id="logs-container">
+                    <div class="log-entry system">System ready. Waiting for configuration...
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>

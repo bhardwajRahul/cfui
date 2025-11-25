@@ -1,0 +1,110 @@
+[status_checking]
+other = "Checking..."
+
+[status_running]
+other = "Running"
+
+[status_stopped]
+other = "Stopped"
+
+[status_error]
+other = "Error"
+
+[app_title]
+other = "CloudFlared UI"
+
+[tunnel_config]
+other = "Tunnel Configuration"
+
+[tunnel_config_subtitle]
+other = "Manage your Cloudflare Tunnel connection"
+
+[tunnel_token]
+other = "Tunnel Token"
+
+[token_help]
+other = "Enter the token provided by the Cloudflare Zero Trust dashboard."
+
+[tunnel_identifier]
+other = "Tunnel Identifier"
+
+[tunnel_identifier_help]
+other = "Custom identifier tag shown in Cloudflare dashboard"
+
+[advanced_config]
+other = "Advanced Configuration"
+
+[protocol]
+other = "Protocol"
+
+[protocol_auto]
+other = "Auto"
+
+[protocol_help]
+other = "Connection protocol to Cloudflare network"
+
+[grace_period]
+other = "Grace Period"
+
+[grace_period_help]
+other = "Shutdown grace period (e.g., 30s)"
+
+[region]
+other = "Region"
+
+[region_global]
+other = "Global (Default)"
+
+[region_us]
+other = "United States"
+
+[region_help]
+other = "Preferred connection region"
+
+[max_retries]
+other = "Max Retries"
+
+[max_retries_help]
+other = "Maximum connection retry attempts"
+
+[metrics_enable]
+other = "Enable Metrics Server"
+
+[metrics_port]
+other = "Metrics Port"
+
+[metrics_port_help]
+other = "Port for metrics server"
+
+[autostart]
+other = "Auto-start on launch"
+
+[autorestart]
+other = "Auto-restart on failure"
+
+[start_tunnel]
+other = "Start Tunnel"
+
+[stop_tunnel]
+other = "Stop Tunnel"
+
+[system_logs]
+other = "System Logs"
+
+[clear]
+other = "Clear"
+
+[system_ready]
+other = "System ready. Waiting for configuration..."
+
+[error_token_required]
+other = "Error: Token is required to start the tunnel"
+
+[command_sent]
+other = "Command sent"
+
+[config_saved]
+other = "Configuration saved"
+
+[status_changed]
+other = "Status changed"

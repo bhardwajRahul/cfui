@@ -1,0 +1,110 @@
+[status_checking]
+other = "確認中..."
+
+[status_running]
+other = "実行中"
+
+[status_stopped]
+other = "停止"
+
+[status_error]
+other = "エラー"
+
+[app_title]
+other = "CloudFlared UI"
+
+[tunnel_config]
+other = "トンネル設定"
+
+[tunnel_config_subtitle]
+other = "Cloudflare Tunnel 接続を管理します"
+
+[tunnel_token]
+other = "トンネル Token"
+
+[token_help]
+other = "Cloudflare Zero Trust ダッシュボードから提供された Token を入力してください。"
+
+[tunnel_identifier]
+other = "トンネル識別子"
+
+[tunnel_identifier_help]
+other = "Cloudflare ダッシュボードに表示されるカスタム識別タグ"
+
+[advanced_config]
+other = "詳細設定"
+
+[protocol]
+other = "プロトコル"
+
+[protocol_auto]
+other = "自動"
+
+[protocol_help]
+other = "Cloudflare ネットワークへの接続プロトコル"
+
+[grace_period]
+other = "グレースピリオド"
+
+[grace_period_help]
+other = "シャットダウンのグレースピリオド（例：30s）"
+
+[region]
+other = "地域"
+
+[region_global]
+other = "グローバル（デフォルト）"
+
+[region_us]
+other = "アメリカ合衆国"
+
+[region_help]
+other = "優先接続地域"
+
+[max_retries]
+other = "最大リトライ数"
+
+[max_retries_help]
+other = "最大接続リトライ回数"
+
+[metrics_enable]
+other = "メトリクスサーバーを有効化"
+
+[metrics_port]
+other = "メトリクスポート"
+
+[metrics_port_help]
+other = "メトリクスサーバーのポート"
+
+[autostart]
+other = "起動時に自動開始"
+
+[autorestart]
+other = "障害時に自動再起動"
+
+[start_tunnel]
+other = "トンネルを開始"
+
+[stop_tunnel]
+other = "トンネルを停止"
+
+[system_logs]
+other = "システムログ"
+
+[clear]
+other = "クリア"
+
+[system_ready]
+other = "システム準備完了。設定を待機中..."
+
+[error_token_required]
+other = "エラー：トンネルを開始するには Token が必要です"
+
+[command_sent]
+other = "コマンド送信済み"
+
+[config_saved]
+other = "設定を保存しました"
+
+[status_changed]
+other = "ステータスが変更されました"
