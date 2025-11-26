@@ -13,6 +13,10 @@ var (
 	GitCommit = "unknown"
 )
 
+const (
+	product = "cfui"
+)
+
 // GetVersion returns the full version string
 func GetVersion() string {
 	if Version == "dev" {
@@ -24,9 +28,9 @@ func GetVersion() string {
 // GetFullVersion returns the version with build info
 func GetFullVersion() string {
 	if Version == "dev" {
-		return fmt.Sprintf("cfui/%s (commit: %s, built: %s)", Version, GitCommit, BuildTime)
+		return fmt.Sprintf("%s/%s (commit: %s, built: %s)", product, Version, GitCommit, BuildTime)
 	}
-	return fmt.Sprintf("cfui/%s", Version)
+	return fmt.Sprintf("%s/%s", product, Version)
 }
 
 // GetShortVersion returns just the version number for cloudflared display

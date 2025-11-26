@@ -46,7 +46,7 @@ func NewRunner(cfgMgr *config.Manager) *Runner {
 // initTunnel initializes the cloudflared tunnel package with required build info
 func (r *Runner) initTunnel() {
 	r.initOnce.Do(func() {
-		buildInfo := cliutil.GetBuildInfo("cfui", version.GetShortVersion())
+		buildInfo := cliutil.GetBuildInfo("dockers-x", version.GetFullVersion())
 		tunnel.Init(buildInfo, r.gracefulShutdownC)
 		log.Printf("Cloudflared tunnel initialized successfully (version: %s)", version.GetFullVersion())
 	})
