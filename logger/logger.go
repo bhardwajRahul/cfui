@@ -1,12 +1,12 @@
 package logger
 
 import (
-	"bufio"
 	"container/ring"
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -105,8 +105,11 @@ func Initialize(cfg *Config) error {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	// Wrap file writer with broadcaster using io.MultiWriter
-	fileWriter := io.MultiWriter(lumberjackLogger, newBroadcastWriter(io.Discard, broadcaster))
+	// Create a single broadcast writer to avoid duplicate broadcasts
+	broadcastWriter := newBroadcastWriter(broadcaster)
+
+	// Wrap file writer with broadcaster - file output broadcasts to SSE clients
+	fileWriter := io.MultiWriter(lumberjackLogger, broadcastWriter)
 
 	// Create cores for both file and console output
 	fileCore := zapcore.NewCore(
@@ -115,16 +118,13 @@ func Initialize(cfg *Config) error {
 		level,
 	)
 
-	// Console encoder with color - also add broadcaster
+	// Console encoder with color - NO broadcaster to avoid duplicate broadcasts
 	consoleEncoderConfig := encoderConfig
 	consoleEncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
-	// Console output goes to both stdout AND broadcaster
-	consoleWriter := io.MultiWriter(os.Stdout, newBroadcastWriter(io.Discard, broadcaster))
-
 	consoleCore := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(consoleEncoderConfig),
-		zapcore.AddSync(consoleWriter),
+		zapcore.AddSync(os.Stdout),
 		level,
 	)
 
@@ -174,29 +174,104 @@ func RecoverPanicWithHandler(handler func(interface{})) {
 
 // LogBroadcaster broadcasts log lines to multiple subscribers
 type LogBroadcaster struct {
-	subscribers map[chan string]struct{}
+	subscribers map[chan string]*subscriberInfo
 	buffer      *ring.Ring // Circular buffer for recent logs
 	mu          sync.RWMutex
 	bufferSize  int
+	cleanupDone chan struct{}
+	wg          sync.WaitGroup
 }
+
+// subscriberInfo holds metadata about a subscriber
+type subscriberInfo struct {
+	ch         chan string
+	lastActive time.Time
+	remoteAddr string // For debugging
+}
+
+const (
+	subscriberTimeout    = 5 * time.Minute // Close inactive subscribers after 5 minutes
+	cleanupInterval      = 1 * time.Minute // Check for inactive subscribers every minute
+	subscriberBufferSize = 100             // Buffered channel size
+)
 
 // NewLogBroadcaster creates a new log broadcaster with a circular buffer
 func NewLogBroadcaster(bufferSize int) *LogBroadcaster {
-	return &LogBroadcaster{
-		subscribers: make(map[chan string]struct{}),
+	b := &LogBroadcaster{
+		subscribers: make(map[chan string]*subscriberInfo),
 		buffer:      ring.New(bufferSize),
 		bufferSize:  bufferSize,
+		cleanupDone: make(chan struct{}),
+	}
+
+	// Start background cleanup goroutine
+	b.wg.Add(1)
+	go b.cleanupInactiveSubscribers()
+
+	return b
+}
+
+// cleanupInactiveSubscribers periodically removes inactive subscribers
+func (b *LogBroadcaster) cleanupInactiveSubscribers() {
+	defer b.wg.Done()
+	ticker := time.NewTicker(cleanupInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			b.mu.Lock()
+			now := time.Now()
+			for ch, info := range b.subscribers {
+				if now.Sub(info.lastActive) > subscriberTimeout {
+					Sugar.Warnf("Removing inactive log subscriber (addr: %s, inactive: %v)",
+						info.remoteAddr, now.Sub(info.lastActive))
+					delete(b.subscribers, ch)
+					close(ch)
+				}
+			}
+			b.mu.Unlock()
+		case <-b.cleanupDone:
+			return
+		}
 	}
 }
 
+// Close stops the broadcaster and cleans up resources
+func (b *LogBroadcaster) Close() {
+	close(b.cleanupDone)
+	b.wg.Wait()
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for ch := range b.subscribers {
+		close(ch)
+	}
+	b.subscribers = make(map[chan string]*subscriberInfo)
+}
+
 // Subscribe creates a new subscriber channel
-func (b *LogBroadcaster) Subscribe() chan string {
+func (b *LogBroadcaster) Subscribe(remoteAddr string) chan string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	ch := make(chan string, 100) // Buffered to prevent blocking
-	b.subscribers[ch] = struct{}{}
+	ch := make(chan string, subscriberBufferSize)
+	b.subscribers[ch] = &subscriberInfo{
+		ch:         ch,
+		lastActive: time.Now(),
+		remoteAddr: remoteAddr,
+	}
 	return ch
+}
+
+// MarkActive updates the last active time for a subscriber
+func (b *LogBroadcaster) MarkActive(ch chan string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if info, ok := b.subscribers[ch]; ok {
+		info.lastActive = time.Now()
+	}
 }
 
 // Unsubscribe removes a subscriber
@@ -211,19 +286,22 @@ func (b *LogBroadcaster) Unsubscribe(ch chan string) {
 // Broadcast sends a log line to all subscribers
 func (b *LogBroadcaster) Broadcast(line string) {
 	b.mu.Lock()
+	defer b.mu.Unlock()
+
 	// Store in circular buffer
 	b.buffer.Value = line
 	b.buffer = b.buffer.Next()
 
 	// Send to all subscribers (non-blocking)
-	for ch := range b.subscribers {
+	for ch, info := range b.subscribers {
 		select {
 		case ch <- line:
+			info.lastActive = time.Now() // Update activity on successful send
 		default:
 			// Skip if channel is full (client too slow)
+			// Don't update lastActive - this subscriber might be dead
 		}
 	}
-	b.mu.Unlock()
 }
 
 // GetRecentLogs returns the recent logs from the circular buffer
@@ -251,25 +329,38 @@ func (b *LogBroadcaster) Write(p []byte) (n int, err error) {
 
 // broadcastWriter wraps an io.Writer and broadcasts lines
 type broadcastWriter struct {
-	writer      io.Writer
 	broadcaster *LogBroadcaster
-	scanner     *bufio.Scanner
 	buffer      []byte
+	mu          sync.Mutex
 }
 
-func newBroadcastWriter(w io.Writer, b *LogBroadcaster) *broadcastWriter {
+const maxBufferSize = 64 * 1024 // 64KB max buffer to prevent memory leak
+
+func newBroadcastWriter(b *LogBroadcaster) *broadcastWriter {
 	return &broadcastWriter{
-		writer:      w,
 		broadcaster: b,
+		buffer:      make([]byte, 0, 1024), // Pre-allocate 1KB
 	}
 }
 
 func (bw *broadcastWriter) Write(p []byte) (n int, err error) {
-	// Write to underlying writer first
-	n, err = bw.writer.Write(p)
+	bw.mu.Lock()
+	defer bw.mu.Unlock()
+
+	// Prevent buffer from growing indefinitely
+	if len(bw.buffer) > maxBufferSize {
+		// Buffer overflow - likely a log line without newline
+		// Force broadcast accumulated data and reset
+		if len(bw.buffer) > 0 {
+			bw.broadcaster.Broadcast(string(bw.buffer))
+		}
+		bw.buffer = bw.buffer[:0]
+	}
+
+	// Append new data to buffer
+	bw.buffer = append(bw.buffer, p...)
 
 	// Broadcast each complete line
-	bw.buffer = append(bw.buffer, p...)
 	for {
 		idx := -1
 		for i, b := range bw.buffer {
@@ -286,7 +377,7 @@ func (bw *broadcastWriter) Write(p []byte) (n int, err error) {
 		bw.buffer = bw.buffer[idx+1:]
 	}
 
-	return n, err
+	return len(p), nil
 }
 
 // GetBroadcaster returns the global log broadcaster

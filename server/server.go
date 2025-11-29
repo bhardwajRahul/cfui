@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/fs"
 	"net/http"
+	"time"
 
 	"cfui/config"
 	"cfui/logger"
@@ -229,8 +230,8 @@ func (s *Server) handleLogStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Subscribe to log broadcasts
-	logChan := broadcaster.Subscribe()
+	// Subscribe to log broadcasts with client address for tracking
+	logChan := broadcaster.Subscribe(r.RemoteAddr)
 	defer broadcaster.Unsubscribe(logChan)
 
 	// Get flusher for SSE
@@ -248,28 +249,45 @@ func (s *Server) handleLogStream(w http.ResponseWriter, r *http.Request) {
 	for _, line := range recentLogs {
 		_, err := w.Write([]byte("data: " + line + "\n\n"))
 		if err != nil {
+			logger.Sugar.Warnf("Failed to send recent logs to %s: %v", r.RemoteAddr, err)
 			return
 		}
 	}
 	flusher.Flush()
 
-	// Stream new logs
+	// Stream new logs with periodic heartbeat to detect dead connections
 	ctx := r.Context()
+	heartbeatTicker := time.NewTicker(30 * time.Second)
+	defer heartbeatTicker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			logger.Sugar.Infof("Log stream client disconnected: %s", r.RemoteAddr)
 			return
+		case <-heartbeatTicker.C:
+			// Send SSE comment as heartbeat to detect dead connections
+			_, err := w.Write([]byte(": heartbeat\n\n"))
+			if err != nil {
+				logger.Sugar.Warnf("Heartbeat failed for %s, closing connection: %v", r.RemoteAddr, err)
+				return
+			}
+			flusher.Flush()
+			// Mark subscriber as active
+			broadcaster.MarkActive(logChan)
 		case logLine, ok := <-logChan:
 			if !ok {
+				logger.Sugar.Infof("Log channel closed for %s", r.RemoteAddr)
 				return
 			}
 			// Send log line as SSE event
 			_, err := w.Write([]byte("data: " + logLine + "\n\n"))
 			if err != nil {
+				logger.Sugar.Warnf("Failed to send log to %s: %v", r.RemoteAddr, err)
 				return
 			}
 			flusher.Flush()
+			// Activity is already updated in Broadcast() on successful send
 		}
 	}
 }
