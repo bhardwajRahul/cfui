@@ -99,6 +99,11 @@ func (r *Runner) Start() error {
 	prometheus.DefaultRegisterer = r.metricsRegistry
 	logger.Sugar.Debug("Created new Prometheus registry for tunnel metrics")
 
+	// Cancel any existing context to prevent context leak
+	if r.cancel != nil {
+		r.cancel()
+	}
+
 	r.ctx, r.cancel = context.WithCancel(context.Background())
 	r.running = true
 	r.lastError = nil
@@ -501,4 +506,25 @@ func (r *Runner) Initialize() {
 			logger.Sugar.Errorf("Failed to auto-start tunnel: %v", err)
 		}
 	}
+}
+
+// Shutdown performs graceful shutdown of the runner and cleans up resources
+func (r *Runner) Shutdown() error {
+	logger.Sugar.Info("Shutting down runner...")
+
+	// Stop the tunnel if running
+	if err := r.Stop(); err != nil {
+		logger.Sugar.Warnf("Error stopping tunnel during shutdown: %v", err)
+	}
+
+	// Close gracefulShutdownC channel to signal complete shutdown
+	r.mu.Lock()
+	if r.gracefulShutdownC != nil {
+		close(r.gracefulShutdownC)
+		r.gracefulShutdownC = nil
+	}
+	r.mu.Unlock()
+
+	logger.Sugar.Info("Runner shutdown complete")
+	return nil
 }

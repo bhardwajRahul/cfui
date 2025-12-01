@@ -145,6 +145,12 @@ other = "连接"
 [log_disconnect]
 other = "断开连接"
 
+[log_stream_enable]
+other = "开启实时日志"
+
+[log_stream_disable]
+other = "关闭实时日志"
+
 [log_clear]
 other = "清空日志"
 

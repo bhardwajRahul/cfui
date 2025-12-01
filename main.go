@@ -1,11 +1,16 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
+	"time"
 
 	"cfui/config"
 	"cfui/logger"
@@ -26,14 +31,14 @@ func main() {
 		if r := recover(); r != nil {
 			if logger.Sugar != nil {
 				logger.Sugar.Errorf("Fatal panic in main: %v", r)
-				logger.Sync()
+				logger.Shutdown()
 			} else {
 				log.Printf("Fatal panic in main (logger not initialized): %v", r)
 			}
 			os.Exit(1)
 		} else {
-			// Normal shutdown - sync logs
-			logger.Sync()
+			// Normal shutdown - shutdown logger properly
+			logger.Shutdown()
 		}
 	}()
 
@@ -98,8 +103,51 @@ func main() {
 	fmt.Printf("Network access: http://<your-ip>:%s\n", port)
 	logger.Sugar.Infof("Server starting on 0.0.0.0:%s", port)
 
-	if err := srv.Run(":" + port); err != nil {
-		logger.Sugar.Errorf("Server failed: %v", err)
-		log.Fatal(err)
+	// Create HTTP server with explicit configuration
+	httpServer := &http.Server{
+		Addr:    ":" + port,
+		Handler: srv.GetHandler(),
+	}
+
+	// Channel to signal when server has shut down
+	serverErrors := make(chan error, 1)
+
+	// Start server in goroutine
+	go func() {
+		serverErrors <- httpServer.ListenAndServe()
+	}()
+
+	// Setup signal handler for graceful shutdown
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+
+	// Block until we receive a signal or server error
+	select {
+	case sig := <-shutdown:
+		logger.Sugar.Infof("Received shutdown signal: %v", sig)
+
+		// Create context with timeout for shutdown
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Shutdown HTTP server gracefully
+		logger.Sugar.Info("Shutting down HTTP server...")
+		if err := httpServer.Shutdown(ctx); err != nil {
+			logger.Sugar.Errorf("HTTP server shutdown error: %v", err)
+			httpServer.Close()
+		}
+
+		// Shutdown runner (stops tunnel if running)
+		if err := runner.Shutdown(); err != nil {
+			logger.Sugar.Errorf("Runner shutdown error: %v", err)
+		}
+
+		logger.Sugar.Info("Graceful shutdown complete")
+
+	case err := <-serverErrors:
+		if err != nil && err != http.ErrServerClosed {
+			logger.Sugar.Errorf("Server failed: %v", err)
+			log.Fatal(err)
+		}
 	}
 }

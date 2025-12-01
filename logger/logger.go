@@ -149,6 +149,20 @@ func Sync() {
 	}
 }
 
+// Shutdown performs graceful shutdown of logger and broadcaster
+func Shutdown() {
+	// Close broadcaster to stop background goroutine
+	broadcasterMu.Lock()
+	if broadcaster != nil {
+		broadcaster.Close()
+		broadcaster = nil
+	}
+	broadcasterMu.Unlock()
+
+	// Sync and close logger
+	Sync()
+}
+
 // RecoverPanic recovers from panic and logs it
 func RecoverPanic() {
 	if r := recover(); r != nil {

@@ -145,6 +145,12 @@ other = "Connect"
 [log_disconnect]
 other = "Disconnect"
 
+[log_stream_enable]
+other = "Enable Real-time Logs"
+
+[log_stream_disable]
+other = "Disable Real-time Logs"
+
 [log_clear]
 other = "Clear Logs"
 

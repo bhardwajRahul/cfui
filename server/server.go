@@ -30,7 +30,8 @@ func NewServer(cfgMgr *config.Manager, runner *service.Runner, assets embed.FS, 
 	}
 }
 
-func (s *Server) Run(addr string) error {
+// GetHandler creates and returns the HTTP handler
+func (s *Server) GetHandler() http.Handler {
 	mux := http.NewServeMux()
 
 	// API Endpoints
@@ -46,13 +47,16 @@ func (s *Server) Run(addr string) error {
 	fsys, err := fs.Sub(s.assets, "web/dist")
 	if err != nil {
 		logger.Sugar.Errorf("Failed to create sub filesystem: %v", err)
-		return err
+		panic(err)
 	}
 	mux.Handle("/", http.FileServer(http.FS(fsys)))
 
 	// Apply middleware chain: logging -> panic recovery -> handler
-	handler := ChainMiddleware(mux, LoggingMiddleware, PanicRecoveryMiddleware)
+	return ChainMiddleware(mux, LoggingMiddleware, PanicRecoveryMiddleware)
+}
 
+func (s *Server) Run(addr string) error {
+	handler := s.GetHandler()
 	logger.Sugar.Infof("Server listening on %s", addr)
 	return http.ListenAndServe(addr, handler)
 }

@@ -68,8 +68,8 @@ async function init() {
     await fetchStatus();
     setInterval(fetchStatus, 2000);
 
-    // Auto-connect log stream
-    connectLogStream();
+    // DO NOT auto-connect log stream - user must manually enable it
+    // connectLogStream();
 }
 
 // Event Listeners
@@ -456,11 +456,11 @@ function disconnectLogStream() {
 
 function updateStreamButtonState() {
     if (state.isStreamConnected) {
-        elements.toggleStreamBtn.textContent = t('log_disconnect');
+        elements.toggleStreamBtn.textContent = t('log_stream_disable');
         elements.toggleStreamBtn.classList.remove('btn-secondary');
         elements.toggleStreamBtn.classList.add('btn-success');
     } else {
-        elements.toggleStreamBtn.textContent = t('log_connect');
+        elements.toggleStreamBtn.textContent = t('log_stream_enable');
         elements.toggleStreamBtn.classList.remove('btn-success');
         elements.toggleStreamBtn.classList.add('btn-secondary');
     }

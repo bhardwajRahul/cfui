@@ -145,6 +145,12 @@ other = "接続"
 [log_disconnect]
 other = "切断"
 
+[log_stream_enable]
+other = "リアルタイムログを有効化"
+
+[log_stream_disable]
+other = "リアルタイムログを無効化"
+
 [log_clear]
 other = "ログをクリア"
 
