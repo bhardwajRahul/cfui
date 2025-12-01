@@ -517,13 +517,11 @@ func (r *Runner) Shutdown() error {
 		logger.Sugar.Warnf("Error stopping tunnel during shutdown: %v", err)
 	}
 
-	// Close gracefulShutdownC channel to signal complete shutdown
-	r.mu.Lock()
-	if r.gracefulShutdownC != nil {
-		close(r.gracefulShutdownC)
-		r.gracefulShutdownC = nil
-	}
-	r.mu.Unlock()
+	// Note: We don't close gracefulShutdownC here because:
+	// 1. It's passed to cloudflared's tunnel.Init() and may be used internally
+	// 2. Closing it could cause "send on closed channel" panics
+	// 3. It will be garbage collected when the Runner is destroyed
+	// The channel is created with NewRunner and should live for the entire app lifecycle
 
 	logger.Sugar.Info("Runner shutdown complete")
 	return nil
