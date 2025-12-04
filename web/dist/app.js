@@ -16,6 +16,7 @@ const elements = {
     statusBadge: document.getElementById('status-badge'),
     statusDot: document.querySelector('.status-dot'),
     statusText: document.querySelector('.status-text'),
+    versionInfo: document.getElementById('version-info'),
     tokenInput: document.getElementById('token-input'),
     customTagInput: document.getElementById('custom-version-input'),
     softwareNameInput: document.getElementById('software-name-input'),
@@ -64,6 +65,7 @@ async function init() {
     elements.logsContainer.innerHTML = '';
     addLog(t('system_ready'), 'system');
 
+    await fetchVersion();
     await fetchConfig();
     await fetchStatus();
     setInterval(fetchStatus, 2000);
@@ -152,6 +154,34 @@ elements.langSelect.addEventListener('change', async (e) => {
 });
 
 // API Calls
+async function fetchVersion() {
+    try {
+        const res = await fetch(`${API_BASE}/version`);
+        const data = await res.json();
+
+        // Display version in the header
+        if (elements.versionInfo) {
+            let version = data.version;
+
+            // Extract main version (e.g., v0.2.2 from v0.2.2-1-g6e29258-dirty)
+            // Match pattern: v0.2.2 or 0.2.2 (before any dash)
+            const match = version.match(/^(v?\d+\.\d+\.\d+)/);
+            const displayVersion = match ? match[1] : version;
+
+            // Ensure it has 'v' prefix
+            const versionText = displayVersion.startsWith('v') ? displayVersion : `v${displayVersion}`;
+
+            elements.versionInfo.textContent = versionText;
+            elements.versionInfo.title = `Version: ${data.version}\nBuild Time: ${data.build_time}\nGit Commit: ${data.git_commit}`;
+        }
+    } catch (err) {
+        // Silently fail - version info is not critical
+        if (elements.versionInfo) {
+            elements.versionInfo.textContent = '';
+        }
+    }
+}
+
 async function fetchConfig() {
     try {
         const res = await fetch(`${API_BASE}/config`);
