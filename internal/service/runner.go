@@ -461,10 +461,10 @@ func (r *Runner) runTunnel(ctx context.Context, token string) {
 			logger.Sugar.Infof("Using custom identifier tag: %s", cfg.CustomTag)
 		}
 	}
-
-	// Add "run" subcommand
 	// Disable auto-update to prevent panic in embedded usage (updater expects non-nil parameters)
-	args = append(args, "run", "--token", token, "--no-autoupdate")
+	args = append(args, "--no-autoupdate")
+	// Add "run" subcommand
+	args = append(args, "run", "--token", token)
 
 	// Select protocol based on config and failure history
 	r.mu.Lock()
