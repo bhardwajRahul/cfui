@@ -14,6 +14,7 @@ import (
 
 	"github.com/cloudflare/cloudflared/cmd/cloudflared/cliutil"
 	"github.com/cloudflare/cloudflared/cmd/cloudflared/tunnel"
+	"github.com/cloudflare/cloudflared/cmd/cloudflared/updater"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
 )
@@ -150,6 +151,9 @@ func (r *Runner) initTunnel() {
 
 		version.ChangeSoftName(softwareName)
 		buildInfo := cliutil.GetBuildInfo("dockers-x", version.GetFullVersion())
+
+		updater.Init(buildInfo)
+
 		tunnel.Init(buildInfo, r.gracefulShutdownC)
 		logger.Sugar.Infof("Cloudflared tunnel initialized successfully (software: %s, version: %s)", softwareName, version.GetFullVersion())
 	})
