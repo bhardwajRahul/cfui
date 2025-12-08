@@ -47,9 +47,9 @@ func DefaultConfig() *Config {
 
 	return &Config{
 		LogDir:     logDir,
-		MaxSize:    10,   // 100 MB
+		MaxSize:    10,   // 10 MB
 		MaxBackups: 10,   // keep 10 backups
-		MaxAge:     30,   // 30 days
+		MaxAge:     7,    // 7 days
 		Compress:   true, // compress old logs
 		LogLevel:   "info",
 	}
