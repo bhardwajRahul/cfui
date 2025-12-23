@@ -3,7 +3,7 @@ module cfui
 go 1.24.0
 
 require (
-	github.com/BurntSushi/toml v1.5.0
+	github.com/BurntSushi/toml v1.6.0
 	github.com/cloudflare/cloudflared v0.0.0-20251121053309-0d2a7a0385bb
 	github.com/prometheus/client_golang v1.23.2
 	github.com/urfave/cli/v2 v2.3.0
