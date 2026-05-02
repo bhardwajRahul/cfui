@@ -255,3 +255,81 @@ other = "API key is configured."
 
 [api_key_not_saved]
 other = "No key saved."
+
+[manager_status_ready]
+other = "Ready"
+
+[manager_status_disabled]
+other = "Disabled"
+
+[manager_status_loading]
+other = "Loading remote config..."
+
+[manager_status_loaded]
+other = "Loaded"
+
+[manager_status_saved]
+other = "Saved"
+
+[manager_status_deleted]
+other = "Deleted"
+
+[manager_status_adding_rule]
+other = "Adding rule..."
+
+[manager_status_updating_rule]
+other = "Updating rule..."
+
+[manager_status_deleting_rule]
+other = "Deleting rule..."
+
+[manager_settings_saved]
+other = "Tunnel manager settings saved"
+
+[tunnel_label]
+other = "Tunnel"
+
+[version_label]
+other = "Version"
+
+[rules_label]
+other = "rules"
+
+[no_ingress_rules]
+other = "No ingress rules found. Add the first rule below."
+
+[catch_all_rule]
+other = "(catch-all rule)"
+
+[no_tls_verify_detail]
+other = "no TLS verify"
+
+[edit]
+other = "Edit"
+
+[delete]
+other = "Delete"
+
+[service_required]
+other = "Service is required"
+
+[tunnel_rule_added]
+other = "Tunnel rule added"
+
+[tunnel_rule_updated]
+other = "Tunnel rule updated"
+
+[tunnel_rule_deleted]
+other = "Tunnel rule deleted"
+
+[public_hostname_section]
+other = "Public hostname"
+
+[service_section]
+other = "Service"
+
+[additional_app_settings]
+other = "Additional application settings"
+
+[disable_origin_tls_verify]
+other = "Disable origin TLS verification"

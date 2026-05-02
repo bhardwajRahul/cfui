@@ -311,10 +311,11 @@ function renderTunnelManagerSettings(settings) {
     elements.managerAPIEmail.value = settings.api_email || '';
     elements.managerAPIToken.value = '';
     elements.managerAPIKey.value = '';
-    elements.managerTokenState.textContent = settings.api_token_set ? 'API token is configured.' : 'No token saved.';
-    elements.managerKeyState.textContent = settings.api_key_set ? 'API key is configured.' : 'No key saved.';
+    elements.managerTokenState.textContent = settings.api_token_set ? t('api_token_configured') : t('api_token_not_saved');
+    elements.managerKeyState.textContent = settings.api_key_set ? t('api_key_configured') : t('api_key_not_saved');
     updateManagerAuthMode();
-    setManagerStatus(settings.enabled ? 'Ready' : 'Disabled', settings.enabled ? 'ready' : 'disabled');
+    setManagerStatus(settings.enabled ? t('manager_status_ready') : t('manager_status_disabled'), settings.enabled ? 'ready' : 'disabled');
+    updateTunnelManagerText();
 }
 
 function updateManagerAuthMode() {
@@ -367,7 +368,7 @@ async function saveTunnelManagerSettings(quiet = false) {
         if (payload.api_token) state.config.tunnel_management.api_token = payload.api_token;
         if (payload.api_key) state.config.tunnel_management.api_key = payload.api_key;
         if (!quiet) {
-            addLog('Tunnel manager settings saved', 'system');
+            addLog(t('manager_settings_saved'), 'system');
         }
     } catch (err) {
         setManagerStatus(err.message, 'error');
@@ -377,13 +378,13 @@ async function saveTunnelManagerSettings(quiet = false) {
 
 async function loadTunnelManagerConfig() {
     try {
-        setManagerStatus('Loading remote config...', 'loading');
+        setManagerStatus(t('manager_status_loading'), 'loading');
         const res = await fetch(`${API_BASE}/tunnel-manager/config`);
         if (!res.ok) throw new Error(await responseError(res));
         const data = await res.json();
         state.tunnelManager.config = data;
         renderTunnelManagerConfig(data);
-        setManagerStatus('Loaded', 'ready');
+        setManagerStatus(t('manager_status_loaded'), 'ready');
         addLog(`Loaded tunnel config ${data.tunnel_id || ''} v${data.version}`, 'system');
     } catch (err) {
         setManagerStatus(err.message, 'error');
@@ -393,13 +394,13 @@ async function loadTunnelManagerConfig() {
 
 function renderTunnelManagerConfig(config) {
     elements.managerConfigPanel.hidden = false;
-    elements.managerConfigMeta.textContent = `Tunnel ${config.tunnel_id || elements.managerTunnelId.value} · Version ${config.version || 0} · ${config.entries?.length || 0} rules`;
+    elements.managerConfigMeta.textContent = `${t('tunnel_label')} ${config.tunnel_id || elements.managerTunnelId.value} · ${t('version_label')} ${config.version || 0} · ${config.entries?.length || 0} ${t('rules_label')}`;
     elements.managerRulesList.innerHTML = '';
 
     if (!config.entries || config.entries.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'empty-state';
-        empty.textContent = 'No ingress rules found. Add the first rule below.';
+        empty.textContent = t('no_ingress_rules');
         elements.managerRulesList.appendChild(empty);
         return;
     }
@@ -412,10 +413,10 @@ function renderTunnelManagerConfig(config) {
         content.className = 'rule-content';
         const title = document.createElement('div');
         title.className = 'rule-title';
-        title.textContent = entry.hostname || '(catch-all rule)';
+        title.textContent = entry.hostname || t('catch_all_rule');
         const detail = document.createElement('div');
         detail.className = 'rule-detail';
-        detail.textContent = `${entry.path || '/'} → ${entry.service}${entry.no_tls_verify ? ' · no TLS verify' : ''}`;
+        detail.textContent = `${entry.path || '/'} → ${entry.service}${entry.no_tls_verify ? ` · ${t('no_tls_verify_detail')}` : ''}`;
         content.append(title, detail);
 
         const actions = document.createElement('div');
@@ -423,12 +424,12 @@ function renderTunnelManagerConfig(config) {
         const edit = document.createElement('button');
         edit.className = 'btn btn-sm btn-secondary';
         edit.type = 'button';
-        edit.textContent = 'Edit';
+        edit.textContent = t('edit');
         edit.addEventListener('click', () => editTunnelManagerEntry(entry));
         const del = document.createElement('button');
         del.className = 'btn btn-sm btn-ghost';
         del.type = 'button';
-        del.textContent = 'Delete';
+        del.textContent = t('delete');
         del.addEventListener('click', () => deleteTunnelManagerEntry(entry.index));
         actions.append(edit, del);
 
@@ -449,7 +450,7 @@ function editTunnelManagerEntry(entry) {
     elements.managerEntryHTTPHostHeader.value = entry.http_host_header || '';
     elements.managerEntryOriginServerName.value = entry.origin_server_name || '';
     elements.managerEntryNoTLS.checked = !!entry.no_tls_verify;
-    elements.managerEntrySubmit.textContent = 'Update Rule';
+    elements.managerEntrySubmit.textContent = t('update_rule');
     updateServicePlaceholder();
     elements.managerEntryService.focus();
 }
@@ -464,7 +465,7 @@ function resetTunnelEntryForm() {
     elements.managerEntryHTTPHostHeader.value = '';
     elements.managerEntryOriginServerName.value = '';
     elements.managerEntryNoTLS.checked = false;
-    elements.managerEntrySubmit.textContent = 'Add Rule';
+    elements.managerEntrySubmit.textContent = t('add_rule');
     updateServicePlaceholder();
 }
 
@@ -526,14 +527,14 @@ async function submitTunnelManagerEntry(event) {
         origin_server_name: elements.managerEntryOriginServerName.value.trim()
     };
     if (!entry.service) {
-        setManagerStatus('Service is required', 'error');
+        setManagerStatus(t('service_required'), 'error');
         return;
     }
 
     const url = index === '' ? `${API_BASE}/tunnel-manager/entries` : `${API_BASE}/tunnel-manager/entries/${index}`;
     const method = index === '' ? 'POST' : 'PUT';
     try {
-        setManagerStatus(index === '' ? 'Adding rule...' : 'Updating rule...', 'loading');
+        setManagerStatus(index === '' ? t('manager_status_adding_rule') : t('manager_status_updating_rule'), 'loading');
         const res = await fetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
@@ -544,8 +545,8 @@ async function submitTunnelManagerEntry(event) {
         state.tunnelManager.config = data;
         renderTunnelManagerConfig(data);
         resetTunnelEntryForm();
-        setManagerStatus('Saved', 'ready');
-        addLog(index === '' ? 'Tunnel rule added' : 'Tunnel rule updated', 'system');
+        setManagerStatus(t('manager_status_saved'), 'ready');
+        addLog(index === '' ? t('tunnel_rule_added') : t('tunnel_rule_updated'), 'system');
     } catch (err) {
         setManagerStatus(err.message, 'error');
         addLog(`Tunnel rule save failed: ${err.message}`, 'error');
@@ -554,14 +555,14 @@ async function submitTunnelManagerEntry(event) {
 
 async function deleteTunnelManagerEntry(index) {
     try {
-        setManagerStatus('Deleting rule...', 'loading');
+        setManagerStatus(t('manager_status_deleting_rule'), 'loading');
         const res = await fetch(`${API_BASE}/tunnel-manager/entries/${index}`, { method: 'DELETE' });
         if (!res.ok) throw new Error(await responseError(res));
         const data = await res.json();
         state.tunnelManager.config = data;
         renderTunnelManagerConfig(data);
-        setManagerStatus('Deleted', 'ready');
-        addLog('Tunnel rule deleted', 'system');
+        setManagerStatus(t('manager_status_deleted'), 'ready');
+        addLog(t('tunnel_rule_deleted'), 'system');
     } catch (err) {
         setManagerStatus(err.message, 'error');
         addLog(`Tunnel rule delete failed: ${err.message}`, 'error');
@@ -823,12 +824,28 @@ function updateTunnelManagerText() {
     document.querySelector('label[for="manager-entry-service"]').textContent = t('service');
     document.querySelector('label[for="manager-entry-http-host-header"]').textContent = t('http_host_header');
     document.querySelector('label[for="manager-entry-origin-server-name"]').textContent = t('origin_server_name');
+    const formSectionLabels = document.querySelectorAll('.public-hostname-form .form-section-label');
+    formSectionLabels[0].textContent = t('public_hostname_section');
+    formSectionLabels[1].textContent = t('service_section');
+    document.querySelector('.public-hostname-advanced .advanced-toggle').textContent = t('additional_app_settings');
+    document.querySelector('.public-hostname-advanced .label-text').textContent = t('disable_origin_tls_verify');
     elements.managerEntryCancel.textContent = t('cancel_edit');
     elements.managerEntrySubmit.textContent = elements.managerEntryIndex.value === '' ? t('add_rule') : t('update_rule');
 
     const settings = state.tunnelManager.settings || {};
     if (elements.managerTokenState) elements.managerTokenState.textContent = settings.api_token_set ? t('api_token_configured') : t('api_token_not_saved');
     if (elements.managerKeyState) elements.managerKeyState.textContent = settings.api_key_set ? t('api_key_configured') : t('api_key_not_saved');
+    if (elements.managerStatus?.classList.contains('ready') || elements.managerStatus?.classList.contains('disabled')) {
+        if (state.tunnelManager.config) {
+            setManagerStatus(t('manager_status_loaded'), 'ready');
+        } else {
+            setManagerStatus(settings.enabled ? t('manager_status_ready') : t('manager_status_disabled'), settings.enabled ? 'ready' : 'disabled');
+        }
+    }
+
+    if (state.tunnelManager.config) {
+        renderTunnelManagerConfig(state.tunnelManager.config);
+    }
 }
 
 // Log Streaming Functions

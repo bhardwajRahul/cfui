@@ -255,3 +255,81 @@ other = "API Key 已配置。"
 
 [api_key_not_saved]
 other = "尚未保存 Key。"
+
+[manager_status_ready]
+other = "就绪"
+
+[manager_status_disabled]
+other = "已禁用"
+
+[manager_status_loading]
+other = "正在加载远程配置..."
+
+[manager_status_loaded]
+other = "已加载"
+
+[manager_status_saved]
+other = "已保存"
+
+[manager_status_deleted]
+other = "已删除"
+
+[manager_status_adding_rule]
+other = "正在添加规则..."
+
+[manager_status_updating_rule]
+other = "正在更新规则..."
+
+[manager_status_deleting_rule]
+other = "正在删除规则..."
+
+[manager_settings_saved]
+other = "隧道管理配置已保存"
+
+[tunnel_label]
+other = "隧道"
+
+[version_label]
+other = "版本"
+
+[rules_label]
+other = "条规则"
+
+[no_ingress_rules]
+other = "未找到 ingress 规则。请在下方添加第一条规则。"
+
+[catch_all_rule]
+other = "（兜底规则）"
+
+[no_tls_verify_detail]
+other = "不验证 TLS"
+
+[edit]
+other = "编辑"
+
+[delete]
+other = "删除"
+
+[service_required]
+other = "服务地址必填"
+
+[tunnel_rule_added]
+other = "隧道规则已添加"
+
+[tunnel_rule_updated]
+other = "隧道规则已更新"
+
+[tunnel_rule_deleted]
+other = "隧道规则已删除"
+
+[public_hostname_section]
+other = "公共主机名"
+
+[service_section]
+other = "服务"
+
+[additional_app_settings]
+other = "其他应用设置"
+
+[disable_origin_tls_verify]
+other = "禁用源站 TLS 验证"

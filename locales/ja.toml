@@ -255,3 +255,81 @@ other = "API Key は設定済みです。"
 
 [api_key_not_saved]
 other = "Key は保存されていません。"
+
+[manager_status_ready]
+other = "準備完了"
+
+[manager_status_disabled]
+other = "無効"
+
+[manager_status_loading]
+other = "リモート設定を読み込み中..."
+
+[manager_status_loaded]
+other = "読み込み済み"
+
+[manager_status_saved]
+other = "保存済み"
+
+[manager_status_deleted]
+other = "削除済み"
+
+[manager_status_adding_rule]
+other = "ルールを追加中..."
+
+[manager_status_updating_rule]
+other = "ルールを更新中..."
+
+[manager_status_deleting_rule]
+other = "ルールを削除中..."
+
+[manager_settings_saved]
+other = "トンネル管理設定を保存しました"
+
+[tunnel_label]
+other = "トンネル"
+
+[version_label]
+other = "バージョン"
+
+[rules_label]
+other = "ルール"
+
+[no_ingress_rules]
+other = "ingress ルールがありません。下で最初のルールを追加してください。"
+
+[catch_all_rule]
+other = "（キャッチオールルール）"
+
+[no_tls_verify_detail]
+other = "TLS 検証なし"
+
+[edit]
+other = "編集"
+
+[delete]
+other = "削除"
+
+[service_required]
+other = "サービスは必須です"
+
+[tunnel_rule_added]
+other = "トンネルルールを追加しました"
+
+[tunnel_rule_updated]
+other = "トンネルルールを更新しました"
+
+[tunnel_rule_deleted]
+other = "トンネルルールを削除しました"
+
+[public_hostname_section]
+other = "パブリックホスト名"
+
+[service_section]
+other = "サービス"
+
+[additional_app_settings]
+other = "追加アプリケーション設定"
+
+[disable_origin_tls_verify]
+other = "オリジン TLS 検証を無効化"
