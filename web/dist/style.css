@@ -867,7 +867,29 @@ input:checked+.slider:before {
 .rules-list {
     display: grid;
     gap: 10px;
+    max-height: 360px;
     margin-bottom: 24px;
+    padding-right: 6px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.rules-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.rules-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.rules-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 999px;
+}
+
+.rules-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
 }
 
 .rule-row {
