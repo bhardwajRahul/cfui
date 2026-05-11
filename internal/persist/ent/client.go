@@ -11,8 +11,13 @@ import (
 
 	"cfui/internal/persist/ent/migrate"
 
-	"cfui/internal/persist/ent/appconfig"
+	"cfui/internal/persist/ent/appsetting"
+	"cfui/internal/persist/ent/ddnsipsource"
+	"cfui/internal/persist/ent/ddnsrecord"
+	"cfui/internal/persist/ent/ddnssetting"
 	"cfui/internal/persist/ent/mcptoken"
+	"cfui/internal/persist/ent/tunnelmanagement"
+	"cfui/internal/persist/ent/tunneltoken"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -24,10 +29,20 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// AppConfig is the client for interacting with the AppConfig builders.
-	AppConfig *AppConfigClient
+	// AppSetting is the client for interacting with the AppSetting builders.
+	AppSetting *AppSettingClient
+	// DDNSIPSource is the client for interacting with the DDNSIPSource builders.
+	DDNSIPSource *DDNSIPSourceClient
+	// DDNSRecord is the client for interacting with the DDNSRecord builders.
+	DDNSRecord *DDNSRecordClient
+	// DDNSSetting is the client for interacting with the DDNSSetting builders.
+	DDNSSetting *DDNSSettingClient
 	// MCPToken is the client for interacting with the MCPToken builders.
 	MCPToken *MCPTokenClient
+	// TunnelManagement is the client for interacting with the TunnelManagement builders.
+	TunnelManagement *TunnelManagementClient
+	// TunnelToken is the client for interacting with the TunnelToken builders.
+	TunnelToken *TunnelTokenClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -39,8 +54,13 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.AppConfig = NewAppConfigClient(c.config)
+	c.AppSetting = NewAppSettingClient(c.config)
+	c.DDNSIPSource = NewDDNSIPSourceClient(c.config)
+	c.DDNSRecord = NewDDNSRecordClient(c.config)
+	c.DDNSSetting = NewDDNSSettingClient(c.config)
 	c.MCPToken = NewMCPTokenClient(c.config)
+	c.TunnelManagement = NewTunnelManagementClient(c.config)
+	c.TunnelToken = NewTunnelTokenClient(c.config)
 }
 
 type (
@@ -131,10 +151,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		AppConfig: NewAppConfigClient(cfg),
-		MCPToken:  NewMCPTokenClient(cfg),
+		ctx:              ctx,
+		config:           cfg,
+		AppSetting:       NewAppSettingClient(cfg),
+		DDNSIPSource:     NewDDNSIPSourceClient(cfg),
+		DDNSRecord:       NewDDNSRecordClient(cfg),
+		DDNSSetting:      NewDDNSSettingClient(cfg),
+		MCPToken:         NewMCPTokenClient(cfg),
+		TunnelManagement: NewTunnelManagementClient(cfg),
+		TunnelToken:      NewTunnelTokenClient(cfg),
 	}, nil
 }
 
@@ -152,17 +177,22 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		AppConfig: NewAppConfigClient(cfg),
-		MCPToken:  NewMCPTokenClient(cfg),
+		ctx:              ctx,
+		config:           cfg,
+		AppSetting:       NewAppSettingClient(cfg),
+		DDNSIPSource:     NewDDNSIPSourceClient(cfg),
+		DDNSRecord:       NewDDNSRecordClient(cfg),
+		DDNSSetting:      NewDDNSSettingClient(cfg),
+		MCPToken:         NewMCPTokenClient(cfg),
+		TunnelManagement: NewTunnelManagementClient(cfg),
+		TunnelToken:      NewTunnelTokenClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		AppConfig.
+//		AppSetting.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -184,130 +214,148 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.AppConfig.Use(hooks...)
-	c.MCPToken.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.AppSetting, c.DDNSIPSource, c.DDNSRecord, c.DDNSSetting, c.MCPToken,
+		c.TunnelManagement, c.TunnelToken,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.AppConfig.Intercept(interceptors...)
-	c.MCPToken.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.AppSetting, c.DDNSIPSource, c.DDNSRecord, c.DDNSSetting, c.MCPToken,
+		c.TunnelManagement, c.TunnelToken,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
-	case *AppConfigMutation:
-		return c.AppConfig.mutate(ctx, m)
+	case *AppSettingMutation:
+		return c.AppSetting.mutate(ctx, m)
+	case *DDNSIPSourceMutation:
+		return c.DDNSIPSource.mutate(ctx, m)
+	case *DDNSRecordMutation:
+		return c.DDNSRecord.mutate(ctx, m)
+	case *DDNSSettingMutation:
+		return c.DDNSSetting.mutate(ctx, m)
 	case *MCPTokenMutation:
 		return c.MCPToken.mutate(ctx, m)
+	case *TunnelManagementMutation:
+		return c.TunnelManagement.mutate(ctx, m)
+	case *TunnelTokenMutation:
+		return c.TunnelToken.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
 }
 
-// AppConfigClient is a client for the AppConfig schema.
-type AppConfigClient struct {
+// AppSettingClient is a client for the AppSetting schema.
+type AppSettingClient struct {
 	config
 }
 
-// NewAppConfigClient returns a client for the AppConfig from the given config.
-func NewAppConfigClient(c config) *AppConfigClient {
-	return &AppConfigClient{config: c}
+// NewAppSettingClient returns a client for the AppSetting from the given config.
+func NewAppSettingClient(c config) *AppSettingClient {
+	return &AppSettingClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `appconfig.Hooks(f(g(h())))`.
-func (c *AppConfigClient) Use(hooks ...Hook) {
-	c.hooks.AppConfig = append(c.hooks.AppConfig, hooks...)
+// A call to `Use(f, g, h)` equals to `appsetting.Hooks(f(g(h())))`.
+func (c *AppSettingClient) Use(hooks ...Hook) {
+	c.hooks.AppSetting = append(c.hooks.AppSetting, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `appconfig.Intercept(f(g(h())))`.
-func (c *AppConfigClient) Intercept(interceptors ...Interceptor) {
-	c.inters.AppConfig = append(c.inters.AppConfig, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `appsetting.Intercept(f(g(h())))`.
+func (c *AppSettingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AppSetting = append(c.inters.AppSetting, interceptors...)
 }
 
-// Create returns a builder for creating a AppConfig entity.
-func (c *AppConfigClient) Create() *AppConfigCreate {
-	mutation := newAppConfigMutation(c.config, OpCreate)
-	return &AppConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a AppSetting entity.
+func (c *AppSettingClient) Create() *AppSettingCreate {
+	mutation := newAppSettingMutation(c.config, OpCreate)
+	return &AppSettingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of AppConfig entities.
-func (c *AppConfigClient) CreateBulk(builders ...*AppConfigCreate) *AppConfigCreateBulk {
-	return &AppConfigCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of AppSetting entities.
+func (c *AppSettingClient) CreateBulk(builders ...*AppSettingCreate) *AppSettingCreateBulk {
+	return &AppSettingCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *AppConfigClient) MapCreateBulk(slice any, setFunc func(*AppConfigCreate, int)) *AppConfigCreateBulk {
+func (c *AppSettingClient) MapCreateBulk(slice any, setFunc func(*AppSettingCreate, int)) *AppSettingCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &AppConfigCreateBulk{err: fmt.Errorf("calling to AppConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &AppSettingCreateBulk{err: fmt.Errorf("calling to AppSettingClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*AppConfigCreate, rv.Len())
+	builders := make([]*AppSettingCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &AppConfigCreateBulk{config: c.config, builders: builders}
+	return &AppSettingCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for AppConfig.
-func (c *AppConfigClient) Update() *AppConfigUpdate {
-	mutation := newAppConfigMutation(c.config, OpUpdate)
-	return &AppConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for AppSetting.
+func (c *AppSettingClient) Update() *AppSettingUpdate {
+	mutation := newAppSettingMutation(c.config, OpUpdate)
+	return &AppSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *AppConfigClient) UpdateOne(_m *AppConfig) *AppConfigUpdateOne {
-	mutation := newAppConfigMutation(c.config, OpUpdateOne, withAppConfig(_m))
-	return &AppConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *AppSettingClient) UpdateOne(_m *AppSetting) *AppSettingUpdateOne {
+	mutation := newAppSettingMutation(c.config, OpUpdateOne, withAppSetting(_m))
+	return &AppSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *AppConfigClient) UpdateOneID(id int) *AppConfigUpdateOne {
-	mutation := newAppConfigMutation(c.config, OpUpdateOne, withAppConfigID(id))
-	return &AppConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *AppSettingClient) UpdateOneID(id int) *AppSettingUpdateOne {
+	mutation := newAppSettingMutation(c.config, OpUpdateOne, withAppSettingID(id))
+	return &AppSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for AppConfig.
-func (c *AppConfigClient) Delete() *AppConfigDelete {
-	mutation := newAppConfigMutation(c.config, OpDelete)
-	return &AppConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for AppSetting.
+func (c *AppSettingClient) Delete() *AppSettingDelete {
+	mutation := newAppSettingMutation(c.config, OpDelete)
+	return &AppSettingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *AppConfigClient) DeleteOne(_m *AppConfig) *AppConfigDeleteOne {
+func (c *AppSettingClient) DeleteOne(_m *AppSetting) *AppSettingDeleteOne {
 	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *AppConfigClient) DeleteOneID(id int) *AppConfigDeleteOne {
-	builder := c.Delete().Where(appconfig.ID(id))
+func (c *AppSettingClient) DeleteOneID(id int) *AppSettingDeleteOne {
+	builder := c.Delete().Where(appsetting.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &AppConfigDeleteOne{builder}
+	return &AppSettingDeleteOne{builder}
 }
 
-// Query returns a query builder for AppConfig.
-func (c *AppConfigClient) Query() *AppConfigQuery {
-	return &AppConfigQuery{
+// Query returns a query builder for AppSetting.
+func (c *AppSettingClient) Query() *AppSettingQuery {
+	return &AppSettingQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeAppConfig},
+		ctx:    &QueryContext{Type: TypeAppSetting},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a AppConfig entity by its id.
-func (c *AppConfigClient) Get(ctx context.Context, id int) (*AppConfig, error) {
-	return c.Query().Where(appconfig.ID(id)).Only(ctx)
+// Get returns a AppSetting entity by its id.
+func (c *AppSettingClient) Get(ctx context.Context, id int) (*AppSetting, error) {
+	return c.Query().Where(appsetting.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *AppConfigClient) GetX(ctx context.Context, id int) *AppConfig {
+func (c *AppSettingClient) GetX(ctx context.Context, id int) *AppSetting {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -316,27 +364,426 @@ func (c *AppConfigClient) GetX(ctx context.Context, id int) *AppConfig {
 }
 
 // Hooks returns the client hooks.
-func (c *AppConfigClient) Hooks() []Hook {
-	return c.hooks.AppConfig
+func (c *AppSettingClient) Hooks() []Hook {
+	return c.hooks.AppSetting
 }
 
 // Interceptors returns the client interceptors.
-func (c *AppConfigClient) Interceptors() []Interceptor {
-	return c.inters.AppConfig
+func (c *AppSettingClient) Interceptors() []Interceptor {
+	return c.inters.AppSetting
 }
 
-func (c *AppConfigClient) mutate(ctx context.Context, m *AppConfigMutation) (Value, error) {
+func (c *AppSettingClient) mutate(ctx context.Context, m *AppSettingMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&AppConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&AppSettingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&AppConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&AppSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&AppConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&AppSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&AppConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&AppSettingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown AppConfig mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown AppSetting mutation op: %q", m.Op())
+	}
+}
+
+// DDNSIPSourceClient is a client for the DDNSIPSource schema.
+type DDNSIPSourceClient struct {
+	config
+}
+
+// NewDDNSIPSourceClient returns a client for the DDNSIPSource from the given config.
+func NewDDNSIPSourceClient(c config) *DDNSIPSourceClient {
+	return &DDNSIPSourceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ddnsipsource.Hooks(f(g(h())))`.
+func (c *DDNSIPSourceClient) Use(hooks ...Hook) {
+	c.hooks.DDNSIPSource = append(c.hooks.DDNSIPSource, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ddnsipsource.Intercept(f(g(h())))`.
+func (c *DDNSIPSourceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DDNSIPSource = append(c.inters.DDNSIPSource, interceptors...)
+}
+
+// Create returns a builder for creating a DDNSIPSource entity.
+func (c *DDNSIPSourceClient) Create() *DDNSIPSourceCreate {
+	mutation := newDDNSIPSourceMutation(c.config, OpCreate)
+	return &DDNSIPSourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DDNSIPSource entities.
+func (c *DDNSIPSourceClient) CreateBulk(builders ...*DDNSIPSourceCreate) *DDNSIPSourceCreateBulk {
+	return &DDNSIPSourceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DDNSIPSourceClient) MapCreateBulk(slice any, setFunc func(*DDNSIPSourceCreate, int)) *DDNSIPSourceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DDNSIPSourceCreateBulk{err: fmt.Errorf("calling to DDNSIPSourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DDNSIPSourceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DDNSIPSourceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DDNSIPSource.
+func (c *DDNSIPSourceClient) Update() *DDNSIPSourceUpdate {
+	mutation := newDDNSIPSourceMutation(c.config, OpUpdate)
+	return &DDNSIPSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DDNSIPSourceClient) UpdateOne(_m *DDNSIPSource) *DDNSIPSourceUpdateOne {
+	mutation := newDDNSIPSourceMutation(c.config, OpUpdateOne, withDDNSIPSource(_m))
+	return &DDNSIPSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DDNSIPSourceClient) UpdateOneID(id int) *DDNSIPSourceUpdateOne {
+	mutation := newDDNSIPSourceMutation(c.config, OpUpdateOne, withDDNSIPSourceID(id))
+	return &DDNSIPSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DDNSIPSource.
+func (c *DDNSIPSourceClient) Delete() *DDNSIPSourceDelete {
+	mutation := newDDNSIPSourceMutation(c.config, OpDelete)
+	return &DDNSIPSourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DDNSIPSourceClient) DeleteOne(_m *DDNSIPSource) *DDNSIPSourceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DDNSIPSourceClient) DeleteOneID(id int) *DDNSIPSourceDeleteOne {
+	builder := c.Delete().Where(ddnsipsource.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DDNSIPSourceDeleteOne{builder}
+}
+
+// Query returns a query builder for DDNSIPSource.
+func (c *DDNSIPSourceClient) Query() *DDNSIPSourceQuery {
+	return &DDNSIPSourceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDDNSIPSource},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DDNSIPSource entity by its id.
+func (c *DDNSIPSourceClient) Get(ctx context.Context, id int) (*DDNSIPSource, error) {
+	return c.Query().Where(ddnsipsource.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DDNSIPSourceClient) GetX(ctx context.Context, id int) *DDNSIPSource {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *DDNSIPSourceClient) Hooks() []Hook {
+	return c.hooks.DDNSIPSource
+}
+
+// Interceptors returns the client interceptors.
+func (c *DDNSIPSourceClient) Interceptors() []Interceptor {
+	return c.inters.DDNSIPSource
+}
+
+func (c *DDNSIPSourceClient) mutate(ctx context.Context, m *DDNSIPSourceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DDNSIPSourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DDNSIPSourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DDNSIPSourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DDNSIPSourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DDNSIPSource mutation op: %q", m.Op())
+	}
+}
+
+// DDNSRecordClient is a client for the DDNSRecord schema.
+type DDNSRecordClient struct {
+	config
+}
+
+// NewDDNSRecordClient returns a client for the DDNSRecord from the given config.
+func NewDDNSRecordClient(c config) *DDNSRecordClient {
+	return &DDNSRecordClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ddnsrecord.Hooks(f(g(h())))`.
+func (c *DDNSRecordClient) Use(hooks ...Hook) {
+	c.hooks.DDNSRecord = append(c.hooks.DDNSRecord, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ddnsrecord.Intercept(f(g(h())))`.
+func (c *DDNSRecordClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DDNSRecord = append(c.inters.DDNSRecord, interceptors...)
+}
+
+// Create returns a builder for creating a DDNSRecord entity.
+func (c *DDNSRecordClient) Create() *DDNSRecordCreate {
+	mutation := newDDNSRecordMutation(c.config, OpCreate)
+	return &DDNSRecordCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DDNSRecord entities.
+func (c *DDNSRecordClient) CreateBulk(builders ...*DDNSRecordCreate) *DDNSRecordCreateBulk {
+	return &DDNSRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DDNSRecordClient) MapCreateBulk(slice any, setFunc func(*DDNSRecordCreate, int)) *DDNSRecordCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DDNSRecordCreateBulk{err: fmt.Errorf("calling to DDNSRecordClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DDNSRecordCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DDNSRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DDNSRecord.
+func (c *DDNSRecordClient) Update() *DDNSRecordUpdate {
+	mutation := newDDNSRecordMutation(c.config, OpUpdate)
+	return &DDNSRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DDNSRecordClient) UpdateOne(_m *DDNSRecord) *DDNSRecordUpdateOne {
+	mutation := newDDNSRecordMutation(c.config, OpUpdateOne, withDDNSRecord(_m))
+	return &DDNSRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DDNSRecordClient) UpdateOneID(id int) *DDNSRecordUpdateOne {
+	mutation := newDDNSRecordMutation(c.config, OpUpdateOne, withDDNSRecordID(id))
+	return &DDNSRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DDNSRecord.
+func (c *DDNSRecordClient) Delete() *DDNSRecordDelete {
+	mutation := newDDNSRecordMutation(c.config, OpDelete)
+	return &DDNSRecordDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DDNSRecordClient) DeleteOne(_m *DDNSRecord) *DDNSRecordDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DDNSRecordClient) DeleteOneID(id int) *DDNSRecordDeleteOne {
+	builder := c.Delete().Where(ddnsrecord.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DDNSRecordDeleteOne{builder}
+}
+
+// Query returns a query builder for DDNSRecord.
+func (c *DDNSRecordClient) Query() *DDNSRecordQuery {
+	return &DDNSRecordQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDDNSRecord},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DDNSRecord entity by its id.
+func (c *DDNSRecordClient) Get(ctx context.Context, id int) (*DDNSRecord, error) {
+	return c.Query().Where(ddnsrecord.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DDNSRecordClient) GetX(ctx context.Context, id int) *DDNSRecord {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *DDNSRecordClient) Hooks() []Hook {
+	return c.hooks.DDNSRecord
+}
+
+// Interceptors returns the client interceptors.
+func (c *DDNSRecordClient) Interceptors() []Interceptor {
+	return c.inters.DDNSRecord
+}
+
+func (c *DDNSRecordClient) mutate(ctx context.Context, m *DDNSRecordMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DDNSRecordCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DDNSRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DDNSRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DDNSRecordDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DDNSRecord mutation op: %q", m.Op())
+	}
+}
+
+// DDNSSettingClient is a client for the DDNSSetting schema.
+type DDNSSettingClient struct {
+	config
+}
+
+// NewDDNSSettingClient returns a client for the DDNSSetting from the given config.
+func NewDDNSSettingClient(c config) *DDNSSettingClient {
+	return &DDNSSettingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ddnssetting.Hooks(f(g(h())))`.
+func (c *DDNSSettingClient) Use(hooks ...Hook) {
+	c.hooks.DDNSSetting = append(c.hooks.DDNSSetting, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ddnssetting.Intercept(f(g(h())))`.
+func (c *DDNSSettingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DDNSSetting = append(c.inters.DDNSSetting, interceptors...)
+}
+
+// Create returns a builder for creating a DDNSSetting entity.
+func (c *DDNSSettingClient) Create() *DDNSSettingCreate {
+	mutation := newDDNSSettingMutation(c.config, OpCreate)
+	return &DDNSSettingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DDNSSetting entities.
+func (c *DDNSSettingClient) CreateBulk(builders ...*DDNSSettingCreate) *DDNSSettingCreateBulk {
+	return &DDNSSettingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DDNSSettingClient) MapCreateBulk(slice any, setFunc func(*DDNSSettingCreate, int)) *DDNSSettingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DDNSSettingCreateBulk{err: fmt.Errorf("calling to DDNSSettingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DDNSSettingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DDNSSettingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DDNSSetting.
+func (c *DDNSSettingClient) Update() *DDNSSettingUpdate {
+	mutation := newDDNSSettingMutation(c.config, OpUpdate)
+	return &DDNSSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DDNSSettingClient) UpdateOne(_m *DDNSSetting) *DDNSSettingUpdateOne {
+	mutation := newDDNSSettingMutation(c.config, OpUpdateOne, withDDNSSetting(_m))
+	return &DDNSSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DDNSSettingClient) UpdateOneID(id int) *DDNSSettingUpdateOne {
+	mutation := newDDNSSettingMutation(c.config, OpUpdateOne, withDDNSSettingID(id))
+	return &DDNSSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DDNSSetting.
+func (c *DDNSSettingClient) Delete() *DDNSSettingDelete {
+	mutation := newDDNSSettingMutation(c.config, OpDelete)
+	return &DDNSSettingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DDNSSettingClient) DeleteOne(_m *DDNSSetting) *DDNSSettingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DDNSSettingClient) DeleteOneID(id int) *DDNSSettingDeleteOne {
+	builder := c.Delete().Where(ddnssetting.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DDNSSettingDeleteOne{builder}
+}
+
+// Query returns a query builder for DDNSSetting.
+func (c *DDNSSettingClient) Query() *DDNSSettingQuery {
+	return &DDNSSettingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDDNSSetting},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DDNSSetting entity by its id.
+func (c *DDNSSettingClient) Get(ctx context.Context, id int) (*DDNSSetting, error) {
+	return c.Query().Where(ddnssetting.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DDNSSettingClient) GetX(ctx context.Context, id int) *DDNSSetting {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *DDNSSettingClient) Hooks() []Hook {
+	return c.hooks.DDNSSetting
+}
+
+// Interceptors returns the client interceptors.
+func (c *DDNSSettingClient) Interceptors() []Interceptor {
+	return c.inters.DDNSSetting
+}
+
+func (c *DDNSSettingClient) mutate(ctx context.Context, m *DDNSSettingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DDNSSettingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DDNSSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DDNSSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DDNSSettingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DDNSSetting mutation op: %q", m.Op())
 	}
 }
 
@@ -473,12 +920,280 @@ func (c *MCPTokenClient) mutate(ctx context.Context, m *MCPTokenMutation) (Value
 	}
 }
 
+// TunnelManagementClient is a client for the TunnelManagement schema.
+type TunnelManagementClient struct {
+	config
+}
+
+// NewTunnelManagementClient returns a client for the TunnelManagement from the given config.
+func NewTunnelManagementClient(c config) *TunnelManagementClient {
+	return &TunnelManagementClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tunnelmanagement.Hooks(f(g(h())))`.
+func (c *TunnelManagementClient) Use(hooks ...Hook) {
+	c.hooks.TunnelManagement = append(c.hooks.TunnelManagement, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tunnelmanagement.Intercept(f(g(h())))`.
+func (c *TunnelManagementClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TunnelManagement = append(c.inters.TunnelManagement, interceptors...)
+}
+
+// Create returns a builder for creating a TunnelManagement entity.
+func (c *TunnelManagementClient) Create() *TunnelManagementCreate {
+	mutation := newTunnelManagementMutation(c.config, OpCreate)
+	return &TunnelManagementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TunnelManagement entities.
+func (c *TunnelManagementClient) CreateBulk(builders ...*TunnelManagementCreate) *TunnelManagementCreateBulk {
+	return &TunnelManagementCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TunnelManagementClient) MapCreateBulk(slice any, setFunc func(*TunnelManagementCreate, int)) *TunnelManagementCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TunnelManagementCreateBulk{err: fmt.Errorf("calling to TunnelManagementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TunnelManagementCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TunnelManagementCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TunnelManagement.
+func (c *TunnelManagementClient) Update() *TunnelManagementUpdate {
+	mutation := newTunnelManagementMutation(c.config, OpUpdate)
+	return &TunnelManagementUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TunnelManagementClient) UpdateOne(_m *TunnelManagement) *TunnelManagementUpdateOne {
+	mutation := newTunnelManagementMutation(c.config, OpUpdateOne, withTunnelManagement(_m))
+	return &TunnelManagementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TunnelManagementClient) UpdateOneID(id int) *TunnelManagementUpdateOne {
+	mutation := newTunnelManagementMutation(c.config, OpUpdateOne, withTunnelManagementID(id))
+	return &TunnelManagementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TunnelManagement.
+func (c *TunnelManagementClient) Delete() *TunnelManagementDelete {
+	mutation := newTunnelManagementMutation(c.config, OpDelete)
+	return &TunnelManagementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TunnelManagementClient) DeleteOne(_m *TunnelManagement) *TunnelManagementDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TunnelManagementClient) DeleteOneID(id int) *TunnelManagementDeleteOne {
+	builder := c.Delete().Where(tunnelmanagement.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TunnelManagementDeleteOne{builder}
+}
+
+// Query returns a query builder for TunnelManagement.
+func (c *TunnelManagementClient) Query() *TunnelManagementQuery {
+	return &TunnelManagementQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTunnelManagement},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TunnelManagement entity by its id.
+func (c *TunnelManagementClient) Get(ctx context.Context, id int) (*TunnelManagement, error) {
+	return c.Query().Where(tunnelmanagement.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TunnelManagementClient) GetX(ctx context.Context, id int) *TunnelManagement {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TunnelManagementClient) Hooks() []Hook {
+	return c.hooks.TunnelManagement
+}
+
+// Interceptors returns the client interceptors.
+func (c *TunnelManagementClient) Interceptors() []Interceptor {
+	return c.inters.TunnelManagement
+}
+
+func (c *TunnelManagementClient) mutate(ctx context.Context, m *TunnelManagementMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TunnelManagementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TunnelManagementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TunnelManagementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TunnelManagementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TunnelManagement mutation op: %q", m.Op())
+	}
+}
+
+// TunnelTokenClient is a client for the TunnelToken schema.
+type TunnelTokenClient struct {
+	config
+}
+
+// NewTunnelTokenClient returns a client for the TunnelToken from the given config.
+func NewTunnelTokenClient(c config) *TunnelTokenClient {
+	return &TunnelTokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tunneltoken.Hooks(f(g(h())))`.
+func (c *TunnelTokenClient) Use(hooks ...Hook) {
+	c.hooks.TunnelToken = append(c.hooks.TunnelToken, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tunneltoken.Intercept(f(g(h())))`.
+func (c *TunnelTokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TunnelToken = append(c.inters.TunnelToken, interceptors...)
+}
+
+// Create returns a builder for creating a TunnelToken entity.
+func (c *TunnelTokenClient) Create() *TunnelTokenCreate {
+	mutation := newTunnelTokenMutation(c.config, OpCreate)
+	return &TunnelTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TunnelToken entities.
+func (c *TunnelTokenClient) CreateBulk(builders ...*TunnelTokenCreate) *TunnelTokenCreateBulk {
+	return &TunnelTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TunnelTokenClient) MapCreateBulk(slice any, setFunc func(*TunnelTokenCreate, int)) *TunnelTokenCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TunnelTokenCreateBulk{err: fmt.Errorf("calling to TunnelTokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TunnelTokenCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TunnelTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TunnelToken.
+func (c *TunnelTokenClient) Update() *TunnelTokenUpdate {
+	mutation := newTunnelTokenMutation(c.config, OpUpdate)
+	return &TunnelTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TunnelTokenClient) UpdateOne(_m *TunnelToken) *TunnelTokenUpdateOne {
+	mutation := newTunnelTokenMutation(c.config, OpUpdateOne, withTunnelToken(_m))
+	return &TunnelTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TunnelTokenClient) UpdateOneID(id int) *TunnelTokenUpdateOne {
+	mutation := newTunnelTokenMutation(c.config, OpUpdateOne, withTunnelTokenID(id))
+	return &TunnelTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TunnelToken.
+func (c *TunnelTokenClient) Delete() *TunnelTokenDelete {
+	mutation := newTunnelTokenMutation(c.config, OpDelete)
+	return &TunnelTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TunnelTokenClient) DeleteOne(_m *TunnelToken) *TunnelTokenDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TunnelTokenClient) DeleteOneID(id int) *TunnelTokenDeleteOne {
+	builder := c.Delete().Where(tunneltoken.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TunnelTokenDeleteOne{builder}
+}
+
+// Query returns a query builder for TunnelToken.
+func (c *TunnelTokenClient) Query() *TunnelTokenQuery {
+	return &TunnelTokenQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTunnelToken},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TunnelToken entity by its id.
+func (c *TunnelTokenClient) Get(ctx context.Context, id int) (*TunnelToken, error) {
+	return c.Query().Where(tunneltoken.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TunnelTokenClient) GetX(ctx context.Context, id int) *TunnelToken {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TunnelTokenClient) Hooks() []Hook {
+	return c.hooks.TunnelToken
+}
+
+// Interceptors returns the client interceptors.
+func (c *TunnelTokenClient) Interceptors() []Interceptor {
+	return c.inters.TunnelToken
+}
+
+func (c *TunnelTokenClient) mutate(ctx context.Context, m *TunnelTokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TunnelTokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TunnelTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TunnelTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TunnelTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TunnelToken mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		AppConfig, MCPToken []ent.Hook
+		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, TunnelManagement,
+		TunnelToken []ent.Hook
 	}
 	inters struct {
-		AppConfig, MCPToken []ent.Interceptor
+		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, TunnelManagement,
+		TunnelToken []ent.Interceptor
 	}
 )

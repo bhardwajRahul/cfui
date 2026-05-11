@@ -3,8 +3,13 @@
 package ent
 
 import (
-	"cfui/internal/persist/ent/appconfig"
+	"cfui/internal/persist/ent/appsetting"
+	"cfui/internal/persist/ent/ddnsipsource"
+	"cfui/internal/persist/ent/ddnsrecord"
+	"cfui/internal/persist/ent/ddnssetting"
 	"cfui/internal/persist/ent/mcptoken"
+	"cfui/internal/persist/ent/tunnelmanagement"
+	"cfui/internal/persist/ent/tunneltoken"
 	"context"
 	"errors"
 	"fmt"
@@ -74,8 +79,13 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			appconfig.Table: appconfig.ValidColumn,
-			mcptoken.Table:  mcptoken.ValidColumn,
+			appsetting.Table:       appsetting.ValidColumn,
+			ddnsipsource.Table:     ddnsipsource.ValidColumn,
+			ddnsrecord.Table:       ddnsrecord.ValidColumn,
+			ddnssetting.Table:      ddnssetting.ValidColumn,
+			mcptoken.Table:         mcptoken.ValidColumn,
+			tunnelmanagement.Table: tunnelmanagement.ValidColumn,
+			tunneltoken.Table:      tunneltoken.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

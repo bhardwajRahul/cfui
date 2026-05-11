@@ -3,7 +3,7 @@
 package ent
 
 import (
-	"cfui/internal/persist/ent/appconfig"
+	"cfui/internal/persist/ent/tunneltoken"
 	"fmt"
 	"strings"
 	"time"
@@ -12,15 +12,15 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// AppConfig is the model entity for the AppConfig schema.
-type AppConfig struct {
+// TunnelToken is the model entity for the TunnelToken schema.
+type TunnelToken struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// Key holds the value of the "key" field.
 	Key string `json:"key,omitempty"`
-	// Payload holds the value of the "payload" field.
-	Payload []byte `json:"payload,omitempty"`
+	// Token holds the value of the "token" field.
+	Token string `json:"token,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -29,17 +29,15 @@ type AppConfig struct {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*AppConfig) scanValues(columns []string) ([]any, error) {
+func (*TunnelToken) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case appconfig.FieldPayload:
-			values[i] = new([]byte)
-		case appconfig.FieldID:
+		case tunneltoken.FieldID:
 			values[i] = new(sql.NullInt64)
-		case appconfig.FieldKey:
+		case tunneltoken.FieldKey, tunneltoken.FieldToken:
 			values[i] = new(sql.NullString)
-		case appconfig.FieldCreatedAt, appconfig.FieldUpdatedAt:
+		case tunneltoken.FieldCreatedAt, tunneltoken.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -49,38 +47,38 @@ func (*AppConfig) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the AppConfig fields.
-func (_m *AppConfig) assignValues(columns []string, values []any) error {
+// to the TunnelToken fields.
+func (_m *TunnelToken) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case appconfig.FieldID:
+		case tunneltoken.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int(value.Int64)
-		case appconfig.FieldKey:
+		case tunneltoken.FieldKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field key", values[i])
 			} else if value.Valid {
 				_m.Key = value.String
 			}
-		case appconfig.FieldPayload:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field payload", values[i])
-			} else if value != nil {
-				_m.Payload = *value
+		case tunneltoken.FieldToken:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field token", values[i])
+			} else if value.Valid {
+				_m.Token = value.String
 			}
-		case appconfig.FieldCreatedAt:
+		case tunneltoken.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
-		case appconfig.FieldUpdatedAt:
+		case tunneltoken.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
@@ -93,40 +91,40 @@ func (_m *AppConfig) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the AppConfig.
+// Value returns the ent.Value that was dynamically selected and assigned to the TunnelToken.
 // This includes values selected through modifiers, order, etc.
-func (_m *AppConfig) Value(name string) (ent.Value, error) {
+func (_m *TunnelToken) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// Update returns a builder for updating this AppConfig.
-// Note that you need to call AppConfig.Unwrap() before calling this method if this AppConfig
+// Update returns a builder for updating this TunnelToken.
+// Note that you need to call TunnelToken.Unwrap() before calling this method if this TunnelToken
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *AppConfig) Update() *AppConfigUpdateOne {
-	return NewAppConfigClient(_m.config).UpdateOne(_m)
+func (_m *TunnelToken) Update() *TunnelTokenUpdateOne {
+	return NewTunnelTokenClient(_m.config).UpdateOne(_m)
 }
 
-// Unwrap unwraps the AppConfig entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the TunnelToken entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *AppConfig) Unwrap() *AppConfig {
+func (_m *TunnelToken) Unwrap() *TunnelToken {
 	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: AppConfig is not a transactional entity")
+		panic("ent: TunnelToken is not a transactional entity")
 	}
 	_m.config.driver = _tx.drv
 	return _m
 }
 
 // String implements the fmt.Stringer.
-func (_m *AppConfig) String() string {
+func (_m *TunnelToken) String() string {
 	var builder strings.Builder
-	builder.WriteString("AppConfig(")
+	builder.WriteString("TunnelToken(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("key=")
 	builder.WriteString(_m.Key)
 	builder.WriteString(", ")
-	builder.WriteString("payload=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Payload))
+	builder.WriteString("token=")
+	builder.WriteString(_m.Token)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
@@ -137,5 +135,5 @@ func (_m *AppConfig) String() string {
 	return builder.String()
 }
 
-// AppConfigs is a parsable slice of AppConfig.
-type AppConfigs []*AppConfig
+// TunnelTokens is a parsable slice of TunnelToken.
+type TunnelTokens []*TunnelToken

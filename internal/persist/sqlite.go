@@ -2,6 +2,7 @@ package persist
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/url"
 	"os"
@@ -47,6 +48,25 @@ func OpenClient(dir string) (*ent.Client, error) {
 	}
 
 	return client, nil
+}
+
+// OpenRawDB opens the SQLite database using the shared runtime DSN without
+// applying schema migrations. It auto-creates the database file if missing.
+func OpenRawDB(dir string) (*sql.DB, error) {
+	dbPath, err := filepath.Abs(DBPath(dir))
+	if err != nil {
+		return nil, fmt.Errorf("resolve database path: %w", err)
+	}
+
+	if err := ensureDatabaseFile(dbPath); err != nil {
+		return nil, fmt.Errorf("create database file: %w", err)
+	}
+
+	db, err := sql.Open("sqlite3", sqliteDSN(dbPath))
+	if err != nil {
+		return nil, fmt.Errorf("open sqlite database: %w", err)
+	}
+	return db, nil
 }
 
 func ensureDatabaseFile(dbPath string) error {

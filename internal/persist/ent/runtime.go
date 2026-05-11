@@ -3,9 +3,14 @@
 package ent
 
 import (
-	"cfui/internal/persist/ent/appconfig"
+	"cfui/internal/persist/ent/appsetting"
+	"cfui/internal/persist/ent/ddnsipsource"
+	"cfui/internal/persist/ent/ddnsrecord"
+	"cfui/internal/persist/ent/ddnssetting"
 	"cfui/internal/persist/ent/mcptoken"
 	"cfui/internal/persist/ent/schema"
+	"cfui/internal/persist/ent/tunnelmanagement"
+	"cfui/internal/persist/ent/tunneltoken"
 	"time"
 )
 
@@ -13,26 +18,190 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	appconfigFields := schema.AppConfig{}.Fields()
-	_ = appconfigFields
-	// appconfigDescKey is the schema descriptor for key field.
-	appconfigDescKey := appconfigFields[0].Descriptor()
-	// appconfig.KeyValidator is a validator for the "key" field. It is called by the builders before save.
-	appconfig.KeyValidator = appconfigDescKey.Validators[0].(func(string) error)
-	// appconfigDescPayload is the schema descriptor for payload field.
-	appconfigDescPayload := appconfigFields[1].Descriptor()
-	// appconfig.PayloadValidator is a validator for the "payload" field. It is called by the builders before save.
-	appconfig.PayloadValidator = appconfigDescPayload.Validators[0].(func([]byte) error)
-	// appconfigDescCreatedAt is the schema descriptor for created_at field.
-	appconfigDescCreatedAt := appconfigFields[2].Descriptor()
-	// appconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
-	appconfig.DefaultCreatedAt = appconfigDescCreatedAt.Default.(func() time.Time)
-	// appconfigDescUpdatedAt is the schema descriptor for updated_at field.
-	appconfigDescUpdatedAt := appconfigFields[3].Descriptor()
-	// appconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	appconfig.DefaultUpdatedAt = appconfigDescUpdatedAt.Default.(func() time.Time)
-	// appconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	appconfig.UpdateDefaultUpdatedAt = appconfigDescUpdatedAt.UpdateDefault.(func() time.Time)
+	appsettingFields := schema.AppSetting{}.Fields()
+	_ = appsettingFields
+	// appsettingDescKey is the schema descriptor for key field.
+	appsettingDescKey := appsettingFields[0].Descriptor()
+	// appsetting.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	appsetting.KeyValidator = appsettingDescKey.Validators[0].(func(string) error)
+	// appsettingDescAutoStart is the schema descriptor for auto_start field.
+	appsettingDescAutoStart := appsettingFields[1].Descriptor()
+	// appsetting.DefaultAutoStart holds the default value on creation for the auto_start field.
+	appsetting.DefaultAutoStart = appsettingDescAutoStart.Default.(bool)
+	// appsettingDescAutoRestart is the schema descriptor for auto_restart field.
+	appsettingDescAutoRestart := appsettingFields[2].Descriptor()
+	// appsetting.DefaultAutoRestart holds the default value on creation for the auto_restart field.
+	appsetting.DefaultAutoRestart = appsettingDescAutoRestart.Default.(bool)
+	// appsettingDescCustomTag is the schema descriptor for custom_tag field.
+	appsettingDescCustomTag := appsettingFields[3].Descriptor()
+	// appsetting.DefaultCustomTag holds the default value on creation for the custom_tag field.
+	appsetting.DefaultCustomTag = appsettingDescCustomTag.Default.(string)
+	// appsettingDescSoftwareName is the schema descriptor for software_name field.
+	appsettingDescSoftwareName := appsettingFields[4].Descriptor()
+	// appsetting.DefaultSoftwareName holds the default value on creation for the software_name field.
+	appsetting.DefaultSoftwareName = appsettingDescSoftwareName.Default.(string)
+	// appsettingDescProtocol is the schema descriptor for protocol field.
+	appsettingDescProtocol := appsettingFields[5].Descriptor()
+	// appsetting.DefaultProtocol holds the default value on creation for the protocol field.
+	appsetting.DefaultProtocol = appsettingDescProtocol.Default.(string)
+	// appsettingDescGracePeriod is the schema descriptor for grace_period field.
+	appsettingDescGracePeriod := appsettingFields[6].Descriptor()
+	// appsetting.DefaultGracePeriod holds the default value on creation for the grace_period field.
+	appsetting.DefaultGracePeriod = appsettingDescGracePeriod.Default.(string)
+	// appsettingDescRegion is the schema descriptor for region field.
+	appsettingDescRegion := appsettingFields[7].Descriptor()
+	// appsetting.DefaultRegion holds the default value on creation for the region field.
+	appsetting.DefaultRegion = appsettingDescRegion.Default.(string)
+	// appsettingDescRetries is the schema descriptor for retries field.
+	appsettingDescRetries := appsettingFields[8].Descriptor()
+	// appsetting.DefaultRetries holds the default value on creation for the retries field.
+	appsetting.DefaultRetries = appsettingDescRetries.Default.(int)
+	// appsettingDescMetricsEnable is the schema descriptor for metrics_enable field.
+	appsettingDescMetricsEnable := appsettingFields[9].Descriptor()
+	// appsetting.DefaultMetricsEnable holds the default value on creation for the metrics_enable field.
+	appsetting.DefaultMetricsEnable = appsettingDescMetricsEnable.Default.(bool)
+	// appsettingDescMetricsPort is the schema descriptor for metrics_port field.
+	appsettingDescMetricsPort := appsettingFields[10].Descriptor()
+	// appsetting.DefaultMetricsPort holds the default value on creation for the metrics_port field.
+	appsetting.DefaultMetricsPort = appsettingDescMetricsPort.Default.(int)
+	// appsettingDescLogLevel is the schema descriptor for log_level field.
+	appsettingDescLogLevel := appsettingFields[11].Descriptor()
+	// appsetting.DefaultLogLevel holds the default value on creation for the log_level field.
+	appsetting.DefaultLogLevel = appsettingDescLogLevel.Default.(string)
+	// appsettingDescLogFile is the schema descriptor for log_file field.
+	appsettingDescLogFile := appsettingFields[12].Descriptor()
+	// appsetting.DefaultLogFile holds the default value on creation for the log_file field.
+	appsetting.DefaultLogFile = appsettingDescLogFile.Default.(string)
+	// appsettingDescLogJSON is the schema descriptor for log_json field.
+	appsettingDescLogJSON := appsettingFields[13].Descriptor()
+	// appsetting.DefaultLogJSON holds the default value on creation for the log_json field.
+	appsetting.DefaultLogJSON = appsettingDescLogJSON.Default.(bool)
+	// appsettingDescEdgeIPVersion is the schema descriptor for edge_ip_version field.
+	appsettingDescEdgeIPVersion := appsettingFields[14].Descriptor()
+	// appsetting.DefaultEdgeIPVersion holds the default value on creation for the edge_ip_version field.
+	appsetting.DefaultEdgeIPVersion = appsettingDescEdgeIPVersion.Default.(string)
+	// appsettingDescEdgeBindAddress is the schema descriptor for edge_bind_address field.
+	appsettingDescEdgeBindAddress := appsettingFields[15].Descriptor()
+	// appsetting.DefaultEdgeBindAddress holds the default value on creation for the edge_bind_address field.
+	appsetting.DefaultEdgeBindAddress = appsettingDescEdgeBindAddress.Default.(string)
+	// appsettingDescPostQuantum is the schema descriptor for post_quantum field.
+	appsettingDescPostQuantum := appsettingFields[16].Descriptor()
+	// appsetting.DefaultPostQuantum holds the default value on creation for the post_quantum field.
+	appsetting.DefaultPostQuantum = appsettingDescPostQuantum.Default.(bool)
+	// appsettingDescNoTLSVerify is the schema descriptor for no_tls_verify field.
+	appsettingDescNoTLSVerify := appsettingFields[17].Descriptor()
+	// appsetting.DefaultNoTLSVerify holds the default value on creation for the no_tls_verify field.
+	appsetting.DefaultNoTLSVerify = appsettingDescNoTLSVerify.Default.(bool)
+	// appsettingDescExtraArgs is the schema descriptor for extra_args field.
+	appsettingDescExtraArgs := appsettingFields[18].Descriptor()
+	// appsetting.DefaultExtraArgs holds the default value on creation for the extra_args field.
+	appsetting.DefaultExtraArgs = appsettingDescExtraArgs.Default.(string)
+	// appsettingDescMcpEnabled is the schema descriptor for mcp_enabled field.
+	appsettingDescMcpEnabled := appsettingFields[19].Descriptor()
+	// appsetting.DefaultMcpEnabled holds the default value on creation for the mcp_enabled field.
+	appsetting.DefaultMcpEnabled = appsettingDescMcpEnabled.Default.(bool)
+	// appsettingDescCreatedAt is the schema descriptor for created_at field.
+	appsettingDescCreatedAt := appsettingFields[20].Descriptor()
+	// appsetting.DefaultCreatedAt holds the default value on creation for the created_at field.
+	appsetting.DefaultCreatedAt = appsettingDescCreatedAt.Default.(func() time.Time)
+	// appsettingDescUpdatedAt is the schema descriptor for updated_at field.
+	appsettingDescUpdatedAt := appsettingFields[21].Descriptor()
+	// appsetting.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	appsetting.DefaultUpdatedAt = appsettingDescUpdatedAt.Default.(func() time.Time)
+	// appsetting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	appsetting.UpdateDefaultUpdatedAt = appsettingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	ddnsipsourceFields := schema.DDNSIPSource{}.Fields()
+	_ = ddnsipsourceFields
+	// ddnsipsourceDescSettingsKey is the schema descriptor for settings_key field.
+	ddnsipsourceDescSettingsKey := ddnsipsourceFields[0].Descriptor()
+	// ddnsipsource.DefaultSettingsKey holds the default value on creation for the settings_key field.
+	ddnsipsource.DefaultSettingsKey = ddnsipsourceDescSettingsKey.Default.(string)
+	// ddnsipsource.SettingsKeyValidator is a validator for the "settings_key" field. It is called by the builders before save.
+	ddnsipsource.SettingsKeyValidator = ddnsipsourceDescSettingsKey.Validators[0].(func(string) error)
+	// ddnsipsourceDescSortOrder is the schema descriptor for sort_order field.
+	ddnsipsourceDescSortOrder := ddnsipsourceFields[1].Descriptor()
+	// ddnsipsource.SortOrderValidator is a validator for the "sort_order" field. It is called by the builders before save.
+	ddnsipsource.SortOrderValidator = ddnsipsourceDescSortOrder.Validators[0].(func(int) error)
+	// ddnsipsourceDescURL is the schema descriptor for url field.
+	ddnsipsourceDescURL := ddnsipsourceFields[2].Descriptor()
+	// ddnsipsource.URLValidator is a validator for the "url" field. It is called by the builders before save.
+	ddnsipsource.URLValidator = ddnsipsourceDescURL.Validators[0].(func(string) error)
+	// ddnsipsourceDescIPType is the schema descriptor for ip_type field.
+	ddnsipsourceDescIPType := ddnsipsourceFields[3].Descriptor()
+	// ddnsipsource.DefaultIPType holds the default value on creation for the ip_type field.
+	ddnsipsource.DefaultIPType = ddnsipsourceDescIPType.Default.(string)
+	ddnsrecordFields := schema.DDNSRecord{}.Fields()
+	_ = ddnsrecordFields
+	// ddnsrecordDescSettingsKey is the schema descriptor for settings_key field.
+	ddnsrecordDescSettingsKey := ddnsrecordFields[0].Descriptor()
+	// ddnsrecord.DefaultSettingsKey holds the default value on creation for the settings_key field.
+	ddnsrecord.DefaultSettingsKey = ddnsrecordDescSettingsKey.Default.(string)
+	// ddnsrecord.SettingsKeyValidator is a validator for the "settings_key" field. It is called by the builders before save.
+	ddnsrecord.SettingsKeyValidator = ddnsrecordDescSettingsKey.Validators[0].(func(string) error)
+	// ddnsrecordDescSortOrder is the schema descriptor for sort_order field.
+	ddnsrecordDescSortOrder := ddnsrecordFields[1].Descriptor()
+	// ddnsrecord.SortOrderValidator is a validator for the "sort_order" field. It is called by the builders before save.
+	ddnsrecord.SortOrderValidator = ddnsrecordDescSortOrder.Validators[0].(func(int) error)
+	// ddnsrecordDescName is the schema descriptor for name field.
+	ddnsrecordDescName := ddnsrecordFields[2].Descriptor()
+	// ddnsrecord.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	ddnsrecord.NameValidator = ddnsrecordDescName.Validators[0].(func(string) error)
+	// ddnsrecordDescZoneID is the schema descriptor for zone_id field.
+	ddnsrecordDescZoneID := ddnsrecordFields[3].Descriptor()
+	// ddnsrecord.ZoneIDValidator is a validator for the "zone_id" field. It is called by the builders before save.
+	ddnsrecord.ZoneIDValidator = ddnsrecordDescZoneID.Validators[0].(func(string) error)
+	// ddnsrecordDescZoneName is the schema descriptor for zone_name field.
+	ddnsrecordDescZoneName := ddnsrecordFields[4].Descriptor()
+	// ddnsrecord.DefaultZoneName holds the default value on creation for the zone_name field.
+	ddnsrecord.DefaultZoneName = ddnsrecordDescZoneName.Default.(string)
+	// ddnsrecordDescType is the schema descriptor for type field.
+	ddnsrecordDescType := ddnsrecordFields[5].Descriptor()
+	// ddnsrecord.TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	ddnsrecord.TypeValidator = ddnsrecordDescType.Validators[0].(func(string) error)
+	// ddnsrecordDescValue is the schema descriptor for value field.
+	ddnsrecordDescValue := ddnsrecordFields[6].Descriptor()
+	// ddnsrecord.DefaultValue holds the default value on creation for the value field.
+	ddnsrecord.DefaultValue = ddnsrecordDescValue.Default.(string)
+	// ddnsrecordDescProxied is the schema descriptor for proxied field.
+	ddnsrecordDescProxied := ddnsrecordFields[7].Descriptor()
+	// ddnsrecord.DefaultProxied holds the default value on creation for the proxied field.
+	ddnsrecord.DefaultProxied = ddnsrecordDescProxied.Default.(bool)
+	// ddnsrecordDescTTL is the schema descriptor for ttl field.
+	ddnsrecordDescTTL := ddnsrecordFields[8].Descriptor()
+	// ddnsrecord.DefaultTTL holds the default value on creation for the ttl field.
+	ddnsrecord.DefaultTTL = ddnsrecordDescTTL.Default.(int)
+	ddnssettingFields := schema.DDNSSetting{}.Fields()
+	_ = ddnssettingFields
+	// ddnssettingDescKey is the schema descriptor for key field.
+	ddnssettingDescKey := ddnssettingFields[0].Descriptor()
+	// ddnssetting.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	ddnssetting.KeyValidator = ddnssettingDescKey.Validators[0].(func(string) error)
+	// ddnssettingDescEnabled is the schema descriptor for enabled field.
+	ddnssettingDescEnabled := ddnssettingFields[1].Descriptor()
+	// ddnssetting.DefaultEnabled holds the default value on creation for the enabled field.
+	ddnssetting.DefaultEnabled = ddnssettingDescEnabled.Default.(bool)
+	// ddnssettingDescIntervalMins is the schema descriptor for interval_mins field.
+	ddnssettingDescIntervalMins := ddnssettingFields[2].Descriptor()
+	// ddnssetting.DefaultIntervalMins holds the default value on creation for the interval_mins field.
+	ddnssetting.DefaultIntervalMins = ddnssettingDescIntervalMins.Default.(int)
+	// ddnssettingDescOnlyOnChange is the schema descriptor for only_on_change field.
+	ddnssettingDescOnlyOnChange := ddnssettingFields[3].Descriptor()
+	// ddnssetting.DefaultOnlyOnChange holds the default value on creation for the only_on_change field.
+	ddnssetting.DefaultOnlyOnChange = ddnssettingDescOnlyOnChange.Default.(bool)
+	// ddnssettingDescMaxRetries is the schema descriptor for max_retries field.
+	ddnssettingDescMaxRetries := ddnssettingFields[4].Descriptor()
+	// ddnssetting.DefaultMaxRetries holds the default value on creation for the max_retries field.
+	ddnssetting.DefaultMaxRetries = ddnssettingDescMaxRetries.Default.(int)
+	// ddnssettingDescCreatedAt is the schema descriptor for created_at field.
+	ddnssettingDescCreatedAt := ddnssettingFields[5].Descriptor()
+	// ddnssetting.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ddnssetting.DefaultCreatedAt = ddnssettingDescCreatedAt.Default.(func() time.Time)
+	// ddnssettingDescUpdatedAt is the schema descriptor for updated_at field.
+	ddnssettingDescUpdatedAt := ddnssettingFields[6].Descriptor()
+	// ddnssetting.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ddnssetting.DefaultUpdatedAt = ddnssettingDescUpdatedAt.Default.(func() time.Time)
+	// ddnssetting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ddnssetting.UpdateDefaultUpdatedAt = ddnssettingDescUpdatedAt.UpdateDefault.(func() time.Time)
 	mcptokenFields := schema.MCPToken{}.Fields()
 	_ = mcptokenFields
 	// mcptokenDescTokenID is the schema descriptor for token_id field.
@@ -55,4 +224,64 @@ func init() {
 	mcptokenDescCreatedAt := mcptokenFields[4].Descriptor()
 	// mcptoken.DefaultCreatedAt holds the default value on creation for the created_at field.
 	mcptoken.DefaultCreatedAt = mcptokenDescCreatedAt.Default.(func() time.Time)
+	tunnelmanagementFields := schema.TunnelManagement{}.Fields()
+	_ = tunnelmanagementFields
+	// tunnelmanagementDescKey is the schema descriptor for key field.
+	tunnelmanagementDescKey := tunnelmanagementFields[0].Descriptor()
+	// tunnelmanagement.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	tunnelmanagement.KeyValidator = tunnelmanagementDescKey.Validators[0].(func(string) error)
+	// tunnelmanagementDescEnabled is the schema descriptor for enabled field.
+	tunnelmanagementDescEnabled := tunnelmanagementFields[1].Descriptor()
+	// tunnelmanagement.DefaultEnabled holds the default value on creation for the enabled field.
+	tunnelmanagement.DefaultEnabled = tunnelmanagementDescEnabled.Default.(bool)
+	// tunnelmanagementDescAccountID is the schema descriptor for account_id field.
+	tunnelmanagementDescAccountID := tunnelmanagementFields[2].Descriptor()
+	// tunnelmanagement.DefaultAccountID holds the default value on creation for the account_id field.
+	tunnelmanagement.DefaultAccountID = tunnelmanagementDescAccountID.Default.(string)
+	// tunnelmanagementDescTunnelID is the schema descriptor for tunnel_id field.
+	tunnelmanagementDescTunnelID := tunnelmanagementFields[3].Descriptor()
+	// tunnelmanagement.DefaultTunnelID holds the default value on creation for the tunnel_id field.
+	tunnelmanagement.DefaultTunnelID = tunnelmanagementDescTunnelID.Default.(string)
+	// tunnelmanagementDescAPIToken is the schema descriptor for api_token field.
+	tunnelmanagementDescAPIToken := tunnelmanagementFields[4].Descriptor()
+	// tunnelmanagement.DefaultAPIToken holds the default value on creation for the api_token field.
+	tunnelmanagement.DefaultAPIToken = tunnelmanagementDescAPIToken.Default.(string)
+	// tunnelmanagementDescAPIEmail is the schema descriptor for api_email field.
+	tunnelmanagementDescAPIEmail := tunnelmanagementFields[5].Descriptor()
+	// tunnelmanagement.DefaultAPIEmail holds the default value on creation for the api_email field.
+	tunnelmanagement.DefaultAPIEmail = tunnelmanagementDescAPIEmail.Default.(string)
+	// tunnelmanagementDescAPIKey is the schema descriptor for api_key field.
+	tunnelmanagementDescAPIKey := tunnelmanagementFields[6].Descriptor()
+	// tunnelmanagement.DefaultAPIKey holds the default value on creation for the api_key field.
+	tunnelmanagement.DefaultAPIKey = tunnelmanagementDescAPIKey.Default.(string)
+	// tunnelmanagementDescCreatedAt is the schema descriptor for created_at field.
+	tunnelmanagementDescCreatedAt := tunnelmanagementFields[7].Descriptor()
+	// tunnelmanagement.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tunnelmanagement.DefaultCreatedAt = tunnelmanagementDescCreatedAt.Default.(func() time.Time)
+	// tunnelmanagementDescUpdatedAt is the schema descriptor for updated_at field.
+	tunnelmanagementDescUpdatedAt := tunnelmanagementFields[8].Descriptor()
+	// tunnelmanagement.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	tunnelmanagement.DefaultUpdatedAt = tunnelmanagementDescUpdatedAt.Default.(func() time.Time)
+	// tunnelmanagement.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	tunnelmanagement.UpdateDefaultUpdatedAt = tunnelmanagementDescUpdatedAt.UpdateDefault.(func() time.Time)
+	tunneltokenFields := schema.TunnelToken{}.Fields()
+	_ = tunneltokenFields
+	// tunneltokenDescKey is the schema descriptor for key field.
+	tunneltokenDescKey := tunneltokenFields[0].Descriptor()
+	// tunneltoken.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	tunneltoken.KeyValidator = tunneltokenDescKey.Validators[0].(func(string) error)
+	// tunneltokenDescToken is the schema descriptor for token field.
+	tunneltokenDescToken := tunneltokenFields[1].Descriptor()
+	// tunneltoken.DefaultToken holds the default value on creation for the token field.
+	tunneltoken.DefaultToken = tunneltokenDescToken.Default.(string)
+	// tunneltokenDescCreatedAt is the schema descriptor for created_at field.
+	tunneltokenDescCreatedAt := tunneltokenFields[2].Descriptor()
+	// tunneltoken.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tunneltoken.DefaultCreatedAt = tunneltokenDescCreatedAt.Default.(func() time.Time)
+	// tunneltokenDescUpdatedAt is the schema descriptor for updated_at field.
+	tunneltokenDescUpdatedAt := tunneltokenFields[3].Descriptor()
+	// tunneltoken.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	tunneltoken.DefaultUpdatedAt = tunneltokenDescUpdatedAt.Default.(func() time.Time)
+	// tunneltoken.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	tunneltoken.UpdateDefaultUpdatedAt = tunneltokenDescUpdatedAt.UpdateDefault.(func() time.Time)
 }

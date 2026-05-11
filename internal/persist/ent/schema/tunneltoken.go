@@ -7,16 +7,16 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// AppConfig stores the singleton application configuration payload.
-type AppConfig struct {
+// TunnelToken stores the singleton tunnel token.
+type TunnelToken struct {
 	ent.Schema
 }
 
-// Fields of the AppConfig.
-func (AppConfig) Fields() []ent.Field {
+// Fields of the TunnelToken.
+func (TunnelToken) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("key").NotEmpty().Unique(),
-		field.Bytes("payload").NotEmpty(),
+		field.String("token").Default(""),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

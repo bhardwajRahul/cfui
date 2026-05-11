@@ -8,19 +8,101 @@ import (
 )
 
 var (
-	// AppConfigsColumns holds the columns for the "app_configs" table.
-	AppConfigsColumns = []*schema.Column{
+	// AppSettingsColumns holds the columns for the "app_settings" table.
+	AppSettingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "key", Type: field.TypeString, Unique: true},
-		{Name: "payload", Type: field.TypeBytes},
+		{Name: "auto_start", Type: field.TypeBool, Default: false},
+		{Name: "auto_restart", Type: field.TypeBool, Default: true},
+		{Name: "custom_tag", Type: field.TypeString, Default: ""},
+		{Name: "software_name", Type: field.TypeString, Default: "cfui"},
+		{Name: "protocol", Type: field.TypeString, Default: "auto"},
+		{Name: "grace_period", Type: field.TypeString, Default: "30s"},
+		{Name: "region", Type: field.TypeString, Default: ""},
+		{Name: "retries", Type: field.TypeInt, Default: 5},
+		{Name: "metrics_enable", Type: field.TypeBool, Default: false},
+		{Name: "metrics_port", Type: field.TypeInt, Default: 60123},
+		{Name: "log_level", Type: field.TypeString, Default: "info"},
+		{Name: "log_file", Type: field.TypeString, Default: ""},
+		{Name: "log_json", Type: field.TypeBool, Default: false},
+		{Name: "edge_ip_version", Type: field.TypeString, Default: "auto"},
+		{Name: "edge_bind_address", Type: field.TypeString, Default: ""},
+		{Name: "post_quantum", Type: field.TypeBool, Default: false},
+		{Name: "no_tls_verify", Type: field.TypeBool, Default: false},
+		{Name: "extra_args", Type: field.TypeString, Default: ""},
+		{Name: "mcp_enabled", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
-	// AppConfigsTable holds the schema information for the "app_configs" table.
-	AppConfigsTable = &schema.Table{
-		Name:       "app_configs",
-		Columns:    AppConfigsColumns,
-		PrimaryKey: []*schema.Column{AppConfigsColumns[0]},
+	// AppSettingsTable holds the schema information for the "app_settings" table.
+	AppSettingsTable = &schema.Table{
+		Name:       "app_settings",
+		Columns:    AppSettingsColumns,
+		PrimaryKey: []*schema.Column{AppSettingsColumns[0]},
+	}
+	// DdnsipSourcesColumns holds the columns for the "ddnsip_sources" table.
+	DdnsipSourcesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "settings_key", Type: field.TypeString, Default: "default"},
+		{Name: "sort_order", Type: field.TypeInt},
+		{Name: "url", Type: field.TypeString},
+		{Name: "ip_type", Type: field.TypeString, Default: "auto"},
+	}
+	// DdnsipSourcesTable holds the schema information for the "ddnsip_sources" table.
+	DdnsipSourcesTable = &schema.Table{
+		Name:       "ddnsip_sources",
+		Columns:    DdnsipSourcesColumns,
+		PrimaryKey: []*schema.Column{DdnsipSourcesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ddnsipsource_settings_key_sort_order",
+				Unique:  true,
+				Columns: []*schema.Column{DdnsipSourcesColumns[1], DdnsipSourcesColumns[2]},
+			},
+		},
+	}
+	// DdnsRecordsColumns holds the columns for the "ddns_records" table.
+	DdnsRecordsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "settings_key", Type: field.TypeString, Default: "default"},
+		{Name: "sort_order", Type: field.TypeInt},
+		{Name: "name", Type: field.TypeString},
+		{Name: "zone_id", Type: field.TypeString},
+		{Name: "zone_name", Type: field.TypeString, Default: ""},
+		{Name: "type", Type: field.TypeString},
+		{Name: "value", Type: field.TypeString, Default: ""},
+		{Name: "proxied", Type: field.TypeBool, Default: false},
+		{Name: "ttl", Type: field.TypeInt, Default: 1},
+	}
+	// DdnsRecordsTable holds the schema information for the "ddns_records" table.
+	DdnsRecordsTable = &schema.Table{
+		Name:       "ddns_records",
+		Columns:    DdnsRecordsColumns,
+		PrimaryKey: []*schema.Column{DdnsRecordsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ddnsrecord_settings_key_sort_order",
+				Unique:  true,
+				Columns: []*schema.Column{DdnsRecordsColumns[1], DdnsRecordsColumns[2]},
+			},
+		},
+	}
+	// DdnsSettingsColumns holds the columns for the "ddns_settings" table.
+	DdnsSettingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString, Unique: true},
+		{Name: "enabled", Type: field.TypeBool, Default: false},
+		{Name: "interval_mins", Type: field.TypeInt, Default: 5},
+		{Name: "only_on_change", Type: field.TypeBool, Default: true},
+		{Name: "max_retries", Type: field.TypeInt, Default: 3},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// DdnsSettingsTable holds the schema information for the "ddns_settings" table.
+	DdnsSettingsTable = &schema.Table{
+		Name:       "ddns_settings",
+		Columns:    DdnsSettingsColumns,
+		PrimaryKey: []*schema.Column{DdnsSettingsColumns[0]},
 	}
 	// McpTokensColumns holds the columns for the "mcp_tokens" table.
 	McpTokensColumns = []*schema.Column{
@@ -37,10 +119,48 @@ var (
 		Columns:    McpTokensColumns,
 		PrimaryKey: []*schema.Column{McpTokensColumns[0]},
 	}
+	// TunnelManagementsColumns holds the columns for the "tunnel_managements" table.
+	TunnelManagementsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString, Unique: true},
+		{Name: "enabled", Type: field.TypeBool, Default: false},
+		{Name: "account_id", Type: field.TypeString, Default: ""},
+		{Name: "tunnel_id", Type: field.TypeString, Default: ""},
+		{Name: "api_token", Type: field.TypeString, Default: ""},
+		{Name: "api_email", Type: field.TypeString, Default: ""},
+		{Name: "api_key", Type: field.TypeString, Default: ""},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// TunnelManagementsTable holds the schema information for the "tunnel_managements" table.
+	TunnelManagementsTable = &schema.Table{
+		Name:       "tunnel_managements",
+		Columns:    TunnelManagementsColumns,
+		PrimaryKey: []*schema.Column{TunnelManagementsColumns[0]},
+	}
+	// TunnelTokensColumns holds the columns for the "tunnel_tokens" table.
+	TunnelTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString, Unique: true},
+		{Name: "token", Type: field.TypeString, Default: ""},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// TunnelTokensTable holds the schema information for the "tunnel_tokens" table.
+	TunnelTokensTable = &schema.Table{
+		Name:       "tunnel_tokens",
+		Columns:    TunnelTokensColumns,
+		PrimaryKey: []*schema.Column{TunnelTokensColumns[0]},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
-		AppConfigsTable,
+		AppSettingsTable,
+		DdnsipSourcesTable,
+		DdnsRecordsTable,
+		DdnsSettingsTable,
 		McpTokensTable,
+		TunnelManagementsTable,
+		TunnelTokensTable,
 	}
 )
 

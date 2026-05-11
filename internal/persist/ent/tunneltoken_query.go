@@ -3,8 +3,8 @@
 package ent
 
 import (
-	"cfui/internal/persist/ent/appconfig"
 	"cfui/internal/persist/ent/predicate"
+	"cfui/internal/persist/ent/tunneltoken"
 	"context"
 	"fmt"
 	"math"
@@ -15,64 +15,64 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// AppConfigQuery is the builder for querying AppConfig entities.
-type AppConfigQuery struct {
+// TunnelTokenQuery is the builder for querying TunnelToken entities.
+type TunnelTokenQuery struct {
 	config
 	ctx        *QueryContext
-	order      []appconfig.OrderOption
+	order      []tunneltoken.OrderOption
 	inters     []Interceptor
-	predicates []predicate.AppConfig
+	predicates []predicate.TunnelToken
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the AppConfigQuery builder.
-func (_q *AppConfigQuery) Where(ps ...predicate.AppConfig) *AppConfigQuery {
+// Where adds a new predicate for the TunnelTokenQuery builder.
+func (_q *TunnelTokenQuery) Where(ps ...predicate.TunnelToken) *TunnelTokenQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *AppConfigQuery) Limit(limit int) *AppConfigQuery {
+func (_q *TunnelTokenQuery) Limit(limit int) *TunnelTokenQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *AppConfigQuery) Offset(offset int) *AppConfigQuery {
+func (_q *TunnelTokenQuery) Offset(offset int) *TunnelTokenQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *AppConfigQuery) Unique(unique bool) *AppConfigQuery {
+func (_q *TunnelTokenQuery) Unique(unique bool) *TunnelTokenQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *AppConfigQuery) Order(o ...appconfig.OrderOption) *AppConfigQuery {
+func (_q *TunnelTokenQuery) Order(o ...tunneltoken.OrderOption) *TunnelTokenQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// First returns the first AppConfig entity from the query.
-// Returns a *NotFoundError when no AppConfig was found.
-func (_q *AppConfigQuery) First(ctx context.Context) (*AppConfig, error) {
+// First returns the first TunnelToken entity from the query.
+// Returns a *NotFoundError when no TunnelToken was found.
+func (_q *TunnelTokenQuery) First(ctx context.Context) (*TunnelToken, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{appconfig.Label}
+		return nil, &NotFoundError{tunneltoken.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *AppConfigQuery) FirstX(ctx context.Context) *AppConfig {
+func (_q *TunnelTokenQuery) FirstX(ctx context.Context) *TunnelToken {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -80,22 +80,22 @@ func (_q *AppConfigQuery) FirstX(ctx context.Context) *AppConfig {
 	return node
 }
 
-// FirstID returns the first AppConfig ID from the query.
-// Returns a *NotFoundError when no AppConfig ID was found.
-func (_q *AppConfigQuery) FirstID(ctx context.Context) (id int, err error) {
+// FirstID returns the first TunnelToken ID from the query.
+// Returns a *NotFoundError when no TunnelToken ID was found.
+func (_q *TunnelTokenQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{appconfig.Label}
+		err = &NotFoundError{tunneltoken.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *AppConfigQuery) FirstIDX(ctx context.Context) int {
+func (_q *TunnelTokenQuery) FirstIDX(ctx context.Context) int {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -103,10 +103,10 @@ func (_q *AppConfigQuery) FirstIDX(ctx context.Context) int {
 	return id
 }
 
-// Only returns a single AppConfig entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one AppConfig entity is found.
-// Returns a *NotFoundError when no AppConfig entities are found.
-func (_q *AppConfigQuery) Only(ctx context.Context) (*AppConfig, error) {
+// Only returns a single TunnelToken entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one TunnelToken entity is found.
+// Returns a *NotFoundError when no TunnelToken entities are found.
+func (_q *TunnelTokenQuery) Only(ctx context.Context) (*TunnelToken, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -115,14 +115,14 @@ func (_q *AppConfigQuery) Only(ctx context.Context) (*AppConfig, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{appconfig.Label}
+		return nil, &NotFoundError{tunneltoken.Label}
 	default:
-		return nil, &NotSingularError{appconfig.Label}
+		return nil, &NotSingularError{tunneltoken.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *AppConfigQuery) OnlyX(ctx context.Context) *AppConfig {
+func (_q *TunnelTokenQuery) OnlyX(ctx context.Context) *TunnelToken {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -130,10 +130,10 @@ func (_q *AppConfigQuery) OnlyX(ctx context.Context) *AppConfig {
 	return node
 }
 
-// OnlyID is like Only, but returns the only AppConfig ID in the query.
-// Returns a *NotSingularError when more than one AppConfig ID is found.
+// OnlyID is like Only, but returns the only TunnelToken ID in the query.
+// Returns a *NotSingularError when more than one TunnelToken ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *AppConfigQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (_q *TunnelTokenQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -142,15 +142,15 @@ func (_q *AppConfigQuery) OnlyID(ctx context.Context) (id int, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{appconfig.Label}
+		err = &NotFoundError{tunneltoken.Label}
 	default:
-		err = &NotSingularError{appconfig.Label}
+		err = &NotSingularError{tunneltoken.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *AppConfigQuery) OnlyIDX(ctx context.Context) int {
+func (_q *TunnelTokenQuery) OnlyIDX(ctx context.Context) int {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -158,18 +158,18 @@ func (_q *AppConfigQuery) OnlyIDX(ctx context.Context) int {
 	return id
 }
 
-// All executes the query and returns a list of AppConfigs.
-func (_q *AppConfigQuery) All(ctx context.Context) ([]*AppConfig, error) {
+// All executes the query and returns a list of TunnelTokens.
+func (_q *TunnelTokenQuery) All(ctx context.Context) ([]*TunnelToken, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*AppConfig, *AppConfigQuery]()
-	return withInterceptors[[]*AppConfig](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*TunnelToken, *TunnelTokenQuery]()
+	return withInterceptors[[]*TunnelToken](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *AppConfigQuery) AllX(ctx context.Context) []*AppConfig {
+func (_q *TunnelTokenQuery) AllX(ctx context.Context) []*TunnelToken {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -177,20 +177,20 @@ func (_q *AppConfigQuery) AllX(ctx context.Context) []*AppConfig {
 	return nodes
 }
 
-// IDs executes the query and returns a list of AppConfig IDs.
-func (_q *AppConfigQuery) IDs(ctx context.Context) (ids []int, err error) {
+// IDs executes the query and returns a list of TunnelToken IDs.
+func (_q *TunnelTokenQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(appconfig.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(tunneltoken.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *AppConfigQuery) IDsX(ctx context.Context) []int {
+func (_q *TunnelTokenQuery) IDsX(ctx context.Context) []int {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -199,16 +199,16 @@ func (_q *AppConfigQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (_q *AppConfigQuery) Count(ctx context.Context) (int, error) {
+func (_q *TunnelTokenQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*AppConfigQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*TunnelTokenQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *AppConfigQuery) CountX(ctx context.Context) int {
+func (_q *TunnelTokenQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -217,7 +217,7 @@ func (_q *AppConfigQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *AppConfigQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *TunnelTokenQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -230,7 +230,7 @@ func (_q *AppConfigQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *AppConfigQuery) ExistX(ctx context.Context) bool {
+func (_q *TunnelTokenQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -238,18 +238,18 @@ func (_q *AppConfigQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the AppConfigQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the TunnelTokenQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *AppConfigQuery) Clone() *AppConfigQuery {
+func (_q *TunnelTokenQuery) Clone() *TunnelTokenQuery {
 	if _q == nil {
 		return nil
 	}
-	return &AppConfigQuery{
+	return &TunnelTokenQuery{
 		config:     _q.config,
 		ctx:        _q.ctx.Clone(),
-		order:      append([]appconfig.OrderOption{}, _q.order...),
+		order:      append([]tunneltoken.OrderOption{}, _q.order...),
 		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.AppConfig{}, _q.predicates...),
+		predicates: append([]predicate.TunnelToken{}, _q.predicates...),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -266,15 +266,15 @@ func (_q *AppConfigQuery) Clone() *AppConfigQuery {
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.AppConfig.Query().
-//		GroupBy(appconfig.FieldKey).
+//	client.TunnelToken.Query().
+//		GroupBy(tunneltoken.FieldKey).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *AppConfigQuery) GroupBy(field string, fields ...string) *AppConfigGroupBy {
+func (_q *TunnelTokenQuery) GroupBy(field string, fields ...string) *TunnelTokenGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &AppConfigGroupBy{build: _q}
+	grbuild := &TunnelTokenGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = appconfig.Label
+	grbuild.label = tunneltoken.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -288,23 +288,23 @@ func (_q *AppConfigQuery) GroupBy(field string, fields ...string) *AppConfigGrou
 //		Key string `json:"key,omitempty"`
 //	}
 //
-//	client.AppConfig.Query().
-//		Select(appconfig.FieldKey).
+//	client.TunnelToken.Query().
+//		Select(tunneltoken.FieldKey).
 //		Scan(ctx, &v)
-func (_q *AppConfigQuery) Select(fields ...string) *AppConfigSelect {
+func (_q *TunnelTokenQuery) Select(fields ...string) *TunnelTokenSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &AppConfigSelect{AppConfigQuery: _q}
-	sbuild.label = appconfig.Label
+	sbuild := &TunnelTokenSelect{TunnelTokenQuery: _q}
+	sbuild.label = tunneltoken.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a AppConfigSelect configured with the given aggregations.
-func (_q *AppConfigQuery) Aggregate(fns ...AggregateFunc) *AppConfigSelect {
+// Aggregate returns a TunnelTokenSelect configured with the given aggregations.
+func (_q *TunnelTokenQuery) Aggregate(fns ...AggregateFunc) *TunnelTokenSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *AppConfigQuery) prepareQuery(ctx context.Context) error {
+func (_q *TunnelTokenQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -316,7 +316,7 @@ func (_q *AppConfigQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !appconfig.ValidColumn(f) {
+		if !tunneltoken.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -330,16 +330,16 @@ func (_q *AppConfigQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *AppConfigQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*AppConfig, error) {
+func (_q *TunnelTokenQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*TunnelToken, error) {
 	var (
-		nodes = []*AppConfig{}
+		nodes = []*TunnelToken{}
 		_spec = _q.querySpec()
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*AppConfig).scanValues(nil, columns)
+		return (*TunnelToken).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &AppConfig{config: _q.config}
+		node := &TunnelToken{config: _q.config}
 		nodes = append(nodes, node)
 		return node.assignValues(columns, values)
 	}
@@ -355,7 +355,7 @@ func (_q *AppConfigQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ap
 	return nodes, nil
 }
 
-func (_q *AppConfigQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *TunnelTokenQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	_spec.Node.Columns = _q.ctx.Fields
 	if len(_q.ctx.Fields) > 0 {
@@ -364,8 +364,8 @@ func (_q *AppConfigQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *AppConfigQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(appconfig.Table, appconfig.Columns, sqlgraph.NewFieldSpec(appconfig.FieldID, field.TypeInt))
+func (_q *TunnelTokenQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(tunneltoken.Table, tunneltoken.Columns, sqlgraph.NewFieldSpec(tunneltoken.FieldID, field.TypeInt))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -374,9 +374,9 @@ func (_q *AppConfigQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, appconfig.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, tunneltoken.FieldID)
 		for i := range fields {
-			if fields[i] != appconfig.FieldID {
+			if fields[i] != tunneltoken.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
@@ -404,12 +404,12 @@ func (_q *AppConfigQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *AppConfigQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *TunnelTokenQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(appconfig.Table)
+	t1 := builder.Table(tunneltoken.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = appconfig.Columns
+		columns = tunneltoken.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -436,28 +436,28 @@ func (_q *AppConfigQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// AppConfigGroupBy is the group-by builder for AppConfig entities.
-type AppConfigGroupBy struct {
+// TunnelTokenGroupBy is the group-by builder for TunnelToken entities.
+type TunnelTokenGroupBy struct {
 	selector
-	build *AppConfigQuery
+	build *TunnelTokenQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *AppConfigGroupBy) Aggregate(fns ...AggregateFunc) *AppConfigGroupBy {
+func (_g *TunnelTokenGroupBy) Aggregate(fns ...AggregateFunc) *TunnelTokenGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *AppConfigGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *TunnelTokenGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*AppConfigQuery, *AppConfigGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*TunnelTokenQuery, *TunnelTokenGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *AppConfigGroupBy) sqlScan(ctx context.Context, root *AppConfigQuery, v any) error {
+func (_g *TunnelTokenGroupBy) sqlScan(ctx context.Context, root *TunnelTokenQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -484,28 +484,28 @@ func (_g *AppConfigGroupBy) sqlScan(ctx context.Context, root *AppConfigQuery, v
 	return sql.ScanSlice(rows, v)
 }
 
-// AppConfigSelect is the builder for selecting fields of AppConfig entities.
-type AppConfigSelect struct {
-	*AppConfigQuery
+// TunnelTokenSelect is the builder for selecting fields of TunnelToken entities.
+type TunnelTokenSelect struct {
+	*TunnelTokenQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *AppConfigSelect) Aggregate(fns ...AggregateFunc) *AppConfigSelect {
+func (_s *TunnelTokenSelect) Aggregate(fns ...AggregateFunc) *TunnelTokenSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *AppConfigSelect) Scan(ctx context.Context, v any) error {
+func (_s *TunnelTokenSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*AppConfigQuery, *AppConfigSelect](ctx, _s.AppConfigQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*TunnelTokenQuery, *TunnelTokenSelect](ctx, _s.TunnelTokenQuery, _s, _s.inters, v)
 }
 
-func (_s *AppConfigSelect) sqlScan(ctx context.Context, root *AppConfigQuery, v any) error {
+func (_s *TunnelTokenSelect) sqlScan(ctx context.Context, root *TunnelTokenQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

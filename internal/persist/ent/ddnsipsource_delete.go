@@ -3,7 +3,7 @@
 package ent
 
 import (
-	"cfui/internal/persist/ent/appconfig"
+	"cfui/internal/persist/ent/ddnsipsource"
 	"cfui/internal/persist/ent/predicate"
 	"context"
 
@@ -12,26 +12,26 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// AppConfigDelete is the builder for deleting a AppConfig entity.
-type AppConfigDelete struct {
+// DDNSIPSourceDelete is the builder for deleting a DDNSIPSource entity.
+type DDNSIPSourceDelete struct {
 	config
 	hooks    []Hook
-	mutation *AppConfigMutation
+	mutation *DDNSIPSourceMutation
 }
 
-// Where appends a list predicates to the AppConfigDelete builder.
-func (_d *AppConfigDelete) Where(ps ...predicate.AppConfig) *AppConfigDelete {
+// Where appends a list predicates to the DDNSIPSourceDelete builder.
+func (_d *DDNSIPSourceDelete) Where(ps ...predicate.DDNSIPSource) *DDNSIPSourceDelete {
 	_d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *AppConfigDelete) Exec(ctx context.Context) (int, error) {
+func (_d *DDNSIPSourceDelete) Exec(ctx context.Context) (int, error) {
 	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *AppConfigDelete) ExecX(ctx context.Context) int {
+func (_d *DDNSIPSourceDelete) ExecX(ctx context.Context) int {
 	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
@@ -39,8 +39,8 @@ func (_d *AppConfigDelete) ExecX(ctx context.Context) int {
 	return n
 }
 
-func (_d *AppConfigDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(appconfig.Table, sqlgraph.NewFieldSpec(appconfig.FieldID, field.TypeInt))
+func (_d *DDNSIPSourceDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(ddnsipsource.Table, sqlgraph.NewFieldSpec(ddnsipsource.FieldID, field.TypeInt))
 	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -56,32 +56,32 @@ func (_d *AppConfigDelete) sqlExec(ctx context.Context) (int, error) {
 	return affected, err
 }
 
-// AppConfigDeleteOne is the builder for deleting a single AppConfig entity.
-type AppConfigDeleteOne struct {
-	_d *AppConfigDelete
+// DDNSIPSourceDeleteOne is the builder for deleting a single DDNSIPSource entity.
+type DDNSIPSourceDeleteOne struct {
+	_d *DDNSIPSourceDelete
 }
 
-// Where appends a list predicates to the AppConfigDelete builder.
-func (_d *AppConfigDeleteOne) Where(ps ...predicate.AppConfig) *AppConfigDeleteOne {
+// Where appends a list predicates to the DDNSIPSourceDelete builder.
+func (_d *DDNSIPSourceDeleteOne) Where(ps ...predicate.DDNSIPSource) *DDNSIPSourceDeleteOne {
 	_d._d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query.
-func (_d *AppConfigDeleteOne) Exec(ctx context.Context) error {
+func (_d *DDNSIPSourceDeleteOne) Exec(ctx context.Context) error {
 	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
 	case n == 0:
-		return &NotFoundError{appconfig.Label}
+		return &NotFoundError{ddnsipsource.Label}
 	default:
 		return nil
 	}
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *AppConfigDeleteOne) ExecX(ctx context.Context) {
+func (_d *DDNSIPSourceDeleteOne) ExecX(ctx context.Context) {
 	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}

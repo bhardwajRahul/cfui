@@ -6,8 +6,23 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// AppConfig is the predicate function for appconfig builders.
-type AppConfig func(*sql.Selector)
+// AppSetting is the predicate function for appsetting builders.
+type AppSetting func(*sql.Selector)
+
+// DDNSIPSource is the predicate function for ddnsipsource builders.
+type DDNSIPSource func(*sql.Selector)
+
+// DDNSRecord is the predicate function for ddnsrecord builders.
+type DDNSRecord func(*sql.Selector)
+
+// DDNSSetting is the predicate function for ddnssetting builders.
+type DDNSSetting func(*sql.Selector)
 
 // MCPToken is the predicate function for mcptoken builders.
 type MCPToken func(*sql.Selector)
+
+// TunnelManagement is the predicate function for tunnelmanagement builders.
+type TunnelManagement func(*sql.Selector)
+
+// TunnelToken is the predicate function for tunneltoken builders.
+type TunnelToken func(*sql.Selector)

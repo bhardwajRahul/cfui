@@ -3,7 +3,7 @@
 package ent
 
 import (
-	"cfui/internal/persist/ent/appconfig"
+	"cfui/internal/persist/ent/tunneltoken"
 	"context"
 	"errors"
 	"fmt"
@@ -13,33 +13,41 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// AppConfigCreate is the builder for creating a AppConfig entity.
-type AppConfigCreate struct {
+// TunnelTokenCreate is the builder for creating a TunnelToken entity.
+type TunnelTokenCreate struct {
 	config
-	mutation *AppConfigMutation
+	mutation *TunnelTokenMutation
 	hooks    []Hook
 }
 
 // SetKey sets the "key" field.
-func (_c *AppConfigCreate) SetKey(v string) *AppConfigCreate {
+func (_c *TunnelTokenCreate) SetKey(v string) *TunnelTokenCreate {
 	_c.mutation.SetKey(v)
 	return _c
 }
 
-// SetPayload sets the "payload" field.
-func (_c *AppConfigCreate) SetPayload(v []byte) *AppConfigCreate {
-	_c.mutation.SetPayload(v)
+// SetToken sets the "token" field.
+func (_c *TunnelTokenCreate) SetToken(v string) *TunnelTokenCreate {
+	_c.mutation.SetToken(v)
+	return _c
+}
+
+// SetNillableToken sets the "token" field if the given value is not nil.
+func (_c *TunnelTokenCreate) SetNillableToken(v *string) *TunnelTokenCreate {
+	if v != nil {
+		_c.SetToken(*v)
+	}
 	return _c
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_c *AppConfigCreate) SetCreatedAt(v time.Time) *AppConfigCreate {
+func (_c *TunnelTokenCreate) SetCreatedAt(v time.Time) *TunnelTokenCreate {
 	_c.mutation.SetCreatedAt(v)
 	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_c *AppConfigCreate) SetNillableCreatedAt(v *time.Time) *AppConfigCreate {
+func (_c *TunnelTokenCreate) SetNillableCreatedAt(v *time.Time) *TunnelTokenCreate {
 	if v != nil {
 		_c.SetCreatedAt(*v)
 	}
@@ -47,32 +55,32 @@ func (_c *AppConfigCreate) SetNillableCreatedAt(v *time.Time) *AppConfigCreate {
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_c *AppConfigCreate) SetUpdatedAt(v time.Time) *AppConfigCreate {
+func (_c *TunnelTokenCreate) SetUpdatedAt(v time.Time) *TunnelTokenCreate {
 	_c.mutation.SetUpdatedAt(v)
 	return _c
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (_c *AppConfigCreate) SetNillableUpdatedAt(v *time.Time) *AppConfigCreate {
+func (_c *TunnelTokenCreate) SetNillableUpdatedAt(v *time.Time) *TunnelTokenCreate {
 	if v != nil {
 		_c.SetUpdatedAt(*v)
 	}
 	return _c
 }
 
-// Mutation returns the AppConfigMutation object of the builder.
-func (_c *AppConfigCreate) Mutation() *AppConfigMutation {
+// Mutation returns the TunnelTokenMutation object of the builder.
+func (_c *TunnelTokenCreate) Mutation() *TunnelTokenMutation {
 	return _c.mutation
 }
 
-// Save creates the AppConfig in the database.
-func (_c *AppConfigCreate) Save(ctx context.Context) (*AppConfig, error) {
+// Save creates the TunnelToken in the database.
+func (_c *TunnelTokenCreate) Save(ctx context.Context) (*TunnelToken, error) {
 	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *AppConfigCreate) SaveX(ctx context.Context) *AppConfig {
+func (_c *TunnelTokenCreate) SaveX(ctx context.Context) *TunnelToken {
 	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -81,58 +89,57 @@ func (_c *AppConfigCreate) SaveX(ctx context.Context) *AppConfig {
 }
 
 // Exec executes the query.
-func (_c *AppConfigCreate) Exec(ctx context.Context) error {
+func (_c *TunnelTokenCreate) Exec(ctx context.Context) error {
 	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *AppConfigCreate) ExecX(ctx context.Context) {
+func (_c *TunnelTokenCreate) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *AppConfigCreate) defaults() {
+func (_c *TunnelTokenCreate) defaults() {
+	if _, ok := _c.mutation.Token(); !ok {
+		v := tunneltoken.DefaultToken
+		_c.mutation.SetToken(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
-		v := appconfig.DefaultCreatedAt()
+		v := tunneltoken.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
-		v := appconfig.DefaultUpdatedAt()
+		v := tunneltoken.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *AppConfigCreate) check() error {
+func (_c *TunnelTokenCreate) check() error {
 	if _, ok := _c.mutation.Key(); !ok {
-		return &ValidationError{Name: "key", err: errors.New(`ent: missing required field "AppConfig.key"`)}
+		return &ValidationError{Name: "key", err: errors.New(`ent: missing required field "TunnelToken.key"`)}
 	}
 	if v, ok := _c.mutation.Key(); ok {
-		if err := appconfig.KeyValidator(v); err != nil {
-			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "AppConfig.key": %w`, err)}
+		if err := tunneltoken.KeyValidator(v); err != nil {
+			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "TunnelToken.key": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.Payload(); !ok {
-		return &ValidationError{Name: "payload", err: errors.New(`ent: missing required field "AppConfig.payload"`)}
-	}
-	if v, ok := _c.mutation.Payload(); ok {
-		if err := appconfig.PayloadValidator(v); err != nil {
-			return &ValidationError{Name: "payload", err: fmt.Errorf(`ent: validator failed for field "AppConfig.payload": %w`, err)}
-		}
+	if _, ok := _c.mutation.Token(); !ok {
+		return &ValidationError{Name: "token", err: errors.New(`ent: missing required field "TunnelToken.token"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "AppConfig.created_at"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "TunnelToken.created_at"`)}
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
-		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "AppConfig.updated_at"`)}
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "TunnelToken.updated_at"`)}
 	}
 	return nil
 }
 
-func (_c *AppConfigCreate) sqlSave(ctx context.Context) (*AppConfig, error) {
+func (_c *TunnelTokenCreate) sqlSave(ctx context.Context) (*TunnelToken, error) {
 	if err := _c.check(); err != nil {
 		return nil, err
 	}
@@ -150,51 +157,51 @@ func (_c *AppConfigCreate) sqlSave(ctx context.Context) (*AppConfig, error) {
 	return _node, nil
 }
 
-func (_c *AppConfigCreate) createSpec() (*AppConfig, *sqlgraph.CreateSpec) {
+func (_c *TunnelTokenCreate) createSpec() (*TunnelToken, *sqlgraph.CreateSpec) {
 	var (
-		_node = &AppConfig{config: _c.config}
-		_spec = sqlgraph.NewCreateSpec(appconfig.Table, sqlgraph.NewFieldSpec(appconfig.FieldID, field.TypeInt))
+		_node = &TunnelToken{config: _c.config}
+		_spec = sqlgraph.NewCreateSpec(tunneltoken.Table, sqlgraph.NewFieldSpec(tunneltoken.FieldID, field.TypeInt))
 	)
 	if value, ok := _c.mutation.Key(); ok {
-		_spec.SetField(appconfig.FieldKey, field.TypeString, value)
+		_spec.SetField(tunneltoken.FieldKey, field.TypeString, value)
 		_node.Key = value
 	}
-	if value, ok := _c.mutation.Payload(); ok {
-		_spec.SetField(appconfig.FieldPayload, field.TypeBytes, value)
-		_node.Payload = value
+	if value, ok := _c.mutation.Token(); ok {
+		_spec.SetField(tunneltoken.FieldToken, field.TypeString, value)
+		_node.Token = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
-		_spec.SetField(appconfig.FieldCreatedAt, field.TypeTime, value)
+		_spec.SetField(tunneltoken.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := _c.mutation.UpdatedAt(); ok {
-		_spec.SetField(appconfig.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(tunneltoken.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	return _node, _spec
 }
 
-// AppConfigCreateBulk is the builder for creating many AppConfig entities in bulk.
-type AppConfigCreateBulk struct {
+// TunnelTokenCreateBulk is the builder for creating many TunnelToken entities in bulk.
+type TunnelTokenCreateBulk struct {
 	config
 	err      error
-	builders []*AppConfigCreate
+	builders []*TunnelTokenCreate
 }
 
-// Save creates the AppConfig entities in the database.
-func (_c *AppConfigCreateBulk) Save(ctx context.Context) ([]*AppConfig, error) {
+// Save creates the TunnelToken entities in the database.
+func (_c *TunnelTokenCreateBulk) Save(ctx context.Context) ([]*TunnelToken, error) {
 	if _c.err != nil {
 		return nil, _c.err
 	}
 	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*AppConfig, len(_c.builders))
+	nodes := make([]*TunnelToken, len(_c.builders))
 	mutators := make([]Mutator, len(_c.builders))
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				mutation, ok := m.(*AppConfigMutation)
+				mutation, ok := m.(*TunnelTokenMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
 				}
@@ -241,7 +248,7 @@ func (_c *AppConfigCreateBulk) Save(ctx context.Context) ([]*AppConfig, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *AppConfigCreateBulk) SaveX(ctx context.Context) []*AppConfig {
+func (_c *TunnelTokenCreateBulk) SaveX(ctx context.Context) []*TunnelToken {
 	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -250,13 +257,13 @@ func (_c *AppConfigCreateBulk) SaveX(ctx context.Context) []*AppConfig {
 }
 
 // Exec executes the query.
-func (_c *AppConfigCreateBulk) Exec(ctx context.Context) error {
+func (_c *TunnelTokenCreateBulk) Exec(ctx context.Context) error {
 	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *AppConfigCreateBulk) ExecX(ctx context.Context) {
+func (_c *TunnelTokenCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}

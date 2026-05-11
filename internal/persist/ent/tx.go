@@ -12,10 +12,20 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
-	// AppConfig is the client for interacting with the AppConfig builders.
-	AppConfig *AppConfigClient
+	// AppSetting is the client for interacting with the AppSetting builders.
+	AppSetting *AppSettingClient
+	// DDNSIPSource is the client for interacting with the DDNSIPSource builders.
+	DDNSIPSource *DDNSIPSourceClient
+	// DDNSRecord is the client for interacting with the DDNSRecord builders.
+	DDNSRecord *DDNSRecordClient
+	// DDNSSetting is the client for interacting with the DDNSSetting builders.
+	DDNSSetting *DDNSSettingClient
 	// MCPToken is the client for interacting with the MCPToken builders.
 	MCPToken *MCPTokenClient
+	// TunnelManagement is the client for interacting with the TunnelManagement builders.
+	TunnelManagement *TunnelManagementClient
+	// TunnelToken is the client for interacting with the TunnelToken builders.
+	TunnelToken *TunnelTokenClient
 
 	// lazily loaded.
 	client     *Client
@@ -147,8 +157,13 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
-	tx.AppConfig = NewAppConfigClient(tx.config)
+	tx.AppSetting = NewAppSettingClient(tx.config)
+	tx.DDNSIPSource = NewDDNSIPSourceClient(tx.config)
+	tx.DDNSRecord = NewDDNSRecordClient(tx.config)
+	tx.DDNSSetting = NewDDNSSettingClient(tx.config)
 	tx.MCPToken = NewMCPTokenClient(tx.config)
+	tx.TunnelManagement = NewTunnelManagementClient(tx.config)
+	tx.TunnelToken = NewTunnelTokenClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -158,7 +173,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: AppConfig.QueryXXX(), the query will be executed
+// applies a query, for example: AppSetting.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

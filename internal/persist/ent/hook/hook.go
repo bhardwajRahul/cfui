@@ -8,16 +8,52 @@ import (
 	"fmt"
 )
 
-// The AppConfigFunc type is an adapter to allow the use of ordinary
-// function as AppConfig mutator.
-type AppConfigFunc func(context.Context, *ent.AppConfigMutation) (ent.Value, error)
+// The AppSettingFunc type is an adapter to allow the use of ordinary
+// function as AppSetting mutator.
+type AppSettingFunc func(context.Context, *ent.AppSettingMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f AppConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.AppConfigMutation); ok {
+func (f AppSettingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AppSettingMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AppConfigMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AppSettingMutation", m)
+}
+
+// The DDNSIPSourceFunc type is an adapter to allow the use of ordinary
+// function as DDNSIPSource mutator.
+type DDNSIPSourceFunc func(context.Context, *ent.DDNSIPSourceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DDNSIPSourceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DDNSIPSourceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DDNSIPSourceMutation", m)
+}
+
+// The DDNSRecordFunc type is an adapter to allow the use of ordinary
+// function as DDNSRecord mutator.
+type DDNSRecordFunc func(context.Context, *ent.DDNSRecordMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DDNSRecordFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DDNSRecordMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DDNSRecordMutation", m)
+}
+
+// The DDNSSettingFunc type is an adapter to allow the use of ordinary
+// function as DDNSSetting mutator.
+type DDNSSettingFunc func(context.Context, *ent.DDNSSettingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DDNSSettingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DDNSSettingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DDNSSettingMutation", m)
 }
 
 // The MCPTokenFunc type is an adapter to allow the use of ordinary
@@ -30,6 +66,30 @@ func (f MCPTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MCPTokenMutation", m)
+}
+
+// The TunnelManagementFunc type is an adapter to allow the use of ordinary
+// function as TunnelManagement mutator.
+type TunnelManagementFunc func(context.Context, *ent.TunnelManagementMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TunnelManagementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TunnelManagementMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TunnelManagementMutation", m)
+}
+
+// The TunnelTokenFunc type is an adapter to allow the use of ordinary
+// function as TunnelToken mutator.
+type TunnelTokenFunc func(context.Context, *ent.TunnelTokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TunnelTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TunnelTokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TunnelTokenMutation", m)
 }
 
 // Condition is a hook condition function.

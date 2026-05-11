@@ -4,11 +4,8 @@ import (
 	"cfui/internal/logger"
 	"cfui/internal/persist"
 	"cfui/internal/persist/ent"
-	"cfui/internal/persist/ent/appconfig"
 	"context"
-	"encoding/json"
 	"os"
-	"path/filepath"
 	"sync"
 )
 
@@ -262,93 +259,4 @@ func (m *Manager) Get() Config {
 
 func (m *Manager) Dir() string {
 	return m.dir
-}
-
-const defaultConfigKey = "default"
-
-func (m *Manager) loadLocked(ctx context.Context) (Config, error) {
-	row, err := m.client.AppConfig.Query().Where(appconfig.Key(defaultConfigKey)).Only(ctx)
-	if err == nil {
-		return decodeConfig(row.Payload)
-	}
-	if !ent.IsNotFound(err) {
-		return Config{}, err
-	}
-
-	legacyPath := filepath.Join(m.dir, "config.json")
-	cfg, migrated, err := loadLegacyConfig(legacyPath)
-	if err != nil {
-		return Config{}, err
-	}
-	if migrated {
-		if err := m.saveLocked(ctx, cfg); err != nil {
-			return Config{}, err
-		}
-		if err := persist.MarkLegacyMigrated(legacyPath); err != nil && !os.IsNotExist(err) {
-			if logger.Sugar != nil {
-				logger.Sugar.Warnf("Failed to rename migrated legacy config %s: %v", legacyPath, err)
-			}
-		}
-		if logger.Sugar != nil {
-			logger.Sugar.Infof("Migrated legacy config from %s to %s", legacyPath, persist.DBPath(m.dir))
-		}
-		return cfg, nil
-	}
-
-	cfg = DefaultConfig()
-	if err := m.saveLocked(ctx, cfg); err != nil {
-		return Config{}, err
-	}
-	if logger.Sugar != nil {
-		logger.Sugar.Infof("Initialized default configuration in %s", persist.DBPath(m.dir))
-	}
-	return cfg, nil
-}
-
-func (m *Manager) saveLocked(ctx context.Context, cfg Config) error {
-	payload, err := json.Marshal(cfg)
-	if err != nil {
-		return err
-	}
-
-	row, err := m.client.AppConfig.Query().Where(appconfig.Key(defaultConfigKey)).Only(ctx)
-	if ent.IsNotFound(err) {
-		_, err = m.client.AppConfig.Create().
-			SetKey(defaultConfigKey).
-			SetPayload(payload).
-			Save(ctx)
-		return err
-	}
-	if err != nil {
-		return err
-	}
-
-	_, err = m.client.AppConfig.UpdateOneID(row.ID).
-		SetPayload(payload).
-		Save(ctx)
-	return err
-}
-
-func loadLegacyConfig(path string) (Config, bool, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return Config{}, false, nil
-		}
-		return Config{}, false, err
-	}
-
-	cfg := DefaultConfig()
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return Config{}, false, err
-	}
-	return cfg, true, nil
-}
-
-func decodeConfig(payload []byte) (Config, error) {
-	cfg := DefaultConfig()
-	if err := json.Unmarshal(payload, &cfg); err != nil {
-		return Config{}, err
-	}
-	return cfg, nil
 }
