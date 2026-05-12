@@ -23,10 +23,10 @@ other = "Manage your Cloudflare Tunnel connection"
 other = "Tunnel Token"
 
 [token_help]
-other = "Paste your tunnel token here. Find it at Cloudflare Zero Trust → Networks → Tunnels → select your tunnel → Configure → Copy token."
+other = "Paste your tunnel token here. Find it at Zero Trust → Networks → Connectors → Cloudflare Tunnels → select your tunnel → Edit → copy the token from the installation command."
 
 [token_help_link]
-other = "Open Cloudflare Zero Trust"
+other = "Open Cloudflare One"
 
 [tunnel_identifier]
 other = "Tunnel Identifier"
@@ -347,7 +347,7 @@ other = "Your Cloudflare Account ID. Find it in your dashboard URL (dash.cloudfl
 other = "Tunnel UUID"
 
 [tunnel_id_help]
-other = "Your tunnel's UUID. Find it at Cloudflare Zero Trust → Networks → Tunnels → click your tunnel name → Overview. Changing this field loads the selected tunnel configuration."
+other = "Your tunnel's UUID. Find it at Zero Trust → Networks → Connectors → Cloudflare Tunnels → click your tunnel name → Overview. Changing this field loads the selected tunnel configuration."
 
 [auth_help]
 other = "API Token is recommended. Create one at Dashboard → My Profile → API Tokens. Requires: Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit. Blank fields keep saved values."

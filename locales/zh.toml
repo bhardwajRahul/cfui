@@ -23,10 +23,10 @@ other = "管理您的 Cloudflare Tunnel 连接"
 other = "隧道 Token"
 
 [token_help]
-other = "在此粘贴您的隧道 Token。获取路径：Cloudflare Zero Trust → 网络 → 隧道 → 选择您的隧道 → 配置 → 复制 Token。"
+other = "在此粘贴您的隧道 Token。获取路径：Zero Trust → 网络 → 连接器 → Cloudflare Tunnels → 选择您的隧道 → 编辑 → 从安装命令中复制 Token。"
 
 [token_help_link]
-other = "打开 Cloudflare Zero Trust"
+other = "打开 Cloudflare One"
 
 [tunnel_identifier]
 other = "隧道标识符"
@@ -347,7 +347,7 @@ other = "您的 Cloudflare 账户 ID。在仪表板 URL (dash.cloudflare.com/<id
 other = "隧道 UUID"
 
 [tunnel_id_help]
-other = "您的隧道 UUID。获取路径：Cloudflare Zero Trust → 网络 → 隧道 → 点击隧道名称 → 概览。修改此字段后会加载所选隧道配置。"
+other = "您的隧道 UUID。获取路径：Zero Trust → 网络 → 连接器 → Cloudflare Tunnels → 点击隧道名称 → 概览。修改此字段后会加载所选隧道配置。"
 
 [auth_help]
 other = "推荐使用 API Token。创建路径：仪表板 → 我的个人资料 → API 令牌。需要权限：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。留空则保留已保存的值。"

@@ -23,10 +23,10 @@ other = "Cloudflare Tunnel 接続を管理します"
 other = "トンネル Token"
 
 [token_help]
-other = "トンネル Token を貼り付けてください。取得方法：Cloudflare Zero Trust → ネットワーク → トンネル → トンネルを選択 → 設定 → Token をコピー。"
+other = "トンネル Token を貼り付けてください。取得方法：Zero Trust → ネットワーク → コネクタ → Cloudflare Tunnels → トンネルを選択 → 編集 → インストールコマンドから Token をコピー。"
 
 [token_help_link]
-other = "Cloudflare Zero Trust を開く"
+other = "Cloudflare One を開く"
 
 [tunnel_identifier]
 other = "トンネル識別子"
@@ -347,7 +347,7 @@ other = "Cloudflare アカウント ID。ダッシュボード URL (dash.cloudfl
 other = "トンネル UUID"
 
 [tunnel_id_help]
-other = "トンネルの UUID。取得方法：Cloudflare Zero Trust → ネットワーク → トンネル → トンネル名をクリック → 概要。この項目を変更すると、選択したトンネル設定を読み込みます。"
+other = "トンネルの UUID。取得方法：Zero Trust → ネットワーク → コネクタ → Cloudflare Tunnels → トンネル名をクリック → 概要。この項目を変更すると、選択したトンネル設定を読み込みます。"
 
 [auth_help]
 other = "API Token を推奨します。作成方法：ダッシュボード → マイプロフィール → API トークン。必要な権限：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。空欄なら保存済みの値を保持します。"
