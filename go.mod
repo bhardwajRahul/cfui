@@ -8,7 +8,7 @@ require (
 	github.com/cloudflare/backoff v0.0.0-20240920015135-e46b80a3a7d0
 	github.com/cloudflare/cloudflare-go v0.116.0
 	github.com/cloudflare/cloudflared v0.0.0-20260508111348-ae3799a09858
-	github.com/lib-x/entsqlite v0.2.1
+	github.com/lib-x/entsqlite v0.2.2
 	github.com/modelcontextprotocol/go-sdk v1.6.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/urfave/cli/v2 v2.27.7
@@ -115,10 +115,10 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.72.0 // indirect
+	modernc.org/libc v1.72.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.50.0 // indirect
+	modernc.org/sqlite v1.50.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 	zombiezen.com/go/capnproto2 v2.18.0+incompatible // indirect
 )
