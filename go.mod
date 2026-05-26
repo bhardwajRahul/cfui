@@ -9,7 +9,7 @@ require (
 	github.com/cloudflare/cloudflare-go v0.116.0
 	github.com/cloudflare/cloudflared v0.0.0-20260508111348-ae3799a09858
 	github.com/lib-x/entsqlite v0.2.2
-	github.com/modelcontextprotocol/go-sdk v1.6.0
+	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/urfave/cli/v2 v2.27.7
 	go.uber.org/zap v1.28.0
