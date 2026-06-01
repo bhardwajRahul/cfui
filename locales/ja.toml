@@ -861,3 +861,95 @@ other = "DDNS レコードの削除に失敗しました"
 
 [ddns_record_ip_required]
 other = "少なくとも 1 つの IP バージョンを選択してください。"
+
+[confirm]
+other = "確認"
+
+[confirm_title]
+other = "確認"
+
+[continue]
+other = "続行"
+
+[copied_to_clipboard]
+other = "クリップボードにコピーしました"
+
+[copy_failed]
+other = "コピーに失敗しました"
+
+[creating]
+other = "作成中…"
+
+[ddns_no_creds_help]
+other = "まず Remote Tunnel Manager で Cloudflare API 認証情報を設定してください。"
+
+[delete_ddns_record_message]
+other = "この DDNS レコードを削除しますか？Cloudflare から DNS エントリが削除されます。"
+
+[delete_ddns_record_title]
+other = "DDNS レコードを削除しますか？"
+
+[delete_mcp_token_message]
+other = "この MCP トークンを削除しますか？接続中の AI クライアントはすぐにアクセスできなくなります。"
+
+[delete_mcp_token_title]
+other = "MCP トークンを削除しますか？"
+
+[delete_rule_message]
+other = "この Ingress ルールを削除しますか？"
+
+[delete_rule_title]
+other = "ルールを削除しますか？"
+
+[error_generic]
+other = "エラーが発生しました"
+
+[language_choose]
+other = "言語を選択"
+
+[logs_copied]
+other = "ログをコピーしました"
+
+[log_status_connecting]
+other = "接続中…"
+
+[log_status_failed]
+other = "接続に失敗しました"
+
+[log_status_reconnecting]
+other = "再接続中…"
+
+[saving]
+other = "保存中…"
+
+[theme_changed]
+other = "テーマを変更しました"
+
+[tls_disable_message]
+other = "TLS 検証を無効化すると、通信が中間者攻撃に晒されます。信頼できる内部サービスでのみ続行してください。"
+
+[tls_disable_title]
+other = "バックエンド TLS 検証を無効化しますか？"
+
+[tls_i_understand]
+other = "リスクを理解しました"
+
+[token_strength_empty]
+other = "未入力"
+
+[weak_token_message]
+other = "このトークンは短く推測されやすいです。24 文字以上のランダムな文字列を使用してください。"
+
+[weak_token_title]
+other = "トークンが脆弱です"
+
+[token_placeholder]
+other = "eyJhIjoi..."
+
+[tunnel_identifier_placeholder]
+other = "MyApp-v1.0"
+[copy]
+other = "コピー"
+
+[cancel]
+other = "キャンセル"

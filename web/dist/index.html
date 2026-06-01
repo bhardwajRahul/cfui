@@ -3,567 +3,627 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudFlared UI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <title data-i18n="app_title">CloudFlared UI</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <!-- LXGW WenKai Screen - Optimized for screen reading -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css" />
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div id="toast-viewport" class="toast-viewport" role="status" aria-live="polite" aria-atomic="false"></div>
+    <div id="toast-viewport" class="toast-viewport" role="region" aria-live="polite" aria-atomic="false"></div>
+
     <div class="app-container">
-        <header class="header">
-            <div class="logo-area">
-                <svg viewBox="0 -70 256 256" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid" class="cf-logo">
-                    <g>
-                        <g transform="translate(0.000000, -1.000000)">
-                            <path d="M202.3569,50.394 L197.0459,48.27 C172.0849,104.434 72.7859,70.289 66.8109,86.997 C65.8149,98.283 121.0379,89.143 160.5169,91.056 C172.5559,91.639 178.5929,100.727 173.4809,115.54 L183.5499,115.571 C195.1649,79.362 232.2329,97.841 233.7819,85.891 C231.2369,78.034 191.1809,85.891 202.3569,50.394 Z" fill="#FFFFFF"></path>
-                            <path d="M176.332,109.3483 C177.925,104.0373 177.394,98.7263 174.739,95.5393 C172.083,92.3523 168.365,90.2283 163.585,89.6973 L71.17,88.6343 C70.639,88.6343 70.108,88.1033 69.577,88.1033 C69.046,87.5723 69.046,87.0413 69.577,86.5103 C70.108,85.4483 70.639,84.9163 71.701,84.9163 L164.647,83.8543 C175.801,83.3233 187.486,74.2943 191.734,63.6723 L197.046,49.8633 C197.046,49.3313 197.577,48.8003 197.046,48.2693 C191.203,21.1823 166.772,0.9993 138.091,0.9993 C111.535,0.9993 88.697,17.9953 80.73,41.8963 C75.419,38.1783 69.046,36.0533 61.61,36.5853 C48.863,37.6473 38.772,48.2693 37.178,61.0163 C36.647,64.2033 37.178,67.3903 37.71,70.5763 C16.996,71.1073 0,88.1033 0,109.3483 C0,111.4723 0,113.0663 0.531,115.1903 C0.531,116.2533 1.593,116.7843 2.125,116.7843 L172.614,116.7843 C173.676,116.7843 174.739,116.2533 174.739,115.1903 L176.332,109.3483 Z" fill="#F4811F"></path>
-                            <path d="M205.5436,49.8628 L202.8876,49.8628 C202.3566,49.8628 201.8256,50.3938 201.2946,50.9248 L197.5766,63.6718 C195.9836,68.9828 196.5146,74.2948 199.1706,77.4808 C201.8256,80.6678 205.5436,82.7918 210.3236,83.3238 L229.9756,84.3858 C230.5066,84.3858 231.0376,84.9168 231.5686,84.9168 C232.0996,85.4478 232.0996,85.9788 231.5686,86.5098 C231.0376,87.5728 230.5066,88.1038 229.4436,88.1038 L209.2616,89.1658 C198.1076,89.6968 186.4236,98.7258 182.1746,109.3478 L181.1116,114.1288 C180.5806,114.6598 181.1116,115.7218 182.1746,115.7218 L252.2826,115.7218 C253.3446,115.7218 253.8756,115.1908 253.8756,114.1288 C254.9376,109.8798 255.9996,105.0998 255.9996,100.3188 C255.9996,72.7008 233.1616,49.8628 205.5436,49.8628" fill="#FAAD3F"></path>
-                        </g>
-                    </g>
-                </svg>
-                <h1>CloudFlared UI</h1>
-            </div>
-            <div class="header-controls">
-                <button id="theme-toggle" class="theme-toggle" type="button" title="Toggle Theme" aria-label="Toggle theme">
-                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-logo" aria-hidden="true">
+                    <svg viewBox="0 -70 256 256" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid">
+                        <path d="M202.3569,50.394 L197.0459,48.27 C172.0849,104.434 72.7859,70.289 66.8109,86.997 C65.8149,98.283 121.0379,89.143 160.5169,91.056 C172.5559,91.639 178.5929,100.727 173.4809,115.54 L183.5499,115.571 C195.1649,79.362 232.2329,97.841 233.7819,85.891 C231.2369,78.034 191.1809,85.891 202.3569,50.394 Z" fill="currentColor" style="color: var(--cf-orange)"></path>
+                        <path d="M176.332,109.3483 C177.925,104.0373 177.394,98.7263 174.739,95.5393 C172.083,92.3523 168.365,90.2283 163.585,89.6973 L71.17,88.6343 C70.639,88.6343 70.108,88.1033 69.577,88.1033 C69.046,87.5723 69.046,87.0413 69.577,86.5103 C70.108,85.4483 70.639,84.9163 71.701,84.9163 L164.647,83.8543 C175.801,83.3233 187.486,74.2943 191.734,63.6723 L197.046,49.8633 C197.046,49.3313 197.577,48.8003 197.046,48.2693 C191.203,21.1823 166.772,0.9993 138.091,0.9993 C111.535,0.9993 88.697,17.9953 80.73,41.8963 C75.419,38.1783 69.046,36.0533 61.61,36.5853 C48.863,37.6473 38.772,48.2693 37.178,61.0163 C36.647,64.2033 37.178,67.3903 37.71,70.5763 C16.996,71.1073 0,88.1033 0,109.3483 C0,111.4723 0,113.0663 0.531,115.1903 C0.531,116.2533 1.593,116.7843 2.125,116.7843 L172.614,116.7843 C173.676,116.7843 174.739,116.2533 174.739,115.1903 L176.332,109.3483 Z" fill="currentColor" style="color: var(--cf-orange)"></path>
+                        <path d="M205.5436,49.8628 L202.8876,49.8628 C202.3566,49.8628 201.8256,50.3938 201.2946,50.9248 L197.5766,63.6718 C195.9836,68.9828 196.5146,74.2948 199.1706,77.4808 C201.8256,80.6678 205.5436,82.7918 210.3236,83.3238 L229.9756,84.3858 C230.5066,84.3858 231.0376,84.9168 231.5686,84.9168 C232.0996,85.4478 232.0996,85.9788 231.5686,86.5098 C231.0376,87.5728 230.5066,88.1038 229.4436,88.1038 L209.2616,89.1658 C198.1076,89.6968 186.4236,98.7258 182.1746,109.3478 L181.1116,114.1288 C180.5806,114.6598 181.1116,115.7218 182.1746,115.7218 L252.2826,115.7218 C253.3446,115.7218 253.8756,115.1908 253.8756,114.1288 C254.9376,109.8798 255.9996,105.0998 255.9996,100.3188 C255.9996,72.7008 233.1616,49.8628 205.5436,49.8628" fill="currentColor" style="color: var(--cf-orange); opacity: 0.6"></path>
                     </svg>
-                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name" data-i18n="app_title">CloudFlared UI</span>
+                    <span class="brand-meta">
+                        <span id="version-info" class="version-tip" tabindex="0" aria-label="Version"></span>
+                    </span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span id="status-pill" class="status-pill" data-state="loading" role="status" aria-live="polite">
+                    <span class="dot"></span>
+                    <span class="text" data-i18n="status_checking">Checking...</span>
+                </span>
+                <button id="lang-btn" class="icon-btn" type="button" aria-haspopup="listbox" aria-label="Language" title="Language">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                </button>
+                <button id="theme-btn" class="icon-btn" type="button" aria-label="Toggle theme" title="Theme">
+                    <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                    </svg>
+                    <svg class="moon-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
                 </button>
-                <select id="lang-select" class="lang-select" aria-label="Language">
-                    <option value="en">English</option>
-                    <option value="zh">中文</option>
-                    <option value="ja">日本語</option>
-                </select>
-            </div>
-            <div class="header-meta">
-                <span class="version-info" id="version-info" title="Version information">Loading...</span>
-                <div class="status-badge" id="status-badge" role="status" aria-live="polite">
-                    <span class="status-dot"></span>
-                    <span class="status-text">Checking...</span>
-                </div>
             </div>
         </header>
 
-        <main class="main-content">
-            <nav class="app-tabs" role="tablist" aria-label="Configuration sections">
-                <button id="local-tab" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="local-panel">Tunnel Configuration</button>
-                <button id="manager-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="manager-panel" hidden>Remote Tunnel Manager</button>
-                <button id="ddns-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="ddns-panel" hidden>DDNS</button>
-                <button id="mcp-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="mcp-panel" hidden>MCP</button>
-                <button id="features-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="features-panel">Features</button>
-            </nav>
+        <!-- Tabs -->
+        <nav class="tabs" role="tablist" aria-label="Sections">
+            <button class="tab" role="tab" id="tab-local" aria-selected="true" aria-controls="panel-local" data-tab="local" data-i18n="local_tunnel_tab">Tunnel Configuration</button>
+            <button class="tab" role="tab" id="tab-manager" aria-selected="false" aria-controls="panel-manager" data-tab="manager" data-i18n="remote_tunnel_tab" tabindex="-1" hidden>Remote Tunnel Manager</button>
+            <button class="tab" role="tab" id="tab-ddns" aria-selected="false" aria-controls="panel-ddns" data-tab="ddns" data-i18n="ddns_tab" tabindex="-1" hidden>DDNS</button>
+            <button class="tab" role="tab" id="tab-mcp" aria-selected="false" aria-controls="panel-mcp" data-tab="mcp" data-i18n="mcp_tab" tabindex="-1" hidden>MCP</button>
+            <button class="tab" role="tab" id="tab-features" aria-selected="false" aria-controls="panel-features" data-tab="features" data-i18n="features_tab" tabindex="-1" hidden>Features</button>
+        </nav>
 
-            <section id="local-panel" class="tab-panel active" role="tabpanel" aria-labelledby="local-tab">
-            <div class="card tunnel-config-card">
-                <div class="card-header">
-                    <h2>Tunnel Configuration</h2>
-                    <p class="subtitle">Manage your Cloudflare Tunnel connection</p>
-                </div>
-
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="token-input">Tunnel Token</label>
-                        <div class="input-wrapper">
-                            <input type="password" id="token-input" placeholder="eyJhIjoi..." spellcheck="false">
-                            <button id="toggle-visibility" class="icon-btn" type="button" title="Toggle Visibility" aria-label="Show tunnel token" aria-pressed="false">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="help-row">
-                            <p class="help-text" id="token-help-text">Paste your tunnel token here. Find it at Zero Trust → Networks → Connectors → Cloudflare Tunnels → select your tunnel → Edit → copy the token from the installation command.</p>
-                            <a href="https://dash.cloudflare.com/one" target="_blank" rel="noopener noreferrer" class="help-link" id="token-help-link">Open Cloudflare One</a>
+        <main>
+            <!-- Local tunnel panel -->
+            <section id="panel-local" class="tab-panel" role="tabpanel" aria-labelledby="tab-local">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-text">
+                            <h2 class="card-title" data-i18n="tunnel_config">Tunnel Configuration</h2>
+                            <p class="card-subtitle" data-i18n="tunnel_config_subtitle">Manage your Cloudflare Tunnel connection</p>
                         </div>
                     </div>
-
-                    <!-- Advanced Configuration Section -->
-                    <details class="advanced-section">
-                        <summary class="advanced-toggle">Advanced Configuration</summary>
-
-                        <div class="advanced-content">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="custom-version-input">Tunnel Identifier</label>
-                                    <input type="text" id="custom-version-input" placeholder="e.g., MyApp-v1.0" spellcheck="false">
-                                    <p class="help-text">Custom identifier tag shown in Cloudflare dashboard</p>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="software-name-input">Software Name</label>
-                                    <input type="text" id="software-name-input" placeholder="cfui" spellcheck="false">
-                                    <p class="help-text">Software name displayed in Cloudflare dashboard (default: cfui)</p>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="protocol-select">Protocol</label>
-                                    <select id="protocol-select" class="form-select">
-                                        <option value="auto">Auto</option>
-                                        <option value="http2">HTTP/2</option>
-                                        <option value="quic">QUIC</option>
-                                    </select>
-                                    <p class="help-text">Connection protocol to Cloudflare network</p>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="grace-period-input">Grace Period</label>
-                                    <input type="text" id="grace-period-input" placeholder="30s" value="30s">
-                                    <p class="help-text">Shutdown grace period (e.g., 30s)</p>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="region-select">Region</label>
-                                    <select id="region-select" class="form-select">
-                                        <option value="">Global (Default)</option>
-                                        <option value="us">United States</option>
-                                    </select>
-                                    <p class="help-text">Preferred connection region</p>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="retries-input">Max Retries</label>
-                                    <input type="number" id="retries-input" min="0" max="100" value="5">
-                                    <p class="help-text">Maximum connection retry attempts</p>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Metrics Server</label>
-                                    <div class="toggle-container">
-                                        <label class="switch">
-                                            <input type="checkbox" id="metrics-enable-toggle" aria-label="Enable metrics server">
-                                            <span class="slider round"></span>
-                                        </label>
-                                        <label class="label-text" for="metrics-enable-toggle">Enable Metrics Server</label>
-                                    </div>
-                                </div>
-
-                                <div class="form-group" id="metrics-port-field">
-                                    <label for="metrics-port-input">Metrics Port</label>
-                                    <input type="number" id="metrics-port-input" min="1024" max="65535" value="60123">
-                                    <p class="help-text">Port for metrics server</p>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="edge-bind-address-input">Edge Bind IP Address</label>
-                                    <input type="text" id="edge-bind-address-input" placeholder="e.g., 192.168.1.100" spellcheck="false">
-                                    <p class="help-text">Local IP address to bind for outgoing connections to Cloudflare edge (optional)</p>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Backend TLS Verification</label>
-                                    <div class="toggle-container">
-                                        <label class="switch">
-                                            <input type="checkbox" id="no-tls-verify-toggle" aria-label="Disable backend TLS verification">
-                                            <span class="slider round"></span>
-                                        </label>
-                                        <label class="label-text" for="no-tls-verify-toggle">Disable Backend TLS Verification</label>
-                                    </div>
-                                    <p class="help-text">Disable TLS certificate verification for backend services (not recommended for production)</p>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-
-                    <div class="control-row">
-                        <div class="toggle-container">
-                            <label class="switch">
-                                <input type="checkbox" id="autostart-toggle" aria-label="Auto-start on launch">
-                                <span class="slider round"></span>
-                            </label>
-                            <label class="label-text" for="autostart-toggle">Auto-start on launch</label>
-                        </div>
-
-                        <div class="toggle-container">
-                            <label class="switch">
-                                <input type="checkbox" id="autorestart-toggle" aria-label="Auto-restart on failure">
-                                <span class="slider round"></span>
-                            </label>
-                            <label class="label-text" for="autorestart-toggle">Auto-restart on failure</label>
-                        </div>
-
-                        <button id="action-btn" class="btn btn-primary">Start Tunnel</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card logs-card">
-                <div class="card-header">
-                    <h2>System Logs</h2>
-                    <div class="logs-controls">
-                        <button id="toggle-stream" class="btn btn-sm btn-secondary">Enable Real-time Logs</button>
-                        <button id="clear-logs" class="btn btn-sm btn-ghost">Clear</button>
-                    </div>
-                </div>
-                <div class="logs-container" id="logs-container">
-                    <div class="log-entry system">System ready. Waiting for configuration...
-                    </div>
-                </div>
-            </div>
-            </section>
-
-            <section id="manager-panel" class="tab-panel" role="tabpanel" aria-labelledby="manager-tab" hidden>
-            <div class="card manager-card">
-                <div class="card-header stacked-header">
-                    <div>
-                        <h2 id="manager-title">Remote Tunnel Manager</h2>
-                        <p class="subtitle" id="manager-subtitle">Manage Cloudflare-hosted ingress rules independently from the local runner.</p>
-                    </div>
-                    <span class="manager-status" id="manager-status">Disabled</span>
-                </div>
-
-                <div class="card-body">
-                    <details class="manager-settings" id="manager-settings-section" open>
-                        <summary class="manager-settings-toggle" id="manager-settings-toggle">Remote manager configuration</summary>
-                        <div class="manager-settings-content">
-                        <div class="toggle-container manager-enable-row">
-                            <label class="switch">
-                                <input type="checkbox" id="manager-enable-toggle" aria-label="Enable remote management">
-                                <span class="slider round"></span>
-                            </label>
-                            <label class="label-text" id="manager-enable-label" for="manager-enable-toggle">Enable remote management</label>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="manager-account-id">Account ID / App ID</label>
-                                <input type="text" id="manager-account-id" placeholder="Cloudflare account id" spellcheck="false">
-                                <p class="help-text" id="manager-account-help">Can also be provided by CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_APP_ID.</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="manager-tunnel-id">Tunnel ID</label>
-                                <input type="text" id="manager-tunnel-id" placeholder="Tunnel UUID" spellcheck="false">
-                                <p class="help-text" id="manager-tunnel-help">Changing this field loads the selected tunnel configuration.</p>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="manager-auth-mode">Authentication</label>
-                                <select id="manager-auth-mode" class="form-select">
-                                    <option value="token">API Token</option>
-                                    <option value="key">Email + API Key</option>
-                                </select>
-                                <p class="help-text" id="manager-auth-help">API Token is recommended. Blank secret fields keep the saved value.</p>
-                            </div>
-                            <div class="form-group manager-token-field">
-                                <div class="label-row">
-                                    <label for="manager-api-token">API Token</label>
-                                    <span class="help-popover">
-                                        <button type="button" id="manager-api-help" class="help-btn" aria-label="Cloudflare API permission help" aria-expanded="false" aria-controls="manager-api-help-panel">?</button>
-                                        <span id="manager-api-help-panel" class="help-menu" role="tooltip" hidden>
-                                            <strong id="manager-api-help-title">Required Cloudflare API permissions</strong>
-                                            <span id="manager-api-help-tunnel">Account · Cloudflare Tunnel · Edit</span>
-                                            <span id="manager-api-help-zone">Zone · Zone · Read</span>
-                                            <span id="manager-api-help-dns">Zone · DNS · Edit</span>
-                                            <small id="manager-api-help-note">Use account-scoped API Token when possible.</small>
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="input-wrapper">
-                                    <input type="password" id="manager-api-token" placeholder="Paste your API token" spellcheck="false">
-                                    <button id="manager-api-token-toggle" class="icon-btn" type="button" title="Toggle Visibility" aria-label="Show API token" aria-pressed="false">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <div class="card-body">
+                        <form id="config-form" novalidate>
+                            <div class="form-field">
+                                <label for="token-input">
+                                    <span data-i18n="tunnel_token">Tunnel Token</span>
+                                </label>
+                                <div class="input-suffix">
+                                    <input
+                                        type="text"
+                                        id="token-input"
+                                        class="input"
+                                        placeholder="eyJhIjoi..."
+                                        spellcheck="false"
+                                        autocomplete="off"
+                                        autocorrect="off"
+                                        autocapitalize="off"
+                                        data-i18n-attr="placeholder|token_placeholder"
+                                    >
+                                    <button id="toggle-token" class="icon-btn" type="button" aria-label="Hide token" aria-pressed="false" title="Hide">
+                                        <svg class="eye-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                             <circle cx="12" cy="12" r="3"></circle>
                                         </svg>
-                                    </button>
-                                </div>
-                                <p class="help-text" id="manager-token-state">No token saved.</p>
-                                <p class="help-text" id="manager-api-token-help">Create a scoped API token at Cloudflare Dashboard → My Profile → API Tokens.</p>
-                                <div class="verify-row">
-                                    <button type="button" id="manager-verify-permissions" class="btn btn-sm btn-secondary">Verify Permissions</button>
-                                    <div id="manager-verify-result" class="verify-result" hidden></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-row manager-key-fields" hidden>
-                            <div class="form-group">
-                                <label for="manager-api-email">API Email</label>
-                                <input type="email" id="manager-api-email" placeholder="you@example.com" spellcheck="false">
-                                <p class="help-text" id="manager-api-email-help">Your Cloudflare account email address.</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="manager-api-key">API Key</label>
-                                <div class="input-wrapper">
-                                    <input type="password" id="manager-api-key" placeholder="Paste your API key" spellcheck="false">
-                                    <button id="manager-api-key-toggle" class="icon-btn" type="button" title="Toggle Visibility" aria-label="Show API key" aria-pressed="false">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                            <circle cx="12" cy="12" r="3"></circle>
+                                        <svg class="eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                            <line x1="1" y1="1" x2="23" y2="23"></line>
                                         </svg>
                                     </button>
                                 </div>
-                                <p class="help-text" id="manager-key-state">No key saved.</p>
-                                <p class="help-text" id="manager-api-key-help">Find your Global API Key at Cloudflare Dashboard → My Profile → API Keys.</p>
-                            </div>
-                        </div>
-
-                        <div class="manager-actions">
-                            <button id="manager-save-settings" class="btn btn-secondary">Save Manager Settings</button>
-                            <button id="manager-load-config" class="btn btn-primary">Load Tunnel Config</button>
-                        </div>
-                        </div>
-                    </details>
-
-                    <div class="manager-config-panel" id="manager-config-panel" hidden>
-                        <div class="section-heading">
-                            <div>
-                                <h3>Ingress Rules</h3>
-                                <p class="help-text" id="manager-config-meta">No remote config loaded.</p>
-                            </div>
-                            <button type="button" id="manager-add-entry-btn" class="btn btn-sm btn-primary">Add Rule</button>
-                        </div>
-
-                        <div class="rules-list" id="manager-rules-list"></div>
-                    </div>
-                </div>
-            </div>
-            </section>
-            <section id="ddns-panel" class="tab-panel" role="tabpanel" aria-labelledby="ddns-tab" hidden>
-            <div class="card ddns-card">
-                <div class="card-header stacked-header">
-                    <div>
-                        <h2 id="ddns-title">Dynamic DNS</h2>
-                        <p class="subtitle" id="ddns-subtitle">Automatically update DNS records when your public IP changes.</p>
-                    </div>
-                    <span class="manager-status" id="ddns-status">Disabled</span>
-                </div>
-                <div class="card-body">
-                    <div id="ddns-no-creds" class="ddns-no-creds" hidden>
-                        <p id="ddns-no-credentials">Configure API credentials in Remote Tunnel Manager first.</p>
-                    </div>
-                    <div id="ddns-main" hidden>
-                        <div class="ddns-ip-banner" id="ddns-ip-banner">
-                            <div class="ddns-ip-header">
-                                <div class="ddns-ip-meta">
-                                    <span class="ddns-ip-label" id="ddns-current-ip-label">Current Public IP</span>
-                                    <span class="ddns-ip-time" id="ddns-last-check">—</span>
+                                <div class="strength" id="token-strength" data-level="empty" hidden>
+                                    <span class="bars"><i></i><i></i><i></i><i></i></span>
+                                    <span class="label" data-i18n="token_strength_empty">No token</span>
                                 </div>
-                                <button type="button" id="ddns-sync-now" class="btn btn-sm btn-primary">Sync Now</button>
-                            </div>
-                            <div class="ddns-ip-list">
-                                <div class="ddns-ip-row">
-                                    <strong id="ddns-ipv4-label">IPv4</strong>
-                                    <code id="ddns-ipv4-value">—</code>
-                                </div>
-                                <div class="ddns-ip-row">
-                                    <strong id="ddns-ipv6-label">IPv6</strong>
-                                    <code id="ddns-ipv6-value">—</code>
+                                <div class="help-row">
+                                    <p class="help-text" data-i18n="token_help">Paste your tunnel token. Find it at Zero Trust → Networks → Connectors → Cloudflare Tunnels → select your tunnel → Edit → copy from the install command.</p>
+                                    <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="help-link" data-i18n="token_help_link">Open Cloudflare One</a>
                                 </div>
                             </div>
-                        </div>
 
-                        <details class="manager-settings" id="ddns-settings-section" open>
-                            <summary class="manager-settings-toggle" id="ddns-settings-toggle">DDNS Settings</summary>
-                            <div class="manager-settings-content">
-                                <div class="ddns-tabs" role="tablist">
-                                    <button type="button" class="ddns-subtab active" role="tab" id="ddns-tab-sources" aria-selected="true">IP Sources</button>
-                                    <button type="button" class="ddns-subtab" role="tab" id="ddns-tab-auto">Auto Update</button>
-                                </div>
-
-                                <div class="ddns-subpanel" id="ddns-panel-sources">
-                                    <div class="form-group">
-                                        <label id="ddns-ipv4-sources-label">IPv4 Sources</label>
-                                        <textarea id="ddns-ipv4-textarea" rows="6" placeholder="http://v4.66666.host:66/ip&#10;https://myip.ipip.net&#10;https://ipv4.ddnspod.com" spellcheck="false"></textarea>
-                                        <p class="help-text" id="ddns-batch-add-help">One URL per line.</p>
-                                    </div>
-                                    <div class="form-group">
-                                        <label id="ddns-ipv6-sources-label">IPv6 Sources</label>
-                                        <textarea id="ddns-ipv6-textarea" rows="6" placeholder="http://v6.66666.host:66/ip&#10;http://myip6.ipip.net&#10;https://6.ipw.cn" spellcheck="false"></textarea>
-                                    </div>
-                                </div>
-
-                                <div class="ddns-subpanel" id="ddns-panel-auto" hidden>
+                            <details class="disclosure" id="advanced-settings">
+                                <summary data-i18n="advanced_config">Advanced Configuration</summary>
+                                <div class="body">
                                     <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="ddns-interval" id="ddns-interval-label">Check Interval</label>
-                                            <select id="ddns-interval" class="form-select">
-                                                <option value="1">1 min</option>
-                                                <option value="5" selected>5 min</option>
-                                                <option value="10">10 min</option>
-                                                <option value="15">15 min</option>
-                                                <option value="30">30 min</option>
-                                                <option value="60">60 min</option>
-                                            </select>
+                                        <div class="form-field">
+                                            <label for="custom-version-input" data-i18n="tunnel_identifier">Tunnel Identifier</label>
+                                            <input type="text" id="custom-version-input" class="input" placeholder="MyApp-v1.0" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|tunnel_identifier_placeholder">
+                                            <p class="help-text" data-i18n="tunnel_identifier_help">Custom identifier tag shown in the Cloudflare dashboard</p>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="ddns-max-retries" id="ddns-max-retries-label">Max Retries</label>
-                                            <select id="ddns-max-retries" class="form-select">
-                                                <option value="1">1</option>
-                                                <option value="3" selected>3</option>
-                                                <option value="5">5</option>
-                                                <option value="10">10</option>
-                                            </select>
+                                        <div class="form-field">
+                                            <label for="software-name-input" data-i18n="software_name">Software Name</label>
+                                            <input type="text" id="software-name-input" class="input" placeholder="cfui" spellcheck="false" autocomplete="off">
+                                            <p class="help-text" data-i18n="software_name_help">Software name shown in the Cloudflare dashboard (restart cfui to apply)</p>
                                         </div>
                                     </div>
-                                    <div class="toggle-container">
-                                        <label class="switch">
-                                            <input type="checkbox" id="ddns-only-on-change" checked aria-label="Only update on IP change">
-                                            <span class="slider round"></span>
-                                        </label>
-                                        <label class="label-text" id="ddns-only-on-change-label" for="ddns-only-on-change">Only update on IP change</label>
+
+                                    <div class="form-row">
+                                        <div class="form-field">
+                                            <label for="protocol-select" data-i18n="protocol">Protocol</label>
+                                            <select id="protocol-select" class="form-select">
+                                                <option value="auto" data-i18n="protocol_auto">Auto</option>
+                                                <option value="http2">HTTP/2</option>
+                                                <option value="quic">QUIC</option>
+                                            </select>
+                                            <p class="help-text" data-i18n="protocol_help">Connection protocol to Cloudflare edge</p>
+                                        </div>
+                                        <div class="form-field">
+                                            <label for="grace-period-input" data-i18n="grace_period">Grace Period</label>
+                                            <input type="text" id="grace-period-input" class="input" placeholder="30s" value="30s" inputmode="text" autocomplete="off">
+                                            <p class="help-text" data-i18n="grace_period_help">Shutdown grace period (e.g., 30s)</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-field">
+                                            <label for="region-select" data-i18n="region">Region</label>
+                                            <select id="region-select" class="form-select">
+                                                <option value="" data-i18n="region_global">Global (Default)</option>
+                                                <option value="us" data-i18n="region_us">United States</option>
+                                            </select>
+                                            <p class="help-text" data-i18n="region_help">Preferred connection region</p>
+                                        </div>
+                                        <div class="form-field">
+                                            <label for="retries-input" data-i18n="max_retries">Max Retries</label>
+                                            <input type="number" id="retries-input" min="0" max="100" value="5" inputmode="numeric">
+                                            <p class="help-text" data-i18n="max_retries_help">Maximum connection retry attempts</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-field">
+                                            <label data-i18n="metrics_server_title">Metrics Server</label>
+                                            <label class="toggle">
+                                                <input type="checkbox" id="metrics-enable-toggle">
+                                                <span class="track"></span>
+                                                <span class="label" data-i18n="metrics_enable">Enable metrics server</span>
+                                            </label>
+                                        </div>
+                                        <div class="form-field" id="metrics-port-field" hidden>
+                                            <label for="metrics-port-input" data-i18n="metrics_port">Metrics Port</label>
+                                            <input type="number" id="metrics-port-input" min="1024" max="65535" value="60123" inputmode="numeric">
+                                            <p class="help-text" data-i18n="metrics_port_help">Port for the metrics server</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-field">
+                                            <label for="edge-bind-address-input" data-i18n="edge_bind_address">Edge Bind IP Address</label>
+                                            <input type="text" id="edge-bind-address-input" class="input" placeholder="192.168.1.100" spellcheck="false" autocomplete="off" inputmode="text">
+                                            <p class="help-text" data-i18n="edge_bind_address_help">Local IP address to bind for outgoing connections to the Cloudflare edge (optional)</p>
+                                        </div>
+                                        <div class="form-field">
+                                            <label data-i18n="backend_tls_title">Backend TLS Verification</label>
+                                            <label class="toggle" id="tls-toggle-row">
+                                                <input type="checkbox" id="no-tls-verify-toggle">
+                                                <span class="track"></span>
+                                                <span class="label">
+                                                    <span data-i18n="no_tls_verify">Disable Backend TLS Verification</span>
+                                                    <span class="hint" data-i18n="no_tls_verify_help">Disables TLS certificate verification for backend services (not recommended for production)</span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <div class="action-bar">
+                                <label class="toggle">
+                                    <input type="checkbox" id="autostart-toggle">
+                                    <span class="track"></span>
+                                    <span class="label" data-i18n="autostart">Auto-start on launch</span>
+                                </label>
+                                <label class="toggle">
+                                    <input type="checkbox" id="autorestart-toggle">
+                                    <span class="track"></span>
+                                    <span class="label" data-i18n="autorestart">Auto-restart on failure</span>
+                                </label>
+                                <span style="flex:1"></span>
+                                <button id="action-btn" type="button" class="btn btn--primary" data-action="start">
+                                    <span class="spinner" aria-hidden="true"></span>
+                                    <span class="text" data-i18n="start_tunnel">Start Tunnel</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-text">
+                            <h2 class="card-title" data-i18n="system_logs">System Logs</h2>
+                        </div>
+                    </div>
+                    <div class="logs-toolbar">
+                        <div class="left">
+                            <span id="log-conn-state" class="pill" data-state="disabled">
+                                <span class="dot"></span>
+                                <span class="text" data-i18n="log_status_disconnected">Disconnected</span>
+                            </span>
+                        </div>
+                        <div class="right">
+                            <button id="toggle-stream" type="button" class="btn btn--sm" data-i18n="log_stream_enable">Enable Real-time Logs</button>
+                            <button id="copy-logs" type="button" class="btn btn--sm btn--ghost" data-i18n="copy">Copy</button>
+                            <button id="clear-logs" type="button" class="btn btn--sm btn--ghost" data-i18n="clear">Clear</button>
+                        </div>
+                    </div>
+                    <div class="logs" id="logs-container" aria-live="polite" aria-atomic="false">
+                        <div class="line system"><span class="ts"></span><span class="msg" data-i18n="system_ready">System ready. Waiting for configuration...</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Remote Manager panel -->
+            <section id="panel-manager" class="tab-panel" role="tabpanel" aria-labelledby="tab-manager" hidden>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-text">
+                            <h2 class="card-title" data-i18n="remote_tunnel_manager">Remote Tunnel Manager</h2>
+                            <p class="card-subtitle" data-i18n="remote_tunnel_manager_subtitle">Manage Cloudflare-hosted ingress rules independently from the local runner.</p>
+                        </div>
+                        <span id="manager-status" class="pill" data-state="disabled">
+                            <span class="dot"></span>
+                            <span class="text" data-i18n="manager_status_disabled">Disabled</span>
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <details class="disclosure" id="manager-settings" open>
+                            <summary data-i18n="remote_manager_config">Remote manager configuration</summary>
+                            <div class="body">
+                                <label class="toggle" style="margin-bottom: 16px">
+                                    <input type="checkbox" id="manager-enable-toggle">
+                                    <span class="track"></span>
+                                    <span class="label" data-i18n="manager_enable">Enable remote management</span>
+                                </label>
+
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label for="manager-account-id" data-i18n="account_id">Account ID / App ID</label>
+                                        <input type="text" id="manager-account-id" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|account_id_placeholder">
+                                        <p class="help-text" id="manager-account-help" data-i18n="account_id_help">Your Cloudflare Account ID. Can also be set via CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_APP_ID env vars.</p>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="manager-tunnel-id" data-i18n="managed_tunnel_id">Tunnel ID</label>
+                                        <input type="text" id="manager-tunnel-id" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|tunnel_id_placeholder">
+                                        <p class="help-text" id="manager-tunnel-help" data-i18n="tunnel_id_help">Your tunnel's UUID. Changing this loads the tunnel configuration.</p>
                                     </div>
                                 </div>
 
-                                <div class="manager-actions ddns-settings-actions">
-                                    <button type="button" id="ddns-save-settings" class="btn btn-primary">Save DDNS Settings</button>
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label for="manager-auth-mode" data-i18n="authentication">Authentication</label>
+                                        <select id="manager-auth-mode" class="form-select">
+                                            <option value="token" data-i18n="api_token">API Token</option>
+                                            <option value="key" data-i18n="email_api_key">Email + API Key</option>
+                                        </select>
+                                        <p class="help-text" data-i18n="auth_help">API Token is recommended. Blank secret fields keep the saved value.</p>
+                                    </div>
+                                    <div class="form-field" id="manager-token-field">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <label for="manager-api-token" style="margin-bottom: 0;" data-i18n="api_token">API Token</label>
+                                            <details class="help-popover">
+                                                <summary class="help-trigger" aria-label="Required permissions">?</summary>
+                                                <div class="menu">
+                                                    <strong data-i18n="api_permissions_title">Required Cloudflare API permissions</strong>
+                                                    <span class="item" data-i18n="api_permission_tunnel">Account · Argo Tunnel · Edit</span>
+                                                    <span class="item" data-i18n="api_permission_zone">Zone · Zone · Read</span>
+                                                    <span class="item" data-i18n="api_permission_dns">Zone · DNS · Edit</span>
+                                                    <small style="color: var(--text-muted); margin-top: 4px;" data-i18n="api_permission_note">Use account-scoped API Token when possible.</small>
+                                                </div>
+                                            </details>
+                                        </div>
+                                        <div class="input-suffix">
+                                            <input type="text" id="manager-api-token" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|api_token_placeholder">
+                                            <button id="manager-api-token-toggle" class="icon-btn" type="button" aria-label="Hide">
+                                                <svg class="eye-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                                <svg class="eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <p class="help-text" id="manager-token-state" data-i18n="api_token_not_saved">No token saved.</p>
+                                        <p class="help-text" data-i18n="api_token_help">Create a scoped API token at Cloudflare Dashboard → My Profile → API Tokens.</p>
+                                        <div class="btn-row" style="margin-top: 8px;">
+                                            <button id="manager-verify-permissions" type="button" class="btn btn--sm">
+                                                <span class="spinner" aria-hidden="true"></span>
+                                                <span class="text" data-i18n="verify_permissions">Verify Permissions</span>
+                                            </button>
+                                            <div id="manager-verify-result" class="btn-row" hidden></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row" id="manager-key-fields" hidden>
+                                    <div class="form-field">
+                                        <label for="manager-api-email" data-i18n="api_email">API Email</label>
+                                        <input type="email" id="manager-api-email" class="input" placeholder="" spellcheck="false" autocomplete="email" data-i18n-attr="placeholder|api_email_placeholder">
+                                        <p class="help-text" data-i18n="api_email_help">Your Cloudflare account email address.</p>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="manager-api-key" data-i18n="api_key">API Key</label>
+                                        <div class="input-suffix">
+                                            <input type="text" id="manager-api-key" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|api_key_placeholder">
+                                            <button id="manager-api-key-toggle" class="icon-btn" type="button" aria-label="Hide">
+                                                <svg class="eye-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                                <svg class="eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <p class="help-text" id="manager-key-state" data-i18n="api_key_not_saved">No key saved.</p>
+                                        <p class="help-text" data-i18n="api_key_help">Find your Global API Key at Cloudflare Dashboard → My Profile → API Keys.</p>
+                                    </div>
+                                </div>
+
+                                <div class="btn-row btn-row--end" style="margin-top: 16px;">
+                                    <button id="manager-save-settings" type="button" class="btn btn--primary">
+                                        <span class="spinner" aria-hidden="true"></span>
+                                        <span class="text" data-i18n="save_manager_settings">Save Manager Settings</span>
+                                    </button>
+                                    <button id="manager-load-config" type="button" class="btn">
+                                        <span class="spinner" aria-hidden="true"></span>
+                                        <span class="text" data-i18n="load_tunnel_config">Load Tunnel Config</span>
+                                    </button>
                                 </div>
                             </div>
                         </details>
 
-                        <div class="manager-config-panel ddns-config-panel">
-                            <section class="ddns-section ddns-records-section">
-                                <div class="section-heading">
-                                    <h3 id="ddns-records-label">DDNS Records</h3>
-                                    <button type="button" id="ddns-add-record-btn" class="btn btn-sm btn-primary">Add Record</button>
+                        <div id="manager-config-panel" hidden>
+                            <div class="section-head">
+                                <div>
+                                    <div class="section-title" data-i18n="ingress_rules">Public hostnames</div>
+                                    <div class="config-meta" id="manager-config-meta"></div>
                                 </div>
-                                <div class="rules-list" id="ddns-records-list"></div>
-                            </section>
-
-                            <section class="ddns-section ddns-log-section">
-                                <div class="section-heading">
-                                    <h3 id="ddns-sync-log-label">Sync Log</h3>
-                                </div>
-                                <div class="rules-list ddns-sync-log-list" id="ddns-sync-log-list"></div>
-                            </section>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </section>
-            <section id="mcp-panel" class="tab-panel" role="tabpanel" aria-labelledby="mcp-tab" hidden>
-            <div class="card mcp-card">
-                <div class="card-header stacked-header">
-                    <div>
-                        <h2 id="mcp-title">MCP Access</h2>
-                        <p class="subtitle" id="mcp-subtitle">Let AI clients operate cfui through the Model Context Protocol.</p>
-                    </div>
-                    <span class="manager-status" id="mcp-status">Disabled</span>
-                </div>
-                <div class="card-body">
-                    <div class="section-heading">
-                        <div>
-                            <h3 id="mcp-token-title">Access tokens</h3>
-                            <p class="help-text" id="mcp-token-help">Tokens are shown once when created. The list only shows masked values.</p>
-                        </div>
-                        <button id="mcp-help-toggle" class="btn btn-secondary" type="button" aria-expanded="false" aria-controls="mcp-help-panel">Help</button>
-                    </div>
-
-                    <div id="mcp-help-panel" class="mcp-help-panel" hidden>
-                        <h3 id="mcp-help-title">MCP configuration</h3>
-                        <p id="mcp-help-summary">Connect an MCP client to the endpoint below and use a bearer token generated here.</p>
-                        <pre id="mcp-config-example">{
-  "mcpServers": {
-    "cfui": {
-      "url": "http://localhost:14333/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_TOKEN"
-      }
-    }
-  }
-}</pre>
-                        <p id="mcp-help-tools">Available tools include status, config update, tunnel start/stop, recent logs, and remote tunnel ingress rule management.</p>
-                    </div>
-
-                    <div class="mcp-endpoint-row">
-                        <div class="form-group">
-                            <label for="mcp-endpoint">Endpoint</label>
-                            <input type="text" id="mcp-endpoint" readonly value="/mcp">
-                        </div>
-                    </div>
-
-                    <form id="mcp-token-form" class="entry-form mcp-token-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="mcp-token-name">Name</label>
-                                <input type="text" id="mcp-token-name" placeholder="Claude Desktop" spellcheck="false">
+                                <button id="manager-add-entry-btn" type="button" class="btn btn--primary btn--sm" data-i18n="add_rule">Add Rule</button>
                             </div>
-                            <div class="form-group">
-                                <label for="mcp-token-input">Token</label>
-                                <input type="password" id="mcp-token-input" placeholder="Leave blank to generate" spellcheck="false">
-                                <p class="help-text" id="mcp-token-input-help">Paste your own token or leave blank to generate a strong token.</p>
-                            </div>
+                            <div id="manager-rules-list" class="rules"></div>
                         </div>
-                        <div class="manager-actions">
-                            <button type="submit" id="mcp-token-create" class="btn btn-primary">Create Token</button>
-                        </div>
-                    </form>
-
-                    <div id="mcp-created-token" class="created-token" hidden>
-                        <strong id="mcp-created-title">Copy this token now</strong>
-                        <p id="mcp-created-warning">It will not be shown again after you leave this page.</p>
-                        <code id="mcp-created-value"></code>
                     </div>
-
-                    <div class="rules-list mcp-token-list" id="mcp-token-list"></div>
                 </div>
-            </div>
             </section>
 
-            <section id="features-panel" class="tab-panel" role="tabpanel" aria-labelledby="features-tab" hidden>
+            <!-- DDNS panel -->
+            <section id="panel-ddns" class="tab-panel" role="tabpanel" aria-labelledby="tab-ddns" hidden>
                 <div class="card">
                     <div class="card-header">
-                        <h2 id="features-title">Features</h2>
-                        <p class="subtitle" id="features-subtitle">Enable or disable optional feature tabs. Disabled features are hidden from the navigation.</p>
+                        <div class="card-header-text">
+                            <h2 class="card-title" data-i18n="ddns_title">Dynamic DNS</h2>
+                            <p class="card-subtitle" data-i18n="ddns_subtitle">Automatically update DNS records when your public IP changes. Reuses Remote Manager API credentials.</p>
+                        </div>
+                        <span id="ddns-status" class="pill" data-state="disabled">
+                            <span class="dot"></span>
+                            <span class="text" data-i18n="ddns_status_disabled">Disabled</span>
+                        </span>
                     </div>
                     <div class="card-body">
-                        <div class="feature-toggle-row">
-                            <div class="feature-toggle-info">
-                                <h3 id="feature-manager-name">Remote Tunnel Manager</h3>
-                                <p class="help-text" id="feature-manager-desc">Manage Cloudflare-hosted ingress rules via API.</p>
+                        <div id="ddns-no-creds" class="disabled-panel" hidden>
+                            <h3 data-i18n="ddns_no_credentials">Configure API credentials first</h3>
+                            <p data-i18n="ddns_no_creds_help">Set up the Remote Tunnel Manager with your Cloudflare API token before using DDNS.</p>
+                        </div>
+
+                        <div id="ddns-main" hidden>
+                            <div class="ddns-ip">
+                                <div class="ddns-ip-row">
+                                    <span class="label" data-i18n="ddns_ipv4">IPv4</span>
+                                    <span class="value" id="ddns-ipv4-value">—</span>
+                                </div>
+                                <div class="ddns-ip-row">
+                                    <span class="label" data-i18n="ddns_ipv6">IPv6</span>
+                                    <span class="value" id="ddns-ipv6-value">—</span>
+                                </div>
+                                <div class="help-row">
+                                    <span class="help-text" id="ddns-last-check">—</span>
+                                    <span style="flex:1"></span>
+                                    <button id="ddns-sync-now" type="button" class="btn btn--primary btn--sm">
+                                        <span class="spinner" aria-hidden="true"></span>
+                                        <span class="text" data-i18n="ddns_sync_now">Sync Now</span>
+                                    </button>
+                                </div>
                             </div>
-                            <label class="switch">
-                                <input type="checkbox" id="feature-manager-toggle" aria-label="Enable Remote Tunnel Manager">
-                                <span class="slider round"></span>
+
+                            <details class="disclosure" open id="ddns-settings">
+                                <summary data-i18n="ddns_settings">DDNS Settings</summary>
+                                <div class="body">
+                                    <div class="subtabs" role="tablist">
+                                        <button class="subtab" role="tab" id="ddns-subtab-sources" aria-selected="true" data-i18n="ddns_ip_sources">IP Sources</button>
+                                        <button class="subtab" role="tab" id="ddns-subtab-auto" aria-selected="false" data-i18n="ddns_auto_update">Auto Update</button>
+                                    </div>
+
+                                    <div id="ddns-panel-sources">
+                                        <div class="form-field">
+                                            <label for="ddns-ipv4-textarea" data-i18n="ddns_ipv4_sources">IPv4 Sources</label>
+                                            <textarea id="ddns-ipv4-textarea" rows="5" placeholder="http://v4.66666.host:66/ip&#10;https://myip.ipip.net" spellcheck="false" autocomplete="off"></textarea>
+                                        </div>
+                                        <div class="form-field">
+                                            <label for="ddns-ipv6-textarea" data-i18n="ddns_ipv6_sources">IPv6 Sources</label>
+                                            <textarea id="ddns-ipv6-textarea" rows="5" placeholder="http://v6.66666.host:66/ip&#10;https://6.ipw.cn" spellcheck="false" autocomplete="off"></textarea>
+                                        </div>
+                                        <p class="help-text" data-i18n="ddns_batch_add_help">One URL per line. Each line is a separate source.</p>
+                                    </div>
+
+                                    <div id="ddns-panel-auto" hidden>
+                                        <div class="form-row">
+                                            <div class="form-field">
+                                                <label for="ddns-interval" data-i18n="ddns_interval">Check Interval</label>
+                                                <select id="ddns-interval" class="form-select">
+                                                    <option value="1">1 min</option>
+                                                    <option value="5" selected>5 min</option>
+                                                    <option value="10">10 min</option>
+                                                    <option value="15">15 min</option>
+                                                    <option value="30">30 min</option>
+                                                    <option value="60">60 min</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-field">
+                                                <label for="ddns-max-retries" data-i18n="ddns_max_retries">Max Retries</label>
+                                                <select id="ddns-max-retries" class="form-select">
+                                                    <option value="1">1</option>
+                                                    <option value="3" selected>3</option>
+                                                    <option value="5">5</option>
+                                                    <option value="10">10</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <label class="toggle">
+                                            <input type="checkbox" id="ddns-only-on-change" checked>
+                                            <span class="track"></span>
+                                            <span class="label" data-i18n="ddns_only_on_change">Only update on IP change</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="btn-row btn-row--end" style="margin-top: 16px;">
+                                        <button id="ddns-save-settings" type="button" class="btn btn--primary">
+                                            <span class="spinner" aria-hidden="true"></span>
+                                            <span class="text" data-i18n="ddns_save_settings">Save DDNS Settings</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <div class="section" style="margin-top: 24px;">
+                                <div class="section-head">
+                                    <div>
+                                        <div class="section-title" data-i18n="ddns_records">DDNS Records</div>
+                                    </div>
+                                    <button id="ddns-add-record-btn" type="button" class="btn btn--primary btn--sm" data-i18n="ddns_add_record">Add Record</button>
+                                </div>
+                                <div id="ddns-records-list" class="rules"></div>
+                            </div>
+
+                            <div class="section">
+                                <div class="section-head">
+                                    <div class="section-title" data-i18n="ddns_sync_log">Sync Log</div>
+                                </div>
+                                <div id="ddns-sync-log-list" class="sync-list">
+                                    <div class="empty" data-i18n="ddns_no_sync_history">No sync history yet.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MCP panel -->
+            <section id="panel-mcp" class="tab-panel" role="tabpanel" aria-labelledby="tab-mcp" hidden>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-text">
+                            <h2 class="card-title" data-i18n="mcp_access">MCP Access</h2>
+                            <p class="card-subtitle" data-i18n="mcp_subtitle">Let AI clients operate cfui through the Model Context Protocol.</p>
+                        </div>
+                        <span id="mcp-status" class="pill" data-state="disabled">
+                            <span class="dot"></span>
+                            <span class="text" data-i18n="mcp_status_disabled">Disabled</span>
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="section">
+                            <div class="section-head">
+                                <div>
+                                    <div class="section-title" data-i18n="mcp_token_title">Access tokens</div>
+                                    <div class="section-subtitle" data-i18n="mcp_token_help">Tokens are shown once when created. The list only shows masked values.</div>
+                                </div>
+                                <button id="mcp-help-toggle" type="button" class="btn btn--sm" aria-expanded="false" data-i18n="help">Help</button>
+                            </div>
+                            <div id="mcp-help-panel" hidden style="margin-top: 12px;">
+                                <p class="help-text" data-i18n="mcp_help_summary">Connect an MCP client to the endpoint below and use a bearer token generated here.</p>
+                                <pre class="code-block" id="mcp-config-example"></pre>
+                                <p class="help-text" style="margin-top: 8px;" data-i18n="mcp_help_tools">Available tools include status, config update, tunnel start/stop, recent logs, and remote tunnel ingress management.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label data-i18n="mcp_endpoint">Endpoint</label>
+                            <input type="text" id="mcp-endpoint" class="input" readonly value="/mcp">
+                        </div>
+
+                        <form id="mcp-token-form" novalidate>
+                            <div class="form-row">
+                                <div class="form-field">
+                                    <label for="mcp-token-name" data-i18n="mcp_token_name">Name</label>
+                                    <input type="text" id="mcp-token-name" class="input" placeholder="" autocomplete="off" data-i18n-attr="placeholder|mcp_token_name_placeholder">
+                                </div>
+                                <div class="form-field">
+                                    <label for="mcp-token-input" data-i18n="mcp_token_value">Token</label>
+                                    <input type="text" id="mcp-token-input" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|mcp_token_value_placeholder">
+                                    <div class="strength" id="mcp-token-strength" data-level="empty" hidden>
+                                        <span class="bars"><i></i><i></i><i></i><i></i></span>
+                                        <span class="label"></span>
+                                    </div>
+                                    <p class="help-text" data-i18n="mcp_token_input_help">Paste your own token or leave blank to generate a strong one.</p>
+                                </div>
+                            </div>
+                            <div class="btn-row btn-row--end">
+                                <button id="mcp-token-create" type="submit" class="btn btn--primary">
+                                    <span class="spinner" aria-hidden="true"></span>
+                                    <span class="text" data-i18n="mcp_create_token">Create Token</span>
+                                </button>
+                            </div>
+                        </form>
+
+                        <div id="mcp-created-token" class="copy-box" hidden style="margin-top: 16px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <strong style="display: block; font-size: var(--fs-sm); margin-bottom: 4px;" data-i18n="mcp_created_title">Copy this token now</strong>
+                                <code id="mcp-created-value"></code>
+                            </div>
+                            <button id="mcp-copy-created" type="button" class="btn btn--sm" data-i18n="copy">Copy</button>
+                        </div>
+
+                        <div class="section" style="margin-top: 24px;">
+                            <div id="mcp-token-list" class="rules"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features panel -->
+            <section id="panel-features" class="tab-panel" role="tabpanel" aria-labelledby="tab-features" hidden>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-text">
+                            <h2 class="card-title" data-i18n="features_title">Features</h2>
+                            <p class="card-subtitle" data-i18n="features_subtitle">Enable optional feature tabs. Disabled features stay accessible from this page.</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="feature-row" data-feature="tunnel_manager">
+                            <div>
+                                <div class="section-title" data-i18n="feature_manager_name">Remote Tunnel Manager</div>
+                                <div class="section-subtitle" data-i18n="feature_manager_desc">Manage Cloudflare-hosted ingress rules via API.</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="feature-manager-toggle">
+                                <span class="track"></span>
                             </label>
                         </div>
-                        <div class="feature-toggle-row">
-                            <div class="feature-toggle-info">
-                                <h3 id="feature-ddns-name">DDNS</h3>
-                                <p class="help-text" id="feature-ddns-desc">Automatically update DNS records when your public IP changes.</p>
+                        <div class="feature-row" data-feature="ddns">
+                            <div>
+                                <div class="section-title" data-i18n="feature_ddns_name">DDNS</div>
+                                <div class="section-subtitle" data-i18n="feature_ddns_desc">Automatically update DNS records when your public IP changes. Requires Remote Manager.</div>
                             </div>
-                            <label class="switch">
-                                <input type="checkbox" id="feature-ddns-toggle" aria-label="Enable DDNS">
-                                <span class="slider round"></span>
+                            <label class="toggle">
+                                <input type="checkbox" id="feature-ddns-toggle">
+                                <span class="track"></span>
                             </label>
                         </div>
-                        <div class="feature-toggle-row">
-                            <div class="feature-toggle-info">
-                                <h3 id="feature-mcp-name">MCP Access</h3>
-                                <p class="help-text" id="feature-mcp-desc">Let AI clients operate cfui through the Model Context Protocol.</p>
+                        <div class="feature-row" data-feature="mcp">
+                            <div>
+                                <div class="section-title" data-i18n="feature_mcp_name">MCP Access</div>
+                                <div class="section-subtitle" data-i18n="feature_mcp_desc">Let AI clients operate cfui through the Model Context Protocol.</div>
                             </div>
-                            <label class="switch">
-                                <input type="checkbox" id="feature-mcp-toggle" aria-label="Enable MCP Access">
-                                <span class="slider round"></span>
+                            <label class="toggle">
+                                <input type="checkbox" id="feature-mcp-toggle">
+                                <span class="track"></span>
                             </label>
                         </div>
                     </div>
@@ -571,139 +631,146 @@
             </section>
         </main>
     </div>
-    <div id="manager-entry-dialog" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="manager-entry-dialog-title" aria-describedby="manager-entry-dialog-description" hidden>
-        <div class="modal-panel" role="document">
-            <div class="modal-header">
+
+    <!-- Manager entry dialog -->
+    <div id="manager-entry-dialog" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="manager-entry-dialog-title" hidden>
+        <div class="modal">
+            <div class="modal-head">
                 <div>
-                    <h2 id="manager-entry-dialog-title">Add published application</h2>
-                    <p id="manager-entry-dialog-description" class="subtitle">Create a public hostname route like the Cloudflare Zero Trust tunnel form.</p>
+                    <h2 id="manager-entry-dialog-title" data-i18n="published_app_title">Add published application</h2>
+                    <p class="subtitle" data-i18n="published_app_help">Create a public hostname route like the Cloudflare Zero Trust tunnel form.</p>
                 </div>
-                <button type="button" id="manager-entry-dialog-close" class="modal-close" aria-label="Close dialog">
-                    <span aria-hidden="true">&times;</span>
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <form id="manager-entry-form" class="entry-form public-hostname-form">
+            <form id="manager-entry-form" class="modal-body" novalidate>
                 <input type="hidden" id="manager-entry-index">
-                <div class="form-section-label">Public hostname</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="manager-entry-subdomain">Subdomain</label>
-                        <input type="text" id="manager-entry-subdomain" placeholder="app" spellcheck="false">
+                <div class="section">
+                    <div class="section-title" style="margin-bottom: 12px;" data-i18n="public_hostname_section">Public hostname</div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="manager-entry-subdomain" data-i18n="subdomain">Subdomain</label>
+                            <input type="text" id="manager-entry-subdomain" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|subdomain_placeholder">
+                        </div>
+                        <div class="form-field">
+                            <label for="manager-entry-domain" data-i18n="domain">Domain</label>
+                            <div class="form-row" style="margin-bottom: 6px;">
+                                <select id="manager-entry-domain-select" class="form-select" style="grid-column: span 1;">
+                                    <option value="" data-i18n="manual_domain_option">Manual domain</option>
+                                </select>
+                                <button type="button" id="manager-refresh-zones" class="btn btn--sm" data-i18n="refresh_domains">Refresh domains</button>
+                            </div>
+                            <input type="text" id="manager-entry-domain" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|domain_placeholder">
+                            <p class="help-text" data-i18n="domain_select_help">Select a Cloudflare zone or type a domain manually.</p>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="manager-entry-domain">Domain</label>
-                        <div class="domain-select-row">
-                            <select id="manager-entry-domain-select" class="form-select">
-                                <option value="">Manual domain</option>
+                    <div class="form-field">
+                        <label for="manager-entry-path" data-i18n="path">Path</label>
+                        <input type="text" id="manager-entry-path" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|path_placeholder">
+                        <p class="help-text" data-i18n="path_help">Optional path matcher. Leave empty to publish the whole hostname.</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title" style="margin-bottom: 12px;" data-i18n="service_section">Service</div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="manager-entry-service-type" data-i18n="service_type">Type</label>
+                            <select id="manager-entry-service-type" class="form-select">
+                                <option value="http">HTTP</option>
+                                <option value="https">HTTPS</option>
+                                <option value="ssh">SSH</option>
+                                <option value="rdp">RDP</option>
+                                <option value="tcp">TCP</option>
+                                <option value="unix" data-i18n="service_type_unix">UNIX socket</option>
+                                <option value="http_status" data-i18n="service_type_http_status">HTTP status</option>
+                                <option value="raw" data-i18n="service_type_raw">Custom</option>
                             </select>
-                            <button type="button" id="manager-refresh-zones" class="btn btn-sm btn-secondary">Refresh domains</button>
                         </div>
-                        <input type="text" id="manager-entry-domain" placeholder="example.com" spellcheck="false">
-                        <p class="help-text" id="manager-entry-domain-help">Select a Cloudflare zone or type a domain manually.</p>
+                        <div class="form-field">
+                            <label for="manager-entry-service" data-i18n="service">URL</label>
+                            <input type="text" id="manager-entry-service" class="input" placeholder="localhost:8080" required spellcheck="false" autocomplete="off">
+                            <p class="help-text" data-i18n="service_help">Use host:port for HTTP/HTTPS/TCP/SSH/RDP, a socket path for UNIX, or a status code.</p>
+                        </div>
                     </div>
                 </div>
-                <div class="form-row form-row-wide">
-                    <div class="form-group">
-                        <label for="manager-entry-path">Path</label>
-                        <input type="text" id="manager-entry-path" placeholder="/api/*" spellcheck="false">
-                        <p class="help-text" id="manager-entry-path-help">Optional path matcher. Leave empty to publish the whole hostname.</p>
-                    </div>
-                </div>
-                <div class="form-section-label">Service</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="manager-entry-service-type">Type</label>
-                        <select id="manager-entry-service-type" class="form-select">
-                            <option value="http">HTTP</option>
-                            <option value="https">HTTPS</option>
-                            <option value="ssh">SSH</option>
-                            <option value="rdp">RDP</option>
-                            <option value="tcp">TCP</option>
-                            <option value="unix">UNIX socket</option>
-                            <option value="http_status">HTTP status</option>
-                            <option value="raw">Custom</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="manager-entry-service">URL</label>
-                        <input type="text" id="manager-entry-service" placeholder="localhost:8080" spellcheck="false" required>
-                        <p class="help-text" id="manager-entry-service-help">Use host:port for HTTP/HTTPS/TCP/SSH/RDP, a socket path for UNIX, or a status code.</p>
-                    </div>
-                </div>
-                <details class="advanced-section public-hostname-advanced">
-                    <summary class="advanced-toggle">Additional application settings</summary>
-                    <div class="advanced-content">
+
+                <details class="disclosure">
+                    <summary data-i18n="additional_app_settings">Additional application settings</summary>
+                    <div class="body">
                         <div class="form-row">
-                            <div class="form-group">
-                                <label for="manager-entry-http-host-header">HTTP Host Header</label>
-                                <input type="text" id="manager-entry-http-host-header" placeholder="origin.example.com" spellcheck="false">
+                            <div class="form-field">
+                                <label for="manager-entry-http-host-header" data-i18n="http_host_header">HTTP Host Header</label>
+                                <input type="text" id="manager-entry-http-host-header" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|origin_hostname_placeholder">
                             </div>
-                            <div class="form-group">
-                                <label for="manager-entry-origin-server-name">Origin Server Name</label>
-                                <input type="text" id="manager-entry-origin-server-name" placeholder="origin.example.com" spellcheck="false">
+                            <div class="form-field">
+                                <label for="manager-entry-origin-server-name" data-i18n="origin_server_name">Origin Server Name</label>
+                                <input type="text" id="manager-entry-origin-server-name" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|origin_hostname_placeholder">
                             </div>
                         </div>
-                        <label id="manager-entry-origin-tls-label">Origin TLS</label>
-                        <div class="toggle-container">
-                            <label class="switch">
-                                <input type="checkbox" id="manager-entry-no-tls" aria-label="Disable origin TLS verification">
-                                <span class="slider round"></span>
-                            </label>
-                            <label class="label-text" id="manager-entry-no-tls-label" for="manager-entry-no-tls">Disable origin TLS verification</label>
-                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="manager-entry-no-tls">
+                            <span class="track"></span>
+                            <span class="label">
+                                <span data-i18n="origin_tls">Origin TLS</span>
+                                <span class="hint" data-i18n="disable_origin_tls_verify">Disable origin TLS verification</span>
+                            </span>
+                        </label>
                     </div>
                 </details>
-                <div class="manager-actions">
-                    <button type="submit" id="manager-entry-submit" class="btn btn-primary">Add Rule</button>
-                    <button type="button" id="manager-entry-cancel" class="btn btn-ghost">Cancel Edit</button>
-                </div>
             </form>
-        </div>
-    </div>
-    <div id="ddns-record-dialog" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ddns-record-dialog-title" aria-describedby="ddns-record-dialog-description" hidden>
-        <div class="modal-panel" role="document">
-            <div class="modal-header">
-                <div>
-                    <h2 id="ddns-record-dialog-title">Add DDNS record</h2>
-                    <p id="ddns-record-dialog-description" class="subtitle">Create DNS records that follow the detected public IP.</p>
-                </div>
-                <button type="button" id="ddns-record-dialog-close" class="modal-close" aria-label="Close dialog">
-                    <span aria-hidden="true">&times;</span>
+            <div class="modal-foot">
+                <button type="button" class="btn btn--ghost" data-close-dialog data-i18n="cancel">Cancel</button>
+                <button type="submit" form="manager-entry-form" class="btn btn--primary" id="manager-entry-submit">
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span class="text" data-i18n="add_rule">Add Rule</span>
                 </button>
             </div>
-            <form id="ddns-record-form" class="entry-form" hidden>
+        </div>
+    </div>
+
+    <!-- DDNS record dialog -->
+    <div id="ddns-record-dialog" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ddns-record-dialog-title" hidden>
+        <div class="modal">
+            <div class="modal-head">
+                <div>
+                    <h2 id="ddns-record-dialog-title" data-i18n="ddns_add_record">Add DDNS record</h2>
+                    <p class="subtitle" data-i18n="ddns_record_dialog_description">Create DNS records that follow the detected public IP.</p>
+                </div>
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="ddns-record-form" class="modal-body" novalidate>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="ddns-record-subdomain" id="ddns-record-subdomain-label">Subdomain</label>
-                        <input type="text" id="ddns-record-subdomain" placeholder="home" spellcheck="false">
+                    <div class="form-field">
+                        <label for="ddns-record-subdomain" data-i18n="subdomain">Subdomain</label>
+                        <input type="text" id="ddns-record-subdomain" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|subdomain_placeholder">
                     </div>
-                    <div class="form-group">
-                        <label for="ddns-record-zone-select" id="ddns-record-zone-label">Domain</label>
+                    <div class="form-field">
+                        <label for="ddns-record-zone-select" data-i18n="domain">Domain</label>
                         <select id="ddns-record-zone-select" class="form-select"></select>
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label id="ddns-record-ip-version-label">IP Version</label>
-                        <div class="toggle-container">
-                            <label class="switch">
-                                <input type="checkbox" id="ddns-record-ipv4" checked aria-label="IPv4">
-                                <span class="slider round"></span>
-                            </label>
-                            <label class="label-text" id="ddns-record-ipv4-label" for="ddns-record-ipv4">IPv4 (A)</label>
-                        </div>
-                        <div class="toggle-container">
-                            <label class="switch">
-                                <input type="checkbox" id="ddns-record-ipv6" checked aria-label="IPv6">
-                                <span class="slider round"></span>
-                            </label>
-                            <label class="label-text" id="ddns-record-ipv6-label" for="ddns-record-ipv6">IPv6 (AAAA)</label>
-                        </div>
+                    <div class="form-field">
+                        <label data-i18n="ddns_record_ip_version">IP Version</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="ddns-record-ipv4" checked>
+                            <span class="track"></span>
+                            <span class="label" data-i18n="ddns_record_a">IPv4 (A)</span>
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="ddns-record-ipv6" checked>
+                            <span class="track"></span>
+                            <span class="label" data-i18n="ddns_record_aaaa">IPv6 (AAAA)</span>
+                        </label>
                     </div>
-                    <div class="form-group">
-                        <label for="ddns-record-ttl-select" id="ddns-record-ttl-label">TTL</label>
+                    <div class="form-field">
+                        <label for="ddns-record-ttl-select" data-i18n="ddns_record_ttl">TTL</label>
                         <select id="ddns-record-ttl-select" class="form-select">
-                            <option value="1" selected>Auto</option>
+                            <option value="1" selected data-i18n="ddns_ttl_auto">Auto</option>
                             <option value="60">60s</option>
                             <option value="120">120s</option>
                             <option value="300">300s</option>
@@ -714,30 +781,73 @@
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group" id="ddns-record-ipv4-value-group">
-                        <label for="ddns-record-ipv4-value" id="ddns-record-ipv4-value-label">IPv4 Value</label>
-                        <input type="text" id="ddns-record-ipv4-value" placeholder="{IPV4}" spellcheck="false">
+                    <div class="form-field" id="ddns-record-ipv4-value-group">
+                        <label for="ddns-record-ipv4-value" data-i18n="ddns_record_ipv4_value">IPv4 Value</label>
+                        <input type="text" id="ddns-record-ipv4-value" class="input" placeholder="{IPV4}" spellcheck="false" autocomplete="off">
                     </div>
-                    <div class="form-group" id="ddns-record-ipv6-value-group">
-                        <label for="ddns-record-ipv6-value" id="ddns-record-ipv6-value-label">IPv6 Value</label>
-                        <input type="text" id="ddns-record-ipv6-value" placeholder="{IPV6}" spellcheck="false">
+                    <div class="form-field" id="ddns-record-ipv6-value-group">
+                        <label for="ddns-record-ipv6-value" data-i18n="ddns_record_ipv6_value">IPv6 Value</label>
+                        <input type="text" id="ddns-record-ipv6-value" class="input" placeholder="{IPV6}" spellcheck="false" autocomplete="off">
                     </div>
                 </div>
-                <p class="help-text" id="ddns-record-value-help">Use {IPV4} / {IPV6} for automatic detection, or enter a fixed public IP.</p>
-                <div class="toggle-container ddns-record-proxied-row">
-                    <label class="switch">
-                        <input type="checkbox" id="ddns-record-proxied" checked aria-label="Proxied">
-                        <span class="slider round"></span>
-                    </label>
-                    <label class="label-text" id="ddns-record-proxied-label" for="ddns-record-proxied">Proxied</label>
-                </div>
-                <div class="manager-actions">
-                    <button type="submit" id="ddns-record-submit" class="btn btn-primary">Add Record</button>
-                    <button type="button" id="ddns-record-cancel" class="btn btn-ghost">Cancel</button>
-                </div>
+                <p class="help-text" data-i18n="ddns_record_value_help">Use {IPV4} / {IPV6} for automatic detection, or enter a fixed public IP.</p>
+                <label class="toggle" style="margin-top: 12px;">
+                    <input type="checkbox" id="ddns-record-proxied" checked>
+                    <span class="track"></span>
+                    <span class="label" data-i18n="ddns_record_proxied">Proxied</span>
+                </label>
             </form>
+            <div class="modal-foot">
+                <button type="button" class="btn btn--ghost" data-close-dialog data-i18n="cancel">Cancel</button>
+                <button type="submit" form="ddns-record-form" class="btn btn--primary" id="ddns-record-submit">
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span class="text" data-i18n="ddns_add_record">Add Record</span>
+                </button>
+            </div>
         </div>
     </div>
+
+    <!-- Confirm dialog (reusable) -->
+    <div id="confirm-dialog" class="modal-backdrop" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message" hidden>
+        <div class="modal" style="max-width: 440px;">
+            <div class="modal-head">
+                <div>
+                    <h2 id="confirm-title">Confirm</h2>
+                    <p class="subtitle" id="confirm-message"></p>
+                </div>
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn--ghost" data-close-dialog data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn--danger" id="confirm-ok">
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span class="text" id="confirm-ok-text" data-i18n="confirm">Confirm</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Language menu -->
+    <div id="lang-menu" class="modal-backdrop" hidden style="background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;">
+        <div class="modal" style="max-width: 320px;">
+            <div class="modal-head">
+                <div>
+                    <h2 data-i18n="language_choose">Choose language</h2>
+                </div>
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body" style="display: grid; gap: 6px;">
+                <button class="btn btn--block" type="button" data-lang="en" style="justify-content: flex-start;">English</button>
+                <button class="btn btn--block" type="button" data-lang="zh" style="justify-content: flex-start;">中文</button>
+                <button class="btn btn--block" type="button" data-lang="ja" style="justify-content: flex-start;">日本語</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 

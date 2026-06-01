@@ -861,3 +861,95 @@ other = "删除 DDNS 记录失败"
 
 [ddns_record_ip_required]
 other = "请至少选择一个 IP 版本。"
+
+[confirm]
+other = "确认"
+
+[confirm_title]
+other = "确认操作"
+
+[continue]
+other = "继续"
+
+[copied_to_clipboard]
+other = "已复制到剪贴板"
+
+[copy_failed]
+other = "复制失败"
+
+[creating]
+other = "正在创建…"
+
+[ddns_no_creds_help]
+other = "请先在远程隧道管理器中配置 Cloudflare API 凭据，再使用 DDNS。"
+
+[delete_ddns_record_message]
+other = "删除此 DDNS 记录？此操作会从 Cloudflare 移除对应 DNS 记录。"
+
+[delete_ddns_record_title]
+other = "删除 DDNS 记录？"
+
+[delete_mcp_token_message]
+other = "删除此 MCP 令牌？已连接的 AI 客户端会立即失去访问权限。"
+
+[delete_mcp_token_title]
+other = "删除 MCP 令牌？"
+
+[delete_rule_message]
+other = "删除此 Ingress 规则？"
+
+[delete_rule_title]
+other = "删除规则？"
+
+[error_generic]
+other = "发生错误"
+
+[language_choose]
+other = "选择语言"
+
+[logs_copied]
+other = "日志已复制"
+
+[log_status_connecting]
+other = "连接中…"
+
+[log_status_failed]
+other = "连接失败"
+
+[log_status_reconnecting]
+other = "重新连接中…"
+
+[saving]
+other = "保存中…"
+
+[theme_changed]
+other = "主题已切换"
+
+[tls_disable_message]
+other = "关闭 TLS 校验会让流量面临中间人攻击风险，请仅在受信的内部服务上继续。"
+
+[tls_disable_title]
+other = "关闭后端 TLS 校验？"
+
+[tls_i_understand]
+other = "我已了解风险"
+
+[token_strength_empty]
+other = "未填写"
+
+[weak_token_message]
+other = "此令牌太短且容易猜测，请使用至少 24 位随机字符。"
+
+[weak_token_title]
+other = "令牌强度不足"
+
+[token_placeholder]
+other = "eyJhIjoi..."
+
+[tunnel_identifier_placeholder]
+other = "MyApp-v1.0"
+[copy]
+other = "复制"
+
+[cancel]
+other = "取消"

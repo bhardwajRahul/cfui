@@ -104,7 +104,7 @@ other = "Clear"
 other = "System ready. Waiting for configuration..."
 
 [error_token_required]
-other = "Error: Token is required to start the tunnel"
+other = "Token is required to start the tunnel"
 
 [command_sent]
 other = "Command sent"
@@ -861,3 +861,95 @@ other = "Failed to delete DDNS record"
 
 [ddns_record_ip_required]
 other = "Select at least one IP version."
+
+[confirm]
+other = "Confirm"
+
+[confirm_title]
+other = "Confirm"
+
+[continue]
+other = "Continue"
+
+[copied_to_clipboard]
+other = "Copied to clipboard"
+
+[copy_failed]
+other = "Copy failed"
+
+[creating]
+other = "Creating…"
+
+[ddns_no_creds_help]
+other = "Set up the Remote Tunnel Manager with your Cloudflare API token before using DDNS."
+
+[delete_ddns_record_message]
+other = "Delete this DDNS record? The DNS entry will be removed from Cloudflare."
+
+[delete_ddns_record_title]
+other = "Delete DDNS record?"
+
+[delete_mcp_token_message]
+other = "Delete this MCP token? Connected AI clients will lose access immediately."
+
+[delete_mcp_token_title]
+other = "Delete MCP token?"
+
+[delete_rule_message]
+other = "Delete this ingress rule?"
+
+[delete_rule_title]
+other = "Delete rule?"
+
+[error_generic]
+other = "An error occurred"
+
+[language_choose]
+other = "Choose language"
+
+[logs_copied]
+other = "Logs copied"
+
+[log_status_connecting]
+other = "Connecting…"
+
+[log_status_failed]
+other = "Connection failed"
+
+[log_status_reconnecting]
+other = "Reconnecting…"
+
+[saving]
+other = "Saving…"
+
+[theme_changed]
+other = "Theme changed"
+
+[tls_disable_message]
+other = "Disabling TLS verification exposes traffic to man-in-the-middle attacks. Continue only for trusted internal services."
+
+[tls_disable_title]
+other = "Disable backend TLS verification?"
+
+[tls_i_understand]
+other = "I understand the risk"
+
+[token_strength_empty]
+other = "No token"
+
+[weak_token_message]
+other = "This token is short and easy to guess. Use at least 24 random characters."
+
+[weak_token_title]
+other = "Weak token"
+
+[token_placeholder]
+other = "eyJhIjoi..."
+
+[tunnel_identifier_placeholder]
+other = "MyApp-v1.0"
+[copy]
+other = "Copy"
+
+[cancel]
+other = "Cancel"
