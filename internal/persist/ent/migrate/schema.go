@@ -71,6 +71,7 @@ var (
 		{Name: "zone_name", Type: field.TypeString, Default: ""},
 		{Name: "type", Type: field.TypeString},
 		{Name: "value", Type: field.TypeString, Default: ""},
+		{Name: "comment", Type: field.TypeString, Default: "cfui"},
 		{Name: "proxied", Type: field.TypeBool, Default: false},
 		{Name: "ttl", Type: field.TypeInt, Default: 1},
 	}

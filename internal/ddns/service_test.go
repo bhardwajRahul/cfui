@@ -50,3 +50,32 @@ func TestDetectIPStopsWhenContextExpiresDuringBackoff(t *testing.T) {
 		t.Fatalf("detectIP waited too long after context cancellation: %v", elapsed)
 	}
 }
+
+func TestGetConfigReturnsDefaultIPSourcesWhenStoredSourcesEmpty(t *testing.T) {
+	ddnsTestLoggerOnce.Do(func() {
+		logDir, err := os.MkdirTemp("", "cfui-ddns-test-logs-*")
+		if err != nil {
+			t.Fatalf("create log dir: %v", err)
+		}
+		if err := logger.Initialize(&logger.Config{LogDir: logDir, LogLevel: "error"}); err != nil {
+			t.Fatalf("initialize logger: %v", err)
+		}
+	})
+
+	cfgMgr, err := config.NewManager(t.TempDir())
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	cfg := cfgMgr.Get()
+	cfg.DDNS.IPSources = []config.IPSource{}
+	if err := cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	resp := NewService(cfgMgr).GetConfig()
+	defaults := config.DefaultDDNSConfig().IPSources
+	if len(resp.DefaultIPSources) != len(defaults) || len(resp.IPSources) != len(defaults) {
+		t.Fatalf("expected default sources in response, got default=%d effective=%d", len(resp.DefaultIPSources), len(resp.IPSources))
+	}
+}

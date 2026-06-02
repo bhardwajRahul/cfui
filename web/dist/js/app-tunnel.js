@@ -3,7 +3,7 @@
    ========================================================================= */
 (() => {
     'use strict';
-    const { state, $, t, apiGet, apiSend, toast, setBusy, flashField, sleep } = window.cfui;
+    const { state, $, t, apiGet, apiSend, toast, setBusy, flashField, setTokenVisible, sleep } = window.cfui;
 
     /* ---- Config form helpers ---- */
 
@@ -20,6 +20,11 @@
         if (!state.isRunning || !state.runningSig) return false;
         const cur = configSignature(readConfigFromForm());
         return cur !== state.runningSig;
+    }
+
+    function numberOr(value, fallback) {
+        const n = Number.parseInt(value, 10);
+        return Number.isFinite(n) ? n : fallback;
     }
 
     function readConfigFromForm() {
@@ -58,6 +63,33 @@
         updateMetricsVisibility();
     }
 
+    function comparableLocalConfig(cfg = {}) {
+        return {
+            token: cfg.token || '',
+            custom_tag: cfg.custom_tag || '',
+            software_name: cfg.software_name || 'cfui',
+            auto_start: !!cfg.auto_start,
+            auto_restart: cfg.auto_restart !== false,
+            protocol: cfg.protocol || 'auto',
+            grace_period: cfg.grace_period || '30s',
+            region: cfg.region || '',
+            retries: numberOr(cfg.retries, 5),
+            metrics_enable: !!cfg.metrics_enable,
+            metrics_port: numberOr(cfg.metrics_port, 60123),
+            edge_bind_address: cfg.edge_bind_address || '',
+            no_tls_verify: !!cfg.no_tls_verify,
+        };
+    }
+
+    function localConfigSignature(cfg = {}) {
+        return JSON.stringify(comparableLocalConfig(cfg));
+    }
+
+    function isLocalConfigDirty(cfg = readConfigFromForm()) {
+        const saved = state.localConfigSignature || localConfigSignature(state.config || {});
+        return localConfigSignature(cfg) !== saved;
+    }
+
     function updateMetricsVisibility() {
         const on = $('metrics-enable-toggle')?.checked;
         if ($('metrics-port-field')) $('metrics-port-field').hidden = !on;
@@ -71,6 +103,7 @@
             const data = await apiGet('/config');
             state.config = data;
             writeConfigToForm(data);
+            state.localConfigSignature = localConfigSignature(data);
         } catch (err) {
             window.cfui.addLog({ key: 'config_load_failed', params: { err: err.message } }, 'error');
         }
@@ -78,15 +111,26 @@
 
     let saveSeq = 0;
     function saveConfig({ showFeedback = true, source = 'auto' } = {}) {
-        const seq = ++saveSeq;
         const cfg = readConfigFromForm();
+        const sig = localConfigSignature(cfg);
+        const saved = state.localConfigSignature || localConfigSignature(state.config || {});
+        if (sig === saved) {
+            updateRestartHint();
+            return state.pendingConfigSave || Promise.resolve(state.config);
+        }
+        if (state.pendingConfigSave && state.pendingConfigSignature === sig) {
+            return state.pendingConfigSave;
+        }
+        const seq = ++saveSeq;
         const prev = state.pendingConfigSave;
+        state.pendingConfigSignature = sig;
         const p = (async () => {
             try { await prev; } catch { /* ignore */ }
             if (seq !== saveSeq) return;
             try {
                 const data = await apiSend('/config', 'POST', cfg);
                 state.config = data;
+                state.localConfigSignature = localConfigSignature(data);
                 if (showFeedback) {
                     ['token-input','custom-version-input','software-name-input',
                      'autostart-toggle','autorestart-toggle','protocol-select',
@@ -103,6 +147,11 @@
                 if (seq !== saveSeq) return;
                 window.cfui.addLog({ key: 'config_save_failed', params: { err: err.message } }, 'error');
                 toast.err(t('config_save_failed'));
+            } finally {
+                if (seq === saveSeq) {
+                    state.pendingConfigSave = null;
+                    state.pendingConfigSignature = '';
+                }
             }
         })();
         state.pendingConfigSave = p;
@@ -225,9 +274,11 @@
                 $('token-input').focus();
                 return;
             }
-            if (state.pendingConfigSave) {
+            const cfg = readConfigFromForm();
+            const needsSave = isLocalConfigDirty(cfg);
+            if (needsSave || state.pendingConfigSave) {
                 setBusy(btn, true, t('saving'));
-                try { await state.pendingConfigSave; } catch { /* */ }
+                try { await (needsSave ? saveConfig({ showFeedback: false, source: 'button' }) : state.pendingConfigSave); } catch { /* */ }
                 setBusy(btn, false);
             }
         }
@@ -283,10 +334,32 @@
         if (!ok) cb.checked = false;
     }
 
+    let tokenHideTimer = null;
+    function toggleTokenVisibility(e) {
+        e?.preventDefault();
+        const input = $('token-input');
+        const btn = $('toggle-token');
+        if (!input || !btn) return;
+        const visible = input.type === 'password';
+        setTokenVisible(input, btn, visible);
+        if (tokenHideTimer) {
+            clearTimeout(tokenHideTimer);
+            tokenHideTimer = null;
+        }
+        if (visible) {
+            tokenHideTimer = setTimeout(() => {
+                setTokenVisible(input, btn, false);
+                tokenHideTimer = null;
+            }, 10000);
+        }
+    }
+
     /* ---- Wire ---- */
 
     function wireTunnel() {
         $('action-btn')?.addEventListener('click', onActionClick);
+        $('toggle-token')?.addEventListener('mousedown', (e) => e.preventDefault());
+        $('toggle-token')?.addEventListener('click', toggleTokenVisibility);
         $('tunnel-alert-logs')?.addEventListener('click', () => {
             const logsCard = document.querySelector('.logs-card');
             if (logsCard) logsCard.scrollIntoView({ behavior: 'smooth' });

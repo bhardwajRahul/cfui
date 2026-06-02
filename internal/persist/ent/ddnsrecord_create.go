@@ -85,6 +85,20 @@ func (_c *DDNSRecordCreate) SetNillableValue(v *string) *DDNSRecordCreate {
 	return _c
 }
 
+// SetComment sets the "comment" field.
+func (_c *DDNSRecordCreate) SetComment(v string) *DDNSRecordCreate {
+	_c.mutation.SetComment(v)
+	return _c
+}
+
+// SetNillableComment sets the "comment" field if the given value is not nil.
+func (_c *DDNSRecordCreate) SetNillableComment(v *string) *DDNSRecordCreate {
+	if v != nil {
+		_c.SetComment(*v)
+	}
+	return _c
+}
+
 // SetProxied sets the "proxied" field.
 func (_c *DDNSRecordCreate) SetProxied(v bool) *DDNSRecordCreate {
 	_c.mutation.SetProxied(v)
@@ -160,6 +174,10 @@ func (_c *DDNSRecordCreate) defaults() {
 		v := ddnsrecord.DefaultValue
 		_c.mutation.SetValue(v)
 	}
+	if _, ok := _c.mutation.Comment(); !ok {
+		v := ddnsrecord.DefaultComment
+		_c.mutation.SetComment(v)
+	}
 	if _, ok := _c.mutation.Proxied(); !ok {
 		v := ddnsrecord.DefaultProxied
 		_c.mutation.SetProxied(v)
@@ -217,6 +235,9 @@ func (_c *DDNSRecordCreate) check() error {
 	}
 	if _, ok := _c.mutation.Value(); !ok {
 		return &ValidationError{Name: "value", err: errors.New(`ent: missing required field "DDNSRecord.value"`)}
+	}
+	if _, ok := _c.mutation.Comment(); !ok {
+		return &ValidationError{Name: "comment", err: errors.New(`ent: missing required field "DDNSRecord.comment"`)}
 	}
 	if _, ok := _c.mutation.Proxied(); !ok {
 		return &ValidationError{Name: "proxied", err: errors.New(`ent: missing required field "DDNSRecord.proxied"`)}
@@ -277,6 +298,10 @@ func (_c *DDNSRecordCreate) createSpec() (*DDNSRecord, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Value(); ok {
 		_spec.SetField(ddnsrecord.FieldValue, field.TypeString, value)
 		_node.Value = value
+	}
+	if value, ok := _c.mutation.Comment(); ok {
+		_spec.SetField(ddnsrecord.FieldComment, field.TypeString, value)
+		_node.Comment = value
 	}
 	if value, ok := _c.mutation.Proxied(); ok {
 		_spec.SetField(ddnsrecord.FieldProxied, field.TypeBool, value)

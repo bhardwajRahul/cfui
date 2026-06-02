@@ -589,6 +589,12 @@ other = "IPv6 Sources"
 [ddns_batch_add_help]
 other = "One URL per line. Each line becomes a separate source."
 
+[ddns_restore_default_sources]
+other = "Restore default sources"
+
+[ddns_sources_restored]
+other = "Default IP sources restored. Save settings to apply."
+
 [ddns_add_single]
 other = "Single Add"
 
@@ -636,6 +642,9 @@ other = "Zone"
 
 [ddns_record_proxied]
 other = "Proxied"
+
+[ddns_record_comment]
+other = "Comment"
 
 [ddns_record_ttl]
 other = "TTL"

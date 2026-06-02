@@ -2106,6 +2106,7 @@ type DDNSRecordMutation struct {
 	zone_name     *string
 	_type         *string
 	value         *string
+	comment       *string
 	proxied       *bool
 	ttl           *int
 	addttl        *int
@@ -2485,6 +2486,42 @@ func (m *DDNSRecordMutation) ResetValue() {
 	m.value = nil
 }
 
+// SetComment sets the "comment" field.
+func (m *DDNSRecordMutation) SetComment(s string) {
+	m.comment = &s
+}
+
+// Comment returns the value of the "comment" field in the mutation.
+func (m *DDNSRecordMutation) Comment() (r string, exists bool) {
+	v := m.comment
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComment returns the old "comment" field's value of the DDNSRecord entity.
+// If the DDNSRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DDNSRecordMutation) OldComment(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComment is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComment requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComment: %w", err)
+	}
+	return oldValue.Comment, nil
+}
+
+// ResetComment resets all changes to the "comment" field.
+func (m *DDNSRecordMutation) ResetComment() {
+	m.comment = nil
+}
+
 // SetProxied sets the "proxied" field.
 func (m *DDNSRecordMutation) SetProxied(b bool) {
 	m.proxied = &b
@@ -2611,7 +2648,7 @@ func (m *DDNSRecordMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *DDNSRecordMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.settings_key != nil {
 		fields = append(fields, ddnsrecord.FieldSettingsKey)
 	}
@@ -2632,6 +2669,9 @@ func (m *DDNSRecordMutation) Fields() []string {
 	}
 	if m.value != nil {
 		fields = append(fields, ddnsrecord.FieldValue)
+	}
+	if m.comment != nil {
+		fields = append(fields, ddnsrecord.FieldComment)
 	}
 	if m.proxied != nil {
 		fields = append(fields, ddnsrecord.FieldProxied)
@@ -2661,6 +2701,8 @@ func (m *DDNSRecordMutation) Field(name string) (ent.Value, bool) {
 		return m.GetType()
 	case ddnsrecord.FieldValue:
 		return m.Value()
+	case ddnsrecord.FieldComment:
+		return m.Comment()
 	case ddnsrecord.FieldProxied:
 		return m.Proxied()
 	case ddnsrecord.FieldTTL:
@@ -2688,6 +2730,8 @@ func (m *DDNSRecordMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldType(ctx)
 	case ddnsrecord.FieldValue:
 		return m.OldValue(ctx)
+	case ddnsrecord.FieldComment:
+		return m.OldComment(ctx)
 	case ddnsrecord.FieldProxied:
 		return m.OldProxied(ctx)
 	case ddnsrecord.FieldTTL:
@@ -2749,6 +2793,13 @@ func (m *DDNSRecordMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetValue(v)
+		return nil
+	case ddnsrecord.FieldComment:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComment(v)
 		return nil
 	case ddnsrecord.FieldProxied:
 		v, ok := value.(bool)
@@ -2860,6 +2911,9 @@ func (m *DDNSRecordMutation) ResetField(name string) error {
 		return nil
 	case ddnsrecord.FieldValue:
 		m.ResetValue()
+		return nil
+	case ddnsrecord.FieldComment:
+		m.ResetComment()
 		return nil
 	case ddnsrecord.FieldProxied:
 		m.ResetProxied()

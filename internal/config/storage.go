@@ -180,6 +180,7 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 			ZoneName: row.ZoneName,
 			Type:     row.Type,
 			Value:    row.Value,
+			Comment:  NormalizeDDNSRecordComment(row.Comment),
 			Proxied:  row.Proxied,
 			TTL:      row.TTL,
 		})
@@ -350,6 +351,7 @@ func replaceDDNSRecords(ctx context.Context, tx *ent.Tx, records []DDNSRecord) e
 			SetZoneName(rec.ZoneName).
 			SetType(rec.Type).
 			SetValue(rec.Value).
+			SetComment(NormalizeDDNSRecordComment(rec.Comment)).
 			SetProxied(rec.Proxied).
 			SetTTL(rec.TTL))
 	}

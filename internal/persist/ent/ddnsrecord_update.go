@@ -132,6 +132,20 @@ func (_u *DDNSRecordUpdate) SetNillableValue(v *string) *DDNSRecordUpdate {
 	return _u
 }
 
+// SetComment sets the "comment" field.
+func (_u *DDNSRecordUpdate) SetComment(v string) *DDNSRecordUpdate {
+	_u.mutation.SetComment(v)
+	return _u
+}
+
+// SetNillableComment sets the "comment" field if the given value is not nil.
+func (_u *DDNSRecordUpdate) SetNillableComment(v *string) *DDNSRecordUpdate {
+	if v != nil {
+		_u.SetComment(*v)
+	}
+	return _u
+}
+
 // SetProxied sets the "proxied" field.
 func (_u *DDNSRecordUpdate) SetProxied(v bool) *DDNSRecordUpdate {
 	_u.mutation.SetProxied(v)
@@ -265,6 +279,9 @@ func (_u *DDNSRecordUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(ddnsrecord.FieldValue, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Comment(); ok {
+		_spec.SetField(ddnsrecord.FieldComment, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.Proxied(); ok {
 		_spec.SetField(ddnsrecord.FieldProxied, field.TypeBool, value)
 	}
@@ -395,6 +412,20 @@ func (_u *DDNSRecordUpdateOne) SetValue(v string) *DDNSRecordUpdateOne {
 func (_u *DDNSRecordUpdateOne) SetNillableValue(v *string) *DDNSRecordUpdateOne {
 	if v != nil {
 		_u.SetValue(*v)
+	}
+	return _u
+}
+
+// SetComment sets the "comment" field.
+func (_u *DDNSRecordUpdateOne) SetComment(v string) *DDNSRecordUpdateOne {
+	_u.mutation.SetComment(v)
+	return _u
+}
+
+// SetNillableComment sets the "comment" field if the given value is not nil.
+func (_u *DDNSRecordUpdateOne) SetNillableComment(v *string) *DDNSRecordUpdateOne {
+	if v != nil {
+		_u.SetComment(*v)
 	}
 	return _u
 }
@@ -561,6 +592,9 @@ func (_u *DDNSRecordUpdateOne) sqlSave(ctx context.Context) (_node *DDNSRecord, 
 	}
 	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(ddnsrecord.FieldValue, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Comment(); ok {
+		_spec.SetField(ddnsrecord.FieldComment, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Proxied(); ok {
 		_spec.SetField(ddnsrecord.FieldProxied, field.TypeBool, value)

@@ -88,6 +88,11 @@ func Value(v string) predicate.DDNSRecord {
 	return predicate.DDNSRecord(sql.FieldEQ(FieldValue, v))
 }
 
+// Comment applies equality check predicate on the "comment" field. It's identical to CommentEQ.
+func Comment(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldEQ(FieldComment, v))
+}
+
 // Proxied applies equality check predicate on the "proxied" field. It's identical to ProxiedEQ.
 func Proxied(v bool) predicate.DDNSRecord {
 	return predicate.DDNSRecord(sql.FieldEQ(FieldProxied, v))
@@ -526,6 +531,71 @@ func ValueEqualFold(v string) predicate.DDNSRecord {
 // ValueContainsFold applies the ContainsFold predicate on the "value" field.
 func ValueContainsFold(v string) predicate.DDNSRecord {
 	return predicate.DDNSRecord(sql.FieldContainsFold(FieldValue, v))
+}
+
+// CommentEQ applies the EQ predicate on the "comment" field.
+func CommentEQ(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldEQ(FieldComment, v))
+}
+
+// CommentNEQ applies the NEQ predicate on the "comment" field.
+func CommentNEQ(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldNEQ(FieldComment, v))
+}
+
+// CommentIn applies the In predicate on the "comment" field.
+func CommentIn(vs ...string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldIn(FieldComment, vs...))
+}
+
+// CommentNotIn applies the NotIn predicate on the "comment" field.
+func CommentNotIn(vs ...string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldNotIn(FieldComment, vs...))
+}
+
+// CommentGT applies the GT predicate on the "comment" field.
+func CommentGT(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldGT(FieldComment, v))
+}
+
+// CommentGTE applies the GTE predicate on the "comment" field.
+func CommentGTE(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldGTE(FieldComment, v))
+}
+
+// CommentLT applies the LT predicate on the "comment" field.
+func CommentLT(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldLT(FieldComment, v))
+}
+
+// CommentLTE applies the LTE predicate on the "comment" field.
+func CommentLTE(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldLTE(FieldComment, v))
+}
+
+// CommentContains applies the Contains predicate on the "comment" field.
+func CommentContains(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldContains(FieldComment, v))
+}
+
+// CommentHasPrefix applies the HasPrefix predicate on the "comment" field.
+func CommentHasPrefix(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldHasPrefix(FieldComment, v))
+}
+
+// CommentHasSuffix applies the HasSuffix predicate on the "comment" field.
+func CommentHasSuffix(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldHasSuffix(FieldComment, v))
+}
+
+// CommentEqualFold applies the EqualFold predicate on the "comment" field.
+func CommentEqualFold(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldEqualFold(FieldComment, v))
+}
+
+// CommentContainsFold applies the ContainsFold predicate on the "comment" field.
+func CommentContainsFold(v string) predicate.DDNSRecord {
+	return predicate.DDNSRecord(sql.FieldContainsFold(FieldComment, v))
 }
 
 // ProxiedEQ applies the EQ predicate on the "proxied" field.

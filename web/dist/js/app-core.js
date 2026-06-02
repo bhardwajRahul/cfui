@@ -29,6 +29,8 @@
         mcp: { status: null, tokens: [] },
         ddns: { config: null, status: null, zones: [], zonesLoaded: false },
         pendingConfigSave: null,
+        pendingConfigSignature: '',
+        localConfigSignature: '',
         activeDialog: null,
         lastFocused: null,
         confirmResolver: null,
@@ -171,7 +173,9 @@
         input.type = visible ? 'text' : 'password';
         if (btn) {
             btn.setAttribute('aria-pressed', String(visible));
-            btn.setAttribute('aria-label', t(visible ? 'token_hide' : 'token_show'));
+            const label = t(visible ? 'token_hide' : 'token_show');
+            btn.setAttribute('aria-label', label);
+            btn.title = label;
         }
     }
 

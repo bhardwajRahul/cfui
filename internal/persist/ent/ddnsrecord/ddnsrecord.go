@@ -25,6 +25,8 @@ const (
 	FieldType = "type"
 	// FieldValue holds the string denoting the value field in the database.
 	FieldValue = "value"
+	// FieldComment holds the string denoting the comment field in the database.
+	FieldComment = "comment"
 	// FieldProxied holds the string denoting the proxied field in the database.
 	FieldProxied = "proxied"
 	// FieldTTL holds the string denoting the ttl field in the database.
@@ -43,6 +45,7 @@ var Columns = []string{
 	FieldZoneName,
 	FieldType,
 	FieldValue,
+	FieldComment,
 	FieldProxied,
 	FieldTTL,
 }
@@ -74,6 +77,8 @@ var (
 	TypeValidator func(string) error
 	// DefaultValue holds the default value on creation for the "value" field.
 	DefaultValue string
+	// DefaultComment holds the default value on creation for the "comment" field.
+	DefaultComment string
 	// DefaultProxied holds the default value on creation for the "proxied" field.
 	DefaultProxied bool
 	// DefaultTTL holds the default value on creation for the "ttl" field.
@@ -121,6 +126,11 @@ func ByType(opts ...sql.OrderTermOption) OrderOption {
 // ByValue orders the results by the value field.
 func ByValue(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldValue, opts...).ToFunc()
+}
+
+// ByComment orders the results by the comment field.
+func ByComment(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldComment, opts...).ToFunc()
 }
 
 // ByProxied orders the results by the proxied field.

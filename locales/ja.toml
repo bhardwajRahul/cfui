@@ -589,6 +589,12 @@ other = "IPv6 ソース"
 [ddns_batch_add_help]
 other = "1行に1つのURL。各行が個別のソースとして追加されます。"
 
+[ddns_restore_default_sources]
+other = "デフォルトソースに戻す"
+
+[ddns_sources_restored]
+other = "デフォルトの IP ソースに戻しました。設定を保存すると反映されます。"
+
 [ddns_add_single]
 other = "個別追加"
 
@@ -636,6 +642,9 @@ other = "ゾーン"
 
 [ddns_record_proxied]
 other = "プロキシ"
+
+[ddns_record_comment]
+other = "コメント"
 
 [ddns_record_ttl]
 other = "TTL"

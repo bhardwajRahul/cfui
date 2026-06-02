@@ -524,6 +524,7 @@ type AddDDNSRecordInput struct {
 	Name    string `json:"name" jsonschema:"full hostname, e.g. home.example.com"`
 	ZoneID  string `json:"zone_id" jsonschema:"Cloudflare zone id"`
 	Type    string `json:"type" jsonschema:"record type: A or AAAA"`
+	Comment string `json:"comment,omitempty" jsonschema:"DNS record comment; defaults to cfui"`
 	TTL     int    `json:"ttl,omitempty" jsonschema:"TTL in seconds; 1 means Auto"`
 	Proxied bool   `json:"proxied,omitempty"`
 }
@@ -541,6 +542,7 @@ func (s *Service) addDDNSRecord(ctx context.Context, req *mcp.CallToolRequest, i
 		Name:    in.Name,
 		ZoneID:  in.ZoneID,
 		Type:    in.Type,
+		Comment: config.NormalizeDDNSRecordComment(in.Comment),
 		TTL:     ttl,
 		Proxied: in.Proxied,
 	})

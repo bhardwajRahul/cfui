@@ -83,6 +83,7 @@ func ValidateRecordValue(recordType, value string) (string, error) {
 
 func NormalizeRecord(rec config.DDNSRecord) config.DDNSRecord {
 	rec.Value = NormalizeRecordValue(rec.Type, rec.Value)
+	rec.Comment = config.NormalizeDDNSRecordComment(rec.Comment)
 	if rec.TTL <= 0 {
 		rec.TTL = 1
 	}

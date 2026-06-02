@@ -138,7 +138,7 @@
                                         autocapitalize="off"
                                         data-i18n-attr="placeholder|token_placeholder"
                                     >
-                                    <button id="toggle-token" class="icon-btn" type="button" aria-label="Hide token" aria-pressed="false" data-i18n-attr="aria-label|token_show" title="Show">
+                                    <button id="toggle-token" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show;title|token_show" title="Show token">
                                         <svg class="eye-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                             <circle cx="12" cy="12" r="3"></circle>
@@ -359,7 +359,7 @@
                                         </div>
                                         <div class="input-suffix">
                                             <input type="password" id="manager-api-token" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|api_token_placeholder">
-                                            <button id="manager-api-token-toggle" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show" title="Show">
+                                            <button id="manager-api-token-toggle" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show;title|token_show" title="Show token">
                                                 <svg class="eye-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                                     <circle cx="12" cy="12" r="3"></circle>
@@ -392,7 +392,7 @@
                                         <label for="manager-api-key" data-i18n="api_key">API Key</label>
                                         <div class="input-suffix">
                                             <input type="password" id="manager-api-key" class="input" placeholder="" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|api_key_placeholder">
-                                            <button id="manager-api-key-toggle" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show" title="Show">
+                                            <button id="manager-api-key-toggle" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show;title|token_show" title="Show token">
                                                 <svg class="eye-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                                     <circle cx="12" cy="12" r="3"></circle>
@@ -492,6 +492,9 @@
                                             <textarea id="ddns-ipv6-textarea" rows="5" placeholder="http://v6.66666.host:66/ip&#10;https://6.ipw.cn" spellcheck="false" autocomplete="off"></textarea>
                                         </div>
                                         <p class="help-text" data-i18n="ddns_batch_add_help">One URL per line. Each line is a separate source.</p>
+                                        <div class="btn-row">
+                                            <button id="ddns-reset-sources" type="button" class="btn btn--sm btn--ghost" data-i18n="ddns_restore_default_sources">Restore default sources</button>
+                                        </div>
                                     </div>
 
                                     <div id="ddns-panel-auto" hidden>
@@ -679,7 +682,7 @@
                     <h2 id="manager-entry-dialog-title" data-i18n="published_app_title">Add published application</h2>
                     <p class="subtitle" data-i18n="published_app_help">Create a public hostname route like the Cloudflare Zero Trust tunnel form.</p>
                 </div>
-                <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close" title="Close" data-i18n-attr="aria-label|toast_close;title|toast_close">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -777,7 +780,7 @@
                     <h2 id="ddns-record-dialog-title" data-i18n="ddns_add_record">Add DDNS record</h2>
                     <p class="subtitle" data-i18n="ddns_record_dialog_description">Create DNS records that follow the detected public IP.</p>
                 </div>
-                <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close" title="Close" data-i18n-attr="aria-label|toast_close;title|toast_close">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -818,6 +821,10 @@
                             <option value="3600">3600s</option>
                         </select>
                     </div>
+                    <div class="form-field">
+                        <label for="ddns-record-comment" data-i18n="ddns_record_comment">Comment</label>
+                        <input type="text" id="ddns-record-comment" class="input" value="cfui" placeholder="cfui" spellcheck="false" autocomplete="off">
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-field" id="ddns-record-ipv4-value-group">
@@ -854,7 +861,7 @@
                     <h2 id="confirm-title">Confirm</h2>
                     <p class="subtitle" id="confirm-message"></p>
                 </div>
-                <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close" title="Close" data-i18n-attr="aria-label|toast_close;title|toast_close">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -875,7 +882,7 @@
                 <div>
                     <h2 data-i18n="language_choose">Choose language</h2>
                 </div>
-                <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close" title="Close" data-i18n-attr="aria-label|toast_close;title|toast_close">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
                 </button>
             </div>

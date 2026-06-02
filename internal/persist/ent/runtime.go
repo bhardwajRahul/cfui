@@ -162,12 +162,16 @@ func init() {
 	ddnsrecordDescValue := ddnsrecordFields[6].Descriptor()
 	// ddnsrecord.DefaultValue holds the default value on creation for the value field.
 	ddnsrecord.DefaultValue = ddnsrecordDescValue.Default.(string)
+	// ddnsrecordDescComment is the schema descriptor for comment field.
+	ddnsrecordDescComment := ddnsrecordFields[7].Descriptor()
+	// ddnsrecord.DefaultComment holds the default value on creation for the comment field.
+	ddnsrecord.DefaultComment = ddnsrecordDescComment.Default.(string)
 	// ddnsrecordDescProxied is the schema descriptor for proxied field.
-	ddnsrecordDescProxied := ddnsrecordFields[7].Descriptor()
+	ddnsrecordDescProxied := ddnsrecordFields[8].Descriptor()
 	// ddnsrecord.DefaultProxied holds the default value on creation for the proxied field.
 	ddnsrecord.DefaultProxied = ddnsrecordDescProxied.Default.(bool)
 	// ddnsrecordDescTTL is the schema descriptor for ttl field.
-	ddnsrecordDescTTL := ddnsrecordFields[8].Descriptor()
+	ddnsrecordDescTTL := ddnsrecordFields[9].Descriptor()
 	// ddnsrecord.DefaultTTL holds the default value on creation for the ttl field.
 	ddnsrecord.DefaultTTL = ddnsrecordDescTTL.Default.(int)
 	ddnssettingFields := schema.DDNSSetting{}.Fields()

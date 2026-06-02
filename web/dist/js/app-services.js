@@ -94,6 +94,17 @@
 
     function setManagerStatus(s, text) { const el = $('manager-status'); if (el) { el.setAttribute('data-state', s); el.querySelector('.text').textContent = text; } }
 
+    function bindSecretVisibilityToggle(buttonId, inputId) {
+        const btn = $(buttonId);
+        const input = $(inputId);
+        if (!btn || !input) return;
+        btn.addEventListener('mousedown', (e) => e.preventDefault());
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            setTokenVisible(input, btn, input.type === 'password');
+        });
+    }
+
     async function saveTunnelManagerSettings({ showFeedback = true } = {}) {
         const btn = $('manager-save-settings');
         if (showFeedback) setBusy(btn, true, t('saving'));
@@ -351,14 +362,31 @@
 
     async function fetchDDNSConfig() { try { const data = await apiGet('/ddns/config'); state.ddns.config = data; renderDDNSConfig(data); } catch (err) { setDDNSStatus('error', err.message); } }
 
+    function ddnsSourcesByType(sources, type) {
+        return (sources || [])
+            .filter((s) => s.ip_type === type)
+            .map((s) => s.url)
+            .filter(Boolean);
+    }
+
+    function effectiveDDNSSources(cfg) {
+        if (cfg?.ip_sources?.length) return cfg.ip_sources;
+        return cfg?.default_ip_sources || [];
+    }
+
+    function setDDNSSourceTextareas(sources) {
+        const v4 = ddnsSourcesByType(sources, 'ipv4').join('\n');
+        const v6 = ddnsSourcesByType(sources, 'ipv6').join('\n');
+        if ($('ddns-ipv4-textarea')) $('ddns-ipv4-textarea').value = v4;
+        if ($('ddns-ipv6-textarea')) $('ddns-ipv6-textarea').value = v6;
+    }
+
     function renderDDNSConfig(cfg) {
         const credsMissing = !cfg.has_credentials;
         $('ddns-no-creds').hidden = !credsMissing;
         $('ddns-main').hidden = credsMissing;
         if (!credsMissing) {
-            const v4 = (cfg.ip_sources || []).filter((s) => s.ip_type === 'ipv4').map((s) => s.url).join('\n');
-            const v6 = (cfg.ip_sources || []).filter((s) => s.ip_type === 'ipv6').map((s) => s.url).join('\n');
-            $('ddns-ipv4-textarea').value = v4; $('ddns-ipv6-textarea').value = v6;
+            setDDNSSourceTextareas(effectiveDDNSSources(cfg));
             $('ddns-interval').value = String(cfg.interval_mins || 5); $('ddns-max-retries').value = String(cfg.max_retries || 3);
             $('ddns-only-on-change').checked = cfg.only_on_change !== false;
             renderDDNSRecords(cfg.records || []);
@@ -401,6 +429,13 @@
         finally { setBusy(btn, false); }
     }
 
+    function resetDDNSSourcesToDefault() {
+        const defaults = state.ddns.config?.default_ip_sources || [];
+        if (!defaults.length) return;
+        setDDNSSourceTextareas(defaults);
+        toast.info(t('ddns_sources_restored'));
+    }
+
     async function ddnsSyncNow() {
         const btn = $('ddns-sync-now'); setBusy(btn, true, t('ddns_status_syncing'));
         try { const data = await apiSend('/ddns/sync-now', 'POST'); state.ddns.status = data; renderDDNSStatus(data); setDDNSStatus('ok', t('ddns_status_running')); toast.ok(t('ddns_sync_triggered')); }
@@ -409,6 +444,7 @@
     }
 
     function defaultDDNSRecordValue(type) { return type === 'AAAA' ? '{IPV6}' : '{IPV4}'; }
+    function defaultDDNSRecordComment(value) { const trimmed = (value || '').trim(); return trimmed || 'cfui'; }
     function normalizeDDNSRecordValue(type, value) { const trimmed = (value || '').trim(); return trimmed || defaultDDNSRecordValue(type); }
     function formatDDNSRecordValue(rec) { const n = normalizeDDNSRecordValue(rec.type, rec.value); if (n === '{IPV4}') return `{IPV4} · ${t('ddns_record_value_auto_ipv4')}`; if (n === '{IPV6}') return `{IPV6} · ${t('ddns_record_value_auto_ipv6')}`; return n; }
 
@@ -430,13 +466,38 @@
             const title = document.createElement('div'); title.className = 'title'; title.textContent = rec.name || '—';
             const detail = document.createElement('div'); detail.className = 'detail';
             const ttlText = rec.ttl === 1 ? t('ddns_ttl_auto') : rec.ttl + 's';
-            detail.textContent = `${rec.type} · ${t('ddns_record_value')}: ${formatDDNSRecordValue(rec)} · ${t('ddns_record_ttl')}: ${ttlText}${rec.proxied ? ` · ${t('ddns_record_proxied')}` : ''}`;
+            detail.textContent = `${rec.type} · ${t('ddns_record_value')}: ${formatDDNSRecordValue(rec)} · ${t('ddns_record_comment')}: ${defaultDDNSRecordComment(rec.comment)} · ${t('ddns_record_ttl')}: ${ttlText}${rec.proxied ? ` · ${t('ddns_record_proxied')}` : ''}`;
             body.append(title, detail);
             const actions = document.createElement('div'); actions.className = 'actions';
             const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.className = 'btn btn--sm'; editBtn.textContent = t('edit'); editBtn.addEventListener('click', () => openDDNSRecordDialog(i, rec));
             const delBtn = document.createElement('button'); delBtn.type = 'button'; delBtn.className = 'btn btn--sm btn--ghost'; delBtn.textContent = t('delete'); delBtn.addEventListener('click', () => { const { confirm } = window.cfui; confirm({ title: t('delete_ddns_record_title'), message: t('delete_ddns_record_message', { name: rec.name || '' }), okText: t('delete') }).then((ok) => { if (ok) deleteDDNSRecord(i); }); });
             actions.append(editBtn, delBtn); row.append(body, actions); list.appendChild(row);
         });
+    }
+
+    function ddnsRecordSubdomain(rec) {
+        const hostname = (rec?.name || '').trim();
+        const zoneName = (rec?.zone_name || '').trim();
+        if (!hostname || !zoneName) return hostname;
+        const suffix = `.${zoneName}`;
+        return hostname.endsWith(suffix) ? hostname.slice(0, -suffix.length) : hostname;
+    }
+
+    function ensureDDNSZoneOption(zoneID, zoneName) {
+        const sel = $('ddns-record-zone-select');
+        if (!sel || !zoneID) return;
+        const exists = Array.from(sel.options).some((opt) => opt.value === zoneID);
+        if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = zoneID;
+            opt.textContent = zoneName || zoneID;
+            sel.appendChild(opt);
+        }
+        sel.value = zoneID;
+    }
+
+    function selectDDNSRecordZone(rec) {
+        ensureDDNSZoneOption(rec?.zone_id || '', rec?.zone_name || '');
     }
 
     function openDDNSRecordDialog(index = null, rec = null) {
@@ -446,15 +507,17 @@
         $('ddns-record-dialog-title').textContent = t(editing ? 'ddns_edit_record' : 'ddns_add_record');
         $('ddns-record-submit').querySelector('.text').textContent = t(editing ? 'update_rule' : 'ddns_add_record');
         window.cfui.openDialog(dialog);
-        loadDDNSZones().then(() => { if (rec?.zone_id && $('ddns-record-zone-select')) $('ddns-record-zone-select').value = rec.zone_id; });
+        loadDDNSZones().then(() => { if (rec) selectDDNSRecordZone(rec); });
     }
 
     function fillDDNSRecordForm(index, rec) {
-        $('ddns-record-subdomain').value = rec.subdomain || '';
+        $('ddns-record-subdomain').value = rec.subdomain || ddnsRecordSubdomain(rec);
+        selectDDNSRecordZone(rec);
         $('ddns-record-ipv4').checked = rec.type === 'A'; $('ddns-record-ipv6').checked = rec.type === 'AAAA';
         $('ddns-record-ipv4-value').value = normalizeDDNSRecordValue('A', rec.type === 'A' ? rec.value : '');
         $('ddns-record-ipv6-value').value = normalizeDDNSRecordValue('AAAA', rec.type === 'AAAA' ? rec.value : '');
         $('ddns-record-ttl-select').value = String(rec.ttl || 1);
+        $('ddns-record-comment').value = defaultDDNSRecordComment(rec.comment);
         $('ddns-record-proxied').checked = rec.proxied !== false;
         $('ddns-record-form').dataset.editIndex = String(index);
         $('ddns-record-ipv4').disabled = true; $('ddns-record-ipv6').disabled = true;
@@ -465,6 +528,7 @@
         $('ddns-record-subdomain').value = '';
         $('ddns-record-ipv4').checked = true; $('ddns-record-ipv6').checked = true;
         $('ddns-record-ipv4-value').value = defaultDDNSRecordValue('A'); $('ddns-record-ipv6-value').value = defaultDDNSRecordValue('AAAA');
+        $('ddns-record-comment').value = 'cfui';
         $('ddns-record-ttl-select').value = '1'; $('ddns-record-proxied').checked = true;
         delete $('ddns-record-form').dataset.editIndex;
         $('ddns-record-ipv4').disabled = false; $('ddns-record-ipv6').disabled = false;
@@ -476,7 +540,7 @@
         const editing = $('ddns-record-form').dataset.editIndex;
         const sel = $('ddns-record-zone-select');
         const zoneName = sel?.selectedOptions[0]?.textContent?.replace(/ \(.*\)/, '') || '';
-        const entry = { subdomain: $('ddns-record-subdomain').value.trim(), zone_id: sel?.value, zone_name: zoneName, ipv4: $('ddns-record-ipv4').checked, ipv6: $('ddns-record-ipv6').checked, ipv4_value: normalizeDDNSRecordValue('A', $('ddns-record-ipv4-value').value), ipv6_value: normalizeDDNSRecordValue('AAAA', $('ddns-record-ipv6-value').value), proxied: $('ddns-record-proxied').checked, ttl: parseInt($('ddns-record-ttl-select').value, 10) || 1 };
+        const entry = { subdomain: $('ddns-record-subdomain').value.trim(), zone_id: sel?.value, zone_name: zoneName, ipv4: $('ddns-record-ipv4').checked, ipv6: $('ddns-record-ipv6').checked, ipv4_value: normalizeDDNSRecordValue('A', $('ddns-record-ipv4-value').value), ipv6_value: normalizeDDNSRecordValue('AAAA', $('ddns-record-ipv6-value').value), comment: defaultDDNSRecordComment($('ddns-record-comment').value), proxied: $('ddns-record-proxied').checked, ttl: parseInt($('ddns-record-ttl-select').value, 10) || 1 };
         if (editing) entry.value = entry.ipv4 ? normalizeDDNSRecordValue('A', $('ddns-record-ipv4-value').value) : normalizeDDNSRecordValue('AAAA', $('ddns-record-ipv6-value').value);
         if (!entry.ipv4 && !entry.ipv6) { toast.err(t('ddns_record_ip_required')); return; }
         const btn = $('ddns-record-submit'); setBusy(btn, true);
@@ -523,8 +587,8 @@
         $('manager-entry-domain-select')?.addEventListener('change', updateDomainInputMode);
         $('manager-entry-service-type')?.addEventListener('change', updateServicePlaceholder);
         $('manager-verify-permissions')?.addEventListener('click', verifyTokenPermissions);
-        $('manager-api-token-toggle')?.addEventListener('click', () => setTokenVisible($('manager-api-token'), $('manager-api-token-toggle'), $('manager-api-token').type === 'password'));
-        $('manager-api-key-toggle')?.addEventListener('click', () => setTokenVisible($('manager-api-key'), $('manager-api-key-toggle'), $('manager-api-key').type === 'password'));
+        bindSecretVisibilityToggle('manager-api-token-toggle', 'manager-api-token');
+        bindSecretVisibilityToggle('manager-api-key-toggle', 'manager-api-key');
 
         /* MCP */
         $('mcp-help-toggle')?.addEventListener('click', () => { const panel = $('mcp-help-panel'); const hidden = panel.hidden; panel.hidden = !hidden; $('mcp-help-toggle').setAttribute('aria-expanded', String(hidden)); });
@@ -534,6 +598,7 @@
         /* DDNS */
         $('ddns-sync-now')?.addEventListener('click', ddnsSyncNow);
         $('ddns-save-settings')?.addEventListener('click', ddnsSaveSettings);
+        $('ddns-reset-sources')?.addEventListener('click', resetDDNSSourcesToDefault);
         $('ddns-add-record-btn')?.addEventListener('click', () => openDDNSRecordDialog());
         $('ddns-record-form')?.addEventListener('submit', ddnsSubmitRecord);
         $('ddns-record-ipv4')?.addEventListener('change', syncDDNSRecordValueFields);

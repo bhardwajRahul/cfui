@@ -62,7 +62,8 @@ type StatusResponse struct {
 // ConfigResponse wraps DDNS config for the frontend.
 type ConfigResponse struct {
 	config.DDNSConfig
-	HasCredentials bool `json:"has_credentials"`
+	DefaultIPSources []config.IPSource `json:"default_ip_sources"`
+	HasCredentials   bool              `json:"has_credentials"`
 }
 
 // SaveRequest is the request body for updating DDNS config.
@@ -86,6 +87,7 @@ type AddRecordRequest struct {
 	IPv4Value string `json:"ipv4_value"`
 	IPv6Value string `json:"ipv6_value"`
 	Value     string `json:"value"` // single-record edit value
+	Comment   string `json:"comment"`
 	Proxied   bool   `json:"proxied"`
 	TTL       int    `json:"ttl"`
 }
@@ -438,9 +440,15 @@ func (s *Service) syncDNSRecord(ctx context.Context, client *cloudflare.API, rec
 		return fmt.Errorf("list failed: %w", err)
 	}
 
+	comment := strings.TrimSpace(rec.Comment)
+	if comment == "" {
+		comment = config.DefaultDDNSRecordComment
+	}
+
 	if len(existing) > 0 {
-		// Update only if content differs
-		if existing[0].Content == ip {
+		proxied := existing[0].Proxied != nil && *existing[0].Proxied
+		// Update only if content or managed metadata differs.
+		if existing[0].Content == ip && proxied == rec.Proxied && existing[0].TTL == rec.TTL && existing[0].Comment == comment {
 			return nil // already up to date
 		}
 		_, err = client.UpdateDNSRecord(ctx, rc, cloudflare.UpdateDNSRecordParams{
@@ -450,6 +458,7 @@ func (s *Service) syncDNSRecord(ctx context.Context, client *cloudflare.API, rec
 			Content: ip,
 			Proxied: cloudflare.BoolPtr(rec.Proxied),
 			TTL:     rec.TTL,
+			Comment: cloudflare.StringPtr(comment),
 		})
 		if err != nil {
 			return fmt.Errorf("update failed: %w", err)
@@ -461,6 +470,7 @@ func (s *Service) syncDNSRecord(ctx context.Context, client *cloudflare.API, rec
 			Content: ip,
 			Proxied: cloudflare.BoolPtr(rec.Proxied),
 			TTL:     rec.TTL,
+			Comment: comment,
 		})
 		if err != nil {
 			return fmt.Errorf("create failed: %w", err)
@@ -529,10 +539,15 @@ func (s *Service) Status() *StatusResponse {
 func (s *Service) GetConfig() ConfigResponse {
 	cfg := s.cfgMgr.Get()
 	cfg.DDNS.Records = NormalizeRecords(cfg.DDNS.Records)
+	defaultSources := config.DefaultDDNSConfig().IPSources
+	if len(cfg.DDNS.IPSources) == 0 {
+		cfg.DDNS.IPSources = defaultSources
+	}
 	effective := cfg.EffectiveTunnelManagement()
 	return ConfigResponse{
-		DDNSConfig:     cfg.DDNS,
-		HasCredentials: effective.APIToken != "" || (effective.APIEmail != "" && effective.APIKey != ""),
+		DDNSConfig:       cfg.DDNS,
+		DefaultIPSources: defaultSources,
+		HasCredentials:   effective.APIToken != "" || (effective.APIEmail != "" && effective.APIKey != ""),
 	}
 }
 

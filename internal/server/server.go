@@ -454,7 +454,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		var cfg config.Config
+		cfg := s.cfgMgr.Get()
 		if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 			logger.Sugar.Warnf("Invalid config request from %s: %v", r.RemoteAddr, err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -468,7 +468,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		}
 
 		logger.Sugar.Infof("Configuration updated by %s", r.RemoteAddr)
-		w.WriteHeader(http.StatusOK)
+		writeJSON(w, s.cfgMgr.Get())
 		return
 	}
 
@@ -798,6 +798,7 @@ func (s *Server) handleDDNSRecords(w http.ResponseWriter, r *http.Request) {
 	req.Subdomain = strings.TrimSpace(req.Subdomain)
 	req.ZoneID = strings.TrimSpace(req.ZoneID)
 	req.ZoneName = strings.TrimSpace(req.ZoneName)
+	req.Comment = config.NormalizeDDNSRecordComment(req.Comment)
 	if req.Subdomain == "" || req.ZoneID == "" {
 		writeAPIError(w, http.StatusBadRequest, errors.New("subdomain and zone_id are required"))
 		return
@@ -835,7 +836,7 @@ func (s *Server) handleDDNSRecords(w http.ResponseWriter, r *http.Request) {
 		}
 		cfg.DDNS.Records = append(cfg.DDNS.Records, config.DDNSRecord{
 			Name: hostname, ZoneID: req.ZoneID, ZoneName: req.ZoneName,
-			Type: "A", Value: value, Proxied: req.Proxied, TTL: req.TTL,
+			Type: "A", Value: value, Comment: req.Comment, Proxied: req.Proxied, TTL: req.TTL,
 		})
 	}
 	if req.IPv6 {
@@ -846,7 +847,7 @@ func (s *Server) handleDDNSRecords(w http.ResponseWriter, r *http.Request) {
 		}
 		cfg.DDNS.Records = append(cfg.DDNS.Records, config.DDNSRecord{
 			Name: hostname, ZoneID: req.ZoneID, ZoneName: req.ZoneName,
-			Type: "AAAA", Value: value, Proxied: req.Proxied, TTL: req.TTL,
+			Type: "AAAA", Value: value, Comment: req.Comment, Proxied: req.Proxied, TTL: req.TTL,
 		})
 	}
 	if err := s.cfgMgr.Save(cfg); err != nil {
@@ -905,6 +906,7 @@ func (s *Server) handleDDNSRecord(w http.ResponseWriter, r *http.Request) {
 		rec.ZoneID = zoneID
 		rec.ZoneName = zoneName
 		rec.Value = value
+		rec.Comment = config.NormalizeDDNSRecordComment(req.Comment)
 		rec.Proxied = req.Proxied
 		rec.TTL = req.TTL
 		if rec.TTL <= 0 {

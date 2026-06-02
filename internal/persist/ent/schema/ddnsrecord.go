@@ -21,6 +21,7 @@ func (DDNSRecord) Fields() []ent.Field {
 		field.String("zone_name").Default(""),
 		field.String("type").NotEmpty(),
 		field.String("value").Default(""),
+		field.String("comment").Default("cfui"),
 		field.Bool("proxied").Default(false),
 		field.Int("ttl").Default(1),
 	}

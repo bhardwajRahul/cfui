@@ -130,6 +130,35 @@ func TestSaveSettingsPersistsTokenDerivedIdentityWhenFieldsAreBlank(t *testing.T
 	}
 }
 
+func TestSaveSettingsDisablingPreservesStoredFields(t *testing.T) {
+	cfgMgr := newConfigManager(t)
+	cfg := cfgMgr.Get()
+	cfg.TunnelManagement = config.TunnelManagementConfig{
+		Enabled:   true,
+		AccountID: "account-1",
+		TunnelID:  "tunnel-1",
+		APIToken:  "api-token",
+		APIEmail:  "user@example.com",
+		APIKey:    "api-key",
+	}
+	if err := cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	mgr := NewManager(cfgMgr)
+	if err := mgr.SaveSettings(SettingsRequest{Enabled: false}); err != nil {
+		t.Fatalf("SaveSettings: %v", err)
+	}
+
+	saved := cfgMgr.Get().TunnelManagement
+	if saved.Enabled {
+		t.Fatal("expected tunnel management to be disabled")
+	}
+	if saved.AccountID != "account-1" || saved.TunnelID != "tunnel-1" || saved.APIToken != "api-token" || saved.APIEmail != "user@example.com" || saved.APIKey != "api-key" {
+		t.Fatalf("stored fields were not preserved: %#v", saved)
+	}
+}
+
 func TestParseTunnelTokenAcceptsUnpaddedBase64(t *testing.T) {
 	identity, err := parseTunnelToken(rawTunnelToken("raw-account", "33333333-3333-3333-3333-333333333333"))
 	if err != nil {

@@ -30,6 +30,8 @@ type DDNSRecord struct {
 	Type string `json:"type,omitempty"`
 	// Value holds the value of the "value" field.
 	Value string `json:"value,omitempty"`
+	// Comment holds the value of the "comment" field.
+	Comment string `json:"comment,omitempty"`
 	// Proxied holds the value of the "proxied" field.
 	Proxied bool `json:"proxied,omitempty"`
 	// TTL holds the value of the "ttl" field.
@@ -46,7 +48,7 @@ func (*DDNSRecord) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case ddnsrecord.FieldID, ddnsrecord.FieldSortOrder, ddnsrecord.FieldTTL:
 			values[i] = new(sql.NullInt64)
-		case ddnsrecord.FieldSettingsKey, ddnsrecord.FieldName, ddnsrecord.FieldZoneID, ddnsrecord.FieldZoneName, ddnsrecord.FieldType, ddnsrecord.FieldValue:
+		case ddnsrecord.FieldSettingsKey, ddnsrecord.FieldName, ddnsrecord.FieldZoneID, ddnsrecord.FieldZoneName, ddnsrecord.FieldType, ddnsrecord.FieldValue, ddnsrecord.FieldComment:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -110,6 +112,12 @@ func (_m *DDNSRecord) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field value", values[i])
 			} else if value.Valid {
 				_m.Value = value.String
+			}
+		case ddnsrecord.FieldComment:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field comment", values[i])
+			} else if value.Valid {
+				_m.Comment = value.String
 			}
 		case ddnsrecord.FieldProxied:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -179,6 +187,9 @@ func (_m *DDNSRecord) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("value=")
 	builder.WriteString(_m.Value)
+	builder.WriteString(", ")
+	builder.WriteString("comment=")
+	builder.WriteString(_m.Comment)
 	builder.WriteString(", ")
 	builder.WriteString("proxied=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Proxied))

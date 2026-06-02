@@ -135,8 +135,19 @@ func (m *Manager) SaveSettings(req SettingsRequest) error {
 	cfg := m.cfgMgr.Get()
 	current := cfg.TunnelManagement
 	current.Enabled = req.Enabled
-	current.AccountID = strings.TrimSpace(req.AccountID)
-	current.TunnelID = strings.TrimSpace(req.TunnelID)
+
+	accountID := strings.TrimSpace(req.AccountID)
+	tunnelID := strings.TrimSpace(req.TunnelID)
+	apiEmail := strings.TrimSpace(req.APIEmail)
+	apiToken := strings.TrimSpace(req.APIToken)
+	apiKey := strings.TrimSpace(req.APIKey)
+
+	if req.Enabled || accountID != "" {
+		current.AccountID = accountID
+	}
+	if req.Enabled || tunnelID != "" {
+		current.TunnelID = tunnelID
+	}
 	if current.AccountID == "" || current.TunnelID == "" {
 		if identity, err := parseTunnelToken(cfg.Token); err == nil {
 			if current.AccountID == "" {
@@ -147,12 +158,14 @@ func (m *Manager) SaveSettings(req SettingsRequest) error {
 			}
 		}
 	}
-	current.APIEmail = strings.TrimSpace(req.APIEmail)
-	if strings.TrimSpace(req.APIToken) != "" {
-		current.APIToken = strings.TrimSpace(req.APIToken)
+	if req.Enabled || apiEmail != "" {
+		current.APIEmail = apiEmail
 	}
-	if strings.TrimSpace(req.APIKey) != "" {
-		current.APIKey = strings.TrimSpace(req.APIKey)
+	if apiToken != "" {
+		current.APIToken = apiToken
+	}
+	if apiKey != "" {
+		current.APIKey = apiKey
 	}
 	cfg.TunnelManagement = current
 	return m.cfgMgr.Save(cfg)

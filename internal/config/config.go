@@ -6,8 +6,19 @@ import (
 	"cfui/internal/persist/ent"
 	"context"
 	"os"
+	"strings"
 	"sync"
 )
+
+const DefaultDDNSRecordComment = "cfui"
+
+func NormalizeDDNSRecordComment(comment string) string {
+	comment = strings.TrimSpace(comment)
+	if comment == "" {
+		return DefaultDDNSRecordComment
+	}
+	return comment
+}
 
 type Config struct {
 	Token        string `json:"token"`
@@ -69,6 +80,7 @@ type DDNSRecord struct {
 	ZoneName string `json:"zone_name"` // zone name for display
 	Type     string `json:"type"`      // "A" or "AAAA"
 	Value    string `json:"value"`     // "{IPV4}"/"{IPV6}" placeholder or a fixed IP
+	Comment  string `json:"comment"`   // Cloudflare DNS record comment
 	Proxied  bool   `json:"proxied"`
 	TTL      int    `json:"ttl"` // 1 = Auto
 }
@@ -236,6 +248,13 @@ func (m *Manager) Load() error {
 func (m *Manager) Save(cfg Config) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if cfg.DDNS.IPSources == nil {
+		cfg.DDNS.IPSources = m.cfg.DDNS.IPSources
+	}
+	if cfg.DDNS.Records == nil {
+		cfg.DDNS.Records = m.cfg.DDNS.Records
+	}
 
 	if err := m.saveLocked(context.Background(), cfg); err != nil {
 		if logger.Sugar != nil {

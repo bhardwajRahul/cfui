@@ -52,6 +52,32 @@ func TestNewManagerAutoCreatesDatabase(t *testing.T) {
 	}
 }
 
+func TestDDNSRecordCommentPersistsInDatabase(t *testing.T) {
+	dir := t.TempDir()
+	mgr, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	cfg := mgr.Get()
+	cfg.DDNS.Records = []DDNSRecord{{
+		Name: "home.example.com", ZoneID: "zone-1", ZoneName: "example.com",
+		Type: "A", Value: "{IPV4}", Comment: "custom comment", TTL: 1,
+	}}
+	if err := mgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	reloaded, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager reload: %v", err)
+	}
+	records := reloaded.Get().DDNS.Records
+	if len(records) != 1 || records[0].Comment != "custom comment" {
+		t.Fatalf("expected persisted DDNS comment, got %#v", records)
+	}
+}
+
 func TestNewManagerMigratesLegacyConfigJSON(t *testing.T) {
 	dir := t.TempDir()
 	legacyPath := filepath.Join(dir, "config.json")
