@@ -13,6 +13,7 @@ import (
 	"cfui/internal/persist/ent/ddnsipsource"
 	"cfui/internal/persist/ent/ddnsrecord"
 	"cfui/internal/persist/ent/ddnssetting"
+	"cfui/internal/persist/ent/r2webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
 	"cfui/internal/persist/ent/tunneltoken"
 )
@@ -77,6 +78,9 @@ func (m *Manager) saveLocked(ctx context.Context, cfg Config) error {
 		return err
 	}
 	if err = saveDDNSSetting(ctx, tx, cfg.DDNS); err != nil {
+		return err
+	}
+	if err = saveR2WebDAVSetting(ctx, tx, cfg.R2WebDAV); err != nil {
 		return err
 	}
 	if err = replaceDDNSIPSources(ctx, tx, cfg.DDNS.IPSources); err != nil {
@@ -148,6 +152,19 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 		cfg.DDNS.IntervalMins = ddnsRow.IntervalMins
 		cfg.DDNS.OnlyOnChange = ddnsRow.OnlyOnChange
 		cfg.DDNS.MaxRetries = ddnsRow.MaxRetries
+	} else if !ent.IsNotFound(err) {
+		return Config{}, false, err
+	}
+
+	if r2Row, err := m.client.R2WebDAVSetting.Query().Where(r2webdavsetting.Key(defaultConfigKey)).Only(ctx); err == nil {
+		cfg.R2WebDAV = R2WebDAVConfig{
+			Enabled:            r2Row.Enabled,
+			AccountID:          r2Row.AccountID,
+			BucketName:         r2Row.BucketName,
+			Jurisdiction:       normalizeR2Jurisdiction(r2Row.Jurisdiction),
+			WebDAVUsername:     r2Row.WebdavUsername,
+			WebDAVPasswordHash: r2Row.WebdavPasswordHash,
+		}
 	} else if !ent.IsNotFound(err) {
 		return Config{}, false, err
 	}
@@ -315,6 +332,45 @@ func saveDDNSSetting(ctx context.Context, tx *ent.Tx, cfg DDNSConfig) error {
 		SetMaxRetries(cfg.MaxRetries).
 		Save(ctx)
 	return err
+}
+
+func saveR2WebDAVSetting(ctx context.Context, tx *ent.Tx, cfg R2WebDAVConfig) error {
+	cfg.Jurisdiction = normalizeR2Jurisdiction(cfg.Jurisdiction)
+	row, err := tx.R2WebDAVSetting.Query().Where(r2webdavsetting.Key(defaultConfigKey)).Only(ctx)
+	if ent.IsNotFound(err) {
+		_, err = tx.R2WebDAVSetting.Create().
+			SetKey(defaultConfigKey).
+			SetEnabled(cfg.Enabled).
+			SetAccountID(cfg.AccountID).
+			SetBucketName(cfg.BucketName).
+			SetJurisdiction(cfg.Jurisdiction).
+			SetWebdavUsername(cfg.WebDAVUsername).
+			SetWebdavPasswordHash(cfg.WebDAVPasswordHash).
+			Save(ctx)
+		return err
+	}
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.R2WebDAVSetting.UpdateOneID(row.ID).
+		SetEnabled(cfg.Enabled).
+		SetAccountID(cfg.AccountID).
+		SetBucketName(cfg.BucketName).
+		SetJurisdiction(cfg.Jurisdiction).
+		SetWebdavUsername(cfg.WebDAVUsername).
+		SetWebdavPasswordHash(cfg.WebDAVPasswordHash).
+		Save(ctx)
+	return err
+}
+
+func normalizeR2Jurisdiction(v string) string {
+	switch v {
+	case "eu", "fedramp":
+		return v
+	default:
+		return "default"
+	}
 }
 
 func replaceDDNSIPSources(ctx context.Context, tx *ent.Tx, sources []IPSource) error {

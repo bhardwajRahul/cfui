@@ -5,6 +5,7 @@ import (
 	"cfui/internal/ddns"
 	"cfui/internal/logger"
 	"cfui/internal/mcpbridge"
+	"cfui/internal/r2dav"
 	"cfui/internal/tunnelmgr"
 	"encoding/json"
 	"net/http"
@@ -83,5 +84,6 @@ func newServerTestServer(t *testing.T) *Server {
 		tunnelMgr: tunnelMgr,
 		mcpSvc:    mcpbridge.NewService(cfgMgr, nil, tunnelMgr, mcpbridge.NewTokenStore(t.TempDir()), ddnsSvc),
 		ddnsSvc:   ddnsSvc,
+		r2Svc:     r2dav.NewService(cfgMgr),
 	}
 }

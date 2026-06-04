@@ -1007,3 +1007,228 @@ other = "New logs"
 
 [action_shortcut_hint]
 other = "Ctrl/⌘ + Enter"
+
+[r2_tab]
+other = "R2 WebDAV"
+
+[r2_title]
+other = "R2 WebDAV"
+
+[r2_subtitle]
+other = "Expose one Cloudflare R2 bucket through WebDAV and manage files from this page."
+
+[r2_status_setup]
+other = "Setup required"
+
+[r2_status_enabled]
+other = "Enabled"
+
+[r2_status_ready_to_enable]
+other = "Ready to enable"
+
+[r2_connection]
+other = "Cloudflare connection"
+
+[r2_connection_help]
+other = "R2 WebDAV requires API Token mode with R2 read/write permission. Global API Key mode is not supported for R2 object access."
+
+[r2_account_help]
+other = "Leave empty to reuse the Remote Tunnel Manager Account ID."
+
+[r2_jurisdiction]
+other = "Jurisdiction"
+
+[r2_jurisdiction_default]
+other = "Default"
+
+[r2_jurisdiction_eu]
+other = "EU"
+
+[r2_jurisdiction_fedramp]
+other = "FedRAMP"
+
+[r2_jurisdiction_help]
+other = "Match the jurisdiction used by your R2 bucket endpoint."
+
+[r2_bucket]
+other = "Bucket"
+
+[r2_bucket_help]
+other = "Select an existing bucket or create a new one for WebDAV access."
+
+[r2_bucket_select]
+other = "Selected bucket"
+
+[r2_bucket_select_help]
+other = "The WebDAV endpoint exposes this bucket only."
+
+[r2_bucket_choose]
+other = "Choose a bucket"
+
+[r2_create_bucket]
+other = "Create bucket"
+
+[r2_create_bucket_help]
+other = "Use lowercase letters, numbers, dots, and hyphens."
+
+[r2_webdav_credentials]
+other = "WebDAV credentials"
+
+[r2_webdav_credentials_help]
+other = "These credentials are only for WebDAV clients connecting to cfui."
+
+[r2_webdav_username]
+other = "WebDAV username"
+
+[r2_webdav_password]
+other = "WebDAV password"
+
+[r2_password_placeholder]
+other = "Leave blank to keep current password"
+
+[r2_password_set]
+other = "WebDAV password saved."
+
+[r2_password_not_set]
+other = "No WebDAV password saved."
+
+[r2_webdav_endpoint]
+other = "WebDAV endpoint"
+
+[r2_endpoint_help]
+other = "Use this path with the WebDAV username and password after the feature is enabled."
+
+[r2_save_settings]
+other = "Save R2 Settings"
+
+[r2_files]
+other = "Files"
+
+[r2_files_help]
+other = "Folders are R2 prefixes. Rename copies the object then deletes the original."
+
+[r2_files_disabled_title]
+other = "Enable R2 WebDAV first"
+
+[r2_files_disabled_help]
+other = "Complete the settings above, then enable the R2 WebDAV feature from the Features tab."
+
+[r2_new_folder]
+other = "New Folder"
+
+[feature_r2_name]
+other = "R2 WebDAV"
+
+[feature_r2_desc]
+other = "Expose a selected R2 bucket through WebDAV. Requires API Token mode and R2 read/write permission."
+
+[r2_ready]
+other = "R2 WebDAV is ready."
+
+[r2_api_token_required]
+other = "Use Cloudflare API Token mode before enabling R2 WebDAV."
+
+[r2_account_required]
+other = "Set an Account ID or configure it in Remote Tunnel Manager."
+
+[r2_permission_denied]
+other = "The API Token needs R2 read/write permission."
+
+[r2_bucket_required]
+other = "Select or create an R2 bucket."
+
+[r2_webdav_credentials_required]
+other = "Set a WebDAV username and password."
+
+[r2_bucket_not_found]
+other = "The selected bucket was not found or is not accessible."
+
+[r2_configure_first]
+other = "Configure R2 settings before enabling this feature."
+
+[r2_not_ready]
+other = "R2 WebDAV is not ready to enable."
+
+[r2_buckets_loaded]
+other = "R2 buckets loaded"
+
+[r2_bucket_load_failed]
+other = "Failed to load R2 buckets"
+
+[r2_bucket_name_required]
+other = "Bucket name is required."
+
+[r2_bucket_created]
+other = "R2 bucket created"
+
+[r2_bucket_create_failed]
+other = "Failed to create R2 bucket"
+
+[r2_settings_saved]
+other = "R2 settings saved"
+
+[r2_settings_save_failed]
+other = "Failed to save R2 settings"
+
+[r2_files_load_failed]
+other = "Failed to load R2 files"
+
+[r2_files_empty]
+other = "This bucket path is empty."
+
+[r2_folder]
+other = "Folder"
+
+[r2_upload_done]
+other = "Upload complete"
+
+[r2_upload_failed]
+other = "Upload failed"
+
+[r2_new_folder_prompt]
+other = "Folder name"
+
+[r2_folder_created]
+other = "Folder created"
+
+[r2_folder_create_failed]
+other = "Failed to create folder"
+
+[r2_rename_prompt]
+other = "New name"
+
+[r2_renamed]
+other = "Renamed"
+
+[r2_rename_failed]
+other = "Rename failed"
+
+[r2_delete_title]
+other = "Delete R2 object?"
+
+[r2_delete_message]
+other = "Delete {name}? This removes it from the R2 bucket."
+
+[r2_deleted]
+other = "Deleted"
+
+[r2_delete_failed]
+other = "Delete failed"
+
+[refresh]
+other = "Refresh"
+
+[create]
+other = "Create"
+
+[upload]
+other = "Upload"
+
+[open]
+other = "Open"
+
+[rename]
+other = "Rename"
+
+[download]
+other = "Download"

@@ -1007,3 +1007,228 @@ other = "新日志"
 
 [action_shortcut_hint]
 other = "Ctrl/⌘ + Enter"
+
+[r2_tab]
+other = "R2 WebDAV"
+
+[r2_title]
+other = "R2 WebDAV"
+
+[r2_subtitle]
+other = "将一个 Cloudflare R2 bucket 通过 WebDAV 暴露，并在此页面管理文件。"
+
+[r2_status_setup]
+other = "需要配置"
+
+[r2_status_enabled]
+other = "已启用"
+
+[r2_status_ready_to_enable]
+other = "可启用"
+
+[r2_connection]
+other = "Cloudflare 连接"
+
+[r2_connection_help]
+other = "R2 WebDAV 需要 API Token 模式，并且 token 具备 R2 读写权限。R2 对象访问不支持 Global API Key 模式。"
+
+[r2_account_help]
+other = "留空则复用远程 Tunnel 管理器中的 Account ID。"
+
+[r2_jurisdiction]
+other = "区域管辖"
+
+[r2_jurisdiction_default]
+other = "默认"
+
+[r2_jurisdiction_eu]
+other = "EU"
+
+[r2_jurisdiction_fedramp]
+other = "FedRAMP"
+
+[r2_jurisdiction_help]
+other = "需要和你的 R2 bucket endpoint 所在区域一致。"
+
+[r2_bucket]
+other = "Bucket"
+
+[r2_bucket_help]
+other = "选择已有 bucket，或创建一个用于 WebDAV 访问的新 bucket。"
+
+[r2_bucket_select]
+other = "已选择 bucket"
+
+[r2_bucket_select_help]
+other = "WebDAV endpoint 只会暴露这个 bucket。"
+
+[r2_bucket_choose]
+other = "选择 bucket"
+
+[r2_create_bucket]
+other = "创建 bucket"
+
+[r2_create_bucket_help]
+other = "使用小写字母、数字、点和连字符。"
+
+[r2_webdav_credentials]
+other = "WebDAV 账户"
+
+[r2_webdav_credentials_help]
+other = "这组账户只用于 WebDAV 客户端连接 cfui。"
+
+[r2_webdav_username]
+other = "WebDAV 用户名"
+
+[r2_webdav_password]
+other = "WebDAV 密码"
+
+[r2_password_placeholder]
+other = "留空表示保持当前密码"
+
+[r2_password_set]
+other = "已保存 WebDAV 密码。"
+
+[r2_password_not_set]
+other = "尚未保存 WebDAV 密码。"
+
+[r2_webdav_endpoint]
+other = "WebDAV endpoint"
+
+[r2_endpoint_help]
+other = "功能启用后，用这个路径配合 WebDAV 用户名和密码访问。"
+
+[r2_save_settings]
+other = "保存 R2 设置"
+
+[r2_files]
+other = "文件"
+
+[r2_files_help]
+other = "文件夹是 R2 前缀模拟。重命名会先复制对象再删除原对象。"
+
+[r2_files_disabled_title]
+other = "先启用 R2 WebDAV"
+
+[r2_files_disabled_help]
+other = "完成上方设置后，到 Features 标签页启用 R2 WebDAV 功能。"
+
+[r2_new_folder]
+other = "新建文件夹"
+
+[feature_r2_name]
+other = "R2 WebDAV"
+
+[feature_r2_desc]
+other = "将选定的 R2 bucket 通过 WebDAV 暴露。需要 API Token 模式和 R2 读写权限。"
+
+[r2_ready]
+other = "R2 WebDAV 已准备就绪。"
+
+[r2_api_token_required]
+other = "启用 R2 WebDAV 前请使用 Cloudflare API Token 模式。"
+
+[r2_account_required]
+other = "请填写 Account ID，或先在远程 Tunnel 管理器中配置。"
+
+[r2_permission_denied]
+other = "API Token 需要 R2 读写权限。"
+
+[r2_bucket_required]
+other = "请选择或创建一个 R2 bucket。"
+
+[r2_webdav_credentials_required]
+other = "请设置 WebDAV 用户名和密码。"
+
+[r2_bucket_not_found]
+other = "选中的 bucket 不存在或不可访问。"
+
+[r2_configure_first]
+other = "请先配置 R2 设置，再启用此功能。"
+
+[r2_not_ready]
+other = "R2 WebDAV 还不能启用。"
+
+[r2_buckets_loaded]
+other = "R2 bucket 已加载"
+
+[r2_bucket_load_failed]
+other = "加载 R2 bucket 失败"
+
+[r2_bucket_name_required]
+other = "Bucket 名称不能为空。"
+
+[r2_bucket_created]
+other = "R2 bucket 已创建"
+
+[r2_bucket_create_failed]
+other = "创建 R2 bucket 失败"
+
+[r2_settings_saved]
+other = "R2 设置已保存"
+
+[r2_settings_save_failed]
+other = "保存 R2 设置失败"
+
+[r2_files_load_failed]
+other = "加载 R2 文件失败"
+
+[r2_files_empty]
+other = "这个 bucket 路径为空。"
+
+[r2_folder]
+other = "文件夹"
+
+[r2_upload_done]
+other = "上传完成"
+
+[r2_upload_failed]
+other = "上传失败"
+
+[r2_new_folder_prompt]
+other = "文件夹名称"
+
+[r2_folder_created]
+other = "文件夹已创建"
+
+[r2_folder_create_failed]
+other = "创建文件夹失败"
+
+[r2_rename_prompt]
+other = "新名称"
+
+[r2_renamed]
+other = "已重命名"
+
+[r2_rename_failed]
+other = "重命名失败"
+
+[r2_delete_title]
+other = "删除 R2 对象？"
+
+[r2_delete_message]
+other = "删除 {name}？这会从 R2 bucket 中移除它。"
+
+[r2_deleted]
+other = "已删除"
+
+[r2_delete_failed]
+other = "删除失败"
+
+[refresh]
+other = "刷新"
+
+[create]
+other = "创建"
+
+[upload]
+other = "上传"
+
+[open]
+other = "打开"
+
+[rename]
+other = "重命名"
+
+[download]
+other = "下载"

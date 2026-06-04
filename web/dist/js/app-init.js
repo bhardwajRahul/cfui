@@ -7,8 +7,8 @@
             fetchVersion, fetchConfig, fetchFeatures, fetchStatus, restoreLastTab,
             fetchTunnelManagerSettings, maybeLoadTunnelManagerZones,
             canLoadTunnelManagerZones, loadTunnelManagerConfig,
-            fetchMCPStatus, refreshDDNS,
-            wireUI, wireTunnel, wireLogs, wireServices,
+            fetchMCPStatus, refreshDDNS, fetchR2Settings,
+            wireUI, wireTunnel, wireLogs, wireServices, wireR2,
             disconnectLogStream, toast } = window.cfui;
 
     async function init() {
@@ -17,6 +17,7 @@
         wireTunnel();
         wireLogs();
         wireServices();
+        wireR2();
         await loadLanguage(state.currentLang);
         updateMetricsVisibility();
         addLog({ key: 'system_ready' }, 'system');
@@ -32,6 +33,7 @@
         }
         if (state.features.mcp) await fetchMCPStatus();
         if (state.features.ddns) await refreshDDNS();
+        await fetchR2Settings();
         await fetchStatus();
 
         setInterval(fetchStatus, 2000);

@@ -1007,3 +1007,228 @@ other = "新しいログ"
 
 [action_shortcut_hint]
 other = "Ctrl/⌘ + Enter"
+
+[r2_tab]
+other = "R2 WebDAV"
+
+[r2_title]
+other = "R2 WebDAV"
+
+[r2_subtitle]
+other = "Cloudflare R2 bucket を WebDAV として公開し、この画面でファイルを管理します。"
+
+[r2_status_setup]
+other = "設定が必要"
+
+[r2_status_enabled]
+other = "有効"
+
+[r2_status_ready_to_enable]
+other = "有効化できます"
+
+[r2_connection]
+other = "Cloudflare 接続"
+
+[r2_connection_help]
+other = "R2 WebDAV には R2 読み書き権限を持つ API Token モードが必要です。Global API Key モードは R2 オブジェクトアクセスに対応していません。"
+
+[r2_account_help]
+other = "空のままにすると Remote Tunnel Manager の Account ID を再利用します。"
+
+[r2_jurisdiction]
+other = "管轄リージョン"
+
+[r2_jurisdiction_default]
+other = "デフォルト"
+
+[r2_jurisdiction_eu]
+other = "EU"
+
+[r2_jurisdiction_fedramp]
+other = "FedRAMP"
+
+[r2_jurisdiction_help]
+other = "R2 bucket endpoint の管轄リージョンに合わせてください。"
+
+[r2_bucket]
+other = "Bucket"
+
+[r2_bucket_help]
+other = "既存 bucket を選択するか、WebDAV 用に新規作成します。"
+
+[r2_bucket_select]
+other = "選択中の bucket"
+
+[r2_bucket_select_help]
+other = "WebDAV endpoint はこの bucket だけを公開します。"
+
+[r2_bucket_choose]
+other = "Bucket を選択"
+
+[r2_create_bucket]
+other = "Bucket を作成"
+
+[r2_create_bucket_help]
+other = "小文字、数字、ドット、ハイフンを使用してください。"
+
+[r2_webdav_credentials]
+other = "WebDAV 認証情報"
+
+[r2_webdav_credentials_help]
+other = "この認証情報は cfui に接続する WebDAV クライアント専用です。"
+
+[r2_webdav_username]
+other = "WebDAV ユーザー名"
+
+[r2_webdav_password]
+other = "WebDAV パスワード"
+
+[r2_password_placeholder]
+other = "空欄なら現在のパスワードを保持"
+
+[r2_password_set]
+other = "WebDAV パスワードは保存済みです。"
+
+[r2_password_not_set]
+other = "WebDAV パスワードは未設定です。"
+
+[r2_webdav_endpoint]
+other = "WebDAV endpoint"
+
+[r2_endpoint_help]
+other = "機能を有効化した後、このパスを WebDAV ユーザー名とパスワードで使用します。"
+
+[r2_save_settings]
+other = "R2 設定を保存"
+
+[r2_files]
+other = "ファイル"
+
+[r2_files_help]
+other = "フォルダーは R2 prefix です。リネームはコピー後に元オブジェクトを削除します。"
+
+[r2_files_disabled_title]
+other = "先に R2 WebDAV を有効化"
+
+[r2_files_disabled_help]
+other = "上の設定を完了してから、Features タブで R2 WebDAV を有効化してください。"
+
+[r2_new_folder]
+other = "新規フォルダー"
+
+[feature_r2_name]
+other = "R2 WebDAV"
+
+[feature_r2_desc]
+other = "選択した R2 bucket を WebDAV として公開します。API Token モードと R2 読み書き権限が必要です。"
+
+[r2_ready]
+other = "R2 WebDAV は準備完了です。"
+
+[r2_api_token_required]
+other = "R2 WebDAV を有効化する前に Cloudflare API Token モードを使用してください。"
+
+[r2_account_required]
+other = "Account ID を入力するか、Remote Tunnel Manager で設定してください。"
+
+[r2_permission_denied]
+other = "API Token には R2 読み書き権限が必要です。"
+
+[r2_bucket_required]
+other = "R2 bucket を選択または作成してください。"
+
+[r2_webdav_credentials_required]
+other = "WebDAV ユーザー名とパスワードを設定してください。"
+
+[r2_bucket_not_found]
+other = "選択した bucket が見つからないかアクセスできません。"
+
+[r2_configure_first]
+other = "この機能を有効化する前に R2 設定を完了してください。"
+
+[r2_not_ready]
+other = "R2 WebDAV はまだ有効化できません。"
+
+[r2_buckets_loaded]
+other = "R2 bucket を読み込みました"
+
+[r2_bucket_load_failed]
+other = "R2 bucket の読み込みに失敗しました"
+
+[r2_bucket_name_required]
+other = "Bucket 名は必須です。"
+
+[r2_bucket_created]
+other = "R2 bucket を作成しました"
+
+[r2_bucket_create_failed]
+other = "R2 bucket の作成に失敗しました"
+
+[r2_settings_saved]
+other = "R2 設定を保存しました"
+
+[r2_settings_save_failed]
+other = "R2 設定の保存に失敗しました"
+
+[r2_files_load_failed]
+other = "R2 ファイルの読み込みに失敗しました"
+
+[r2_files_empty]
+other = "この bucket path は空です。"
+
+[r2_folder]
+other = "フォルダー"
+
+[r2_upload_done]
+other = "アップロード完了"
+
+[r2_upload_failed]
+other = "アップロード失敗"
+
+[r2_new_folder_prompt]
+other = "フォルダー名"
+
+[r2_folder_created]
+other = "フォルダーを作成しました"
+
+[r2_folder_create_failed]
+other = "フォルダー作成に失敗しました"
+
+[r2_rename_prompt]
+other = "新しい名前"
+
+[r2_renamed]
+other = "リネームしました"
+
+[r2_rename_failed]
+other = "リネーム失敗"
+
+[r2_delete_title]
+other = "R2 オブジェクトを削除しますか？"
+
+[r2_delete_message]
+other = "{name} を削除しますか？R2 bucket から削除されます。"
+
+[r2_deleted]
+other = "削除しました"
+
+[r2_delete_failed]
+other = "削除失敗"
+
+[refresh]
+other = "更新"
+
+[create]
+other = "作成"
+
+[upload]
+other = "アップロード"
+
+[open]
+other = "開く"
+
+[rename]
+other = "リネーム"
+
+[download]
+other = "ダウンロード"

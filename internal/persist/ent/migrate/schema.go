@@ -120,6 +120,25 @@ var (
 		Columns:    McpTokensColumns,
 		PrimaryKey: []*schema.Column{McpTokensColumns[0]},
 	}
+	// R2webDavSettingsColumns holds the columns for the "r2web_dav_settings" table.
+	R2webDavSettingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString, Unique: true},
+		{Name: "enabled", Type: field.TypeBool, Default: false},
+		{Name: "account_id", Type: field.TypeString, Default: ""},
+		{Name: "bucket_name", Type: field.TypeString, Default: ""},
+		{Name: "jurisdiction", Type: field.TypeString, Default: "default"},
+		{Name: "webdav_username", Type: field.TypeString, Default: ""},
+		{Name: "webdav_password_hash", Type: field.TypeString, Default: ""},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// R2webDavSettingsTable holds the schema information for the "r2web_dav_settings" table.
+	R2webDavSettingsTable = &schema.Table{
+		Name:       "r2web_dav_settings",
+		Columns:    R2webDavSettingsColumns,
+		PrimaryKey: []*schema.Column{R2webDavSettingsColumns[0]},
+	}
 	// TunnelManagementsColumns holds the columns for the "tunnel_managements" table.
 	TunnelManagementsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -160,6 +179,7 @@ var (
 		DdnsRecordsTable,
 		DdnsSettingsTable,
 		McpTokensTable,
+		R2webDavSettingsTable,
 		TunnelManagementsTable,
 		TunnelTokensTable,
 	}

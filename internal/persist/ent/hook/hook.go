@@ -68,6 +68,18 @@ func (f MCPTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MCPTokenMutation", m)
 }
 
+// The R2WebDAVSettingFunc type is an adapter to allow the use of ordinary
+// function as R2WebDAVSetting mutator.
+type R2WebDAVSettingFunc func(context.Context, *ent.R2WebDAVSettingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f R2WebDAVSettingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.R2WebDAVSettingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.R2WebDAVSettingMutation", m)
+}
+
 // The TunnelManagementFunc type is an adapter to allow the use of ordinary
 // function as TunnelManagement mutator.
 type TunnelManagementFunc func(context.Context, *ent.TunnelManagementMutation) (ent.Value, error)

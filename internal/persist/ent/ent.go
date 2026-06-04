@@ -8,6 +8,7 @@ import (
 	"cfui/internal/persist/ent/ddnsrecord"
 	"cfui/internal/persist/ent/ddnssetting"
 	"cfui/internal/persist/ent/mcptoken"
+	"cfui/internal/persist/ent/r2webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
 	"cfui/internal/persist/ent/tunneltoken"
 	"context"
@@ -84,6 +85,7 @@ func checkColumn(t, c string) error {
 			ddnsrecord.Table:       ddnsrecord.ValidColumn,
 			ddnssetting.Table:      ddnssetting.ValidColumn,
 			mcptoken.Table:         mcptoken.ValidColumn,
+			r2webdavsetting.Table:  r2webdavsetting.ValidColumn,
 			tunnelmanagement.Table: tunnelmanagement.ValidColumn,
 			tunneltoken.Table:      tunneltoken.ValidColumn,
 		})

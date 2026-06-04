@@ -8,6 +8,7 @@ import (
 	"cfui/internal/persist/ent/ddnsrecord"
 	"cfui/internal/persist/ent/ddnssetting"
 	"cfui/internal/persist/ent/mcptoken"
+	"cfui/internal/persist/ent/r2webdavsetting"
 	"cfui/internal/persist/ent/schema"
 	"cfui/internal/persist/ent/tunnelmanagement"
 	"cfui/internal/persist/ent/tunneltoken"
@@ -228,6 +229,46 @@ func init() {
 	mcptokenDescCreatedAt := mcptokenFields[4].Descriptor()
 	// mcptoken.DefaultCreatedAt holds the default value on creation for the created_at field.
 	mcptoken.DefaultCreatedAt = mcptokenDescCreatedAt.Default.(func() time.Time)
+	r2webdavsettingFields := schema.R2WebDAVSetting{}.Fields()
+	_ = r2webdavsettingFields
+	// r2webdavsettingDescKey is the schema descriptor for key field.
+	r2webdavsettingDescKey := r2webdavsettingFields[0].Descriptor()
+	// r2webdavsetting.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	r2webdavsetting.KeyValidator = r2webdavsettingDescKey.Validators[0].(func(string) error)
+	// r2webdavsettingDescEnabled is the schema descriptor for enabled field.
+	r2webdavsettingDescEnabled := r2webdavsettingFields[1].Descriptor()
+	// r2webdavsetting.DefaultEnabled holds the default value on creation for the enabled field.
+	r2webdavsetting.DefaultEnabled = r2webdavsettingDescEnabled.Default.(bool)
+	// r2webdavsettingDescAccountID is the schema descriptor for account_id field.
+	r2webdavsettingDescAccountID := r2webdavsettingFields[2].Descriptor()
+	// r2webdavsetting.DefaultAccountID holds the default value on creation for the account_id field.
+	r2webdavsetting.DefaultAccountID = r2webdavsettingDescAccountID.Default.(string)
+	// r2webdavsettingDescBucketName is the schema descriptor for bucket_name field.
+	r2webdavsettingDescBucketName := r2webdavsettingFields[3].Descriptor()
+	// r2webdavsetting.DefaultBucketName holds the default value on creation for the bucket_name field.
+	r2webdavsetting.DefaultBucketName = r2webdavsettingDescBucketName.Default.(string)
+	// r2webdavsettingDescJurisdiction is the schema descriptor for jurisdiction field.
+	r2webdavsettingDescJurisdiction := r2webdavsettingFields[4].Descriptor()
+	// r2webdavsetting.DefaultJurisdiction holds the default value on creation for the jurisdiction field.
+	r2webdavsetting.DefaultJurisdiction = r2webdavsettingDescJurisdiction.Default.(string)
+	// r2webdavsettingDescWebdavUsername is the schema descriptor for webdav_username field.
+	r2webdavsettingDescWebdavUsername := r2webdavsettingFields[5].Descriptor()
+	// r2webdavsetting.DefaultWebdavUsername holds the default value on creation for the webdav_username field.
+	r2webdavsetting.DefaultWebdavUsername = r2webdavsettingDescWebdavUsername.Default.(string)
+	// r2webdavsettingDescWebdavPasswordHash is the schema descriptor for webdav_password_hash field.
+	r2webdavsettingDescWebdavPasswordHash := r2webdavsettingFields[6].Descriptor()
+	// r2webdavsetting.DefaultWebdavPasswordHash holds the default value on creation for the webdav_password_hash field.
+	r2webdavsetting.DefaultWebdavPasswordHash = r2webdavsettingDescWebdavPasswordHash.Default.(string)
+	// r2webdavsettingDescCreatedAt is the schema descriptor for created_at field.
+	r2webdavsettingDescCreatedAt := r2webdavsettingFields[7].Descriptor()
+	// r2webdavsetting.DefaultCreatedAt holds the default value on creation for the created_at field.
+	r2webdavsetting.DefaultCreatedAt = r2webdavsettingDescCreatedAt.Default.(func() time.Time)
+	// r2webdavsettingDescUpdatedAt is the schema descriptor for updated_at field.
+	r2webdavsettingDescUpdatedAt := r2webdavsettingFields[8].Descriptor()
+	// r2webdavsetting.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	r2webdavsetting.DefaultUpdatedAt = r2webdavsettingDescUpdatedAt.Default.(func() time.Time)
+	// r2webdavsetting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	r2webdavsetting.UpdateDefaultUpdatedAt = r2webdavsettingDescUpdatedAt.UpdateDefault.(func() time.Time)
 	tunnelmanagementFields := schema.TunnelManagement{}.Fields()
 	_ = tunnelmanagementFields
 	// tunnelmanagementDescKey is the schema descriptor for key field.

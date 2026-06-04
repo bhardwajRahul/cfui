@@ -686,6 +686,19 @@ label .hint {
     margin-top: 0;
 }
 
+.input-with-button,
+.secret-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--gap-2);
+    align-items: center;
+}
+
+.secret-field .icon-btn {
+    min-width: var(--tap);
+    min-height: var(--tap);
+}
+
 .help-link {
     display: inline-flex;
     align-items: center;
@@ -1015,6 +1028,11 @@ select.form-select {
     box-shadow: var(--focus-ring);
 }
 
+.toggle input:disabled + .track {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .toggle .label {
     font-size: var(--fs-sm);
     color: var(--text);
@@ -1142,6 +1160,39 @@ details.disclosure > .body {
     margin-top: var(--gap-2);
 }
 
+.notice {
+    padding: var(--gap-3);
+    margin-bottom: var(--gap-4);
+    border-radius: var(--r-control);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+
+.notice:empty {
+    display: none;
+}
+
+.notice[data-state="ok"] {
+    color: var(--state-ok);
+    background: var(--state-ok-soft);
+    border-color: transparent;
+}
+
+.notice[data-state="warn"] {
+    color: var(--state-warn);
+    background: var(--state-warn-soft);
+    border-color: transparent;
+}
+
+.notice[data-state="error"] {
+    color: var(--state-error);
+    background: var(--state-error-soft);
+    border-color: transparent;
+}
+
 /* ============================================================
    Section header (used inside cards)
    ============================================================ */
@@ -1173,6 +1224,17 @@ details.disclosure > .body {
     color: var(--text-muted);
     margin-top: 2px;
     line-height: 1.5;
+}
+
+.feature-reason {
+    margin-top: 6px;
+    font-size: var(--fs-xs);
+    color: var(--state-warn);
+    line-height: 1.45;
+}
+
+.feature-reason:empty {
+    display: none;
 }
 
 /* ============================================================
@@ -1218,6 +1280,87 @@ details.disclosure > .body {
     margin-top: 2px;
     overflow-wrap: anywhere;
     line-height: 1.5;
+}
+
+.r2-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: var(--gap-3);
+    min-height: 36px;
+}
+
+.r2-breadcrumb button {
+    min-height: 32px;
+    padding: 0 8px;
+    border-radius: var(--r-control);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: var(--fs-xs);
+}
+
+.r2-breadcrumb button:hover {
+    border-color: var(--border-strong);
+}
+
+.r2-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-2);
+    min-height: 160px;
+}
+
+.r2-file-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--gap-3);
+    align-items: center;
+    min-height: 56px;
+    padding: 10px var(--gap-3);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-control);
+}
+
+.r2-file-main {
+    min-width: 0;
+}
+
+.r2-file-name {
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--text);
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+}
+
+.r2-file-meta {
+    margin-top: 2px;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.r2-file-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--gap-2);
+}
+
+@media (max-width: 640px) {
+    .input-with-button,
+    .secret-field,
+    .r2-file-row {
+        grid-template-columns: 1fr;
+    }
+
+    .r2-file-actions {
+        justify-content: flex-start;
+    }
 }
 
 .rule .actions {

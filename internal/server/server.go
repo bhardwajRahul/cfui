@@ -6,14 +6,18 @@ import (
 	"cfui/internal/logger"
 	"cfui/internal/mcpbridge"
 	"cfui/internal/pool"
+	"cfui/internal/r2dav"
 	"cfui/internal/service"
 	"cfui/internal/tunnelmgr"
+	"context"
 	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
+	"mime"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -97,6 +101,7 @@ type Server struct {
 	tunnelMgr *tunnelmgr.Manager
 	mcpSvc    *mcpbridge.Service
 	ddnsSvc   *ddns.Service
+	r2Svc     *r2dav.Service
 	assets    embed.FS
 	locales   embed.FS
 }
@@ -105,12 +110,14 @@ func NewServer(cfgMgr *config.Manager, runner *service.Runner, assets embed.FS, 
 	tunnelMgr := tunnelmgr.NewManager(cfgMgr)
 	tokenStore := mcpbridge.NewTokenStore(cfgMgr.Dir())
 	ddnsSvc := ddns.NewService(cfgMgr)
+	r2Svc := r2dav.NewService(cfgMgr)
 	return &Server{
 		cfgMgr:    cfgMgr,
 		runner:    runner,
 		tunnelMgr: tunnelMgr,
 		mcpSvc:    mcpbridge.NewService(cfgMgr, runner, tunnelMgr, tokenStore, ddnsSvc),
 		ddnsSvc:   ddnsSvc,
+		r2Svc:     r2Svc,
 		assets:    assets,
 		locales:   locales,
 	}
@@ -140,6 +147,7 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/features", s.handleFeatures)
 	mux.Handle("/mcp", s.mcpSvc.Handler())
 	mux.Handle("/mcp/", s.mcpSvc.Handler())
+	mux.Handle(r2dav.EndpointPath, s.r2Svc.Handler())
 
 	// DDNS endpoints
 	mux.HandleFunc("/api/ddns/config", s.handleDDNSConfig)
@@ -148,6 +156,15 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/ddns/zones", s.handleDDNSZones)
 	mux.HandleFunc("/api/ddns/records/", s.handleDDNSRecord)
 	mux.HandleFunc("/api/ddns/records", s.handleDDNSRecords)
+
+	// R2 WebDAV endpoints
+	mux.HandleFunc("/api/r2/settings", s.handleR2Settings)
+	mux.HandleFunc("/api/r2/buckets", s.handleR2Buckets)
+	mux.HandleFunc("/api/r2/files/download", s.handleR2Download)
+	mux.HandleFunc("/api/r2/files/mkdir", s.handleR2Mkdir)
+	mux.HandleFunc("/api/r2/files/rename", s.handleR2Rename)
+	mux.HandleFunc("/api/r2/files/", s.handleR2FileObject)
+	mux.HandleFunc("/api/r2/files", s.handleR2Files)
 
 	// Static Files
 	// The assets are in "web/dist", so we need to strip that prefix
@@ -177,9 +194,11 @@ func (s *Server) handleMCPStatus(w http.ResponseWriter, r *http.Request) {
 
 // FeaturesResponse describes feature toggle state.
 type FeaturesResponse struct {
-	TunnelManager bool `json:"tunnel_manager"`
-	DDNS          bool `json:"ddns"`
-	MCP           bool `json:"mcp"`
+	TunnelManager bool                          `json:"tunnel_manager"`
+	DDNS          bool                          `json:"ddns"`
+	MCP           bool                          `json:"mcp"`
+	R2WebDAV      bool                          `json:"r2_webdav"`
+	Availability  map[string]r2dav.Availability `json:"availability,omitempty"`
 }
 
 // FeaturesRequest carries partial feature toggle updates.
@@ -187,16 +206,13 @@ type FeaturesRequest struct {
 	TunnelManager *bool `json:"tunnel_manager,omitempty"`
 	DDNS          *bool `json:"ddns,omitempty"`
 	MCP           *bool `json:"mcp,omitempty"`
+	R2WebDAV      *bool `json:"r2_webdav,omitempty"`
 }
 
 func (s *Server) handleFeatures(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		cfg := s.cfgMgr.Get()
-		writeJSON(w, FeaturesResponse{
-			TunnelManager: cfg.TunnelManagement.Enabled,
-			DDNS:          cfg.DDNS.Enabled,
-			MCP:           cfg.MCPEnabled,
-		})
+		writeJSON(w, s.featuresResponse(r.Context(), cfg))
 		return
 	}
 	if r.Method != http.MethodPost {
@@ -233,6 +249,16 @@ func (s *Server) handleFeatures(w http.ResponseWriter, r *http.Request) {
 	if req.MCP != nil {
 		cfg.MCPEnabled = *req.MCP
 	}
+	if req.R2WebDAV != nil {
+		if *req.R2WebDAV {
+			availability := s.r2Svc.Availability(r.Context(), cfg.R2WebDAV)
+			if !availability.CanEnable {
+				writeAPIError(w, http.StatusForbidden, fmt.Errorf("%s", availability.Message))
+				return
+			}
+		}
+		cfg.R2WebDAV.Enabled = *req.R2WebDAV
+	}
 	if err := s.cfgMgr.Save(cfg); err != nil {
 		writeAPIError(w, http.StatusInternalServerError, err)
 		return
@@ -240,11 +266,178 @@ func (s *Server) handleFeatures(w http.ResponseWriter, r *http.Request) {
 	if ddnsChanged {
 		s.ddnsSvc.Restart()
 	}
-	writeJSON(w, FeaturesResponse{
+	writeJSON(w, s.featuresResponse(r.Context(), cfg))
+}
+
+func (s *Server) featuresResponse(ctx context.Context, cfg config.Config) FeaturesResponse {
+	return FeaturesResponse{
 		TunnelManager: cfg.TunnelManagement.Enabled,
 		DDNS:          cfg.DDNS.Enabled,
 		MCP:           cfg.MCPEnabled,
-	})
+		R2WebDAV:      cfg.R2WebDAV.Enabled,
+		Availability: map[string]r2dav.Availability{
+			"r2_webdav": s.r2Svc.Availability(ctx, cfg.R2WebDAV),
+		},
+	}
+}
+
+func (s *Server) handleR2Settings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		writeJSON(w, s.r2Svc.Settings(r.Context()))
+	case http.MethodPost:
+		var req r2dav.SettingsRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		resp, err := s.r2Svc.SaveSettings(r.Context(), req)
+		if err != nil {
+			writeR2Error(w, err)
+			return
+		}
+		writeJSON(w, resp)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleR2Buckets(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		resp, err := s.r2Svc.ListBuckets(r.Context())
+		if err != nil {
+			writeR2Error(w, err)
+			return
+		}
+		writeJSON(w, resp)
+	case http.MethodPost:
+		var req r2dav.CreateBucketRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		bucket, err := s.r2Svc.CreateBucket(r.Context(), req)
+		if err != nil {
+			writeR2Error(w, err)
+			return
+		}
+		writeJSON(w, bucket)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleR2Files(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	resp, err := s.r2Svc.ListFiles(r.Context(), r.URL.Query().Get("path"))
+	if err != nil {
+		writeR2Error(w, err)
+		return
+	}
+	writeJSON(w, resp)
+}
+
+func (s *Server) handleR2Download(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	file, info, err := s.r2Svc.OpenFile(r.Context(), r.URL.Query().Get("path"))
+	if err != nil {
+		writeR2Error(w, err)
+		return
+	}
+	defer file.Close()
+	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": info.Name()}))
+	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
+}
+
+func (s *Server) handleR2FileObject(w http.ResponseWriter, r *http.Request) {
+	rawPath, err := r2ObjectPath(r.URL.Path)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	switch r.Method {
+	case http.MethodPut:
+		if err := s.r2Svc.WriteFile(r.Context(), rawPath, r.Body); err != nil {
+			writeR2Error(w, err)
+			return
+		}
+		writeJSON(w, map[string]bool{"success": true})
+	case http.MethodDelete:
+		if err := s.r2Svc.Delete(r.Context(), rawPath); err != nil {
+			writeR2Error(w, err)
+			return
+		}
+		writeJSON(w, map[string]bool{"success": true})
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleR2Mkdir(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req r2dav.MkdirRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := s.r2Svc.Mkdir(r.Context(), req.Path); err != nil {
+		writeR2Error(w, err)
+		return
+	}
+	writeJSON(w, map[string]bool{"success": true})
+}
+
+func (s *Server) handleR2Rename(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req r2dav.RenameRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := s.r2Svc.Rename(r.Context(), req.From, req.To); err != nil {
+		writeR2Error(w, err)
+		return
+	}
+	writeJSON(w, map[string]bool{"success": true})
+}
+
+func r2ObjectPath(requestPath string) (string, error) {
+	raw := strings.TrimPrefix(requestPath, "/api/r2/files/")
+	if raw == "" || raw == requestPath {
+		return "", fmt.Errorf("object path is required")
+	}
+	decoded, err := url.PathUnescape(raw)
+	if err != nil {
+		return "", err
+	}
+	return "/" + strings.TrimPrefix(decoded, "/"), nil
+}
+
+func writeR2Error(w http.ResponseWriter, err error) {
+	msg := err.Error()
+	switch {
+	case strings.Contains(msg, "requires Cloudflare API Token"), strings.Contains(msg, "permission"), strings.Contains(msg, "not active"):
+		writeAPIError(w, http.StatusForbidden, err)
+	case strings.Contains(msg, "required"), strings.Contains(msg, "not allowed"), strings.Contains(msg, "bucket name"):
+		writeAPIError(w, http.StatusBadRequest, err)
+	case strings.Contains(msg, "disabled"), strings.Contains(msg, "not configured"):
+		writeAPIError(w, http.StatusConflict, err)
+	default:
+		writeAPIError(w, http.StatusBadGateway, err)
+	}
 }
 
 func (s *Server) handleMCPTokens(w http.ResponseWriter, r *http.Request) {

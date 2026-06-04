@@ -78,6 +78,58 @@ func TestDDNSRecordCommentPersistsInDatabase(t *testing.T) {
 	}
 }
 
+func TestR2WebDAVPersistsInDatabase(t *testing.T) {
+	dir := t.TempDir()
+	mgr, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	cfg := mgr.Get()
+	cfg.R2WebDAV = R2WebDAVConfig{
+		Enabled:            true,
+		AccountID:          "account-r2",
+		BucketName:         "cfui-r2",
+		Jurisdiction:       "eu",
+		WebDAVUsername:     "dav-user",
+		WebDAVPasswordHash: "$2a$10$hash",
+	}
+	if err := mgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	reloaded, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager reload: %v", err)
+	}
+	got := reloaded.Get().R2WebDAV
+	if !got.Enabled || got.AccountID != "account-r2" || got.BucketName != "cfui-r2" || got.Jurisdiction != "eu" || got.WebDAVUsername != "dav-user" || got.WebDAVPasswordHash == "" {
+		t.Fatalf("expected persisted R2 WebDAV settings, got %#v", got)
+	}
+}
+
+func TestR2WebDAVJurisdictionDefaultsToDefault(t *testing.T) {
+	dir := t.TempDir()
+	mgr, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	cfg := mgr.Get()
+	cfg.R2WebDAV.Jurisdiction = ""
+	if err := mgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	reloaded, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager reload: %v", err)
+	}
+	if got := reloaded.Get().R2WebDAV.Jurisdiction; got != "default" {
+		t.Fatalf("expected default jurisdiction, got %q", got)
+	}
+}
+
 func TestNewManagerMigratesLegacyConfigJSON(t *testing.T) {
 	dir := t.TempDir()
 	legacyPath := filepath.Join(dir, "config.json")
@@ -87,6 +139,14 @@ func TestNewManagerMigratesLegacyConfigJSON(t *testing.T) {
 	legacyCfg.MCPEnabled = true
 	legacyCfg.DDNS.Enabled = true
 	legacyCfg.DDNS.IntervalMins = 9
+	legacyCfg.R2WebDAV = R2WebDAVConfig{
+		Enabled:            true,
+		AccountID:          "legacy-account",
+		BucketName:         "legacy-bucket",
+		Jurisdiction:       "fedramp",
+		WebDAVUsername:     "legacy-dav",
+		WebDAVPasswordHash: "legacy-hash",
+	}
 	legacyCfg.DDNS.Records = []DDNSRecord{{
 		Name:    "home.example.com",
 		ZoneID:  "zone-1",
@@ -114,6 +174,9 @@ func TestNewManagerMigratesLegacyConfigJSON(t *testing.T) {
 	}
 	if got.DDNS.IntervalMins != 9 || len(got.DDNS.Records) != 1 || got.DDNS.Records[0].Name != "home.example.com" {
 		t.Fatalf("legacy DDNS config not migrated correctly: %#v", got.DDNS)
+	}
+	if !got.R2WebDAV.Enabled || got.R2WebDAV.AccountID != "legacy-account" || got.R2WebDAV.BucketName != "legacy-bucket" {
+		t.Fatalf("legacy R2 WebDAV config not migrated correctly: %#v", got.R2WebDAV)
 	}
 
 	if _, err := os.Stat(filepath.Join(dir, "config.json.migrated")); err != nil {

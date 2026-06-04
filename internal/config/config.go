@@ -55,6 +55,9 @@ type Config struct {
 
 	// MCPEnabled gates the Model Context Protocol HTTP endpoint.
 	MCPEnabled bool `json:"mcp_enabled"`
+
+	// R2WebDAV exposes a selected Cloudflare R2 bucket through WebDAV.
+	R2WebDAV R2WebDAVConfig `json:"r2_webdav"`
 }
 
 // DDNSConfig stores settings for the built-in DDNS client.
@@ -125,6 +128,16 @@ type TunnelManagementConfig struct {
 	APIKey    string `json:"api_key"`
 }
 
+// R2WebDAVConfig stores settings for the optional R2-backed WebDAV endpoint.
+type R2WebDAVConfig struct {
+	Enabled            bool   `json:"enabled"`
+	AccountID          string `json:"account_id"`
+	BucketName         string `json:"bucket_name"`
+	Jurisdiction       string `json:"jurisdiction"`
+	WebDAVUsername     string `json:"webdav_username"`
+	WebDAVPasswordHash string `json:"-"`
+}
+
 // DefaultConfig returns a Config with default values
 func DefaultConfig() Config {
 	return Config{
@@ -149,6 +162,10 @@ func DefaultConfig() Config {
 			Enabled: false,
 		},
 		DDNS: DefaultDDNSConfig(),
+		R2WebDAV: R2WebDAVConfig{
+			Enabled:      false,
+			Jurisdiction: "default",
+		},
 	}
 }
 
