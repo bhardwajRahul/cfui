@@ -21,8 +21,8 @@ type DDNSSetting func(*sql.Selector)
 // MCPToken is the predicate function for mcptoken builders.
 type MCPToken func(*sql.Selector)
 
-// R2WebDAVSetting is the predicate function for r2webdavsetting builders.
-type R2WebDAVSetting func(*sql.Selector)
+// S3WebDAVSetting is the predicate function for s3webdavsetting builders.
+type S3WebDAVSetting func(*sql.Selector)
 
 // TunnelManagement is the predicate function for tunnelmanagement builders.
 type TunnelManagement func(*sql.Selector)

@@ -56,8 +56,8 @@ type Config struct {
 	// MCPEnabled gates the Model Context Protocol HTTP endpoint.
 	MCPEnabled bool `json:"mcp_enabled"`
 
-	// R2WebDAV exposes a selected Cloudflare R2 bucket through WebDAV.
-	R2WebDAV R2WebDAVConfig `json:"r2_webdav"`
+	// S3WebDAV exposes S3-compatible bucket paths through WebDAV.
+	S3WebDAV S3WebDAVConfig `json:"s3_webdav"`
 }
 
 // DDNSConfig stores settings for the built-in DDNS client.
@@ -128,12 +128,29 @@ type TunnelManagementConfig struct {
 	APIKey    string `json:"api_key"`
 }
 
-// R2WebDAVConfig stores settings for the optional R2-backed WebDAV endpoint.
-type R2WebDAVConfig struct {
+// S3WebDAVConfig stores global state for optional S3-backed WebDAV mounts.
+type S3WebDAVConfig struct {
+	Enabled   bool                  `json:"enabled"`
+	ActiveKey string                `json:"active_key"`
+	Mounts    []S3WebDAVMountConfig `json:"mounts"`
+}
+
+// S3WebDAVMountConfig stores settings for one S3-backed WebDAV mount.
+type S3WebDAVMountConfig struct {
+	Key                string `json:"key"`
+	Name               string `json:"name"`
 	Enabled            bool   `json:"enabled"`
+	Provider           string `json:"provider"`
+	EndpointURL        string `json:"endpoint_url"`
+	Region             string `json:"region"`
+	PathStyle          bool   `json:"path_style"`
 	AccountID          string `json:"account_id"`
 	BucketName         string `json:"bucket_name"`
+	RootPrefix         string `json:"root_prefix"`
+	MountPath          string `json:"mount_path"`
 	Jurisdiction       string `json:"jurisdiction"`
+	AccessKeyID        string `json:"access_key_id"`
+	SecretAccessKey    string `json:"-"`
 	WebDAVUsername     string `json:"webdav_username"`
 	WebDAVPasswordHash string `json:"-"`
 }
@@ -162,10 +179,24 @@ func DefaultConfig() Config {
 			Enabled: false,
 		},
 		DDNS: DefaultDDNSConfig(),
-		R2WebDAV: R2WebDAVConfig{
-			Enabled:      false,
-			Jurisdiction: "default",
+		S3WebDAV: S3WebDAVConfig{
+			Enabled:   false,
+			ActiveKey: "default",
+			Mounts:    []S3WebDAVMountConfig{DefaultS3WebDAVMountConfig()},
 		},
+	}
+}
+
+func DefaultS3WebDAVMountConfig() S3WebDAVMountConfig {
+	return S3WebDAVMountConfig{
+		Key:          "default",
+		Name:         "Default S3",
+		Enabled:      true,
+		Provider:     "generic_s3",
+		Region:       "auto",
+		PathStyle:    true,
+		MountPath:    "/webdav/s3/",
+		Jurisdiction: "default",
 	}
 }
 

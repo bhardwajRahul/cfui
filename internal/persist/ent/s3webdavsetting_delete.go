@@ -4,7 +4,7 @@ package ent
 
 import (
 	"cfui/internal/persist/ent/predicate"
-	"cfui/internal/persist/ent/r2webdavsetting"
+	"cfui/internal/persist/ent/s3webdavsetting"
 	"context"
 
 	"entgo.io/ent/dialect/sql"
@@ -12,26 +12,26 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// R2WebDAVSettingDelete is the builder for deleting a R2WebDAVSetting entity.
-type R2WebDAVSettingDelete struct {
+// S3WebDAVSettingDelete is the builder for deleting a S3WebDAVSetting entity.
+type S3WebDAVSettingDelete struct {
 	config
 	hooks    []Hook
-	mutation *R2WebDAVSettingMutation
+	mutation *S3WebDAVSettingMutation
 }
 
-// Where appends a list predicates to the R2WebDAVSettingDelete builder.
-func (_d *R2WebDAVSettingDelete) Where(ps ...predicate.R2WebDAVSetting) *R2WebDAVSettingDelete {
+// Where appends a list predicates to the S3WebDAVSettingDelete builder.
+func (_d *S3WebDAVSettingDelete) Where(ps ...predicate.S3WebDAVSetting) *S3WebDAVSettingDelete {
 	_d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *R2WebDAVSettingDelete) Exec(ctx context.Context) (int, error) {
+func (_d *S3WebDAVSettingDelete) Exec(ctx context.Context) (int, error) {
 	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *R2WebDAVSettingDelete) ExecX(ctx context.Context) int {
+func (_d *S3WebDAVSettingDelete) ExecX(ctx context.Context) int {
 	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
@@ -39,8 +39,8 @@ func (_d *R2WebDAVSettingDelete) ExecX(ctx context.Context) int {
 	return n
 }
 
-func (_d *R2WebDAVSettingDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(r2webdavsetting.Table, sqlgraph.NewFieldSpec(r2webdavsetting.FieldID, field.TypeInt))
+func (_d *S3WebDAVSettingDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(s3webdavsetting.Table, sqlgraph.NewFieldSpec(s3webdavsetting.FieldID, field.TypeInt))
 	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -56,32 +56,32 @@ func (_d *R2WebDAVSettingDelete) sqlExec(ctx context.Context) (int, error) {
 	return affected, err
 }
 
-// R2WebDAVSettingDeleteOne is the builder for deleting a single R2WebDAVSetting entity.
-type R2WebDAVSettingDeleteOne struct {
-	_d *R2WebDAVSettingDelete
+// S3WebDAVSettingDeleteOne is the builder for deleting a single S3WebDAVSetting entity.
+type S3WebDAVSettingDeleteOne struct {
+	_d *S3WebDAVSettingDelete
 }
 
-// Where appends a list predicates to the R2WebDAVSettingDelete builder.
-func (_d *R2WebDAVSettingDeleteOne) Where(ps ...predicate.R2WebDAVSetting) *R2WebDAVSettingDeleteOne {
+// Where appends a list predicates to the S3WebDAVSettingDelete builder.
+func (_d *S3WebDAVSettingDeleteOne) Where(ps ...predicate.S3WebDAVSetting) *S3WebDAVSettingDeleteOne {
 	_d._d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query.
-func (_d *R2WebDAVSettingDeleteOne) Exec(ctx context.Context) error {
+func (_d *S3WebDAVSettingDeleteOne) Exec(ctx context.Context) error {
 	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
 	case n == 0:
-		return &NotFoundError{r2webdavsetting.Label}
+		return &NotFoundError{s3webdavsetting.Label}
 	default:
 		return nil
 	}
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *R2WebDAVSettingDeleteOne) ExecX(ctx context.Context) {
+func (_d *S3WebDAVSettingDeleteOne) ExecX(ctx context.Context) {
 	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}

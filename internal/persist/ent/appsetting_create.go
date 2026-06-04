@@ -292,6 +292,34 @@ func (_c *AppSettingCreate) SetNillableMcpEnabled(v *bool) *AppSettingCreate {
 	return _c
 }
 
+// SetS3WebdavEnabled sets the "s3_webdav_enabled" field.
+func (_c *AppSettingCreate) SetS3WebdavEnabled(v bool) *AppSettingCreate {
+	_c.mutation.SetS3WebdavEnabled(v)
+	return _c
+}
+
+// SetNillableS3WebdavEnabled sets the "s3_webdav_enabled" field if the given value is not nil.
+func (_c *AppSettingCreate) SetNillableS3WebdavEnabled(v *bool) *AppSettingCreate {
+	if v != nil {
+		_c.SetS3WebdavEnabled(*v)
+	}
+	return _c
+}
+
+// SetS3WebdavActiveKey sets the "s3_webdav_active_key" field.
+func (_c *AppSettingCreate) SetS3WebdavActiveKey(v string) *AppSettingCreate {
+	_c.mutation.SetS3WebdavActiveKey(v)
+	return _c
+}
+
+// SetNillableS3WebdavActiveKey sets the "s3_webdav_active_key" field if the given value is not nil.
+func (_c *AppSettingCreate) SetNillableS3WebdavActiveKey(v *string) *AppSettingCreate {
+	if v != nil {
+		_c.SetS3WebdavActiveKey(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *AppSettingCreate) SetCreatedAt(v time.Time) *AppSettingCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -431,6 +459,14 @@ func (_c *AppSettingCreate) defaults() {
 		v := appsetting.DefaultMcpEnabled
 		_c.mutation.SetMcpEnabled(v)
 	}
+	if _, ok := _c.mutation.S3WebdavEnabled(); !ok {
+		v := appsetting.DefaultS3WebdavEnabled
+		_c.mutation.SetS3WebdavEnabled(v)
+	}
+	if _, ok := _c.mutation.S3WebdavActiveKey(); !ok {
+		v := appsetting.DefaultS3WebdavActiveKey
+		_c.mutation.SetS3WebdavActiveKey(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := appsetting.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -507,6 +543,12 @@ func (_c *AppSettingCreate) check() error {
 	}
 	if _, ok := _c.mutation.McpEnabled(); !ok {
 		return &ValidationError{Name: "mcp_enabled", err: errors.New(`ent: missing required field "AppSetting.mcp_enabled"`)}
+	}
+	if _, ok := _c.mutation.S3WebdavEnabled(); !ok {
+		return &ValidationError{Name: "s3_webdav_enabled", err: errors.New(`ent: missing required field "AppSetting.s3_webdav_enabled"`)}
+	}
+	if _, ok := _c.mutation.S3WebdavActiveKey(); !ok {
+		return &ValidationError{Name: "s3_webdav_active_key", err: errors.New(`ent: missing required field "AppSetting.s3_webdav_active_key"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "AppSetting.created_at"`)}
@@ -619,6 +661,14 @@ func (_c *AppSettingCreate) createSpec() (*AppSetting, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
 		_node.McpEnabled = value
+	}
+	if value, ok := _c.mutation.S3WebdavEnabled(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavEnabled, field.TypeBool, value)
+		_node.S3WebdavEnabled = value
+	}
+	if value, ok := _c.mutation.S3WebdavActiveKey(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavActiveKey, field.TypeString, value)
+		_node.S3WebdavActiveKey = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(appsetting.FieldCreatedAt, field.TypeTime, value)

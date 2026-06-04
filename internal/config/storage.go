@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"strconv"
+	"strings"
 
 	"cfui/internal/configmigrate"
 	"cfui/internal/logger"
@@ -13,7 +15,7 @@ import (
 	"cfui/internal/persist/ent/ddnsipsource"
 	"cfui/internal/persist/ent/ddnsrecord"
 	"cfui/internal/persist/ent/ddnssetting"
-	"cfui/internal/persist/ent/r2webdavsetting"
+	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
 	"cfui/internal/persist/ent/tunneltoken"
 )
@@ -80,7 +82,7 @@ func (m *Manager) saveLocked(ctx context.Context, cfg Config) error {
 	if err = saveDDNSSetting(ctx, tx, cfg.DDNS); err != nil {
 		return err
 	}
-	if err = saveR2WebDAVSetting(ctx, tx, cfg.R2WebDAV); err != nil {
+	if err = saveS3WebDAVSettings(ctx, tx, cfg.S3WebDAV); err != nil {
 		return err
 	}
 	if err = replaceDDNSIPSources(ctx, tx, cfg.DDNS.IPSources); err != nil {
@@ -127,6 +129,8 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 	cfg.NoTLSVerify = settingsRow.NoTLSVerify
 	cfg.ExtraArgs = settingsRow.ExtraArgs
 	cfg.MCPEnabled = settingsRow.McpEnabled
+	cfg.S3WebDAV.Enabled = settingsRow.S3WebdavEnabled
+	cfg.S3WebDAV.ActiveKey = settingsRow.S3WebdavActiveKey
 
 	if tokenRow, err := m.client.TunnelToken.Query().Where(tunneltoken.Key(defaultConfigKey)).Only(ctx); err == nil {
 		cfg.Token = tokenRow.Token
@@ -156,18 +160,34 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 		return Config{}, false, err
 	}
 
-	if r2Row, err := m.client.R2WebDAVSetting.Query().Where(r2webdavsetting.Key(defaultConfigKey)).Only(ctx); err == nil {
-		cfg.R2WebDAV = R2WebDAVConfig{
-			Enabled:            r2Row.Enabled,
-			AccountID:          r2Row.AccountID,
-			BucketName:         r2Row.BucketName,
-			Jurisdiction:       normalizeR2Jurisdiction(r2Row.Jurisdiction),
-			WebDAVUsername:     r2Row.WebdavUsername,
-			WebDAVPasswordHash: r2Row.WebdavPasswordHash,
-		}
-	} else if !ent.IsNotFound(err) {
+	s3Rows, err := m.client.S3WebDAVSetting.Query().
+		Order(s3webdavsetting.BySortOrder(), s3webdavsetting.ByID()).
+		All(ctx)
+	if err != nil {
 		return Config{}, false, err
 	}
+	cfg.S3WebDAV.Mounts = cfg.S3WebDAV.Mounts[:0]
+	for _, row := range s3Rows {
+		cfg.S3WebDAV.Mounts = append(cfg.S3WebDAV.Mounts, S3WebDAVMountConfig{
+			Key:                row.Key,
+			Name:               row.Name,
+			Enabled:            row.Enabled,
+			Provider:           normalizeS3Provider(row.Provider),
+			EndpointURL:        row.EndpointURL,
+			Region:             normalizeS3Region(row.Region),
+			PathStyle:          row.PathStyle,
+			AccountID:          row.AccountID,
+			BucketName:         row.BucketName,
+			RootPrefix:         normalizeS3RootPrefix(row.RootPrefix),
+			MountPath:          normalizeS3MountPath(row.MountPath),
+			Jurisdiction:       normalizeR2Jurisdiction(row.Jurisdiction),
+			AccessKeyID:        row.AccessKeyID,
+			SecretAccessKey:    row.SecretAccessKey,
+			WebDAVUsername:     row.WebdavUsername,
+			WebDAVPasswordHash: row.WebdavPasswordHash,
+		})
+	}
+	cfg.S3WebDAV = normalizeS3WebDAVConfig(cfg.S3WebDAV)
 
 	sourceRows, err := m.client.DDNSIPSource.Query().
 		Where(ddnsipsource.SettingsKey(defaultConfigKey)).
@@ -230,6 +250,8 @@ func saveAppSetting(ctx context.Context, tx *ent.Tx, cfg Config) error {
 			SetNoTLSVerify(cfg.NoTLSVerify).
 			SetExtraArgs(cfg.ExtraArgs).
 			SetMcpEnabled(cfg.MCPEnabled).
+			SetS3WebdavEnabled(cfg.S3WebDAV.Enabled).
+			SetS3WebdavActiveKey(normalizeS3WebDAVConfig(cfg.S3WebDAV).ActiveKey).
 			Save(ctx)
 		return err
 	}
@@ -257,6 +279,8 @@ func saveAppSetting(ctx context.Context, tx *ent.Tx, cfg Config) error {
 		SetNoTLSVerify(cfg.NoTLSVerify).
 		SetExtraArgs(cfg.ExtraArgs).
 		SetMcpEnabled(cfg.MCPEnabled).
+		SetS3WebdavEnabled(cfg.S3WebDAV.Enabled).
+		SetS3WebdavActiveKey(normalizeS3WebDAVConfig(cfg.S3WebDAV).ActiveKey).
 		Save(ctx)
 	return err
 }
@@ -334,34 +358,149 @@ func saveDDNSSetting(ctx context.Context, tx *ent.Tx, cfg DDNSConfig) error {
 	return err
 }
 
-func saveR2WebDAVSetting(ctx context.Context, tx *ent.Tx, cfg R2WebDAVConfig) error {
-	cfg.Jurisdiction = normalizeR2Jurisdiction(cfg.Jurisdiction)
-	row, err := tx.R2WebDAVSetting.Query().Where(r2webdavsetting.Key(defaultConfigKey)).Only(ctx)
-	if ent.IsNotFound(err) {
-		_, err = tx.R2WebDAVSetting.Create().
-			SetKey(defaultConfigKey).
-			SetEnabled(cfg.Enabled).
-			SetAccountID(cfg.AccountID).
-			SetBucketName(cfg.BucketName).
-			SetJurisdiction(cfg.Jurisdiction).
-			SetWebdavUsername(cfg.WebDAVUsername).
-			SetWebdavPasswordHash(cfg.WebDAVPasswordHash).
-			Save(ctx)
+func saveS3WebDAVSettings(ctx context.Context, tx *ent.Tx, cfg S3WebDAVConfig) error {
+	cfg = normalizeS3WebDAVConfig(cfg)
+	if _, err := tx.S3WebDAVSetting.Delete().Exec(ctx); err != nil {
 		return err
 	}
-	if err != nil {
-		return err
+	builders := make([]*ent.S3WebDAVSettingCreate, 0, len(cfg.Mounts))
+	for i, mount := range cfg.Mounts {
+		builders = append(builders, tx.S3WebDAVSetting.Create().
+			SetKey(mount.Key).
+			SetName(mount.Name).
+			SetSortOrder(i).
+			SetEnabled(mount.Enabled).
+			SetProvider(mount.Provider).
+			SetEndpointURL(mount.EndpointURL).
+			SetRegion(mount.Region).
+			SetPathStyle(mount.PathStyle).
+			SetAccountID(mount.AccountID).
+			SetBucketName(mount.BucketName).
+			SetRootPrefix(mount.RootPrefix).
+			SetMountPath(mount.MountPath).
+			SetJurisdiction(mount.Jurisdiction).
+			SetAccessKeyID(mount.AccessKeyID).
+			SetSecretAccessKey(mount.SecretAccessKey).
+			SetWebdavUsername(mount.WebDAVUsername).
+			SetWebdavPasswordHash(mount.WebDAVPasswordHash))
 	}
+	if len(builders) == 0 {
+		return nil
+	}
+	return tx.S3WebDAVSetting.CreateBulk(builders...).Exec(ctx)
+}
 
-	_, err = tx.R2WebDAVSetting.UpdateOneID(row.ID).
-		SetEnabled(cfg.Enabled).
-		SetAccountID(cfg.AccountID).
-		SetBucketName(cfg.BucketName).
-		SetJurisdiction(cfg.Jurisdiction).
-		SetWebdavUsername(cfg.WebDAVUsername).
-		SetWebdavPasswordHash(cfg.WebDAVPasswordHash).
-		Save(ctx)
-	return err
+func normalizeS3WebDAVConfig(cfg S3WebDAVConfig) S3WebDAVConfig {
+	if len(cfg.Mounts) == 0 {
+		cfg.Mounts = []S3WebDAVMountConfig{DefaultS3WebDAVMountConfig()}
+	}
+	seen := make(map[string]int, len(cfg.Mounts))
+	mounts := make([]S3WebDAVMountConfig, 0, len(cfg.Mounts))
+	for i, mount := range cfg.Mounts {
+		mount = normalizeS3MountConfig(mount, i)
+		base := mount.Key
+		if base == "" {
+			base = "default"
+		}
+		key := base
+		for n := seen[key]; n > 0; n = seen[key] {
+			key = base + "-" + strconv.Itoa(n+1)
+		}
+		seen[key]++
+		mount.Key = key
+		mounts = append(mounts, mount)
+	}
+	cfg.Mounts = mounts
+	if cfg.ActiveKey == "" || !s3MountExists(cfg.Mounts, cfg.ActiveKey) {
+		cfg.ActiveKey = cfg.Mounts[0].Key
+	}
+	return cfg
+}
+
+func normalizeS3MountConfig(mount S3WebDAVMountConfig, index int) S3WebDAVMountConfig {
+	mount.Key = normalizeS3Key(mount.Key)
+	if mount.Key == "" {
+		if index == 0 {
+			mount.Key = "default"
+		} else {
+			mount.Key = "mount-" + strconv.Itoa(index+1)
+		}
+	}
+	mount.Name = strings.TrimSpace(mount.Name)
+	if mount.Name == "" {
+		mount.Name = "S3 Mount " + strconv.Itoa(index+1)
+	}
+	mount.Provider = normalizeS3Provider(mount.Provider)
+	mount.Region = normalizeS3Region(mount.Region)
+	mount.RootPrefix = normalizeS3RootPrefix(mount.RootPrefix)
+	mount.MountPath = normalizeS3MountPath(mount.MountPath)
+	mount.Jurisdiction = normalizeR2Jurisdiction(mount.Jurisdiction)
+	mount.EndpointURL = strings.TrimSpace(mount.EndpointURL)
+	mount.AccountID = strings.TrimSpace(mount.AccountID)
+	mount.BucketName = strings.TrimSpace(mount.BucketName)
+	mount.AccessKeyID = strings.TrimSpace(mount.AccessKeyID)
+	mount.SecretAccessKey = strings.TrimSpace(mount.SecretAccessKey)
+	mount.WebDAVUsername = strings.TrimSpace(mount.WebDAVUsername)
+	return mount
+}
+
+func normalizeS3Key(v string) string {
+	v = strings.ToLower(strings.TrimSpace(v))
+	var b strings.Builder
+	for _, r := range v {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		case r == '-' || r == '_':
+			b.WriteByte('-')
+		}
+	}
+	return strings.Trim(b.String(), "-")
+}
+
+func s3MountExists(mounts []S3WebDAVMountConfig, key string) bool {
+	for _, mount := range mounts {
+		if mount.Key == key {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeS3Provider(v string) string {
+	switch v {
+	case "cloudflare_r2":
+		return v
+	default:
+		return "generic_s3"
+	}
+}
+
+func normalizeS3Region(v string) string {
+	if v == "" {
+		return "auto"
+	}
+	return v
+}
+
+func normalizeS3RootPrefix(v string) string {
+	v = strings.Trim(strings.TrimSpace(v), "/")
+	if v == "." {
+		return ""
+	}
+	return v
+}
+
+func normalizeS3MountPath(v string) string {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return "/webdav/s3/"
+	}
+	if !strings.HasPrefix(v, "/") {
+		v = "/" + v
+	}
+	v = strings.TrimRight(v, "/") + "/"
+	return v
 }
 
 func normalizeR2Jurisdiction(v string) string {

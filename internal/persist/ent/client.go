@@ -16,7 +16,7 @@ import (
 	"cfui/internal/persist/ent/ddnsrecord"
 	"cfui/internal/persist/ent/ddnssetting"
 	"cfui/internal/persist/ent/mcptoken"
-	"cfui/internal/persist/ent/r2webdavsetting"
+	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
 	"cfui/internal/persist/ent/tunneltoken"
 
@@ -40,8 +40,8 @@ type Client struct {
 	DDNSSetting *DDNSSettingClient
 	// MCPToken is the client for interacting with the MCPToken builders.
 	MCPToken *MCPTokenClient
-	// R2WebDAVSetting is the client for interacting with the R2WebDAVSetting builders.
-	R2WebDAVSetting *R2WebDAVSettingClient
+	// S3WebDAVSetting is the client for interacting with the S3WebDAVSetting builders.
+	S3WebDAVSetting *S3WebDAVSettingClient
 	// TunnelManagement is the client for interacting with the TunnelManagement builders.
 	TunnelManagement *TunnelManagementClient
 	// TunnelToken is the client for interacting with the TunnelToken builders.
@@ -62,7 +62,7 @@ func (c *Client) init() {
 	c.DDNSRecord = NewDDNSRecordClient(c.config)
 	c.DDNSSetting = NewDDNSSettingClient(c.config)
 	c.MCPToken = NewMCPTokenClient(c.config)
-	c.R2WebDAVSetting = NewR2WebDAVSettingClient(c.config)
+	c.S3WebDAVSetting = NewS3WebDAVSettingClient(c.config)
 	c.TunnelManagement = NewTunnelManagementClient(c.config)
 	c.TunnelToken = NewTunnelTokenClient(c.config)
 }
@@ -162,7 +162,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		DDNSRecord:       NewDDNSRecordClient(cfg),
 		DDNSSetting:      NewDDNSSettingClient(cfg),
 		MCPToken:         NewMCPTokenClient(cfg),
-		R2WebDAVSetting:  NewR2WebDAVSettingClient(cfg),
+		S3WebDAVSetting:  NewS3WebDAVSettingClient(cfg),
 		TunnelManagement: NewTunnelManagementClient(cfg),
 		TunnelToken:      NewTunnelTokenClient(cfg),
 	}, nil
@@ -189,7 +189,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		DDNSRecord:       NewDDNSRecordClient(cfg),
 		DDNSSetting:      NewDDNSSettingClient(cfg),
 		MCPToken:         NewMCPTokenClient(cfg),
-		R2WebDAVSetting:  NewR2WebDAVSettingClient(cfg),
+		S3WebDAVSetting:  NewS3WebDAVSettingClient(cfg),
 		TunnelManagement: NewTunnelManagementClient(cfg),
 		TunnelToken:      NewTunnelTokenClient(cfg),
 	}, nil
@@ -222,7 +222,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.AppSetting, c.DDNSIPSource, c.DDNSRecord, c.DDNSSetting, c.MCPToken,
-		c.R2WebDAVSetting, c.TunnelManagement, c.TunnelToken,
+		c.S3WebDAVSetting, c.TunnelManagement, c.TunnelToken,
 	} {
 		n.Use(hooks...)
 	}
@@ -233,7 +233,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.AppSetting, c.DDNSIPSource, c.DDNSRecord, c.DDNSSetting, c.MCPToken,
-		c.R2WebDAVSetting, c.TunnelManagement, c.TunnelToken,
+		c.S3WebDAVSetting, c.TunnelManagement, c.TunnelToken,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -252,8 +252,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.DDNSSetting.mutate(ctx, m)
 	case *MCPTokenMutation:
 		return c.MCPToken.mutate(ctx, m)
-	case *R2WebDAVSettingMutation:
-		return c.R2WebDAVSetting.mutate(ctx, m)
+	case *S3WebDAVSettingMutation:
+		return c.S3WebDAVSetting.mutate(ctx, m)
 	case *TunnelManagementMutation:
 		return c.TunnelManagement.mutate(ctx, m)
 	case *TunnelTokenMutation:
@@ -928,107 +928,107 @@ func (c *MCPTokenClient) mutate(ctx context.Context, m *MCPTokenMutation) (Value
 	}
 }
 
-// R2WebDAVSettingClient is a client for the R2WebDAVSetting schema.
-type R2WebDAVSettingClient struct {
+// S3WebDAVSettingClient is a client for the S3WebDAVSetting schema.
+type S3WebDAVSettingClient struct {
 	config
 }
 
-// NewR2WebDAVSettingClient returns a client for the R2WebDAVSetting from the given config.
-func NewR2WebDAVSettingClient(c config) *R2WebDAVSettingClient {
-	return &R2WebDAVSettingClient{config: c}
+// NewS3WebDAVSettingClient returns a client for the S3WebDAVSetting from the given config.
+func NewS3WebDAVSettingClient(c config) *S3WebDAVSettingClient {
+	return &S3WebDAVSettingClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `r2webdavsetting.Hooks(f(g(h())))`.
-func (c *R2WebDAVSettingClient) Use(hooks ...Hook) {
-	c.hooks.R2WebDAVSetting = append(c.hooks.R2WebDAVSetting, hooks...)
+// A call to `Use(f, g, h)` equals to `s3webdavsetting.Hooks(f(g(h())))`.
+func (c *S3WebDAVSettingClient) Use(hooks ...Hook) {
+	c.hooks.S3WebDAVSetting = append(c.hooks.S3WebDAVSetting, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `r2webdavsetting.Intercept(f(g(h())))`.
-func (c *R2WebDAVSettingClient) Intercept(interceptors ...Interceptor) {
-	c.inters.R2WebDAVSetting = append(c.inters.R2WebDAVSetting, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `s3webdavsetting.Intercept(f(g(h())))`.
+func (c *S3WebDAVSettingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.S3WebDAVSetting = append(c.inters.S3WebDAVSetting, interceptors...)
 }
 
-// Create returns a builder for creating a R2WebDAVSetting entity.
-func (c *R2WebDAVSettingClient) Create() *R2WebDAVSettingCreate {
-	mutation := newR2WebDAVSettingMutation(c.config, OpCreate)
-	return &R2WebDAVSettingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a S3WebDAVSetting entity.
+func (c *S3WebDAVSettingClient) Create() *S3WebDAVSettingCreate {
+	mutation := newS3WebDAVSettingMutation(c.config, OpCreate)
+	return &S3WebDAVSettingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of R2WebDAVSetting entities.
-func (c *R2WebDAVSettingClient) CreateBulk(builders ...*R2WebDAVSettingCreate) *R2WebDAVSettingCreateBulk {
-	return &R2WebDAVSettingCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of S3WebDAVSetting entities.
+func (c *S3WebDAVSettingClient) CreateBulk(builders ...*S3WebDAVSettingCreate) *S3WebDAVSettingCreateBulk {
+	return &S3WebDAVSettingCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *R2WebDAVSettingClient) MapCreateBulk(slice any, setFunc func(*R2WebDAVSettingCreate, int)) *R2WebDAVSettingCreateBulk {
+func (c *S3WebDAVSettingClient) MapCreateBulk(slice any, setFunc func(*S3WebDAVSettingCreate, int)) *S3WebDAVSettingCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &R2WebDAVSettingCreateBulk{err: fmt.Errorf("calling to R2WebDAVSettingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &S3WebDAVSettingCreateBulk{err: fmt.Errorf("calling to S3WebDAVSettingClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*R2WebDAVSettingCreate, rv.Len())
+	builders := make([]*S3WebDAVSettingCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &R2WebDAVSettingCreateBulk{config: c.config, builders: builders}
+	return &S3WebDAVSettingCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for R2WebDAVSetting.
-func (c *R2WebDAVSettingClient) Update() *R2WebDAVSettingUpdate {
-	mutation := newR2WebDAVSettingMutation(c.config, OpUpdate)
-	return &R2WebDAVSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for S3WebDAVSetting.
+func (c *S3WebDAVSettingClient) Update() *S3WebDAVSettingUpdate {
+	mutation := newS3WebDAVSettingMutation(c.config, OpUpdate)
+	return &S3WebDAVSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *R2WebDAVSettingClient) UpdateOne(_m *R2WebDAVSetting) *R2WebDAVSettingUpdateOne {
-	mutation := newR2WebDAVSettingMutation(c.config, OpUpdateOne, withR2WebDAVSetting(_m))
-	return &R2WebDAVSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *S3WebDAVSettingClient) UpdateOne(_m *S3WebDAVSetting) *S3WebDAVSettingUpdateOne {
+	mutation := newS3WebDAVSettingMutation(c.config, OpUpdateOne, withS3WebDAVSetting(_m))
+	return &S3WebDAVSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *R2WebDAVSettingClient) UpdateOneID(id int) *R2WebDAVSettingUpdateOne {
-	mutation := newR2WebDAVSettingMutation(c.config, OpUpdateOne, withR2WebDAVSettingID(id))
-	return &R2WebDAVSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *S3WebDAVSettingClient) UpdateOneID(id int) *S3WebDAVSettingUpdateOne {
+	mutation := newS3WebDAVSettingMutation(c.config, OpUpdateOne, withS3WebDAVSettingID(id))
+	return &S3WebDAVSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for R2WebDAVSetting.
-func (c *R2WebDAVSettingClient) Delete() *R2WebDAVSettingDelete {
-	mutation := newR2WebDAVSettingMutation(c.config, OpDelete)
-	return &R2WebDAVSettingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for S3WebDAVSetting.
+func (c *S3WebDAVSettingClient) Delete() *S3WebDAVSettingDelete {
+	mutation := newS3WebDAVSettingMutation(c.config, OpDelete)
+	return &S3WebDAVSettingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *R2WebDAVSettingClient) DeleteOne(_m *R2WebDAVSetting) *R2WebDAVSettingDeleteOne {
+func (c *S3WebDAVSettingClient) DeleteOne(_m *S3WebDAVSetting) *S3WebDAVSettingDeleteOne {
 	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *R2WebDAVSettingClient) DeleteOneID(id int) *R2WebDAVSettingDeleteOne {
-	builder := c.Delete().Where(r2webdavsetting.ID(id))
+func (c *S3WebDAVSettingClient) DeleteOneID(id int) *S3WebDAVSettingDeleteOne {
+	builder := c.Delete().Where(s3webdavsetting.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &R2WebDAVSettingDeleteOne{builder}
+	return &S3WebDAVSettingDeleteOne{builder}
 }
 
-// Query returns a query builder for R2WebDAVSetting.
-func (c *R2WebDAVSettingClient) Query() *R2WebDAVSettingQuery {
-	return &R2WebDAVSettingQuery{
+// Query returns a query builder for S3WebDAVSetting.
+func (c *S3WebDAVSettingClient) Query() *S3WebDAVSettingQuery {
+	return &S3WebDAVSettingQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeR2WebDAVSetting},
+		ctx:    &QueryContext{Type: TypeS3WebDAVSetting},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a R2WebDAVSetting entity by its id.
-func (c *R2WebDAVSettingClient) Get(ctx context.Context, id int) (*R2WebDAVSetting, error) {
-	return c.Query().Where(r2webdavsetting.ID(id)).Only(ctx)
+// Get returns a S3WebDAVSetting entity by its id.
+func (c *S3WebDAVSettingClient) Get(ctx context.Context, id int) (*S3WebDAVSetting, error) {
+	return c.Query().Where(s3webdavsetting.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *R2WebDAVSettingClient) GetX(ctx context.Context, id int) *R2WebDAVSetting {
+func (c *S3WebDAVSettingClient) GetX(ctx context.Context, id int) *S3WebDAVSetting {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -1037,27 +1037,27 @@ func (c *R2WebDAVSettingClient) GetX(ctx context.Context, id int) *R2WebDAVSetti
 }
 
 // Hooks returns the client hooks.
-func (c *R2WebDAVSettingClient) Hooks() []Hook {
-	return c.hooks.R2WebDAVSetting
+func (c *S3WebDAVSettingClient) Hooks() []Hook {
+	return c.hooks.S3WebDAVSetting
 }
 
 // Interceptors returns the client interceptors.
-func (c *R2WebDAVSettingClient) Interceptors() []Interceptor {
-	return c.inters.R2WebDAVSetting
+func (c *S3WebDAVSettingClient) Interceptors() []Interceptor {
+	return c.inters.S3WebDAVSetting
 }
 
-func (c *R2WebDAVSettingClient) mutate(ctx context.Context, m *R2WebDAVSettingMutation) (Value, error) {
+func (c *S3WebDAVSettingClient) mutate(ctx context.Context, m *S3WebDAVSettingMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&R2WebDAVSettingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&S3WebDAVSettingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&R2WebDAVSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&S3WebDAVSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&R2WebDAVSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&S3WebDAVSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&R2WebDAVSettingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&S3WebDAVSettingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown R2WebDAVSetting mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown S3WebDAVSetting mutation op: %q", m.Op())
 	}
 }
 
@@ -1330,11 +1330,11 @@ func (c *TunnelTokenClient) mutate(ctx context.Context, m *TunnelTokenMutation) 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, R2WebDAVSetting,
+		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, S3WebDAVSetting,
 		TunnelManagement, TunnelToken []ent.Hook
 	}
 	inters struct {
-		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, R2WebDAVSetting,
+		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, S3WebDAVSetting,
 		TunnelManagement, TunnelToken []ent.Interceptor
 	}
 )

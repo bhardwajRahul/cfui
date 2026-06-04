@@ -4,7 +4,7 @@ package ent
 
 import (
 	"cfui/internal/persist/ent/predicate"
-	"cfui/internal/persist/ent/r2webdavsetting"
+	"cfui/internal/persist/ent/s3webdavsetting"
 	"context"
 	"fmt"
 	"math"
@@ -15,64 +15,64 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// R2WebDAVSettingQuery is the builder for querying R2WebDAVSetting entities.
-type R2WebDAVSettingQuery struct {
+// S3WebDAVSettingQuery is the builder for querying S3WebDAVSetting entities.
+type S3WebDAVSettingQuery struct {
 	config
 	ctx        *QueryContext
-	order      []r2webdavsetting.OrderOption
+	order      []s3webdavsetting.OrderOption
 	inters     []Interceptor
-	predicates []predicate.R2WebDAVSetting
+	predicates []predicate.S3WebDAVSetting
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the R2WebDAVSettingQuery builder.
-func (_q *R2WebDAVSettingQuery) Where(ps ...predicate.R2WebDAVSetting) *R2WebDAVSettingQuery {
+// Where adds a new predicate for the S3WebDAVSettingQuery builder.
+func (_q *S3WebDAVSettingQuery) Where(ps ...predicate.S3WebDAVSetting) *S3WebDAVSettingQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *R2WebDAVSettingQuery) Limit(limit int) *R2WebDAVSettingQuery {
+func (_q *S3WebDAVSettingQuery) Limit(limit int) *S3WebDAVSettingQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *R2WebDAVSettingQuery) Offset(offset int) *R2WebDAVSettingQuery {
+func (_q *S3WebDAVSettingQuery) Offset(offset int) *S3WebDAVSettingQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *R2WebDAVSettingQuery) Unique(unique bool) *R2WebDAVSettingQuery {
+func (_q *S3WebDAVSettingQuery) Unique(unique bool) *S3WebDAVSettingQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *R2WebDAVSettingQuery) Order(o ...r2webdavsetting.OrderOption) *R2WebDAVSettingQuery {
+func (_q *S3WebDAVSettingQuery) Order(o ...s3webdavsetting.OrderOption) *S3WebDAVSettingQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// First returns the first R2WebDAVSetting entity from the query.
-// Returns a *NotFoundError when no R2WebDAVSetting was found.
-func (_q *R2WebDAVSettingQuery) First(ctx context.Context) (*R2WebDAVSetting, error) {
+// First returns the first S3WebDAVSetting entity from the query.
+// Returns a *NotFoundError when no S3WebDAVSetting was found.
+func (_q *S3WebDAVSettingQuery) First(ctx context.Context) (*S3WebDAVSetting, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{r2webdavsetting.Label}
+		return nil, &NotFoundError{s3webdavsetting.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *R2WebDAVSettingQuery) FirstX(ctx context.Context) *R2WebDAVSetting {
+func (_q *S3WebDAVSettingQuery) FirstX(ctx context.Context) *S3WebDAVSetting {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -80,22 +80,22 @@ func (_q *R2WebDAVSettingQuery) FirstX(ctx context.Context) *R2WebDAVSetting {
 	return node
 }
 
-// FirstID returns the first R2WebDAVSetting ID from the query.
-// Returns a *NotFoundError when no R2WebDAVSetting ID was found.
-func (_q *R2WebDAVSettingQuery) FirstID(ctx context.Context) (id int, err error) {
+// FirstID returns the first S3WebDAVSetting ID from the query.
+// Returns a *NotFoundError when no S3WebDAVSetting ID was found.
+func (_q *S3WebDAVSettingQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{r2webdavsetting.Label}
+		err = &NotFoundError{s3webdavsetting.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *R2WebDAVSettingQuery) FirstIDX(ctx context.Context) int {
+func (_q *S3WebDAVSettingQuery) FirstIDX(ctx context.Context) int {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -103,10 +103,10 @@ func (_q *R2WebDAVSettingQuery) FirstIDX(ctx context.Context) int {
 	return id
 }
 
-// Only returns a single R2WebDAVSetting entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one R2WebDAVSetting entity is found.
-// Returns a *NotFoundError when no R2WebDAVSetting entities are found.
-func (_q *R2WebDAVSettingQuery) Only(ctx context.Context) (*R2WebDAVSetting, error) {
+// Only returns a single S3WebDAVSetting entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one S3WebDAVSetting entity is found.
+// Returns a *NotFoundError when no S3WebDAVSetting entities are found.
+func (_q *S3WebDAVSettingQuery) Only(ctx context.Context) (*S3WebDAVSetting, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -115,14 +115,14 @@ func (_q *R2WebDAVSettingQuery) Only(ctx context.Context) (*R2WebDAVSetting, err
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{r2webdavsetting.Label}
+		return nil, &NotFoundError{s3webdavsetting.Label}
 	default:
-		return nil, &NotSingularError{r2webdavsetting.Label}
+		return nil, &NotSingularError{s3webdavsetting.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *R2WebDAVSettingQuery) OnlyX(ctx context.Context) *R2WebDAVSetting {
+func (_q *S3WebDAVSettingQuery) OnlyX(ctx context.Context) *S3WebDAVSetting {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -130,10 +130,10 @@ func (_q *R2WebDAVSettingQuery) OnlyX(ctx context.Context) *R2WebDAVSetting {
 	return node
 }
 
-// OnlyID is like Only, but returns the only R2WebDAVSetting ID in the query.
-// Returns a *NotSingularError when more than one R2WebDAVSetting ID is found.
+// OnlyID is like Only, but returns the only S3WebDAVSetting ID in the query.
+// Returns a *NotSingularError when more than one S3WebDAVSetting ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *R2WebDAVSettingQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (_q *S3WebDAVSettingQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -142,15 +142,15 @@ func (_q *R2WebDAVSettingQuery) OnlyID(ctx context.Context) (id int, err error) 
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{r2webdavsetting.Label}
+		err = &NotFoundError{s3webdavsetting.Label}
 	default:
-		err = &NotSingularError{r2webdavsetting.Label}
+		err = &NotSingularError{s3webdavsetting.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *R2WebDAVSettingQuery) OnlyIDX(ctx context.Context) int {
+func (_q *S3WebDAVSettingQuery) OnlyIDX(ctx context.Context) int {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -158,18 +158,18 @@ func (_q *R2WebDAVSettingQuery) OnlyIDX(ctx context.Context) int {
 	return id
 }
 
-// All executes the query and returns a list of R2WebDAVSettings.
-func (_q *R2WebDAVSettingQuery) All(ctx context.Context) ([]*R2WebDAVSetting, error) {
+// All executes the query and returns a list of S3WebDAVSettings.
+func (_q *S3WebDAVSettingQuery) All(ctx context.Context) ([]*S3WebDAVSetting, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*R2WebDAVSetting, *R2WebDAVSettingQuery]()
-	return withInterceptors[[]*R2WebDAVSetting](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*S3WebDAVSetting, *S3WebDAVSettingQuery]()
+	return withInterceptors[[]*S3WebDAVSetting](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *R2WebDAVSettingQuery) AllX(ctx context.Context) []*R2WebDAVSetting {
+func (_q *S3WebDAVSettingQuery) AllX(ctx context.Context) []*S3WebDAVSetting {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -177,20 +177,20 @@ func (_q *R2WebDAVSettingQuery) AllX(ctx context.Context) []*R2WebDAVSetting {
 	return nodes
 }
 
-// IDs executes the query and returns a list of R2WebDAVSetting IDs.
-func (_q *R2WebDAVSettingQuery) IDs(ctx context.Context) (ids []int, err error) {
+// IDs executes the query and returns a list of S3WebDAVSetting IDs.
+func (_q *S3WebDAVSettingQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(r2webdavsetting.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(s3webdavsetting.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *R2WebDAVSettingQuery) IDsX(ctx context.Context) []int {
+func (_q *S3WebDAVSettingQuery) IDsX(ctx context.Context) []int {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -199,16 +199,16 @@ func (_q *R2WebDAVSettingQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (_q *R2WebDAVSettingQuery) Count(ctx context.Context) (int, error) {
+func (_q *S3WebDAVSettingQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*R2WebDAVSettingQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*S3WebDAVSettingQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *R2WebDAVSettingQuery) CountX(ctx context.Context) int {
+func (_q *S3WebDAVSettingQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -217,7 +217,7 @@ func (_q *R2WebDAVSettingQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *R2WebDAVSettingQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *S3WebDAVSettingQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -230,7 +230,7 @@ func (_q *R2WebDAVSettingQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *R2WebDAVSettingQuery) ExistX(ctx context.Context) bool {
+func (_q *S3WebDAVSettingQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -238,18 +238,18 @@ func (_q *R2WebDAVSettingQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the R2WebDAVSettingQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the S3WebDAVSettingQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *R2WebDAVSettingQuery) Clone() *R2WebDAVSettingQuery {
+func (_q *S3WebDAVSettingQuery) Clone() *S3WebDAVSettingQuery {
 	if _q == nil {
 		return nil
 	}
-	return &R2WebDAVSettingQuery{
+	return &S3WebDAVSettingQuery{
 		config:     _q.config,
 		ctx:        _q.ctx.Clone(),
-		order:      append([]r2webdavsetting.OrderOption{}, _q.order...),
+		order:      append([]s3webdavsetting.OrderOption{}, _q.order...),
 		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.R2WebDAVSetting{}, _q.predicates...),
+		predicates: append([]predicate.S3WebDAVSetting{}, _q.predicates...),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -266,15 +266,15 @@ func (_q *R2WebDAVSettingQuery) Clone() *R2WebDAVSettingQuery {
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.R2WebDAVSetting.Query().
-//		GroupBy(r2webdavsetting.FieldKey).
+//	client.S3WebDAVSetting.Query().
+//		GroupBy(s3webdavsetting.FieldKey).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *R2WebDAVSettingQuery) GroupBy(field string, fields ...string) *R2WebDAVSettingGroupBy {
+func (_q *S3WebDAVSettingQuery) GroupBy(field string, fields ...string) *S3WebDAVSettingGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &R2WebDAVSettingGroupBy{build: _q}
+	grbuild := &S3WebDAVSettingGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = r2webdavsetting.Label
+	grbuild.label = s3webdavsetting.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -288,23 +288,23 @@ func (_q *R2WebDAVSettingQuery) GroupBy(field string, fields ...string) *R2WebDA
 //		Key string `json:"key,omitempty"`
 //	}
 //
-//	client.R2WebDAVSetting.Query().
-//		Select(r2webdavsetting.FieldKey).
+//	client.S3WebDAVSetting.Query().
+//		Select(s3webdavsetting.FieldKey).
 //		Scan(ctx, &v)
-func (_q *R2WebDAVSettingQuery) Select(fields ...string) *R2WebDAVSettingSelect {
+func (_q *S3WebDAVSettingQuery) Select(fields ...string) *S3WebDAVSettingSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &R2WebDAVSettingSelect{R2WebDAVSettingQuery: _q}
-	sbuild.label = r2webdavsetting.Label
+	sbuild := &S3WebDAVSettingSelect{S3WebDAVSettingQuery: _q}
+	sbuild.label = s3webdavsetting.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a R2WebDAVSettingSelect configured with the given aggregations.
-func (_q *R2WebDAVSettingQuery) Aggregate(fns ...AggregateFunc) *R2WebDAVSettingSelect {
+// Aggregate returns a S3WebDAVSettingSelect configured with the given aggregations.
+func (_q *S3WebDAVSettingQuery) Aggregate(fns ...AggregateFunc) *S3WebDAVSettingSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *R2WebDAVSettingQuery) prepareQuery(ctx context.Context) error {
+func (_q *S3WebDAVSettingQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -316,7 +316,7 @@ func (_q *R2WebDAVSettingQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !r2webdavsetting.ValidColumn(f) {
+		if !s3webdavsetting.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -330,16 +330,16 @@ func (_q *R2WebDAVSettingQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *R2WebDAVSettingQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*R2WebDAVSetting, error) {
+func (_q *S3WebDAVSettingQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S3WebDAVSetting, error) {
 	var (
-		nodes = []*R2WebDAVSetting{}
+		nodes = []*S3WebDAVSetting{}
 		_spec = _q.querySpec()
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*R2WebDAVSetting).scanValues(nil, columns)
+		return (*S3WebDAVSetting).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &R2WebDAVSetting{config: _q.config}
+		node := &S3WebDAVSetting{config: _q.config}
 		nodes = append(nodes, node)
 		return node.assignValues(columns, values)
 	}
@@ -355,7 +355,7 @@ func (_q *R2WebDAVSettingQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	return nodes, nil
 }
 
-func (_q *R2WebDAVSettingQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *S3WebDAVSettingQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	_spec.Node.Columns = _q.ctx.Fields
 	if len(_q.ctx.Fields) > 0 {
@@ -364,8 +364,8 @@ func (_q *R2WebDAVSettingQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *R2WebDAVSettingQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(r2webdavsetting.Table, r2webdavsetting.Columns, sqlgraph.NewFieldSpec(r2webdavsetting.FieldID, field.TypeInt))
+func (_q *S3WebDAVSettingQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(s3webdavsetting.Table, s3webdavsetting.Columns, sqlgraph.NewFieldSpec(s3webdavsetting.FieldID, field.TypeInt))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -374,9 +374,9 @@ func (_q *R2WebDAVSettingQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, r2webdavsetting.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, s3webdavsetting.FieldID)
 		for i := range fields {
-			if fields[i] != r2webdavsetting.FieldID {
+			if fields[i] != s3webdavsetting.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
@@ -404,12 +404,12 @@ func (_q *R2WebDAVSettingQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *R2WebDAVSettingQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *S3WebDAVSettingQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(r2webdavsetting.Table)
+	t1 := builder.Table(s3webdavsetting.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = r2webdavsetting.Columns
+		columns = s3webdavsetting.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -436,28 +436,28 @@ func (_q *R2WebDAVSettingQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// R2WebDAVSettingGroupBy is the group-by builder for R2WebDAVSetting entities.
-type R2WebDAVSettingGroupBy struct {
+// S3WebDAVSettingGroupBy is the group-by builder for S3WebDAVSetting entities.
+type S3WebDAVSettingGroupBy struct {
 	selector
-	build *R2WebDAVSettingQuery
+	build *S3WebDAVSettingQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *R2WebDAVSettingGroupBy) Aggregate(fns ...AggregateFunc) *R2WebDAVSettingGroupBy {
+func (_g *S3WebDAVSettingGroupBy) Aggregate(fns ...AggregateFunc) *S3WebDAVSettingGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *R2WebDAVSettingGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *S3WebDAVSettingGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*R2WebDAVSettingQuery, *R2WebDAVSettingGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*S3WebDAVSettingQuery, *S3WebDAVSettingGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *R2WebDAVSettingGroupBy) sqlScan(ctx context.Context, root *R2WebDAVSettingQuery, v any) error {
+func (_g *S3WebDAVSettingGroupBy) sqlScan(ctx context.Context, root *S3WebDAVSettingQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -484,28 +484,28 @@ func (_g *R2WebDAVSettingGroupBy) sqlScan(ctx context.Context, root *R2WebDAVSet
 	return sql.ScanSlice(rows, v)
 }
 
-// R2WebDAVSettingSelect is the builder for selecting fields of R2WebDAVSetting entities.
-type R2WebDAVSettingSelect struct {
-	*R2WebDAVSettingQuery
+// S3WebDAVSettingSelect is the builder for selecting fields of S3WebDAVSetting entities.
+type S3WebDAVSettingSelect struct {
+	*S3WebDAVSettingQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *R2WebDAVSettingSelect) Aggregate(fns ...AggregateFunc) *R2WebDAVSettingSelect {
+func (_s *S3WebDAVSettingSelect) Aggregate(fns ...AggregateFunc) *S3WebDAVSettingSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *R2WebDAVSettingSelect) Scan(ctx context.Context, v any) error {
+func (_s *S3WebDAVSettingSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*R2WebDAVSettingQuery, *R2WebDAVSettingSelect](ctx, _s.R2WebDAVSettingQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*S3WebDAVSettingQuery, *S3WebDAVSettingSelect](ctx, _s.S3WebDAVSettingQuery, _s, _s.inters, v)
 }
 
-func (_s *R2WebDAVSettingSelect) sqlScan(ctx context.Context, root *R2WebDAVSettingQuery, v any) error {
+func (_s *S3WebDAVSettingSelect) sqlScan(ctx context.Context, root *S3WebDAVSettingQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

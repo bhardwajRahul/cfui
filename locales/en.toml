@@ -356,10 +356,10 @@ other = "Tunnel UUID"
 other = "Your tunnel's UUID. Find it at Zero Trust → Networks → Connectors → Cloudflare Tunnels → click your tunnel name → Overview. Changing this field loads the selected tunnel configuration."
 
 [auth_help]
-other = "API Token is recommended. Create one at Dashboard → My Profile → API Tokens. Tunnel management requires: Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit. R2 WebDAV additionally requires Account · Workers R2 Storage · Write. Blank fields keep saved values."
+other = "API Token is recommended. Tunnel management requires: Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit. Workers R2 Storage · Edit is optional and only for listing or creating R2 buckets. Blank fields keep saved values."
 
 [api_token_help]
-other = "Create at Cloudflare Dashboard → My Profile → API Tokens → Create Token. Select Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit. Add Account · Workers R2 Storage · Write when enabling R2 WebDAV."
+other = "Create at Cloudflare Dashboard → My Profile → API Tokens → Create Token. Select the tunnel permissions here. Add Workers R2 Storage Edit only if you want cfui to list or create R2 buckets."
 
 [api_key_help]
 other = "Find your Global API Key at Cloudflare Dashboard → My Profile → API Keys. For security, prefer an API Token instead."
@@ -454,17 +454,11 @@ other = "Zone · Zone · Read"
 [api_permission_dns]
 other = "Zone · DNS · Edit"
 
-[api_permission_r2_storage]
-other = "Account · Workers R2 Storage · Write"
-
-[api_permission_r2_bucket_item]
-other = "R2 Bucket · Workers R2 Storage Bucket Item · Write"
-
 [api_permission_note]
-other = "The first three permissions are required for Remote Tunnel Manager and DDNS."
+other = "These permissions are required for Remote Tunnel Manager and DDNS."
 
 [api_permission_r2_note]
-other = "R2 WebDAV additionally needs Account · Workers R2 Storage · Write so cfui can list and create buckets."
+other = "Workers R2 Storage Edit is only for optional R2 bucket list/create. S3 WebDAV file access uses the S3 Access Key ID and Secret Access Key configured on the S3 page."
 
 [remote_manager_config]
 other = "Remote manager configuration"
@@ -567,12 +561,6 @@ other = "Zone:Read"
 
 [verify_permission_dns_edit]
 other = "DNS:Edit"
-
-[verify_permission_r2_storage_write]
-other = "R2 Storage:Write"
-
-[verify_permission_r2_bucket_item_write]
-other = "R2 Bucket Item:Write"
 
 [ddns_tab]
 other = "DDNS"
@@ -1026,215 +1014,356 @@ other = "New logs"
 [action_shortcut_hint]
 other = "Ctrl/⌘ + Enter"
 
-[r2_tab]
-other = "R2 WebDAV"
+[s3_tab]
+other = "S3 WebDAV"
 
-[r2_title]
-other = "R2 WebDAV"
+[s3_title]
+other = "S3 WebDAV"
 
-[r2_subtitle]
-other = "Expose one Cloudflare R2 bucket through WebDAV and manage files from this page."
+[s3_subtitle]
+other = "Mount one S3-compatible bucket path as WebDAV and manage files from this page."
 
-[r2_status_setup]
+[s3_status_setup]
 other = "Setup required"
 
-[r2_status_enabled]
+[s3_status_enabled]
 other = "Enabled"
 
-[r2_status_ready_to_enable]
+[s3_status_ready_to_enable]
 other = "Ready to enable"
 
-[r2_connection]
-other = "Cloudflare connection"
+[s3_provider]
+other = "Storage provider"
 
-[r2_connection_help]
-other = "R2 WebDAV requires API Token mode with Account · Workers R2 Storage · Write. Global API Key mode is not supported for R2 object access."
+[s3_mounts]
+other = "Mounts"
 
-[r2_account_help]
-other = "Leave empty to reuse the Remote Tunnel Manager Account ID."
+[s3_mounts_help]
+other = "Each mount has its own S3 credentials, bucket path, WebDAV path, and WebDAV login."
 
-[r2_jurisdiction]
+[s3_new_mount]
+other = "New Mount"
+
+[s3_new_mount_default]
+other = "New S3 Mount"
+
+[s3_mount_created]
+other = "S3 mount created"
+
+[s3_mount_create_failed]
+other = "Failed to create S3 mount"
+
+[s3_delete_mount]
+other = "Delete mount"
+
+[s3_delete_mount_title]
+other = "Delete S3 mount?"
+
+[s3_delete_mount_message]
+other = "Delete {name}? This removes the cfui mount configuration, not the bucket."
+
+[s3_mount_deleted]
+other = "S3 mount deleted"
+
+[s3_mount_delete_failed]
+other = "Failed to delete S3 mount"
+
+[s3_mount_name]
+other = "Mount name"
+
+[s3_mount_name_help]
+other = "Shown only inside cfui so you can tell multiple mounts apart."
+
+[s3_provider_help]
+other = "Use generic S3 for most services. Choose Cloudflare R2 only when you want cfui to help list or create R2 buckets."
+
+[s3_provider_label]
+other = "Provider"
+
+[s3_provider_generic]
+other = "Generic S3"
+
+[s3_provider_r2]
+other = "Cloudflare R2"
+
+[s3_provider_label_help]
+other = "This only changes presets and optional bucket management. File access always uses S3 credentials."
+
+[s3_endpoint_url]
+other = "S3 endpoint"
+
+[s3_endpoint_url_help]
+other = "For R2, use https://<ACCOUNT_ID>.r2.cloudflarestorage.com."
+
+[s3_region]
+other = "Region"
+
+[s3_region_help]
+other = "Use auto for Cloudflare R2. Other S3 services usually require their documented region."
+
+[s3_path_style]
+other = "Use path-style requests"
+
+[s3_path_style_help]
+other = "Keep this on for R2 and most S3-compatible providers unless your provider requires virtual-host style."
+
+[s3_r2_credentials_guide]
+other = "Create an R2 API token from the R2 console to get the Access Key ID and Secret Access Key. The Secret Access Key is only shown once."
+
+[s3_r2_tokens_path]
+other = "Direct path:"
+
+[s3_r2_management]
+other = "Optional R2 bucket management"
+
+[s3_r2_management_help]
+other = "Only needed if you want cfui to list or create buckets. WebDAV file access does not use this Cloudflare API token."
+
+[s3_account_help]
+other = "Used to build the R2 endpoint and to call the optional bucket list/create API. Leave empty to reuse Remote Tunnel Manager's Account ID."
+
+[s3_jurisdiction]
 other = "Jurisdiction"
 
-[r2_jurisdiction_default]
+[s3_jurisdiction_default]
 other = "Default"
 
-[r2_jurisdiction_eu]
+[s3_jurisdiction_eu]
 other = "EU"
 
-[r2_jurisdiction_fedramp]
+[s3_jurisdiction_fedramp]
 other = "FedRAMP"
 
-[r2_jurisdiction_help]
-other = "Match the jurisdiction used by your R2 bucket endpoint."
+[s3_jurisdiction_help]
+other = "Match the endpoint shown in your R2 Overview page."
 
-[r2_bucket]
-other = "Bucket"
+[s3_bucket_select]
+other = "Choose from R2 buckets"
 
-[r2_bucket_help]
-other = "Select an existing bucket or create a new one for WebDAV access."
+[s3_r2_management_unavailable]
+other = "Bucket list/create is optional and needs a Cloudflare API Token with Workers R2 Storage Edit."
 
-[r2_bucket_select]
-other = "Selected bucket"
+[s3_r2_management_ready]
+other = "R2 bucket management is available."
 
-[r2_bucket_select_help]
-other = "The WebDAV endpoint exposes this bucket only."
-
-[r2_bucket_choose]
+[s3_bucket_choose]
 other = "Choose a bucket"
 
-[r2_create_bucket]
-other = "Create bucket"
+[s3_create_bucket]
+other = "Create R2 bucket"
 
-[r2_create_bucket_help]
+[s3_create_bucket_help]
 other = "Use lowercase letters, numbers, dots, and hyphens."
 
-[r2_webdav_credentials]
-other = "WebDAV credentials"
+[s3_bucket_path]
+other = "Bucket and exposed path"
 
-[r2_webdav_credentials_help]
+[s3_bucket_path_help]
+other = "Choose the bucket, optional object prefix, and the WebDAV URL path shown by cfui."
+
+[s3_bucket_name]
+other = "Bucket name"
+
+[s3_bucket_name_help]
+other = "cfui mounts this bucket only. For generic S3, create the bucket outside cfui first."
+
+[s3_root_prefix]
+other = "Bucket subpath"
+
+[s3_root_prefix_help]
+other = "Optional. WebDAV will only see files under this prefix."
+
+[s3_mount_path]
+other = "WebDAV path"
+
+[s3_mount_path_help]
+other = "Must start with /webdav/. Examples: /webdav/my_r2/ or /webdav/qiniu/."
+
+[s3_s3_credentials]
+other = "S3 credentials"
+
+[s3_s3_credentials_help]
+other = "These credentials are used by cfui to read and write objects. They are separate from the WebDAV login below."
+
+[s3_access_key_id]
+other = "Access Key ID"
+
+[s3_secret_access_key]
+other = "Secret Access Key"
+
+[s3_secret_placeholder]
+other = "Leave blank to keep current secret"
+
+[s3_secret_set]
+other = "Secret Access Key saved."
+
+[s3_secret_not_set]
+other = "No Secret Access Key saved."
+
+[s3_webdav_credentials]
+other = "WebDAV login"
+
+[s3_webdav_credentials_help]
 other = "These credentials are only for WebDAV clients connecting to cfui."
 
-[r2_webdav_username]
+[s3_webdav_username]
 other = "WebDAV username"
 
-[r2_webdav_password]
+[s3_webdav_password]
 other = "WebDAV password"
 
-[r2_password_placeholder]
+[s3_password_placeholder]
 other = "Leave blank to keep current password"
 
-[r2_password_set]
+[s3_password_set]
 other = "WebDAV password saved."
 
-[r2_password_not_set]
+[s3_password_not_set]
 other = "No WebDAV password saved."
 
-[r2_webdav_endpoint]
+[s3_webdav_endpoint]
 other = "WebDAV endpoint"
 
-[r2_endpoint_help]
-other = "Use this path with the WebDAV username and password after the R2 setup is complete."
+[s3_endpoint_help]
+other = "Use this path with the WebDAV username and password after the feature is enabled."
 
-[r2_save_settings]
-other = "Save R2 Settings"
+[s3_test_connection]
+other = "Test connection"
 
-[r2_files]
+[s3_save_settings]
+other = "Save settings"
+
+[s3_files]
 other = "Files"
 
-[r2_files_help]
-other = "Folders are R2 prefixes. Rename copies the object then deletes the original."
+[s3_files_help]
+other = "Folders map to object prefixes. Changes apply inside the configured bucket subpath."
 
-[r2_files_disabled_title]
-other = "Complete R2 setup first"
+[s3_files_disabled_title]
+other = "Complete S3 setup first"
 
-[r2_files_disabled_help]
-other = "Select a bucket and set WebDAV credentials before using the file manager."
+[s3_files_disabled_help]
+other = "Set endpoint, bucket, S3 credentials, and WebDAV login before using the file manager."
 
-[r2_new_folder]
+[s3_new_folder]
 other = "New Folder"
 
-[feature_r2_name]
-other = "R2 WebDAV"
+[feature_s3_name]
+other = "S3 WebDAV"
 
-[feature_r2_desc]
-other = "Expose a selected R2 bucket through WebDAV. Requires API Token mode and Account · Workers R2 Storage · Write."
+[feature_s3_desc]
+other = "Expose one S3-compatible bucket path through WebDAV. Cloudflare R2 is supported as a provider preset."
 
-[r2_ready]
-other = "R2 WebDAV is ready."
+[s3_ready]
+other = "S3 WebDAV is ready."
 
-[r2_feature_can_enable]
-other = "Token and R2 permission are ready. Enable to configure bucket and WebDAV credentials."
+[s3_feature_can_enable]
+other = "Enable this tab, then configure endpoint, bucket, S3 credentials, and WebDAV login."
 
-[r2_api_token_required]
-other = "Use Cloudflare API Token mode before enabling R2 WebDAV."
+[s3_endpoint_required]
+other = "Enter an S3 endpoint."
 
-[r2_account_required]
-other = "Set an Account ID or configure it in Remote Tunnel Manager."
+[s3_credentials_required]
+other = "Enter Access Key ID and Secret Access Key."
 
-[r2_permission_denied]
-other = "The API Token needs Account · Workers R2 Storage · Write."
+[s3_mount_path_invalid]
+other = "WebDAV path must start with /webdav/."
 
-[r2_bucket_required]
-other = "Select or create an R2 bucket."
+[s3_bucket_required]
+other = "Enter a bucket name."
 
-[r2_webdav_credentials_required]
+[s3_webdav_credentials_required]
 other = "Set a WebDAV username and password."
 
-[r2_bucket_not_found]
-other = "The selected bucket was not found or is not accessible."
+[s3_configuration_incomplete]
+other = "S3 WebDAV settings are incomplete."
 
-[r2_configure_first]
-other = "Configure R2 settings before enabling this feature."
+[s3_filesystem_unavailable]
+other = "S3 filesystem is not available."
 
-[r2_not_ready]
-other = "R2 WebDAV is not ready to enable."
+[s3_configure_first]
+other = "Configure S3 WebDAV settings first."
 
-[r2_buckets_loaded]
+[s3_buckets_loaded]
 other = "R2 buckets loaded"
 
-[r2_bucket_load_failed]
+[s3_bucket_load_failed]
 other = "Failed to load R2 buckets"
 
-[r2_bucket_name_required]
+[s3_bucket_name_required]
 other = "Bucket name is required."
 
-[r2_bucket_created]
+[s3_bucket_created]
 other = "R2 bucket created"
 
-[r2_bucket_create_failed]
+[s3_bucket_create_failed]
 other = "Failed to create R2 bucket"
 
-[r2_settings_saved]
-other = "R2 settings saved"
+[s3_settings_saved]
+other = "S3 WebDAV settings saved"
 
-[r2_settings_save_failed]
-other = "Failed to save R2 settings"
+[s3_settings_save_failed]
+other = "Failed to save S3 WebDAV settings"
 
-[r2_files_load_failed]
-other = "Failed to load R2 files"
+[s3_test_success]
+other = "S3 connection works."
 
-[r2_files_empty]
+[s3_test_failed]
+other = "S3 connection test failed"
+
+[testing]
+other = "Testing..."
+
+[s3_files_load_failed]
+other = "Failed to load S3 files"
+
+[s3_files_empty]
 other = "This bucket path is empty."
 
-[r2_folder]
+[s3_folder]
 other = "Folder"
 
-[r2_upload_done]
+[s3_upload_done]
 other = "Upload complete"
 
-[r2_upload_failed]
+[s3_upload_failed]
 other = "Upload failed"
 
-[r2_new_folder_prompt]
+[s3_new_folder_prompt]
 other = "Folder name"
 
-[r2_folder_created]
+[s3_folder_created]
 other = "Folder created"
 
-[r2_folder_create_failed]
+[s3_folder_create_failed]
 other = "Failed to create folder"
 
-[r2_rename_prompt]
+[s3_rename_prompt]
 other = "New name"
 
-[r2_renamed]
+[s3_renamed]
 other = "Renamed"
 
-[r2_rename_failed]
+[s3_rename_failed]
 other = "Rename failed"
 
-[r2_delete_title]
-other = "Delete R2 object?"
+[s3_delete_title]
+other = "Delete object?"
 
-[r2_delete_message]
-other = "Delete {name}? This removes it from the R2 bucket."
+[s3_delete_message]
+other = "Delete {name}? This removes it from the mounted bucket path."
 
-[r2_deleted]
+[s3_deleted]
 other = "Deleted"
 
-[r2_delete_failed]
+[s3_delete_failed]
 other = "Delete failed"
+
+[ready]
+other = "Ready"
+
+[disabled]
+other = "Disabled"
 
 [refresh]
 other = "Refresh"

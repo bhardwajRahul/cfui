@@ -9,7 +9,7 @@ import (
 	"cfui/internal/persist/ent/ddnssetting"
 	"cfui/internal/persist/ent/mcptoken"
 	"cfui/internal/persist/ent/predicate"
-	"cfui/internal/persist/ent/r2webdavsetting"
+	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
 	"cfui/internal/persist/ent/tunneltoken"
 	"context"
@@ -36,7 +36,7 @@ const (
 	TypeDDNSRecord       = "DDNSRecord"
 	TypeDDNSSetting      = "DDNSSetting"
 	TypeMCPToken         = "MCPToken"
-	TypeR2WebDAVSetting  = "R2WebDAVSetting"
+	TypeS3WebDAVSetting  = "S3WebDAVSetting"
 	TypeTunnelManagement = "TunnelManagement"
 	TypeTunnelToken      = "TunnelToken"
 )
@@ -44,37 +44,39 @@ const (
 // AppSettingMutation represents an operation that mutates the AppSetting nodes in the graph.
 type AppSettingMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	key               *string
-	auto_start        *bool
-	auto_restart      *bool
-	custom_tag        *string
-	software_name     *string
-	protocol          *string
-	grace_period      *string
-	region            *string
-	retries           *int
-	addretries        *int
-	metrics_enable    *bool
-	metrics_port      *int
-	addmetrics_port   *int
-	log_level         *string
-	log_file          *string
-	log_json          *bool
-	edge_ip_version   *string
-	edge_bind_address *string
-	post_quantum      *bool
-	no_tls_verify     *bool
-	extra_args        *string
-	mcp_enabled       *bool
-	created_at        *time.Time
-	updated_at        *time.Time
-	clearedFields     map[string]struct{}
-	done              bool
-	oldValue          func(context.Context) (*AppSetting, error)
-	predicates        []predicate.AppSetting
+	op                   Op
+	typ                  string
+	id                   *int
+	key                  *string
+	auto_start           *bool
+	auto_restart         *bool
+	custom_tag           *string
+	software_name        *string
+	protocol             *string
+	grace_period         *string
+	region               *string
+	retries              *int
+	addretries           *int
+	metrics_enable       *bool
+	metrics_port         *int
+	addmetrics_port      *int
+	log_level            *string
+	log_file             *string
+	log_json             *bool
+	edge_ip_version      *string
+	edge_bind_address    *string
+	post_quantum         *bool
+	no_tls_verify        *bool
+	extra_args           *string
+	mcp_enabled          *bool
+	s3_webdav_enabled    *bool
+	s3_webdav_active_key *string
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*AppSetting, error)
+	predicates           []predicate.AppSetting
 }
 
 var _ ent.Mutation = (*AppSettingMutation)(nil)
@@ -935,6 +937,78 @@ func (m *AppSettingMutation) ResetMcpEnabled() {
 	m.mcp_enabled = nil
 }
 
+// SetS3WebdavEnabled sets the "s3_webdav_enabled" field.
+func (m *AppSettingMutation) SetS3WebdavEnabled(b bool) {
+	m.s3_webdav_enabled = &b
+}
+
+// S3WebdavEnabled returns the value of the "s3_webdav_enabled" field in the mutation.
+func (m *AppSettingMutation) S3WebdavEnabled() (r bool, exists bool) {
+	v := m.s3_webdav_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldS3WebdavEnabled returns the old "s3_webdav_enabled" field's value of the AppSetting entity.
+// If the AppSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AppSettingMutation) OldS3WebdavEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldS3WebdavEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldS3WebdavEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldS3WebdavEnabled: %w", err)
+	}
+	return oldValue.S3WebdavEnabled, nil
+}
+
+// ResetS3WebdavEnabled resets all changes to the "s3_webdav_enabled" field.
+func (m *AppSettingMutation) ResetS3WebdavEnabled() {
+	m.s3_webdav_enabled = nil
+}
+
+// SetS3WebdavActiveKey sets the "s3_webdav_active_key" field.
+func (m *AppSettingMutation) SetS3WebdavActiveKey(s string) {
+	m.s3_webdav_active_key = &s
+}
+
+// S3WebdavActiveKey returns the value of the "s3_webdav_active_key" field in the mutation.
+func (m *AppSettingMutation) S3WebdavActiveKey() (r string, exists bool) {
+	v := m.s3_webdav_active_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldS3WebdavActiveKey returns the old "s3_webdav_active_key" field's value of the AppSetting entity.
+// If the AppSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AppSettingMutation) OldS3WebdavActiveKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldS3WebdavActiveKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldS3WebdavActiveKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldS3WebdavActiveKey: %w", err)
+	}
+	return oldValue.S3WebdavActiveKey, nil
+}
+
+// ResetS3WebdavActiveKey resets all changes to the "s3_webdav_active_key" field.
+func (m *AppSettingMutation) ResetS3WebdavActiveKey() {
+	m.s3_webdav_active_key = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *AppSettingMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -1041,7 +1115,7 @@ func (m *AppSettingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AppSettingMutation) Fields() []string {
-	fields := make([]string, 0, 22)
+	fields := make([]string, 0, 24)
 	if m.key != nil {
 		fields = append(fields, appsetting.FieldKey)
 	}
@@ -1102,6 +1176,12 @@ func (m *AppSettingMutation) Fields() []string {
 	if m.mcp_enabled != nil {
 		fields = append(fields, appsetting.FieldMcpEnabled)
 	}
+	if m.s3_webdav_enabled != nil {
+		fields = append(fields, appsetting.FieldS3WebdavEnabled)
+	}
+	if m.s3_webdav_active_key != nil {
+		fields = append(fields, appsetting.FieldS3WebdavActiveKey)
+	}
 	if m.created_at != nil {
 		fields = append(fields, appsetting.FieldCreatedAt)
 	}
@@ -1156,6 +1236,10 @@ func (m *AppSettingMutation) Field(name string) (ent.Value, bool) {
 		return m.ExtraArgs()
 	case appsetting.FieldMcpEnabled:
 		return m.McpEnabled()
+	case appsetting.FieldS3WebdavEnabled:
+		return m.S3WebdavEnabled()
+	case appsetting.FieldS3WebdavActiveKey:
+		return m.S3WebdavActiveKey()
 	case appsetting.FieldCreatedAt:
 		return m.CreatedAt()
 	case appsetting.FieldUpdatedAt:
@@ -1209,6 +1293,10 @@ func (m *AppSettingMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldExtraArgs(ctx)
 	case appsetting.FieldMcpEnabled:
 		return m.OldMcpEnabled(ctx)
+	case appsetting.FieldS3WebdavEnabled:
+		return m.OldS3WebdavEnabled(ctx)
+	case appsetting.FieldS3WebdavActiveKey:
+		return m.OldS3WebdavActiveKey(ctx)
 	case appsetting.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case appsetting.FieldUpdatedAt:
@@ -1362,6 +1450,20 @@ func (m *AppSettingMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetMcpEnabled(v)
 		return nil
+	case appsetting.FieldS3WebdavEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetS3WebdavEnabled(v)
+		return nil
+	case appsetting.FieldS3WebdavActiveKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetS3WebdavActiveKey(v)
+		return nil
 	case appsetting.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -1511,6 +1613,12 @@ func (m *AppSettingMutation) ResetField(name string) error {
 		return nil
 	case appsetting.FieldMcpEnabled:
 		m.ResetMcpEnabled()
+		return nil
+	case appsetting.FieldS3WebdavEnabled:
+		m.ResetS3WebdavEnabled()
+		return nil
+	case appsetting.FieldS3WebdavActiveKey:
+		m.ResetS3WebdavActiveKey()
 		return nil
 	case appsetting.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -4236,38 +4344,49 @@ func (m *MCPTokenMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown MCPToken edge %s", name)
 }
 
-// R2WebDAVSettingMutation represents an operation that mutates the R2WebDAVSetting nodes in the graph.
-type R2WebDAVSettingMutation struct {
+// S3WebDAVSettingMutation represents an operation that mutates the S3WebDAVSetting nodes in the graph.
+type S3WebDAVSettingMutation struct {
 	config
 	op                   Op
 	typ                  string
 	id                   *int
 	key                  *string
+	name                 *string
+	sort_order           *int
+	addsort_order        *int
 	enabled              *bool
+	provider             *string
+	endpoint_url         *string
+	region               *string
+	path_style           *bool
 	account_id           *string
 	bucket_name          *string
+	root_prefix          *string
+	mount_path           *string
 	jurisdiction         *string
+	access_key_id        *string
+	secret_access_key    *string
 	webdav_username      *string
 	webdav_password_hash *string
 	created_at           *time.Time
 	updated_at           *time.Time
 	clearedFields        map[string]struct{}
 	done                 bool
-	oldValue             func(context.Context) (*R2WebDAVSetting, error)
-	predicates           []predicate.R2WebDAVSetting
+	oldValue             func(context.Context) (*S3WebDAVSetting, error)
+	predicates           []predicate.S3WebDAVSetting
 }
 
-var _ ent.Mutation = (*R2WebDAVSettingMutation)(nil)
+var _ ent.Mutation = (*S3WebDAVSettingMutation)(nil)
 
-// r2webdavsettingOption allows management of the mutation configuration using functional options.
-type r2webdavsettingOption func(*R2WebDAVSettingMutation)
+// s3webdavsettingOption allows management of the mutation configuration using functional options.
+type s3webdavsettingOption func(*S3WebDAVSettingMutation)
 
-// newR2WebDAVSettingMutation creates new mutation for the R2WebDAVSetting entity.
-func newR2WebDAVSettingMutation(c config, op Op, opts ...r2webdavsettingOption) *R2WebDAVSettingMutation {
-	m := &R2WebDAVSettingMutation{
+// newS3WebDAVSettingMutation creates new mutation for the S3WebDAVSetting entity.
+func newS3WebDAVSettingMutation(c config, op Op, opts ...s3webdavsettingOption) *S3WebDAVSettingMutation {
+	m := &S3WebDAVSettingMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeR2WebDAVSetting,
+		typ:           TypeS3WebDAVSetting,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -4276,20 +4395,20 @@ func newR2WebDAVSettingMutation(c config, op Op, opts ...r2webdavsettingOption) 
 	return m
 }
 
-// withR2WebDAVSettingID sets the ID field of the mutation.
-func withR2WebDAVSettingID(id int) r2webdavsettingOption {
-	return func(m *R2WebDAVSettingMutation) {
+// withS3WebDAVSettingID sets the ID field of the mutation.
+func withS3WebDAVSettingID(id int) s3webdavsettingOption {
+	return func(m *S3WebDAVSettingMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *R2WebDAVSetting
+			value *S3WebDAVSetting
 		)
-		m.oldValue = func(ctx context.Context) (*R2WebDAVSetting, error) {
+		m.oldValue = func(ctx context.Context) (*S3WebDAVSetting, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().R2WebDAVSetting.Get(ctx, id)
+					value, err = m.Client().S3WebDAVSetting.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -4298,10 +4417,10 @@ func withR2WebDAVSettingID(id int) r2webdavsettingOption {
 	}
 }
 
-// withR2WebDAVSetting sets the old R2WebDAVSetting of the mutation.
-func withR2WebDAVSetting(node *R2WebDAVSetting) r2webdavsettingOption {
-	return func(m *R2WebDAVSettingMutation) {
-		m.oldValue = func(context.Context) (*R2WebDAVSetting, error) {
+// withS3WebDAVSetting sets the old S3WebDAVSetting of the mutation.
+func withS3WebDAVSetting(node *S3WebDAVSetting) s3webdavsettingOption {
+	return func(m *S3WebDAVSettingMutation) {
+		m.oldValue = func(context.Context) (*S3WebDAVSetting, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -4310,7 +4429,7 @@ func withR2WebDAVSetting(node *R2WebDAVSetting) r2webdavsettingOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m R2WebDAVSettingMutation) Client() *Client {
+func (m S3WebDAVSettingMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -4318,7 +4437,7 @@ func (m R2WebDAVSettingMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m R2WebDAVSettingMutation) Tx() (*Tx, error) {
+func (m S3WebDAVSettingMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -4329,7 +4448,7 @@ func (m R2WebDAVSettingMutation) Tx() (*Tx, error) {
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *R2WebDAVSettingMutation) ID() (id int, exists bool) {
+func (m *S3WebDAVSettingMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -4340,7 +4459,7 @@ func (m *R2WebDAVSettingMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *R2WebDAVSettingMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *S3WebDAVSettingMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -4349,19 +4468,19 @@ func (m *R2WebDAVSettingMutation) IDs(ctx context.Context) ([]int, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().R2WebDAVSetting.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().S3WebDAVSetting.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
 // SetKey sets the "key" field.
-func (m *R2WebDAVSettingMutation) SetKey(s string) {
+func (m *S3WebDAVSettingMutation) SetKey(s string) {
 	m.key = &s
 }
 
 // Key returns the value of the "key" field in the mutation.
-func (m *R2WebDAVSettingMutation) Key() (r string, exists bool) {
+func (m *S3WebDAVSettingMutation) Key() (r string, exists bool) {
 	v := m.key
 	if v == nil {
 		return
@@ -4369,10 +4488,10 @@ func (m *R2WebDAVSettingMutation) Key() (r string, exists bool) {
 	return *v, true
 }
 
-// OldKey returns the old "key" field's value of the R2WebDAVSetting entity.
-// If the R2WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// OldKey returns the old "key" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *R2WebDAVSettingMutation) OldKey(ctx context.Context) (v string, err error) {
+func (m *S3WebDAVSettingMutation) OldKey(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldKey is only allowed on UpdateOne operations")
 	}
@@ -4387,17 +4506,109 @@ func (m *R2WebDAVSettingMutation) OldKey(ctx context.Context) (v string, err err
 }
 
 // ResetKey resets all changes to the "key" field.
-func (m *R2WebDAVSettingMutation) ResetKey() {
+func (m *S3WebDAVSettingMutation) ResetKey() {
 	m.key = nil
 }
 
+// SetName sets the "name" field.
+func (m *S3WebDAVSettingMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *S3WebDAVSettingMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *S3WebDAVSettingMutation) ResetName() {
+	m.name = nil
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (m *S3WebDAVSettingMutation) SetSortOrder(i int) {
+	m.sort_order = &i
+	m.addsort_order = nil
+}
+
+// SortOrder returns the value of the "sort_order" field in the mutation.
+func (m *S3WebDAVSettingMutation) SortOrder() (r int, exists bool) {
+	v := m.sort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSortOrder returns the old "sort_order" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldSortOrder(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSortOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSortOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSortOrder: %w", err)
+	}
+	return oldValue.SortOrder, nil
+}
+
+// AddSortOrder adds i to the "sort_order" field.
+func (m *S3WebDAVSettingMutation) AddSortOrder(i int) {
+	if m.addsort_order != nil {
+		*m.addsort_order += i
+	} else {
+		m.addsort_order = &i
+	}
+}
+
+// AddedSortOrder returns the value that was added to the "sort_order" field in this mutation.
+func (m *S3WebDAVSettingMutation) AddedSortOrder() (r int, exists bool) {
+	v := m.addsort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSortOrder resets all changes to the "sort_order" field.
+func (m *S3WebDAVSettingMutation) ResetSortOrder() {
+	m.sort_order = nil
+	m.addsort_order = nil
+}
+
 // SetEnabled sets the "enabled" field.
-func (m *R2WebDAVSettingMutation) SetEnabled(b bool) {
+func (m *S3WebDAVSettingMutation) SetEnabled(b bool) {
 	m.enabled = &b
 }
 
 // Enabled returns the value of the "enabled" field in the mutation.
-func (m *R2WebDAVSettingMutation) Enabled() (r bool, exists bool) {
+func (m *S3WebDAVSettingMutation) Enabled() (r bool, exists bool) {
 	v := m.enabled
 	if v == nil {
 		return
@@ -4405,10 +4616,10 @@ func (m *R2WebDAVSettingMutation) Enabled() (r bool, exists bool) {
 	return *v, true
 }
 
-// OldEnabled returns the old "enabled" field's value of the R2WebDAVSetting entity.
-// If the R2WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// OldEnabled returns the old "enabled" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *R2WebDAVSettingMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+func (m *S3WebDAVSettingMutation) OldEnabled(ctx context.Context) (v bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
 	}
@@ -4423,17 +4634,161 @@ func (m *R2WebDAVSettingMutation) OldEnabled(ctx context.Context) (v bool, err e
 }
 
 // ResetEnabled resets all changes to the "enabled" field.
-func (m *R2WebDAVSettingMutation) ResetEnabled() {
+func (m *S3WebDAVSettingMutation) ResetEnabled() {
 	m.enabled = nil
 }
 
+// SetProvider sets the "provider" field.
+func (m *S3WebDAVSettingMutation) SetProvider(s string) {
+	m.provider = &s
+}
+
+// Provider returns the value of the "provider" field in the mutation.
+func (m *S3WebDAVSettingMutation) Provider() (r string, exists bool) {
+	v := m.provider
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProvider returns the old "provider" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldProvider(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProvider is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProvider requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProvider: %w", err)
+	}
+	return oldValue.Provider, nil
+}
+
+// ResetProvider resets all changes to the "provider" field.
+func (m *S3WebDAVSettingMutation) ResetProvider() {
+	m.provider = nil
+}
+
+// SetEndpointURL sets the "endpoint_url" field.
+func (m *S3WebDAVSettingMutation) SetEndpointURL(s string) {
+	m.endpoint_url = &s
+}
+
+// EndpointURL returns the value of the "endpoint_url" field in the mutation.
+func (m *S3WebDAVSettingMutation) EndpointURL() (r string, exists bool) {
+	v := m.endpoint_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEndpointURL returns the old "endpoint_url" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldEndpointURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEndpointURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEndpointURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEndpointURL: %w", err)
+	}
+	return oldValue.EndpointURL, nil
+}
+
+// ResetEndpointURL resets all changes to the "endpoint_url" field.
+func (m *S3WebDAVSettingMutation) ResetEndpointURL() {
+	m.endpoint_url = nil
+}
+
+// SetRegion sets the "region" field.
+func (m *S3WebDAVSettingMutation) SetRegion(s string) {
+	m.region = &s
+}
+
+// Region returns the value of the "region" field in the mutation.
+func (m *S3WebDAVSettingMutation) Region() (r string, exists bool) {
+	v := m.region
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRegion returns the old "region" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldRegion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRegion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRegion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRegion: %w", err)
+	}
+	return oldValue.Region, nil
+}
+
+// ResetRegion resets all changes to the "region" field.
+func (m *S3WebDAVSettingMutation) ResetRegion() {
+	m.region = nil
+}
+
+// SetPathStyle sets the "path_style" field.
+func (m *S3WebDAVSettingMutation) SetPathStyle(b bool) {
+	m.path_style = &b
+}
+
+// PathStyle returns the value of the "path_style" field in the mutation.
+func (m *S3WebDAVSettingMutation) PathStyle() (r bool, exists bool) {
+	v := m.path_style
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPathStyle returns the old "path_style" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldPathStyle(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPathStyle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPathStyle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPathStyle: %w", err)
+	}
+	return oldValue.PathStyle, nil
+}
+
+// ResetPathStyle resets all changes to the "path_style" field.
+func (m *S3WebDAVSettingMutation) ResetPathStyle() {
+	m.path_style = nil
+}
+
 // SetAccountID sets the "account_id" field.
-func (m *R2WebDAVSettingMutation) SetAccountID(s string) {
+func (m *S3WebDAVSettingMutation) SetAccountID(s string) {
 	m.account_id = &s
 }
 
 // AccountID returns the value of the "account_id" field in the mutation.
-func (m *R2WebDAVSettingMutation) AccountID() (r string, exists bool) {
+func (m *S3WebDAVSettingMutation) AccountID() (r string, exists bool) {
 	v := m.account_id
 	if v == nil {
 		return
@@ -4441,10 +4796,10 @@ func (m *R2WebDAVSettingMutation) AccountID() (r string, exists bool) {
 	return *v, true
 }
 
-// OldAccountID returns the old "account_id" field's value of the R2WebDAVSetting entity.
-// If the R2WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// OldAccountID returns the old "account_id" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *R2WebDAVSettingMutation) OldAccountID(ctx context.Context) (v string, err error) {
+func (m *S3WebDAVSettingMutation) OldAccountID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
 	}
@@ -4459,17 +4814,17 @@ func (m *R2WebDAVSettingMutation) OldAccountID(ctx context.Context) (v string, e
 }
 
 // ResetAccountID resets all changes to the "account_id" field.
-func (m *R2WebDAVSettingMutation) ResetAccountID() {
+func (m *S3WebDAVSettingMutation) ResetAccountID() {
 	m.account_id = nil
 }
 
 // SetBucketName sets the "bucket_name" field.
-func (m *R2WebDAVSettingMutation) SetBucketName(s string) {
+func (m *S3WebDAVSettingMutation) SetBucketName(s string) {
 	m.bucket_name = &s
 }
 
 // BucketName returns the value of the "bucket_name" field in the mutation.
-func (m *R2WebDAVSettingMutation) BucketName() (r string, exists bool) {
+func (m *S3WebDAVSettingMutation) BucketName() (r string, exists bool) {
 	v := m.bucket_name
 	if v == nil {
 		return
@@ -4477,10 +4832,10 @@ func (m *R2WebDAVSettingMutation) BucketName() (r string, exists bool) {
 	return *v, true
 }
 
-// OldBucketName returns the old "bucket_name" field's value of the R2WebDAVSetting entity.
-// If the R2WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// OldBucketName returns the old "bucket_name" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *R2WebDAVSettingMutation) OldBucketName(ctx context.Context) (v string, err error) {
+func (m *S3WebDAVSettingMutation) OldBucketName(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldBucketName is only allowed on UpdateOne operations")
 	}
@@ -4495,17 +4850,89 @@ func (m *R2WebDAVSettingMutation) OldBucketName(ctx context.Context) (v string, 
 }
 
 // ResetBucketName resets all changes to the "bucket_name" field.
-func (m *R2WebDAVSettingMutation) ResetBucketName() {
+func (m *S3WebDAVSettingMutation) ResetBucketName() {
 	m.bucket_name = nil
 }
 
+// SetRootPrefix sets the "root_prefix" field.
+func (m *S3WebDAVSettingMutation) SetRootPrefix(s string) {
+	m.root_prefix = &s
+}
+
+// RootPrefix returns the value of the "root_prefix" field in the mutation.
+func (m *S3WebDAVSettingMutation) RootPrefix() (r string, exists bool) {
+	v := m.root_prefix
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRootPrefix returns the old "root_prefix" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldRootPrefix(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRootPrefix is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRootPrefix requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRootPrefix: %w", err)
+	}
+	return oldValue.RootPrefix, nil
+}
+
+// ResetRootPrefix resets all changes to the "root_prefix" field.
+func (m *S3WebDAVSettingMutation) ResetRootPrefix() {
+	m.root_prefix = nil
+}
+
+// SetMountPath sets the "mount_path" field.
+func (m *S3WebDAVSettingMutation) SetMountPath(s string) {
+	m.mount_path = &s
+}
+
+// MountPath returns the value of the "mount_path" field in the mutation.
+func (m *S3WebDAVSettingMutation) MountPath() (r string, exists bool) {
+	v := m.mount_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMountPath returns the old "mount_path" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldMountPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMountPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMountPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMountPath: %w", err)
+	}
+	return oldValue.MountPath, nil
+}
+
+// ResetMountPath resets all changes to the "mount_path" field.
+func (m *S3WebDAVSettingMutation) ResetMountPath() {
+	m.mount_path = nil
+}
+
 // SetJurisdiction sets the "jurisdiction" field.
-func (m *R2WebDAVSettingMutation) SetJurisdiction(s string) {
+func (m *S3WebDAVSettingMutation) SetJurisdiction(s string) {
 	m.jurisdiction = &s
 }
 
 // Jurisdiction returns the value of the "jurisdiction" field in the mutation.
-func (m *R2WebDAVSettingMutation) Jurisdiction() (r string, exists bool) {
+func (m *S3WebDAVSettingMutation) Jurisdiction() (r string, exists bool) {
 	v := m.jurisdiction
 	if v == nil {
 		return
@@ -4513,10 +4940,10 @@ func (m *R2WebDAVSettingMutation) Jurisdiction() (r string, exists bool) {
 	return *v, true
 }
 
-// OldJurisdiction returns the old "jurisdiction" field's value of the R2WebDAVSetting entity.
-// If the R2WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// OldJurisdiction returns the old "jurisdiction" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *R2WebDAVSettingMutation) OldJurisdiction(ctx context.Context) (v string, err error) {
+func (m *S3WebDAVSettingMutation) OldJurisdiction(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldJurisdiction is only allowed on UpdateOne operations")
 	}
@@ -4531,17 +4958,89 @@ func (m *R2WebDAVSettingMutation) OldJurisdiction(ctx context.Context) (v string
 }
 
 // ResetJurisdiction resets all changes to the "jurisdiction" field.
-func (m *R2WebDAVSettingMutation) ResetJurisdiction() {
+func (m *S3WebDAVSettingMutation) ResetJurisdiction() {
 	m.jurisdiction = nil
 }
 
+// SetAccessKeyID sets the "access_key_id" field.
+func (m *S3WebDAVSettingMutation) SetAccessKeyID(s string) {
+	m.access_key_id = &s
+}
+
+// AccessKeyID returns the value of the "access_key_id" field in the mutation.
+func (m *S3WebDAVSettingMutation) AccessKeyID() (r string, exists bool) {
+	v := m.access_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessKeyID returns the old "access_key_id" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldAccessKeyID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccessKeyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccessKeyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessKeyID: %w", err)
+	}
+	return oldValue.AccessKeyID, nil
+}
+
+// ResetAccessKeyID resets all changes to the "access_key_id" field.
+func (m *S3WebDAVSettingMutation) ResetAccessKeyID() {
+	m.access_key_id = nil
+}
+
+// SetSecretAccessKey sets the "secret_access_key" field.
+func (m *S3WebDAVSettingMutation) SetSecretAccessKey(s string) {
+	m.secret_access_key = &s
+}
+
+// SecretAccessKey returns the value of the "secret_access_key" field in the mutation.
+func (m *S3WebDAVSettingMutation) SecretAccessKey() (r string, exists bool) {
+	v := m.secret_access_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSecretAccessKey returns the old "secret_access_key" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldSecretAccessKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSecretAccessKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSecretAccessKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSecretAccessKey: %w", err)
+	}
+	return oldValue.SecretAccessKey, nil
+}
+
+// ResetSecretAccessKey resets all changes to the "secret_access_key" field.
+func (m *S3WebDAVSettingMutation) ResetSecretAccessKey() {
+	m.secret_access_key = nil
+}
+
 // SetWebdavUsername sets the "webdav_username" field.
-func (m *R2WebDAVSettingMutation) SetWebdavUsername(s string) {
+func (m *S3WebDAVSettingMutation) SetWebdavUsername(s string) {
 	m.webdav_username = &s
 }
 
 // WebdavUsername returns the value of the "webdav_username" field in the mutation.
-func (m *R2WebDAVSettingMutation) WebdavUsername() (r string, exists bool) {
+func (m *S3WebDAVSettingMutation) WebdavUsername() (r string, exists bool) {
 	v := m.webdav_username
 	if v == nil {
 		return
@@ -4549,10 +5048,10 @@ func (m *R2WebDAVSettingMutation) WebdavUsername() (r string, exists bool) {
 	return *v, true
 }
 
-// OldWebdavUsername returns the old "webdav_username" field's value of the R2WebDAVSetting entity.
-// If the R2WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// OldWebdavUsername returns the old "webdav_username" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *R2WebDAVSettingMutation) OldWebdavUsername(ctx context.Context) (v string, err error) {
+func (m *S3WebDAVSettingMutation) OldWebdavUsername(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldWebdavUsername is only allowed on UpdateOne operations")
 	}
@@ -4567,17 +5066,17 @@ func (m *R2WebDAVSettingMutation) OldWebdavUsername(ctx context.Context) (v stri
 }
 
 // ResetWebdavUsername resets all changes to the "webdav_username" field.
-func (m *R2WebDAVSettingMutation) ResetWebdavUsername() {
+func (m *S3WebDAVSettingMutation) ResetWebdavUsername() {
 	m.webdav_username = nil
 }
 
 // SetWebdavPasswordHash sets the "webdav_password_hash" field.
-func (m *R2WebDAVSettingMutation) SetWebdavPasswordHash(s string) {
+func (m *S3WebDAVSettingMutation) SetWebdavPasswordHash(s string) {
 	m.webdav_password_hash = &s
 }
 
 // WebdavPasswordHash returns the value of the "webdav_password_hash" field in the mutation.
-func (m *R2WebDAVSettingMutation) WebdavPasswordHash() (r string, exists bool) {
+func (m *S3WebDAVSettingMutation) WebdavPasswordHash() (r string, exists bool) {
 	v := m.webdav_password_hash
 	if v == nil {
 		return
@@ -4585,10 +5084,10 @@ func (m *R2WebDAVSettingMutation) WebdavPasswordHash() (r string, exists bool) {
 	return *v, true
 }
 
-// OldWebdavPasswordHash returns the old "webdav_password_hash" field's value of the R2WebDAVSetting entity.
-// If the R2WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// OldWebdavPasswordHash returns the old "webdav_password_hash" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *R2WebDAVSettingMutation) OldWebdavPasswordHash(ctx context.Context) (v string, err error) {
+func (m *S3WebDAVSettingMutation) OldWebdavPasswordHash(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldWebdavPasswordHash is only allowed on UpdateOne operations")
 	}
@@ -4603,17 +5102,17 @@ func (m *R2WebDAVSettingMutation) OldWebdavPasswordHash(ctx context.Context) (v 
 }
 
 // ResetWebdavPasswordHash resets all changes to the "webdav_password_hash" field.
-func (m *R2WebDAVSettingMutation) ResetWebdavPasswordHash() {
+func (m *S3WebDAVSettingMutation) ResetWebdavPasswordHash() {
 	m.webdav_password_hash = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (m *R2WebDAVSettingMutation) SetCreatedAt(t time.Time) {
+func (m *S3WebDAVSettingMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
 }
 
 // CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *R2WebDAVSettingMutation) CreatedAt() (r time.Time, exists bool) {
+func (m *S3WebDAVSettingMutation) CreatedAt() (r time.Time, exists bool) {
 	v := m.created_at
 	if v == nil {
 		return
@@ -4621,10 +5120,10 @@ func (m *R2WebDAVSettingMutation) CreatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldCreatedAt returns the old "created_at" field's value of the R2WebDAVSetting entity.
-// If the R2WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// OldCreatedAt returns the old "created_at" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *R2WebDAVSettingMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *S3WebDAVSettingMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
 	}
@@ -4639,17 +5138,17 @@ func (m *R2WebDAVSettingMutation) OldCreatedAt(ctx context.Context) (v time.Time
 }
 
 // ResetCreatedAt resets all changes to the "created_at" field.
-func (m *R2WebDAVSettingMutation) ResetCreatedAt() {
+func (m *S3WebDAVSettingMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (m *R2WebDAVSettingMutation) SetUpdatedAt(t time.Time) {
+func (m *S3WebDAVSettingMutation) SetUpdatedAt(t time.Time) {
 	m.updated_at = &t
 }
 
 // UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *R2WebDAVSettingMutation) UpdatedAt() (r time.Time, exists bool) {
+func (m *S3WebDAVSettingMutation) UpdatedAt() (r time.Time, exists bool) {
 	v := m.updated_at
 	if v == nil {
 		return
@@ -4657,10 +5156,10 @@ func (m *R2WebDAVSettingMutation) UpdatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldUpdatedAt returns the old "updated_at" field's value of the R2WebDAVSetting entity.
-// If the R2WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// OldUpdatedAt returns the old "updated_at" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *R2WebDAVSettingMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *S3WebDAVSettingMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
 	}
@@ -4675,19 +5174,19 @@ func (m *R2WebDAVSettingMutation) OldUpdatedAt(ctx context.Context) (v time.Time
 }
 
 // ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *R2WebDAVSettingMutation) ResetUpdatedAt() {
+func (m *S3WebDAVSettingMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
-// Where appends a list predicates to the R2WebDAVSettingMutation builder.
-func (m *R2WebDAVSettingMutation) Where(ps ...predicate.R2WebDAVSetting) {
+// Where appends a list predicates to the S3WebDAVSettingMutation builder.
+func (m *S3WebDAVSettingMutation) Where(ps ...predicate.S3WebDAVSetting) {
 	m.predicates = append(m.predicates, ps...)
 }
 
-// WhereP appends storage-level predicates to the R2WebDAVSettingMutation builder. Using this method,
+// WhereP appends storage-level predicates to the S3WebDAVSettingMutation builder. Using this method,
 // users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *R2WebDAVSettingMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.R2WebDAVSetting, len(ps))
+func (m *S3WebDAVSettingMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.S3WebDAVSetting, len(ps))
 	for i := range ps {
 		p[i] = ps[i]
 	}
@@ -4695,51 +5194,81 @@ func (m *R2WebDAVSettingMutation) WhereP(ps ...func(*sql.Selector)) {
 }
 
 // Op returns the operation name.
-func (m *R2WebDAVSettingMutation) Op() Op {
+func (m *S3WebDAVSettingMutation) Op() Op {
 	return m.op
 }
 
 // SetOp allows setting the mutation operation.
-func (m *R2WebDAVSettingMutation) SetOp(op Op) {
+func (m *S3WebDAVSettingMutation) SetOp(op Op) {
 	m.op = op
 }
 
-// Type returns the node type of this mutation (R2WebDAVSetting).
-func (m *R2WebDAVSettingMutation) Type() string {
+// Type returns the node type of this mutation (S3WebDAVSetting).
+func (m *S3WebDAVSettingMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *R2WebDAVSettingMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+func (m *S3WebDAVSettingMutation) Fields() []string {
+	fields := make([]string, 0, 19)
 	if m.key != nil {
-		fields = append(fields, r2webdavsetting.FieldKey)
+		fields = append(fields, s3webdavsetting.FieldKey)
+	}
+	if m.name != nil {
+		fields = append(fields, s3webdavsetting.FieldName)
+	}
+	if m.sort_order != nil {
+		fields = append(fields, s3webdavsetting.FieldSortOrder)
 	}
 	if m.enabled != nil {
-		fields = append(fields, r2webdavsetting.FieldEnabled)
+		fields = append(fields, s3webdavsetting.FieldEnabled)
+	}
+	if m.provider != nil {
+		fields = append(fields, s3webdavsetting.FieldProvider)
+	}
+	if m.endpoint_url != nil {
+		fields = append(fields, s3webdavsetting.FieldEndpointURL)
+	}
+	if m.region != nil {
+		fields = append(fields, s3webdavsetting.FieldRegion)
+	}
+	if m.path_style != nil {
+		fields = append(fields, s3webdavsetting.FieldPathStyle)
 	}
 	if m.account_id != nil {
-		fields = append(fields, r2webdavsetting.FieldAccountID)
+		fields = append(fields, s3webdavsetting.FieldAccountID)
 	}
 	if m.bucket_name != nil {
-		fields = append(fields, r2webdavsetting.FieldBucketName)
+		fields = append(fields, s3webdavsetting.FieldBucketName)
+	}
+	if m.root_prefix != nil {
+		fields = append(fields, s3webdavsetting.FieldRootPrefix)
+	}
+	if m.mount_path != nil {
+		fields = append(fields, s3webdavsetting.FieldMountPath)
 	}
 	if m.jurisdiction != nil {
-		fields = append(fields, r2webdavsetting.FieldJurisdiction)
+		fields = append(fields, s3webdavsetting.FieldJurisdiction)
+	}
+	if m.access_key_id != nil {
+		fields = append(fields, s3webdavsetting.FieldAccessKeyID)
+	}
+	if m.secret_access_key != nil {
+		fields = append(fields, s3webdavsetting.FieldSecretAccessKey)
 	}
 	if m.webdav_username != nil {
-		fields = append(fields, r2webdavsetting.FieldWebdavUsername)
+		fields = append(fields, s3webdavsetting.FieldWebdavUsername)
 	}
 	if m.webdav_password_hash != nil {
-		fields = append(fields, r2webdavsetting.FieldWebdavPasswordHash)
+		fields = append(fields, s3webdavsetting.FieldWebdavPasswordHash)
 	}
 	if m.created_at != nil {
-		fields = append(fields, r2webdavsetting.FieldCreatedAt)
+		fields = append(fields, s3webdavsetting.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
-		fields = append(fields, r2webdavsetting.FieldUpdatedAt)
+		fields = append(fields, s3webdavsetting.FieldUpdatedAt)
 	}
 	return fields
 }
@@ -4747,25 +5276,45 @@ func (m *R2WebDAVSettingMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *R2WebDAVSettingMutation) Field(name string) (ent.Value, bool) {
+func (m *S3WebDAVSettingMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case r2webdavsetting.FieldKey:
+	case s3webdavsetting.FieldKey:
 		return m.Key()
-	case r2webdavsetting.FieldEnabled:
+	case s3webdavsetting.FieldName:
+		return m.Name()
+	case s3webdavsetting.FieldSortOrder:
+		return m.SortOrder()
+	case s3webdavsetting.FieldEnabled:
 		return m.Enabled()
-	case r2webdavsetting.FieldAccountID:
+	case s3webdavsetting.FieldProvider:
+		return m.Provider()
+	case s3webdavsetting.FieldEndpointURL:
+		return m.EndpointURL()
+	case s3webdavsetting.FieldRegion:
+		return m.Region()
+	case s3webdavsetting.FieldPathStyle:
+		return m.PathStyle()
+	case s3webdavsetting.FieldAccountID:
 		return m.AccountID()
-	case r2webdavsetting.FieldBucketName:
+	case s3webdavsetting.FieldBucketName:
 		return m.BucketName()
-	case r2webdavsetting.FieldJurisdiction:
+	case s3webdavsetting.FieldRootPrefix:
+		return m.RootPrefix()
+	case s3webdavsetting.FieldMountPath:
+		return m.MountPath()
+	case s3webdavsetting.FieldJurisdiction:
 		return m.Jurisdiction()
-	case r2webdavsetting.FieldWebdavUsername:
+	case s3webdavsetting.FieldAccessKeyID:
+		return m.AccessKeyID()
+	case s3webdavsetting.FieldSecretAccessKey:
+		return m.SecretAccessKey()
+	case s3webdavsetting.FieldWebdavUsername:
 		return m.WebdavUsername()
-	case r2webdavsetting.FieldWebdavPasswordHash:
+	case s3webdavsetting.FieldWebdavPasswordHash:
 		return m.WebdavPasswordHash()
-	case r2webdavsetting.FieldCreatedAt:
+	case s3webdavsetting.FieldCreatedAt:
 		return m.CreatedAt()
-	case r2webdavsetting.FieldUpdatedAt:
+	case s3webdavsetting.FieldUpdatedAt:
 		return m.UpdatedAt()
 	}
 	return nil, false
@@ -4774,92 +5323,182 @@ func (m *R2WebDAVSettingMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *R2WebDAVSettingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *S3WebDAVSettingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case r2webdavsetting.FieldKey:
+	case s3webdavsetting.FieldKey:
 		return m.OldKey(ctx)
-	case r2webdavsetting.FieldEnabled:
+	case s3webdavsetting.FieldName:
+		return m.OldName(ctx)
+	case s3webdavsetting.FieldSortOrder:
+		return m.OldSortOrder(ctx)
+	case s3webdavsetting.FieldEnabled:
 		return m.OldEnabled(ctx)
-	case r2webdavsetting.FieldAccountID:
+	case s3webdavsetting.FieldProvider:
+		return m.OldProvider(ctx)
+	case s3webdavsetting.FieldEndpointURL:
+		return m.OldEndpointURL(ctx)
+	case s3webdavsetting.FieldRegion:
+		return m.OldRegion(ctx)
+	case s3webdavsetting.FieldPathStyle:
+		return m.OldPathStyle(ctx)
+	case s3webdavsetting.FieldAccountID:
 		return m.OldAccountID(ctx)
-	case r2webdavsetting.FieldBucketName:
+	case s3webdavsetting.FieldBucketName:
 		return m.OldBucketName(ctx)
-	case r2webdavsetting.FieldJurisdiction:
+	case s3webdavsetting.FieldRootPrefix:
+		return m.OldRootPrefix(ctx)
+	case s3webdavsetting.FieldMountPath:
+		return m.OldMountPath(ctx)
+	case s3webdavsetting.FieldJurisdiction:
 		return m.OldJurisdiction(ctx)
-	case r2webdavsetting.FieldWebdavUsername:
+	case s3webdavsetting.FieldAccessKeyID:
+		return m.OldAccessKeyID(ctx)
+	case s3webdavsetting.FieldSecretAccessKey:
+		return m.OldSecretAccessKey(ctx)
+	case s3webdavsetting.FieldWebdavUsername:
 		return m.OldWebdavUsername(ctx)
-	case r2webdavsetting.FieldWebdavPasswordHash:
+	case s3webdavsetting.FieldWebdavPasswordHash:
 		return m.OldWebdavPasswordHash(ctx)
-	case r2webdavsetting.FieldCreatedAt:
+	case s3webdavsetting.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
-	case r2webdavsetting.FieldUpdatedAt:
+	case s3webdavsetting.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
 	}
-	return nil, fmt.Errorf("unknown R2WebDAVSetting field %s", name)
+	return nil, fmt.Errorf("unknown S3WebDAVSetting field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *R2WebDAVSettingMutation) SetField(name string, value ent.Value) error {
+func (m *S3WebDAVSettingMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case r2webdavsetting.FieldKey:
+	case s3webdavsetting.FieldKey:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetKey(v)
 		return nil
-	case r2webdavsetting.FieldEnabled:
+	case s3webdavsetting.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case s3webdavsetting.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSortOrder(v)
+		return nil
+	case s3webdavsetting.FieldEnabled:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEnabled(v)
 		return nil
-	case r2webdavsetting.FieldAccountID:
+	case s3webdavsetting.FieldProvider:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProvider(v)
+		return nil
+	case s3webdavsetting.FieldEndpointURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEndpointURL(v)
+		return nil
+	case s3webdavsetting.FieldRegion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRegion(v)
+		return nil
+	case s3webdavsetting.FieldPathStyle:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPathStyle(v)
+		return nil
+	case s3webdavsetting.FieldAccountID:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAccountID(v)
 		return nil
-	case r2webdavsetting.FieldBucketName:
+	case s3webdavsetting.FieldBucketName:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBucketName(v)
 		return nil
-	case r2webdavsetting.FieldJurisdiction:
+	case s3webdavsetting.FieldRootPrefix:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRootPrefix(v)
+		return nil
+	case s3webdavsetting.FieldMountPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMountPath(v)
+		return nil
+	case s3webdavsetting.FieldJurisdiction:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetJurisdiction(v)
 		return nil
-	case r2webdavsetting.FieldWebdavUsername:
+	case s3webdavsetting.FieldAccessKeyID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessKeyID(v)
+		return nil
+	case s3webdavsetting.FieldSecretAccessKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSecretAccessKey(v)
+		return nil
+	case s3webdavsetting.FieldWebdavUsername:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWebdavUsername(v)
 		return nil
-	case r2webdavsetting.FieldWebdavPasswordHash:
+	case s3webdavsetting.FieldWebdavPasswordHash:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWebdavPasswordHash(v)
 		return nil
-	case r2webdavsetting.FieldCreatedAt:
+	case s3webdavsetting.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCreatedAt(v)
 		return nil
-	case r2webdavsetting.FieldUpdatedAt:
+	case s3webdavsetting.FieldUpdatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
@@ -4867,131 +5506,176 @@ func (m *R2WebDAVSettingMutation) SetField(name string, value ent.Value) error {
 		m.SetUpdatedAt(v)
 		return nil
 	}
-	return fmt.Errorf("unknown R2WebDAVSetting field %s", name)
+	return fmt.Errorf("unknown S3WebDAVSetting field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *R2WebDAVSettingMutation) AddedFields() []string {
-	return nil
+func (m *S3WebDAVSettingMutation) AddedFields() []string {
+	var fields []string
+	if m.addsort_order != nil {
+		fields = append(fields, s3webdavsetting.FieldSortOrder)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *R2WebDAVSettingMutation) AddedField(name string) (ent.Value, bool) {
+func (m *S3WebDAVSettingMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case s3webdavsetting.FieldSortOrder:
+		return m.AddedSortOrder()
+	}
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *R2WebDAVSettingMutation) AddField(name string, value ent.Value) error {
+func (m *S3WebDAVSettingMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case s3webdavsetting.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSortOrder(v)
+		return nil
 	}
-	return fmt.Errorf("unknown R2WebDAVSetting numeric field %s", name)
+	return fmt.Errorf("unknown S3WebDAVSetting numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *R2WebDAVSettingMutation) ClearedFields() []string {
+func (m *S3WebDAVSettingMutation) ClearedFields() []string {
 	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *R2WebDAVSettingMutation) FieldCleared(name string) bool {
+func (m *S3WebDAVSettingMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *R2WebDAVSettingMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown R2WebDAVSetting nullable field %s", name)
+func (m *S3WebDAVSettingMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown S3WebDAVSetting nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *R2WebDAVSettingMutation) ResetField(name string) error {
+func (m *S3WebDAVSettingMutation) ResetField(name string) error {
 	switch name {
-	case r2webdavsetting.FieldKey:
+	case s3webdavsetting.FieldKey:
 		m.ResetKey()
 		return nil
-	case r2webdavsetting.FieldEnabled:
+	case s3webdavsetting.FieldName:
+		m.ResetName()
+		return nil
+	case s3webdavsetting.FieldSortOrder:
+		m.ResetSortOrder()
+		return nil
+	case s3webdavsetting.FieldEnabled:
 		m.ResetEnabled()
 		return nil
-	case r2webdavsetting.FieldAccountID:
+	case s3webdavsetting.FieldProvider:
+		m.ResetProvider()
+		return nil
+	case s3webdavsetting.FieldEndpointURL:
+		m.ResetEndpointURL()
+		return nil
+	case s3webdavsetting.FieldRegion:
+		m.ResetRegion()
+		return nil
+	case s3webdavsetting.FieldPathStyle:
+		m.ResetPathStyle()
+		return nil
+	case s3webdavsetting.FieldAccountID:
 		m.ResetAccountID()
 		return nil
-	case r2webdavsetting.FieldBucketName:
+	case s3webdavsetting.FieldBucketName:
 		m.ResetBucketName()
 		return nil
-	case r2webdavsetting.FieldJurisdiction:
+	case s3webdavsetting.FieldRootPrefix:
+		m.ResetRootPrefix()
+		return nil
+	case s3webdavsetting.FieldMountPath:
+		m.ResetMountPath()
+		return nil
+	case s3webdavsetting.FieldJurisdiction:
 		m.ResetJurisdiction()
 		return nil
-	case r2webdavsetting.FieldWebdavUsername:
+	case s3webdavsetting.FieldAccessKeyID:
+		m.ResetAccessKeyID()
+		return nil
+	case s3webdavsetting.FieldSecretAccessKey:
+		m.ResetSecretAccessKey()
+		return nil
+	case s3webdavsetting.FieldWebdavUsername:
 		m.ResetWebdavUsername()
 		return nil
-	case r2webdavsetting.FieldWebdavPasswordHash:
+	case s3webdavsetting.FieldWebdavPasswordHash:
 		m.ResetWebdavPasswordHash()
 		return nil
-	case r2webdavsetting.FieldCreatedAt:
+	case s3webdavsetting.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
-	case r2webdavsetting.FieldUpdatedAt:
+	case s3webdavsetting.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
 	}
-	return fmt.Errorf("unknown R2WebDAVSetting field %s", name)
+	return fmt.Errorf("unknown S3WebDAVSetting field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *R2WebDAVSettingMutation) AddedEdges() []string {
+func (m *S3WebDAVSettingMutation) AddedEdges() []string {
 	edges := make([]string, 0, 0)
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *R2WebDAVSettingMutation) AddedIDs(name string) []ent.Value {
+func (m *S3WebDAVSettingMutation) AddedIDs(name string) []ent.Value {
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *R2WebDAVSettingMutation) RemovedEdges() []string {
+func (m *S3WebDAVSettingMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 0)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *R2WebDAVSettingMutation) RemovedIDs(name string) []ent.Value {
+func (m *S3WebDAVSettingMutation) RemovedIDs(name string) []ent.Value {
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *R2WebDAVSettingMutation) ClearedEdges() []string {
+func (m *S3WebDAVSettingMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 0)
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *R2WebDAVSettingMutation) EdgeCleared(name string) bool {
+func (m *S3WebDAVSettingMutation) EdgeCleared(name string) bool {
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *R2WebDAVSettingMutation) ClearEdge(name string) error {
-	return fmt.Errorf("unknown R2WebDAVSetting unique edge %s", name)
+func (m *S3WebDAVSettingMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown S3WebDAVSetting unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *R2WebDAVSettingMutation) ResetEdge(name string) error {
-	return fmt.Errorf("unknown R2WebDAVSetting edge %s", name)
+func (m *S3WebDAVSettingMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown S3WebDAVSetting edge %s", name)
 }
 
 // TunnelManagementMutation represents an operation that mutates the TunnelManagement nodes in the graph.

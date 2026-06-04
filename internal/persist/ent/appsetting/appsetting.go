@@ -53,6 +53,10 @@ const (
 	FieldExtraArgs = "extra_args"
 	// FieldMcpEnabled holds the string denoting the mcp_enabled field in the database.
 	FieldMcpEnabled = "mcp_enabled"
+	// FieldS3WebdavEnabled holds the string denoting the s3_webdav_enabled field in the database.
+	FieldS3WebdavEnabled = "s3_webdav_enabled"
+	// FieldS3WebdavActiveKey holds the string denoting the s3_webdav_active_key field in the database.
+	FieldS3WebdavActiveKey = "s3_webdav_active_key"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -84,6 +88,8 @@ var Columns = []string{
 	FieldNoTLSVerify,
 	FieldExtraArgs,
 	FieldMcpEnabled,
+	FieldS3WebdavEnabled,
+	FieldS3WebdavActiveKey,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -139,6 +145,10 @@ var (
 	DefaultExtraArgs string
 	// DefaultMcpEnabled holds the default value on creation for the "mcp_enabled" field.
 	DefaultMcpEnabled bool
+	// DefaultS3WebdavEnabled holds the default value on creation for the "s3_webdav_enabled" field.
+	DefaultS3WebdavEnabled bool
+	// DefaultS3WebdavActiveKey holds the default value on creation for the "s3_webdav_active_key" field.
+	DefaultS3WebdavActiveKey string
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -253,6 +263,16 @@ func ByExtraArgs(opts ...sql.OrderTermOption) OrderOption {
 // ByMcpEnabled orders the results by the mcp_enabled field.
 func ByMcpEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMcpEnabled, opts...).ToFunc()
+}
+
+// ByS3WebdavEnabled orders the results by the s3_webdav_enabled field.
+func ByS3WebdavEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldS3WebdavEnabled, opts...).ToFunc()
+}
+
+// ByS3WebdavActiveKey orders the results by the s3_webdav_active_key field.
+func ByS3WebdavActiveKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldS3WebdavActiveKey, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

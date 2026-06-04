@@ -17,7 +17,7 @@
             if ($('feature-manager-toggle')) $('feature-manager-toggle').checked = !!data.tunnel_manager;
             if ($('feature-ddns-toggle')) { $('feature-ddns-toggle').checked = !!data.ddns; $('feature-ddns-toggle').disabled = !data.tunnel_manager; }
             if ($('feature-mcp-toggle')) $('feature-mcp-toggle').checked = !!data.mcp;
-            renderR2FeatureToggle(data);
+            renderS3FeatureToggle(data);
         } catch (err) { console.error('features fetch failed', err); }
     }
 
@@ -26,7 +26,7 @@
         show('tab-manager', !!data.tunnel_manager);
         show('tab-ddns', !!data.ddns);
         show('tab-mcp', !!data.mcp);
-        show('tab-r2', !!data.r2_webdav);
+        show('tab-s3', !!data.s3_webdav);
         show('tab-features', true);
         const active = document.querySelector('.tab[aria-selected="true"]');
         if (active?.hidden) window.cfui.activateTab?.('local');
@@ -36,8 +36,6 @@
         account_tunnel_edit: 'verify_permission_tunnel_edit',
         zone_read: 'verify_permission_zone_read',
         zone_dns_edit: 'verify_permission_dns_edit',
-        account_r2_storage_write: 'verify_permission_r2_storage_write',
-        r2_bucket_item_write: 'verify_permission_r2_bucket_item_write',
     };
 
     async function saveFeature(key, value) {
@@ -46,14 +44,6 @@
             toast.err(t('feature_ddns_requires_manager'));
             return;
         }
-        if (key === 'r2_webdav' && value) {
-            const availability = state.features?.availability?.r2_webdav;
-            if (availability && !availability.can_enable) {
-                $('feature-r2-toggle').checked = false;
-                toast.err(window.cfui.r2AvailabilityText?.(availability) || availability.message || t('r2_not_ready'));
-                return;
-            }
-        }
         try {
             const data = await apiSend('/features', 'POST', { [key]: value });
             state.features = data;
@@ -61,12 +51,12 @@
             if ($('feature-manager-toggle')) $('feature-manager-toggle').checked = !!data.tunnel_manager;
             if ($('feature-ddns-toggle')) { $('feature-ddns-toggle').checked = !!data.ddns; $('feature-ddns-toggle').disabled = !data.tunnel_manager; }
             if ($('feature-mcp-toggle')) $('feature-mcp-toggle').checked = !!data.mcp;
-            renderR2FeatureToggle(data);
+            renderS3FeatureToggle(data);
             if (key === 'tunnel_manager') await fetchTunnelManagerSettings();
             if (key === 'ddns') await fetchDDNSConfig();
-            if (key === 'r2_webdav') {
-                await window.cfui.fetchR2Settings?.();
-                if (value) await window.cfui.loadR2Files?.('/');
+            if (key === 's3_webdav') {
+                await window.cfui.fetchS3Settings?.();
+                if (value) await window.cfui.loadS3Files?.('/');
             }
             toast.ok(t('feature_updated'));
         } catch (err) {
@@ -75,15 +65,15 @@
         }
     }
 
-    function renderR2FeatureToggle(data = state.features) {
-        const toggle = $('feature-r2-toggle');
+    function renderS3FeatureToggle(data = state.features) {
+        const toggle = $('feature-s3-toggle');
         if (!toggle) return;
-        const availability = data?.availability?.r2_webdav;
-        toggle.checked = !!data?.r2_webdav;
-        toggle.disabled = !data?.r2_webdav && !!availability && !availability.can_enable;
-        const reason = $('feature-r2-reason');
+        const availability = data?.availability?.s3_webdav;
+        toggle.checked = !!data?.s3_webdav;
+        toggle.disabled = false;
+        const reason = $('feature-s3-reason');
         if (reason) {
-            reason.textContent = data?.r2_webdav ? '' : (availability?.can_enable ? t('r2_feature_can_enable') : (window.cfui.r2AvailabilityText?.(availability) || availability?.message || t('r2_configure_first')));
+            reason.textContent = data?.s3_webdav ? '' : (availability?.can_enable ? t('s3_feature_can_enable') : (window.cfui.s3AvailabilityText?.(availability) || availability?.message || t('s3_configure_first')));
         }
     }
 
@@ -613,7 +603,7 @@
         $('feature-manager-toggle')?.addEventListener('change', (e) => saveFeature('tunnel_manager', e.target.checked));
         $('feature-ddns-toggle')?.addEventListener('change', (e) => saveFeature('ddns', e.target.checked));
         $('feature-mcp-toggle')?.addEventListener('change', (e) => saveFeature('mcp', e.target.checked));
-        $('feature-r2-toggle')?.addEventListener('change', (e) => saveFeature('r2_webdav', e.target.checked));
+        $('feature-s3-toggle')?.addEventListener('change', (e) => saveFeature('s3_webdav', e.target.checked));
 
         /* Manager */
         $('manager-auth-mode')?.addEventListener('change', updateManagerAuthMode);
@@ -652,7 +642,7 @@
             const name = e.detail?.name;
             if (name === 'manager' && state.features?.tunnel_manager) fetchTunnelManagerSettings();
             else if (name === 'ddns' && state.features?.ddns) refreshDDNS();
-            else if (name === 'r2') window.cfui.fetchR2Settings?.();
+            else if (name === 's3') window.cfui.fetchS3Settings?.();
         });
     }
 
@@ -660,7 +650,7 @@
     const ns = window.cfui;
     ns.fetchFeatures = fetchFeatures;
     ns.saveFeature = saveFeature;
-    ns.renderR2FeatureToggle = renderR2FeatureToggle;
+    ns.renderS3FeatureToggle = renderS3FeatureToggle;
     ns.fetchTunnelManagerSettings = fetchTunnelManagerSettings;
     ns.maybeLoadTunnelManagerZones = maybeLoadTunnelManagerZones;
     ns.loadTunnelManagerConfig = loadTunnelManagerConfig;

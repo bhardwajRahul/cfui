@@ -35,6 +35,8 @@ func (AppSetting) Fields() []ent.Field {
 		field.Bool("no_tls_verify").Default(false),
 		field.String("extra_args").Default(""),
 		field.Bool("mcp_enabled").Default(false),
+		field.Bool("s3_webdav_enabled").Default(false),
+		field.String("s3_webdav_active_key").Default("default"),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -31,6 +32,8 @@ var (
 		{Name: "no_tls_verify", Type: field.TypeBool, Default: false},
 		{Name: "extra_args", Type: field.TypeString, Default: ""},
 		{Name: "mcp_enabled", Type: field.TypeBool, Default: false},
+		{Name: "s3_webdav_enabled", Type: field.TypeBool, Default: false},
+		{Name: "s3_webdav_active_key", Type: field.TypeString, Default: "default"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -120,24 +123,34 @@ var (
 		Columns:    McpTokensColumns,
 		PrimaryKey: []*schema.Column{McpTokensColumns[0]},
 	}
-	// R2webDavSettingsColumns holds the columns for the "r2web_dav_settings" table.
-	R2webDavSettingsColumns = []*schema.Column{
+	// S3WebdavSettingsColumns holds the columns for the "s3_webdav_settings" table.
+	S3WebdavSettingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "key", Type: field.TypeString, Unique: true},
-		{Name: "enabled", Type: field.TypeBool, Default: false},
+		{Name: "name", Type: field.TypeString, Default: "Default S3"},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "provider", Type: field.TypeString, Default: "generic_s3"},
+		{Name: "endpoint_url", Type: field.TypeString, Default: ""},
+		{Name: "region", Type: field.TypeString, Default: "auto"},
+		{Name: "path_style", Type: field.TypeBool, Default: true},
 		{Name: "account_id", Type: field.TypeString, Default: ""},
 		{Name: "bucket_name", Type: field.TypeString, Default: ""},
+		{Name: "root_prefix", Type: field.TypeString, Default: ""},
+		{Name: "mount_path", Type: field.TypeString, Default: "/webdav/s3/"},
 		{Name: "jurisdiction", Type: field.TypeString, Default: "default"},
+		{Name: "access_key_id", Type: field.TypeString, Default: ""},
+		{Name: "secret_access_key", Type: field.TypeString, Default: ""},
 		{Name: "webdav_username", Type: field.TypeString, Default: ""},
 		{Name: "webdav_password_hash", Type: field.TypeString, Default: ""},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
-	// R2webDavSettingsTable holds the schema information for the "r2web_dav_settings" table.
-	R2webDavSettingsTable = &schema.Table{
-		Name:       "r2web_dav_settings",
-		Columns:    R2webDavSettingsColumns,
-		PrimaryKey: []*schema.Column{R2webDavSettingsColumns[0]},
+	// S3WebdavSettingsTable holds the schema information for the "s3_webdav_settings" table.
+	S3WebdavSettingsTable = &schema.Table{
+		Name:       "s3_webdav_settings",
+		Columns:    S3WebdavSettingsColumns,
+		PrimaryKey: []*schema.Column{S3WebdavSettingsColumns[0]},
 	}
 	// TunnelManagementsColumns holds the columns for the "tunnel_managements" table.
 	TunnelManagementsColumns = []*schema.Column{
@@ -179,11 +192,14 @@ var (
 		DdnsRecordsTable,
 		DdnsSettingsTable,
 		McpTokensTable,
-		R2webDavSettingsTable,
+		S3WebdavSettingsTable,
 		TunnelManagementsTable,
 		TunnelTokensTable,
 	}
 )
 
 func init() {
+	S3WebdavSettingsTable.Annotation = &entsql.Annotation{
+		Table: "s3_webdav_settings",
+	}
 }

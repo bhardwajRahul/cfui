@@ -22,8 +22,8 @@ type Tx struct {
 	DDNSSetting *DDNSSettingClient
 	// MCPToken is the client for interacting with the MCPToken builders.
 	MCPToken *MCPTokenClient
-	// R2WebDAVSetting is the client for interacting with the R2WebDAVSetting builders.
-	R2WebDAVSetting *R2WebDAVSettingClient
+	// S3WebDAVSetting is the client for interacting with the S3WebDAVSetting builders.
+	S3WebDAVSetting *S3WebDAVSettingClient
 	// TunnelManagement is the client for interacting with the TunnelManagement builders.
 	TunnelManagement *TunnelManagementClient
 	// TunnelToken is the client for interacting with the TunnelToken builders.
@@ -164,7 +164,7 @@ func (tx *Tx) init() {
 	tx.DDNSRecord = NewDDNSRecordClient(tx.config)
 	tx.DDNSSetting = NewDDNSSettingClient(tx.config)
 	tx.MCPToken = NewMCPTokenClient(tx.config)
-	tx.R2WebDAVSetting = NewR2WebDAVSettingClient(tx.config)
+	tx.S3WebDAVSetting = NewS3WebDAVSettingClient(tx.config)
 	tx.TunnelManagement = NewTunnelManagementClient(tx.config)
 	tx.TunnelToken = NewTunnelTokenClient(tx.config)
 }

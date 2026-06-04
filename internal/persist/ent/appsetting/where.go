@@ -154,6 +154,16 @@ func McpEnabled(v bool) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldMcpEnabled, v))
 }
 
+// S3WebdavEnabled applies equality check predicate on the "s3_webdav_enabled" field. It's identical to S3WebdavEnabledEQ.
+func S3WebdavEnabled(v bool) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavEnabled, v))
+}
+
+// S3WebdavActiveKey applies equality check predicate on the "s3_webdav_active_key" field. It's identical to S3WebdavActiveKeyEQ.
+func S3WebdavActiveKey(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavActiveKey, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldCreatedAt, v))
@@ -1027,6 +1037,81 @@ func McpEnabledEQ(v bool) predicate.AppSetting {
 // McpEnabledNEQ applies the NEQ predicate on the "mcp_enabled" field.
 func McpEnabledNEQ(v bool) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldNEQ(FieldMcpEnabled, v))
+}
+
+// S3WebdavEnabledEQ applies the EQ predicate on the "s3_webdav_enabled" field.
+func S3WebdavEnabledEQ(v bool) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavEnabled, v))
+}
+
+// S3WebdavEnabledNEQ applies the NEQ predicate on the "s3_webdav_enabled" field.
+func S3WebdavEnabledNEQ(v bool) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNEQ(FieldS3WebdavEnabled, v))
+}
+
+// S3WebdavActiveKeyEQ applies the EQ predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyNEQ applies the NEQ predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyNEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNEQ(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyIn applies the In predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldIn(FieldS3WebdavActiveKey, vs...))
+}
+
+// S3WebdavActiveKeyNotIn applies the NotIn predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyNotIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNotIn(FieldS3WebdavActiveKey, vs...))
+}
+
+// S3WebdavActiveKeyGT applies the GT predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyGT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGT(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyGTE applies the GTE predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyGTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGTE(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyLT applies the LT predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyLT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLT(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyLTE applies the LTE predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyLTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLTE(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyContains applies the Contains predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyContains(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContains(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyHasPrefix applies the HasPrefix predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyHasPrefix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasPrefix(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyHasSuffix applies the HasSuffix predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyHasSuffix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasSuffix(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyEqualFold applies the EqualFold predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyEqualFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEqualFold(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavActiveKeyContainsFold applies the ContainsFold predicate on the "s3_webdav_active_key" field.
+func S3WebdavActiveKeyContainsFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContainsFold(FieldS3WebdavActiveKey, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

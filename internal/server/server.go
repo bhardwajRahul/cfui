@@ -6,7 +6,7 @@ import (
 	"cfui/internal/logger"
 	"cfui/internal/mcpbridge"
 	"cfui/internal/pool"
-	"cfui/internal/r2dav"
+	"cfui/internal/s3dav"
 	"cfui/internal/service"
 	"cfui/internal/tunnelmgr"
 	"context"
@@ -101,7 +101,7 @@ type Server struct {
 	tunnelMgr *tunnelmgr.Manager
 	mcpSvc    *mcpbridge.Service
 	ddnsSvc   *ddns.Service
-	r2Svc     *r2dav.Service
+	s3Svc     *s3dav.Service
 	assets    embed.FS
 	locales   embed.FS
 }
@@ -110,14 +110,14 @@ func NewServer(cfgMgr *config.Manager, runner *service.Runner, assets embed.FS, 
 	tunnelMgr := tunnelmgr.NewManager(cfgMgr)
 	tokenStore := mcpbridge.NewTokenStore(cfgMgr.Dir())
 	ddnsSvc := ddns.NewService(cfgMgr)
-	r2Svc := r2dav.NewService(cfgMgr)
+	s3Svc := s3dav.NewService(cfgMgr)
 	return &Server{
 		cfgMgr:    cfgMgr,
 		runner:    runner,
 		tunnelMgr: tunnelMgr,
 		mcpSvc:    mcpbridge.NewService(cfgMgr, runner, tunnelMgr, tokenStore, ddnsSvc),
 		ddnsSvc:   ddnsSvc,
-		r2Svc:     r2Svc,
+		s3Svc:     s3Svc,
 		assets:    assets,
 		locales:   locales,
 	}
@@ -147,7 +147,7 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/features", s.handleFeatures)
 	mux.Handle("/mcp", s.mcpSvc.Handler())
 	mux.Handle("/mcp/", s.mcpSvc.Handler())
-	mux.Handle(r2dav.EndpointPath, s.r2Svc.Handler())
+	mux.Handle("/webdav/", s.s3Svc.Handler())
 
 	// DDNS endpoints
 	mux.HandleFunc("/api/ddns/config", s.handleDDNSConfig)
@@ -157,14 +157,17 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/ddns/records/", s.handleDDNSRecord)
 	mux.HandleFunc("/api/ddns/records", s.handleDDNSRecords)
 
-	// R2 WebDAV endpoints
-	mux.HandleFunc("/api/r2/settings", s.handleR2Settings)
-	mux.HandleFunc("/api/r2/buckets", s.handleR2Buckets)
-	mux.HandleFunc("/api/r2/files/download", s.handleR2Download)
-	mux.HandleFunc("/api/r2/files/mkdir", s.handleR2Mkdir)
-	mux.HandleFunc("/api/r2/files/rename", s.handleR2Rename)
-	mux.HandleFunc("/api/r2/files/", s.handleR2FileObject)
-	mux.HandleFunc("/api/r2/files", s.handleR2Files)
+	// S3 WebDAV endpoints
+	mux.HandleFunc("/api/s3/settings", s.handleS3Settings)
+	mux.HandleFunc("/api/s3/mounts/", s.handleS3Mount)
+	mux.HandleFunc("/api/s3/mounts", s.handleS3Mounts)
+	mux.HandleFunc("/api/s3/test", s.handleS3Test)
+	mux.HandleFunc("/api/s3/buckets", s.handleS3Buckets)
+	mux.HandleFunc("/api/s3/files/download", s.handleS3Download)
+	mux.HandleFunc("/api/s3/files/mkdir", s.handleS3Mkdir)
+	mux.HandleFunc("/api/s3/files/rename", s.handleS3Rename)
+	mux.HandleFunc("/api/s3/files/", s.handleS3FileObject)
+	mux.HandleFunc("/api/s3/files", s.handleS3Files)
 
 	// Static Files
 	// The assets are in "web/dist", so we need to strip that prefix
@@ -197,8 +200,8 @@ type FeaturesResponse struct {
 	TunnelManager bool                          `json:"tunnel_manager"`
 	DDNS          bool                          `json:"ddns"`
 	MCP           bool                          `json:"mcp"`
-	R2WebDAV      bool                          `json:"r2_webdav"`
-	Availability  map[string]r2dav.Availability `json:"availability,omitempty"`
+	S3WebDAV      bool                          `json:"s3_webdav"`
+	Availability  map[string]s3dav.Availability `json:"availability,omitempty"`
 }
 
 // FeaturesRequest carries partial feature toggle updates.
@@ -206,7 +209,7 @@ type FeaturesRequest struct {
 	TunnelManager *bool `json:"tunnel_manager,omitempty"`
 	DDNS          *bool `json:"ddns,omitempty"`
 	MCP           *bool `json:"mcp,omitempty"`
-	R2WebDAV      *bool `json:"r2_webdav,omitempty"`
+	S3WebDAV      *bool `json:"s3_webdav,omitempty"`
 }
 
 func (s *Server) handleFeatures(w http.ResponseWriter, r *http.Request) {
@@ -249,15 +252,8 @@ func (s *Server) handleFeatures(w http.ResponseWriter, r *http.Request) {
 	if req.MCP != nil {
 		cfg.MCPEnabled = *req.MCP
 	}
-	if req.R2WebDAV != nil {
-		if *req.R2WebDAV {
-			availability := s.r2Svc.FeatureAvailability(r.Context(), cfg.R2WebDAV)
-			if !availability.CanEnable {
-				writeAPIError(w, http.StatusForbidden, fmt.Errorf("%s", availability.Message))
-				return
-			}
-		}
-		cfg.R2WebDAV.Enabled = *req.R2WebDAV
+	if req.S3WebDAV != nil {
+		cfg.S3WebDAV.Enabled = *req.S3WebDAV
 	}
 	if err := s.cfgMgr.Save(cfg); err != nil {
 		writeAPIError(w, http.StatusInternalServerError, err)
@@ -274,26 +270,26 @@ func (s *Server) featuresResponse(ctx context.Context, cfg config.Config) Featur
 		TunnelManager: cfg.TunnelManagement.Enabled,
 		DDNS:          cfg.DDNS.Enabled,
 		MCP:           cfg.MCPEnabled,
-		R2WebDAV:      cfg.R2WebDAV.Enabled,
-		Availability: map[string]r2dav.Availability{
-			"r2_webdav": s.r2Svc.FeatureAvailability(ctx, cfg.R2WebDAV),
+		S3WebDAV:      cfg.S3WebDAV.Enabled,
+		Availability: map[string]s3dav.Availability{
+			"s3_webdav": s.s3Svc.FeatureAvailability(ctx, cfg.S3WebDAV),
 		},
 	}
 }
 
-func (s *Server) handleR2Settings(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleS3Settings(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, s.r2Svc.Settings(r.Context()))
+		writeJSON(w, s.s3Svc.Settings(r.Context()))
 	case http.MethodPost:
-		var req r2dav.SettingsRequest
+		var req s3dav.SettingsRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			writeAPIError(w, http.StatusBadRequest, err)
 			return
 		}
-		resp, err := s.r2Svc.SaveSettings(r.Context(), req)
+		resp, err := s.s3Svc.SaveSettings(r.Context(), req)
 		if err != nil {
-			writeR2Error(w, err)
+			writeS3Error(w, err)
 			return
 		}
 		writeJSON(w, resp)
@@ -302,24 +298,94 @@ func (s *Server) handleR2Settings(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleR2Buckets(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleS3Mounts(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req s3dav.MountRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	resp, err := s.s3Svc.CreateMount(r.Context(), req)
+	if err != nil {
+		writeS3Error(w, err)
+		return
+	}
+	writeJSON(w, resp)
+}
+
+func (s *Server) handleS3Mount(w http.ResponseWriter, r *http.Request) {
+	key := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/s3/mounts/"), "/")
+	if key == "" {
+		writeAPIError(w, http.StatusBadRequest, fmt.Errorf("mount key is required"))
+		return
+	}
 	switch r.Method {
-	case http.MethodGet:
-		resp, err := s.r2Svc.ListBuckets(r.Context())
-		if err != nil {
-			writeR2Error(w, err)
-			return
-		}
-		writeJSON(w, resp)
-	case http.MethodPost:
-		var req r2dav.CreateBucketRequest
+	case http.MethodPut, http.MethodPost:
+		var req s3dav.MountRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			writeAPIError(w, http.StatusBadRequest, err)
 			return
 		}
-		bucket, err := s.r2Svc.CreateBucket(r.Context(), req)
+		resp, err := s.s3Svc.SaveMount(r.Context(), key, req)
 		if err != nil {
-			writeR2Error(w, err)
+			writeS3Error(w, err)
+			return
+		}
+		writeJSON(w, resp)
+	case http.MethodDelete:
+		resp, err := s.s3Svc.DeleteMount(r.Context(), key)
+		if err != nil {
+			writeS3Error(w, err)
+			return
+		}
+		writeJSON(w, resp)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleS3Test(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req s3dav.MountRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	resp, err := s.s3Svc.TestConnection(r.Context(), r.URL.Query().Get("mount_key"), req)
+	if err != nil {
+		writeS3Error(w, err)
+		return
+	}
+	writeJSON(w, resp)
+}
+
+func (s *Server) handleS3Buckets(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		resp, err := s.s3Svc.ListBuckets(r.Context(), r.URL.Query().Get("mount_key"))
+		if err != nil {
+			writeS3Error(w, err)
+			return
+		}
+		writeJSON(w, resp)
+	case http.MethodPost:
+		var req s3dav.CreateBucketRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		if req.MountKey == "" {
+			req.MountKey = r.URL.Query().Get("mount_key")
+		}
+		bucket, err := s.s3Svc.CreateBucket(r.Context(), req)
+		if err != nil {
+			writeS3Error(w, err)
 			return
 		}
 		writeJSON(w, bucket)
@@ -328,27 +394,27 @@ func (s *Server) handleR2Buckets(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleR2Files(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleS3Files(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	resp, err := s.r2Svc.ListFiles(r.Context(), r.URL.Query().Get("path"))
+	resp, err := s.s3Svc.ListFiles(r.Context(), r.URL.Query().Get("mount_key"), r.URL.Query().Get("path"))
 	if err != nil {
-		writeR2Error(w, err)
+		writeS3Error(w, err)
 		return
 	}
 	writeJSON(w, resp)
 }
 
-func (s *Server) handleR2Download(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleS3Download(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	file, info, err := s.r2Svc.OpenFile(r.Context(), r.URL.Query().Get("path"))
+	file, info, err := s.s3Svc.OpenFile(r.Context(), r.URL.Query().Get("mount_key"), r.URL.Query().Get("path"))
 	if err != nil {
-		writeR2Error(w, err)
+		writeS3Error(w, err)
 		return
 	}
 	defer file.Close()
@@ -356,22 +422,22 @@ func (s *Server) handleR2Download(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 }
 
-func (s *Server) handleR2FileObject(w http.ResponseWriter, r *http.Request) {
-	rawPath, err := r2ObjectPath(r.URL.Path)
+func (s *Server) handleS3FileObject(w http.ResponseWriter, r *http.Request) {
+	rawPath, err := s3ObjectPath(r.URL.Path)
 	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
 	switch r.Method {
 	case http.MethodPut:
-		if err := s.r2Svc.WriteFile(r.Context(), rawPath, r.Body); err != nil {
-			writeR2Error(w, err)
+		if err := s.s3Svc.WriteFile(r.Context(), r.URL.Query().Get("mount_key"), rawPath, r.Body); err != nil {
+			writeS3Error(w, err)
 			return
 		}
 		writeJSON(w, map[string]bool{"success": true})
 	case http.MethodDelete:
-		if err := s.r2Svc.Delete(r.Context(), rawPath); err != nil {
-			writeR2Error(w, err)
+		if err := s.s3Svc.Delete(r.Context(), r.URL.Query().Get("mount_key"), rawPath); err != nil {
+			writeS3Error(w, err)
 			return
 		}
 		writeJSON(w, map[string]bool{"success": true})
@@ -380,42 +446,48 @@ func (s *Server) handleR2FileObject(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleR2Mkdir(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleS3Mkdir(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	var req r2dav.MkdirRequest
+	var req s3dav.MkdirRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
-	if err := s.r2Svc.Mkdir(r.Context(), req.Path); err != nil {
-		writeR2Error(w, err)
+	if req.MountKey == "" {
+		req.MountKey = r.URL.Query().Get("mount_key")
+	}
+	if err := s.s3Svc.Mkdir(r.Context(), req.MountKey, req.Path); err != nil {
+		writeS3Error(w, err)
 		return
 	}
 	writeJSON(w, map[string]bool{"success": true})
 }
 
-func (s *Server) handleR2Rename(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleS3Rename(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	var req r2dav.RenameRequest
+	var req s3dav.RenameRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
-	if err := s.r2Svc.Rename(r.Context(), req.From, req.To); err != nil {
-		writeR2Error(w, err)
+	if req.MountKey == "" {
+		req.MountKey = r.URL.Query().Get("mount_key")
+	}
+	if err := s.s3Svc.Rename(r.Context(), req.MountKey, req.From, req.To); err != nil {
+		writeS3Error(w, err)
 		return
 	}
 	writeJSON(w, map[string]bool{"success": true})
 }
 
-func r2ObjectPath(requestPath string) (string, error) {
-	raw := strings.TrimPrefix(requestPath, "/api/r2/files/")
+func s3ObjectPath(requestPath string) (string, error) {
+	raw := strings.TrimPrefix(requestPath, "/api/s3/files/")
 	if raw == "" || raw == requestPath {
 		return "", fmt.Errorf("object path is required")
 	}
@@ -426,7 +498,7 @@ func r2ObjectPath(requestPath string) (string, error) {
 	return "/" + strings.TrimPrefix(decoded, "/"), nil
 }
 
-func writeR2Error(w http.ResponseWriter, err error) {
+func writeS3Error(w http.ResponseWriter, err error) {
 	msg := err.Error()
 	switch {
 	case strings.Contains(msg, "requires Cloudflare API Token"), strings.Contains(msg, "permission"), strings.Contains(msg, "not active"):

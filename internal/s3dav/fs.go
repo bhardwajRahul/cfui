@@ -1,4 +1,4 @@
-package r2dav
+package s3dav
 
 import (
 	"context"
@@ -15,11 +15,11 @@ import (
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-type FSFactory func(context.Context, string, string, Credentials) (afero.Fs, error)
+type FSFactory func(context.Context, FSConfig, Credentials) (afero.Fs, error)
 
-func newR2FS(_ context.Context, bucketName, endpoint string, creds Credentials) (afero.Fs, error) {
+func newS3FS(_ context.Context, cfg FSConfig, creds Credentials) (afero.Fs, error) {
 	awsCfg := aws.Config{
-		Region: "auto",
+		Region: cfg.Region,
 		Credentials: aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(
 			creds.AccessKeyID,
 			creds.SecretAccessKey,
@@ -28,16 +28,20 @@ func newR2FS(_ context.Context, bucketName, endpoint string, creds Credentials) 
 		EndpointResolverWithOptions: aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 			return aws.Endpoint{
 				PartitionID:       "aws",
-				URL:               endpoint,
-				SigningRegion:     "auto",
+				URL:               cfg.Endpoint,
+				SigningRegion:     cfg.Region,
 				HostnameImmutable: true,
 			}, nil
 		}),
 	}
 	client := awss3.NewFromConfig(awsCfg, func(options *awss3.Options) {
-		options.UsePathStyle = true
+		options.UsePathStyle = cfg.PathStyle
 	})
-	return aferos3.NewFsFromClient(bucketName, client), nil
+	fs := aferos3.NewFsFromClient(cfg.BucketName, client)
+	if cfg.RootPrefix == "" {
+		return fs, nil
+	}
+	return afero.NewBasePathFs(fs, "/"+cfg.RootPrefix), nil
 }
 
 func listFiles(fs afero.Fs, rawPath string) (FilesResponse, error) {

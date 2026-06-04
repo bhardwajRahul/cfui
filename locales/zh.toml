@@ -356,10 +356,10 @@ other = "隧道 UUID"
 other = "您的隧道 UUID。获取路径：Zero Trust → 网络 → 连接器 → Cloudflare Tunnels → 点击隧道名称 → 概览。修改此字段后会加载所选隧道配置。"
 
 [auth_help]
-other = "推荐使用 API Token。创建路径：仪表板 → 我的个人资料 → API 令牌。远程 Tunnel 管理需要：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。R2 WebDAV 还需要 Account · Workers R2 Storage · Write。留空则保留已保存的值。"
+other = "推荐使用 API Token。远程 Tunnel 管理需要：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。Workers R2 Storage · Edit 是可选项，只在需要让 cfui 列出或创建 R2 bucket 时使用。留空则保留已保存的值。"
 
 [api_token_help]
-other = "在 Cloudflare 仪表板 → 我的个人资料 → API 令牌 → 创建令牌 中创建。勾选 Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。启用 R2 WebDAV 时再勾选 Account · Workers R2 Storage · Write。"
+other = "在 Cloudflare 仪表板 → 我的个人资料 → API 令牌 → 创建令牌 中创建。这里勾选 Tunnel 管理所需权限即可。只有想让 cfui 列出或创建 R2 bucket 时，才额外勾选 Workers R2 Storage Edit。"
 
 [api_key_help]
 other = "在 Cloudflare 仪表板 → 我的个人资料 → API 密钥 中找到 Global API Key。为安全起见，建议使用 API Token 代替。"
@@ -454,17 +454,11 @@ other = "Zone · Zone · Read"
 [api_permission_dns]
 other = "Zone · DNS · Edit"
 
-[api_permission_r2_storage]
-other = "Account · Workers R2 Storage · Write"
-
-[api_permission_r2_bucket_item]
-other = "R2 Bucket · Workers R2 Storage Bucket Item · Write"
-
 [api_permission_note]
-other = "前三项是远程 Tunnel 管理和 DDNS 所需权限。"
+other = "这些权限是远程 Tunnel 管理和 DDNS 所需权限。"
 
 [api_permission_r2_note]
-other = "R2 WebDAV 额外需要 Account · Workers R2 Storage · Write，以便 cfui 选择和创建 bucket。"
+other = "Workers R2 Storage Edit 只用于可选的 R2 bucket 列表/创建。S3 WebDAV 文件读写使用 S3 页面里填写的 Access Key ID 和 Secret Access Key。"
 
 [remote_manager_config]
 other = "远程管理配置"
@@ -567,12 +561,6 @@ other = "Zone:Read"
 
 [verify_permission_dns_edit]
 other = "DNS:Edit"
-
-[verify_permission_r2_storage_write]
-other = "R2 Storage:Write"
-
-[verify_permission_r2_bucket_item_write]
-other = "R2 Bucket Item:Write"
 
 [ddns_tab]
 other = "DDNS"
@@ -1026,215 +1014,356 @@ other = "新日志"
 [action_shortcut_hint]
 other = "Ctrl/⌘ + Enter"
 
-[r2_tab]
-other = "R2 WebDAV"
+[s3_tab]
+other = "S3 WebDAV"
 
-[r2_title]
-other = "R2 WebDAV"
+[s3_title]
+other = "S3 WebDAV"
 
-[r2_subtitle]
-other = "将一个 Cloudflare R2 bucket 通过 WebDAV 暴露，并在此页面管理文件。"
+[s3_subtitle]
+other = "把一个兼容 S3 的 bucket 路径挂载成 WebDAV，并在这里管理文件。"
 
-[r2_status_setup]
+[s3_status_setup]
 other = "需要配置"
 
-[r2_status_enabled]
+[s3_status_enabled]
 other = "已启用"
 
-[r2_status_ready_to_enable]
+[s3_status_ready_to_enable]
 other = "可启用"
 
-[r2_connection]
-other = "Cloudflare 连接"
+[s3_provider]
+other = "存储服务"
 
-[r2_connection_help]
-other = "R2 WebDAV 需要 API Token 模式，并且 token 具备 Account · Workers R2 Storage · Write。R2 对象访问不支持 Global API Key 模式。"
+[s3_mounts]
+other = "挂载配置"
 
-[r2_account_help]
-other = "留空则复用远程 Tunnel 管理器中的 Account ID。"
+[s3_mounts_help]
+other = "每个挂载配置都有独立的 S3 凭证、bucket 路径、WebDAV 路径和 WebDAV 登录账户。"
 
-[r2_jurisdiction]
+[s3_new_mount]
+other = "新建挂载"
+
+[s3_new_mount_default]
+other = "新 S3 挂载"
+
+[s3_mount_created]
+other = "S3 挂载已创建"
+
+[s3_mount_create_failed]
+other = "创建 S3 挂载失败"
+
+[s3_delete_mount]
+other = "删除挂载"
+
+[s3_delete_mount_title]
+other = "删除 S3 挂载？"
+
+[s3_delete_mount_message]
+other = "删除 {name}？这只会删除 cfui 里的挂载配置，不会删除 bucket。"
+
+[s3_mount_deleted]
+other = "S3 挂载已删除"
+
+[s3_mount_delete_failed]
+other = "删除 S3 挂载失败"
+
+[s3_mount_name]
+other = "挂载名称"
+
+[s3_mount_name_help]
+other = "只在 cfui 内显示，用来区分多个挂载配置。"
+
+[s3_provider_help]
+other = "大多数服务选择通用 S3。只有需要 cfui 帮你列出或创建 R2 bucket 时，才选择 Cloudflare R2。"
+
+[s3_provider_label]
+other = "服务类型"
+
+[s3_provider_generic]
+other = "通用 S3"
+
+[s3_provider_r2]
+other = "Cloudflare R2"
+
+[s3_provider_label_help]
+other = "这里主要影响预设和可选的 bucket 管理。文件访问始终使用 S3 凭证。"
+
+[s3_endpoint_url]
+other = "S3 endpoint"
+
+[s3_endpoint_url_help]
+other = "R2 使用 https://<ACCOUNT_ID>.r2.cloudflarestorage.com。"
+
+[s3_region]
+other = "Region"
+
+[s3_region_help]
+other = "Cloudflare R2 填 auto。其他 S3 服务通常要填官方文档里的 region。"
+
+[s3_path_style]
+other = "使用 path-style 请求"
+
+[s3_path_style_help]
+other = "R2 和多数 S3 兼容服务建议开启；只有服务商要求 virtual-host style 时再关闭。"
+
+[s3_r2_credentials_guide]
+other = "R2 的 Access Key ID 和 Secret Access Key 要在 R2 控制台创建 R2 API Token 后复制。Secret Access Key 只显示一次，请创建后马上保存。"
+
+[s3_r2_tokens_path]
+other = "直达路径："
+
+[s3_r2_management]
+other = "可选的 R2 bucket 管理"
+
+[s3_r2_management_help]
+other = "只有想让 cfui 列出或创建 bucket 时才需要。WebDAV 文件读写不使用这里的 Cloudflare API Token。"
+
+[s3_account_help]
+other = "用于生成 R2 endpoint，也用于可选的 bucket 列表/创建接口。留空则复用远程 Tunnel 管理中的 Account ID。"
+
+[s3_jurisdiction]
 other = "区域管辖"
 
-[r2_jurisdiction_default]
+[s3_jurisdiction_default]
 other = "默认"
 
-[r2_jurisdiction_eu]
+[s3_jurisdiction_eu]
 other = "EU"
 
-[r2_jurisdiction_fedramp]
+[s3_jurisdiction_fedramp]
 other = "FedRAMP"
 
-[r2_jurisdiction_help]
-other = "需要和你的 R2 bucket endpoint 所在区域一致。"
+[s3_jurisdiction_help]
+other = "需要和 R2 Overview 页面显示的 endpoint 一致。"
 
-[r2_bucket]
-other = "Bucket"
+[s3_bucket_select]
+other = "从 R2 bucket 中选择"
 
-[r2_bucket_help]
-other = "选择已有 bucket，或创建一个用于 WebDAV 访问的新 bucket。"
+[s3_r2_management_unavailable]
+other = "列出/创建 bucket 是可选能力，需要 Cloudflare API Token 具备 Workers R2 Storage Edit。"
 
-[r2_bucket_select]
-other = "已选择 bucket"
+[s3_r2_management_ready]
+other = "R2 bucket 管理可用。"
 
-[r2_bucket_select_help]
-other = "WebDAV endpoint 只会暴露这个 bucket。"
-
-[r2_bucket_choose]
+[s3_bucket_choose]
 other = "选择 bucket"
 
-[r2_create_bucket]
-other = "创建 bucket"
+[s3_create_bucket]
+other = "创建 R2 bucket"
 
-[r2_create_bucket_help]
+[s3_create_bucket_help]
 other = "使用小写字母、数字、点和连字符。"
 
-[r2_webdav_credentials]
-other = "WebDAV 账户"
+[s3_bucket_path]
+other = "Bucket 和挂载路径"
 
-[r2_webdav_credentials_help]
+[s3_bucket_path_help]
+other = "设置 bucket、可选的对象前缀，以及 cfui 对外提供的 WebDAV URL 路径。"
+
+[s3_bucket_name]
+other = "Bucket 名称"
+
+[s3_bucket_name_help]
+other = "cfui 只会挂载这个 bucket。通用 S3 模式下，请先在服务商控制台创建好 bucket。"
+
+[s3_root_prefix]
+other = "Bucket 子路径"
+
+[s3_root_prefix_help]
+other = "可选。填写后，WebDAV 只能看到这个前缀下面的文件。"
+
+[s3_mount_path]
+other = "WebDAV 路径"
+
+[s3_mount_path_help]
+other = "必须以 /webdav/ 开头。例如 /webdav/my_r2/ 或 /webdav/qiniu/。"
+
+[s3_s3_credentials]
+other = "S3 凭证"
+
+[s3_s3_credentials_help]
+other = "这组凭证给 cfui 读写对象用，和下面的 WebDAV 登录账户不是一回事。"
+
+[s3_access_key_id]
+other = "Access Key ID"
+
+[s3_secret_access_key]
+other = "Secret Access Key"
+
+[s3_secret_placeholder]
+other = "留空表示保持当前密钥"
+
+[s3_secret_set]
+other = "已保存 Secret Access Key。"
+
+[s3_secret_not_set]
+other = "尚未保存 Secret Access Key。"
+
+[s3_webdav_credentials]
+other = "WebDAV 登录账户"
+
+[s3_webdav_credentials_help]
 other = "这组账户只用于 WebDAV 客户端连接 cfui。"
 
-[r2_webdav_username]
+[s3_webdav_username]
 other = "WebDAV 用户名"
 
-[r2_webdav_password]
+[s3_webdav_password]
 other = "WebDAV 密码"
 
-[r2_password_placeholder]
+[s3_password_placeholder]
 other = "留空表示保持当前密码"
 
-[r2_password_set]
+[s3_password_set]
 other = "已保存 WebDAV 密码。"
 
-[r2_password_not_set]
+[s3_password_not_set]
 other = "尚未保存 WebDAV 密码。"
 
-[r2_webdav_endpoint]
+[s3_webdav_endpoint]
 other = "WebDAV endpoint"
 
-[r2_endpoint_help]
-other = "R2 设置完成后，用这个路径配合 WebDAV 用户名和密码访问。"
+[s3_endpoint_help]
+other = "启用功能后，用这个路径配合 WebDAV 用户名和密码访问。"
 
-[r2_save_settings]
-other = "保存 R2 设置"
+[s3_test_connection]
+other = "测试连接"
 
-[r2_files]
+[s3_save_settings]
+other = "保存设置"
+
+[s3_files]
 other = "文件"
 
-[r2_files_help]
-other = "文件夹是 R2 前缀模拟。重命名会先复制对象再删除原对象。"
+[s3_files_help]
+other = "文件夹对应对象前缀。这里的操作只影响配置的 bucket 子路径。"
 
-[r2_files_disabled_title]
-other = "先完成 R2 设置"
+[s3_files_disabled_title]
+other = "先完成 S3 设置"
 
-[r2_files_disabled_help]
-other = "请选择 bucket 并设置 WebDAV 账户后再使用文件管理。"
+[s3_files_disabled_help]
+other = "请先填写 endpoint、bucket、S3 凭证和 WebDAV 登录账户。"
 
-[r2_new_folder]
+[s3_new_folder]
 other = "新建文件夹"
 
-[feature_r2_name]
-other = "R2 WebDAV"
+[feature_s3_name]
+other = "S3 WebDAV"
 
-[feature_r2_desc]
-other = "将选定的 R2 bucket 通过 WebDAV 暴露。需要 API Token 模式和 Account · Workers R2 Storage · Write。"
+[feature_s3_desc]
+other = "把一个兼容 S3 的 bucket 路径通过 WebDAV 暴露。Cloudflare R2 是其中一种服务预设。"
 
-[r2_ready]
-other = "R2 WebDAV 已准备就绪。"
+[s3_ready]
+other = "S3 WebDAV 已准备就绪。"
 
-[r2_feature_can_enable]
-other = "Token 和 R2 权限已满足。启用后再配置 bucket 和 WebDAV 账户。"
+[s3_feature_can_enable]
+other = "启用后再配置 endpoint、bucket、S3 凭证和 WebDAV 登录账户。"
 
-[r2_api_token_required]
-other = "启用 R2 WebDAV 前请使用 Cloudflare API Token 模式。"
+[s3_endpoint_required]
+other = "请填写 S3 endpoint。"
 
-[r2_account_required]
-other = "请填写 Account ID，或先在远程 Tunnel 管理器中配置。"
+[s3_credentials_required]
+other = "请填写 Access Key ID 和 Secret Access Key。"
 
-[r2_permission_denied]
-other = "API Token 需要 Account · Workers R2 Storage · Write。"
+[s3_mount_path_invalid]
+other = "WebDAV 路径必须以 /webdav/ 开头。"
 
-[r2_bucket_required]
-other = "请选择或创建一个 R2 bucket。"
+[s3_bucket_required]
+other = "请填写 bucket 名称。"
 
-[r2_webdav_credentials_required]
+[s3_webdav_credentials_required]
 other = "请设置 WebDAV 用户名和密码。"
 
-[r2_bucket_not_found]
-other = "选中的 bucket 不存在或不可访问。"
+[s3_configuration_incomplete]
+other = "S3 WebDAV 设置还不完整。"
 
-[r2_configure_first]
-other = "请先配置 R2 设置，再启用此功能。"
+[s3_filesystem_unavailable]
+other = "S3 文件系统不可用。"
 
-[r2_not_ready]
-other = "R2 WebDAV 还不能启用。"
+[s3_configure_first]
+other = "请先配置 S3 WebDAV 设置。"
 
-[r2_buckets_loaded]
+[s3_buckets_loaded]
 other = "R2 bucket 已加载"
 
-[r2_bucket_load_failed]
+[s3_bucket_load_failed]
 other = "加载 R2 bucket 失败"
 
-[r2_bucket_name_required]
+[s3_bucket_name_required]
 other = "Bucket 名称不能为空。"
 
-[r2_bucket_created]
+[s3_bucket_created]
 other = "R2 bucket 已创建"
 
-[r2_bucket_create_failed]
+[s3_bucket_create_failed]
 other = "创建 R2 bucket 失败"
 
-[r2_settings_saved]
-other = "R2 设置已保存"
+[s3_settings_saved]
+other = "S3 WebDAV 设置已保存"
 
-[r2_settings_save_failed]
-other = "保存 R2 设置失败"
+[s3_settings_save_failed]
+other = "保存 S3 WebDAV 设置失败"
 
-[r2_files_load_failed]
-other = "加载 R2 文件失败"
+[s3_test_success]
+other = "S3 连接可用。"
 
-[r2_files_empty]
+[s3_test_failed]
+other = "S3 连接测试失败"
+
+[testing]
+other = "测试中..."
+
+[s3_files_load_failed]
+other = "加载 S3 文件失败"
+
+[s3_files_empty]
 other = "这个 bucket 路径为空。"
 
-[r2_folder]
+[s3_folder]
 other = "文件夹"
 
-[r2_upload_done]
+[s3_upload_done]
 other = "上传完成"
 
-[r2_upload_failed]
+[s3_upload_failed]
 other = "上传失败"
 
-[r2_new_folder_prompt]
+[s3_new_folder_prompt]
 other = "文件夹名称"
 
-[r2_folder_created]
+[s3_folder_created]
 other = "文件夹已创建"
 
-[r2_folder_create_failed]
+[s3_folder_create_failed]
 other = "创建文件夹失败"
 
-[r2_rename_prompt]
+[s3_rename_prompt]
 other = "新名称"
 
-[r2_renamed]
+[s3_renamed]
 other = "已重命名"
 
-[r2_rename_failed]
+[s3_rename_failed]
 other = "重命名失败"
 
-[r2_delete_title]
-other = "删除 R2 对象？"
+[s3_delete_title]
+other = "删除对象？"
 
-[r2_delete_message]
-other = "删除 {name}？这会从 R2 bucket 中移除它。"
+[s3_delete_message]
+other = "删除 {name}？这会从当前挂载的 bucket 路径中移除。"
 
-[r2_deleted]
+[s3_deleted]
 other = "已删除"
 
-[r2_delete_failed]
+[s3_delete_failed]
 other = "删除失败"
+
+[ready]
+other = "就绪"
+
+[disabled]
+other = "已禁用"
 
 [refresh]
 other = "刷新"

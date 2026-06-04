@@ -356,10 +356,10 @@ other = "トンネル UUID"
 other = "トンネルの UUID。取得方法：Zero Trust → ネットワーク → コネクタ → Cloudflare Tunnels → トンネル名をクリック → 概要。この項目を変更すると、選択したトンネル設定を読み込みます。"
 
 [auth_help]
-other = "API Token を推奨します。作成方法：ダッシュボード → マイプロフィール → API トークン。Remote Tunnel Manager には Account · Argo Tunnel (Legacy) · Edit、Zone · Zone · Read、Zone · DNS · Edit が必要です。R2 WebDAV には Account · Workers R2 Storage · Write も必要です。空欄なら保存済みの値を保持します。"
+other = "API Token を推奨します。Remote Tunnel Manager には Account · Argo Tunnel (Legacy) · Edit、Zone · Zone · Read、Zone · DNS · Edit が必要です。Workers R2 Storage · Edit は任意で、cfui から R2 bucket を一覧表示または作成する場合だけ必要です。空欄なら保存済みの値を保持します。"
 
 [api_token_help]
-other = "Cloudflare ダッシュボード → マイプロフィール → API トークン → トークンを作成 で作成。Account · Argo Tunnel (Legacy) · Edit、Zone · Zone · Read、Zone · DNS · Edit を選択します。R2 WebDAV を有効化する場合は Account · Workers R2 Storage · Write も追加してください。"
+other = "Cloudflare ダッシュボード → マイプロフィール → API トークン → トークンを作成 で作成します。ここでは Tunnel 管理に必要な権限を選択してください。cfui から R2 bucket を一覧表示または作成したい場合だけ Workers R2 Storage Edit を追加します。"
 
 [api_key_help]
 other = "Cloudflare ダッシュボード → マイプロフィール → API キー で Global API Key を確認できます。セキュリティ上、API Token の使用を推奨します。"
@@ -454,17 +454,11 @@ other = "Zone · Zone · Read"
 [api_permission_dns]
 other = "Zone · DNS · Edit"
 
-[api_permission_r2_storage]
-other = "Account · Workers R2 Storage · Write"
-
-[api_permission_r2_bucket_item]
-other = "R2 Bucket · Workers R2 Storage Bucket Item · Write"
-
 [api_permission_note]
-other = "最初の 3 つは Remote Tunnel Manager と DDNS に必要です。"
+other = "これらは Remote Tunnel Manager と DDNS に必要な権限です。"
 
 [api_permission_r2_note]
-other = "R2 WebDAV には、cfui が bucket を一覧表示・作成できるよう Account · Workers R2 Storage · Write も必要です。"
+other = "Workers R2 Storage Edit は任意の R2 bucket 一覧/作成だけに使います。S3 WebDAV のファイルアクセスは S3 ページで設定した Access Key ID と Secret Access Key を使います。"
 
 [remote_manager_config]
 other = "リモート管理設定"
@@ -567,12 +561,6 @@ other = "Zone:Read"
 
 [verify_permission_dns_edit]
 other = "DNS:Edit"
-
-[verify_permission_r2_storage_write]
-other = "R2 Storage:Write"
-
-[verify_permission_r2_bucket_item_write]
-other = "R2 Bucket Item:Write"
 
 [ddns_tab]
 other = "DDNS"
@@ -1026,215 +1014,356 @@ other = "新しいログ"
 [action_shortcut_hint]
 other = "Ctrl/⌘ + Enter"
 
-[r2_tab]
-other = "R2 WebDAV"
+[s3_tab]
+other = "S3 WebDAV"
 
-[r2_title]
-other = "R2 WebDAV"
+[s3_title]
+other = "S3 WebDAV"
 
-[r2_subtitle]
-other = "Cloudflare R2 bucket を WebDAV として公開し、この画面でファイルを管理します。"
+[s3_subtitle]
+other = "S3 互換 bucket のパスを WebDAV として公開し、この画面でファイルを管理します。"
 
-[r2_status_setup]
+[s3_status_setup]
 other = "設定が必要"
 
-[r2_status_enabled]
+[s3_status_enabled]
 other = "有効"
 
-[r2_status_ready_to_enable]
+[s3_status_ready_to_enable]
 other = "有効化できます"
 
-[r2_connection]
-other = "Cloudflare 接続"
+[s3_provider]
+other = "ストレージサービス"
 
-[r2_connection_help]
-other = "R2 WebDAV には Account · Workers R2 Storage · Write を持つ API Token モードが必要です。Global API Key モードは R2 オブジェクトアクセスに対応していません。"
+[s3_mounts]
+other = "マウント設定"
 
-[r2_account_help]
-other = "空のままにすると Remote Tunnel Manager の Account ID を再利用します。"
+[s3_mounts_help]
+other = "各マウントは S3 認証情報、bucket パス、WebDAV パス、WebDAV ログインを個別に持ちます。"
 
-[r2_jurisdiction]
+[s3_new_mount]
+other = "マウントを追加"
+
+[s3_new_mount_default]
+other = "新しい S3 マウント"
+
+[s3_mount_created]
+other = "S3 マウントを作成しました"
+
+[s3_mount_create_failed]
+other = "S3 マウントの作成に失敗しました"
+
+[s3_delete_mount]
+other = "マウントを削除"
+
+[s3_delete_mount_title]
+other = "S3 マウントを削除しますか？"
+
+[s3_delete_mount_message]
+other = "{name} を削除しますか？cfui のマウント設定だけを削除し、bucket は削除しません。"
+
+[s3_mount_deleted]
+other = "S3 マウントを削除しました"
+
+[s3_mount_delete_failed]
+other = "S3 マウントの削除に失敗しました"
+
+[s3_mount_name]
+other = "マウント名"
+
+[s3_mount_name_help]
+other = "複数のマウントを見分けるために cfui 内だけで表示されます。"
+
+[s3_provider_help]
+other = "多くのサービスでは汎用 S3 を選びます。cfui で R2 bucket を一覧表示または作成したい場合だけ Cloudflare R2 を選びます。"
+
+[s3_provider_label]
+other = "サービスタイプ"
+
+[s3_provider_generic]
+other = "汎用 S3"
+
+[s3_provider_r2]
+other = "Cloudflare R2"
+
+[s3_provider_label_help]
+other = "ここではプリセットと任意の bucket 管理だけが変わります。ファイルアクセスは常に S3 認証情報を使います。"
+
+[s3_endpoint_url]
+other = "S3 endpoint"
+
+[s3_endpoint_url_help]
+other = "R2 では https://<ACCOUNT_ID>.r2.cloudflarestorage.com を使います。"
+
+[s3_region]
+other = "Region"
+
+[s3_region_help]
+other = "Cloudflare R2 は auto を使います。他の S3 サービスでは通常、公式ドキュメントの region を指定します。"
+
+[s3_path_style]
+other = "path-style リクエストを使う"
+
+[s3_path_style_help]
+other = "R2 と多くの S3 互換サービスではオンのままにします。サービス側が virtual-host style を要求する場合だけオフにします。"
+
+[s3_r2_credentials_guide]
+other = "R2 の Access Key ID と Secret Access Key は、R2 コンソールで R2 API Token を作成して取得します。Secret Access Key は一度だけ表示されます。"
+
+[s3_r2_tokens_path]
+other = "直接開くパス:"
+
+[s3_r2_management]
+other = "任意の R2 bucket 管理"
+
+[s3_r2_management_help]
+other = "cfui で bucket を一覧表示または作成したい場合だけ必要です。WebDAV のファイル読み書きではこの Cloudflare API Token は使いません。"
+
+[s3_account_help]
+other = "R2 endpoint の生成と任意の bucket 一覧/作成 API に使います。空欄なら Remote Tunnel Manager の Account ID を再利用します。"
+
+[s3_jurisdiction]
 other = "管轄リージョン"
 
-[r2_jurisdiction_default]
+[s3_jurisdiction_default]
 other = "デフォルト"
 
-[r2_jurisdiction_eu]
+[s3_jurisdiction_eu]
 other = "EU"
 
-[r2_jurisdiction_fedramp]
+[s3_jurisdiction_fedramp]
 other = "FedRAMP"
 
-[r2_jurisdiction_help]
-other = "R2 bucket endpoint の管轄リージョンに合わせてください。"
+[s3_jurisdiction_help]
+other = "R2 Overview ページに表示される endpoint と一致させてください。"
 
-[r2_bucket]
-other = "Bucket"
+[s3_bucket_select]
+other = "R2 bucket から選択"
 
-[r2_bucket_help]
-other = "既存 bucket を選択するか、WebDAV 用に新規作成します。"
+[s3_r2_management_unavailable]
+other = "bucket の一覧表示/作成は任意機能です。Cloudflare API Token に Workers R2 Storage Edit が必要です。"
 
-[r2_bucket_select]
-other = "選択中の bucket"
+[s3_r2_management_ready]
+other = "R2 bucket 管理を利用できます。"
 
-[r2_bucket_select_help]
-other = "WebDAV endpoint はこの bucket だけを公開します。"
+[s3_bucket_choose]
+other = "bucket を選択"
 
-[r2_bucket_choose]
-other = "Bucket を選択"
+[s3_create_bucket]
+other = "R2 bucket を作成"
 
-[r2_create_bucket]
-other = "Bucket を作成"
+[s3_create_bucket_help]
+other = "小文字、数字、ドット、ハイフンを使ってください。"
 
-[r2_create_bucket_help]
-other = "小文字、数字、ドット、ハイフンを使用してください。"
+[s3_bucket_path]
+other = "Bucket と公開パス"
 
-[r2_webdav_credentials]
-other = "WebDAV 認証情報"
+[s3_bucket_path_help]
+other = "bucket、任意のオブジェクト prefix、cfui が公開する WebDAV URL パスを設定します。"
 
-[r2_webdav_credentials_help]
-other = "この認証情報は cfui に接続する WebDAV クライアント専用です。"
+[s3_bucket_name]
+other = "Bucket 名"
 
-[r2_webdav_username]
+[s3_bucket_name_help]
+other = "cfui はこの bucket だけをマウントします。汎用 S3 では、先にサービス側のコンソールで bucket を作成してください。"
+
+[s3_root_prefix]
+other = "Bucket サブパス"
+
+[s3_root_prefix_help]
+other = "任意です。指定すると WebDAV からはこの prefix 配下のファイルだけが見えます。"
+
+[s3_mount_path]
+other = "WebDAV パス"
+
+[s3_mount_path_help]
+other = "/webdav/ で始める必要があります。例: /webdav/my_r2/ または /webdav/qiniu/。"
+
+[s3_s3_credentials]
+other = "S3 認証情報"
+
+[s3_s3_credentials_help]
+other = "この認証情報は cfui がオブジェクトを読み書きするために使います。下の WebDAV ログインとは別です。"
+
+[s3_access_key_id]
+other = "Access Key ID"
+
+[s3_secret_access_key]
+other = "Secret Access Key"
+
+[s3_secret_placeholder]
+other = "空欄なら現在の secret を保持"
+
+[s3_secret_set]
+other = "Secret Access Key は保存済みです。"
+
+[s3_secret_not_set]
+other = "Secret Access Key は未保存です。"
+
+[s3_webdav_credentials]
+other = "WebDAV ログイン"
+
+[s3_webdav_credentials_help]
+other = "このアカウントは WebDAV クライアントが cfui に接続するためだけに使います。"
+
+[s3_webdav_username]
 other = "WebDAV ユーザー名"
 
-[r2_webdav_password]
+[s3_webdav_password]
 other = "WebDAV パスワード"
 
-[r2_password_placeholder]
+[s3_password_placeholder]
 other = "空欄なら現在のパスワードを保持"
 
-[r2_password_set]
+[s3_password_set]
 other = "WebDAV パスワードは保存済みです。"
 
-[r2_password_not_set]
+[s3_password_not_set]
 other = "WebDAV パスワードは未設定です。"
 
-[r2_webdav_endpoint]
+[s3_webdav_endpoint]
 other = "WebDAV endpoint"
 
-[r2_endpoint_help]
-other = "R2 設定完了後、このパスを WebDAV ユーザー名とパスワードで使用します。"
+[s3_endpoint_help]
+other = "機能を有効化した後、このパスを WebDAV ユーザー名とパスワードで使います。"
 
-[r2_save_settings]
-other = "R2 設定を保存"
+[s3_test_connection]
+other = "接続をテスト"
 
-[r2_files]
+[s3_save_settings]
+other = "設定を保存"
+
+[s3_files]
 other = "ファイル"
 
-[r2_files_help]
-other = "フォルダーは R2 prefix です。リネームはコピー後に元オブジェクトを削除します。"
+[s3_files_help]
+other = "フォルダーはオブジェクト prefix に対応します。操作は設定した bucket サブパス内に適用されます。"
 
-[r2_files_disabled_title]
-other = "先に R2 設定を完了"
+[s3_files_disabled_title]
+other = "先に S3 設定を完了してください"
 
-[r2_files_disabled_help]
-other = "ファイル管理を使用する前に bucket を選択し、WebDAV 認証情報を設定してください。"
+[s3_files_disabled_help]
+other = "ファイル管理を使う前に endpoint、bucket、S3 認証情報、WebDAV ログインを設定してください。"
 
-[r2_new_folder]
+[s3_new_folder]
 other = "新規フォルダー"
 
-[feature_r2_name]
-other = "R2 WebDAV"
+[feature_s3_name]
+other = "S3 WebDAV"
 
-[feature_r2_desc]
-other = "選択した R2 bucket を WebDAV として公開します。API Token モードと Account · Workers R2 Storage · Write が必要です。"
+[feature_s3_desc]
+other = "S3 互換 bucket のパスを WebDAV として公開します。Cloudflare R2 はサービスプリセットとして対応しています。"
 
-[r2_ready]
-other = "R2 WebDAV は準備完了です。"
+[s3_ready]
+other = "S3 WebDAV は準備完了です。"
 
-[r2_feature_can_enable]
-other = "Token と R2 権限は準備済みです。有効化後に bucket と WebDAV 認証情報を設定します。"
+[s3_feature_can_enable]
+other = "有効化後に endpoint、bucket、S3 認証情報、WebDAV ログインを設定してください。"
 
-[r2_api_token_required]
-other = "R2 WebDAV を有効化する前に Cloudflare API Token モードを使用してください。"
+[s3_endpoint_required]
+other = "S3 endpoint を入力してください。"
 
-[r2_account_required]
-other = "Account ID を入力するか、Remote Tunnel Manager で設定してください。"
+[s3_credentials_required]
+other = "Access Key ID と Secret Access Key を入力してください。"
 
-[r2_permission_denied]
-other = "API Token には Account · Workers R2 Storage · Write が必要です。"
+[s3_mount_path_invalid]
+other = "WebDAV パスは /webdav/ で始める必要があります。"
 
-[r2_bucket_required]
-other = "R2 bucket を選択または作成してください。"
+[s3_bucket_required]
+other = "bucket 名を入力してください。"
 
-[r2_webdav_credentials_required]
+[s3_webdav_credentials_required]
 other = "WebDAV ユーザー名とパスワードを設定してください。"
 
-[r2_bucket_not_found]
-other = "選択した bucket が見つからないかアクセスできません。"
+[s3_configuration_incomplete]
+other = "S3 WebDAV 設定がまだ完了していません。"
 
-[r2_configure_first]
-other = "この機能を有効化する前に R2 設定を完了してください。"
+[s3_filesystem_unavailable]
+other = "S3 ファイルシステムを利用できません。"
 
-[r2_not_ready]
-other = "R2 WebDAV はまだ有効化できません。"
+[s3_configure_first]
+other = "先に S3 WebDAV を設定してください。"
 
-[r2_buckets_loaded]
+[s3_buckets_loaded]
 other = "R2 bucket を読み込みました"
 
-[r2_bucket_load_failed]
+[s3_bucket_load_failed]
 other = "R2 bucket の読み込みに失敗しました"
 
-[r2_bucket_name_required]
+[s3_bucket_name_required]
 other = "Bucket 名は必須です。"
 
-[r2_bucket_created]
+[s3_bucket_created]
 other = "R2 bucket を作成しました"
 
-[r2_bucket_create_failed]
+[s3_bucket_create_failed]
 other = "R2 bucket の作成に失敗しました"
 
-[r2_settings_saved]
-other = "R2 設定を保存しました"
+[s3_settings_saved]
+other = "S3 WebDAV 設定を保存しました"
 
-[r2_settings_save_failed]
-other = "R2 設定の保存に失敗しました"
+[s3_settings_save_failed]
+other = "S3 WebDAV 設定の保存に失敗しました"
 
-[r2_files_load_failed]
-other = "R2 ファイルの読み込みに失敗しました"
+[s3_test_success]
+other = "S3 接続は利用できます。"
 
-[r2_files_empty]
-other = "この bucket path は空です。"
+[s3_test_failed]
+other = "S3 接続テストに失敗しました"
 
-[r2_folder]
+[testing]
+other = "テスト中..."
+
+[s3_files_load_failed]
+other = "S3 ファイルの読み込みに失敗しました"
+
+[s3_files_empty]
+other = "この bucket パスは空です。"
+
+[s3_folder]
 other = "フォルダー"
 
-[r2_upload_done]
+[s3_upload_done]
 other = "アップロード完了"
 
-[r2_upload_failed]
+[s3_upload_failed]
 other = "アップロード失敗"
 
-[r2_new_folder_prompt]
+[s3_new_folder_prompt]
 other = "フォルダー名"
 
-[r2_folder_created]
+[s3_folder_created]
 other = "フォルダーを作成しました"
 
-[r2_folder_create_failed]
+[s3_folder_create_failed]
 other = "フォルダー作成に失敗しました"
 
-[r2_rename_prompt]
+[s3_rename_prompt]
 other = "新しい名前"
 
-[r2_renamed]
+[s3_renamed]
 other = "リネームしました"
 
-[r2_rename_failed]
+[s3_rename_failed]
 other = "リネーム失敗"
 
-[r2_delete_title]
-other = "R2 オブジェクトを削除しますか？"
+[s3_delete_title]
+other = "オブジェクトを削除しますか？"
 
-[r2_delete_message]
-other = "{name} を削除しますか？R2 bucket から削除されます。"
+[s3_delete_message]
+other = "{name} を削除しますか？現在のマウント済み bucket パスから削除されます。"
 
-[r2_deleted]
+[s3_deleted]
 other = "削除しました"
 
-[r2_delete_failed]
+[s3_delete_failed]
 other = "削除失敗"
+
+[ready]
+other = "準備完了"
+
+[disabled]
+other = "無効"
 
 [refresh]
 other = "更新"

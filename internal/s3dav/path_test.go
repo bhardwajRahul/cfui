@@ -1,4 +1,4 @@
-package r2dav
+package s3dav
 
 import "testing"
 

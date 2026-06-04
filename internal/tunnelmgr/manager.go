@@ -111,12 +111,9 @@ type VerifyTokenResponse struct {
 }
 
 const (
-	permTunnelEdit        = "Argo Tunnel (Legacy)"
-	permZoneRead          = "Zone"
-	permDNSEdit           = "DNS"
-	permR2StorageWrite    = "Workers R2 Storage Write"
-	permR2StorageEdit     = "Workers R2 Storage Edit"
-	permR2BucketItemWrite = "Workers R2 Storage Bucket Item Write"
+	permTunnelEdit = "Argo Tunnel (Legacy)"
+	permZoneRead   = "Zone"
+	permDNSEdit    = "DNS"
 )
 
 func NewManager(cfgMgr *config.Manager) *Manager {
@@ -248,10 +245,6 @@ func checkPermissionsFromToken(policies []cloudflare.APITokenPolicies, checks []
 			checks[i].Granted = granted[permZoneRead]
 		case "zone_dns_edit":
 			checks[i].Granted = granted[permDNSEdit]
-		case "account_r2_storage_write":
-			checks[i].Granted = granted[permR2StorageWrite] || granted[permR2StorageEdit]
-		case "r2_bucket_item_write":
-			checks[i].Granted = granted[permR2BucketItemWrite]
 		}
 	}
 }
@@ -291,8 +284,6 @@ func defaultPermissionChecks() []PermissionCheck {
 		{Name: "account_tunnel_edit", Description: "Account · Argo Tunnel (Legacy) · Edit", Required: true},
 		{Name: "zone_read", Description: "Zone · Zone · Read", Required: true},
 		{Name: "zone_dns_edit", Description: "Zone · DNS · Edit", Required: true},
-		{Name: "account_r2_storage_write", Description: "Account · Workers R2 Storage · Write", Required: false},
-		{Name: "r2_bucket_item_write", Description: "R2 Bucket · Workers R2 Storage Bucket Item · Write", Required: false},
 	}
 }
 

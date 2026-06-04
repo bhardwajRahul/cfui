@@ -322,6 +322,34 @@ func (_u *AppSettingUpdate) SetNillableMcpEnabled(v *bool) *AppSettingUpdate {
 	return _u
 }
 
+// SetS3WebdavEnabled sets the "s3_webdav_enabled" field.
+func (_u *AppSettingUpdate) SetS3WebdavEnabled(v bool) *AppSettingUpdate {
+	_u.mutation.SetS3WebdavEnabled(v)
+	return _u
+}
+
+// SetNillableS3WebdavEnabled sets the "s3_webdav_enabled" field if the given value is not nil.
+func (_u *AppSettingUpdate) SetNillableS3WebdavEnabled(v *bool) *AppSettingUpdate {
+	if v != nil {
+		_u.SetS3WebdavEnabled(*v)
+	}
+	return _u
+}
+
+// SetS3WebdavActiveKey sets the "s3_webdav_active_key" field.
+func (_u *AppSettingUpdate) SetS3WebdavActiveKey(v string) *AppSettingUpdate {
+	_u.mutation.SetS3WebdavActiveKey(v)
+	return _u
+}
+
+// SetNillableS3WebdavActiveKey sets the "s3_webdav_active_key" field if the given value is not nil.
+func (_u *AppSettingUpdate) SetNillableS3WebdavActiveKey(v *string) *AppSettingUpdate {
+	if v != nil {
+		_u.SetS3WebdavActiveKey(*v)
+	}
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *AppSettingUpdate) SetUpdatedAt(v time.Time) *AppSettingUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -456,6 +484,12 @@ func (_u *AppSettingUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.S3WebdavEnabled(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.S3WebdavActiveKey(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavActiveKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(appsetting.FieldUpdatedAt, field.TypeTime, value)
@@ -774,6 +808,34 @@ func (_u *AppSettingUpdateOne) SetNillableMcpEnabled(v *bool) *AppSettingUpdateO
 	return _u
 }
 
+// SetS3WebdavEnabled sets the "s3_webdav_enabled" field.
+func (_u *AppSettingUpdateOne) SetS3WebdavEnabled(v bool) *AppSettingUpdateOne {
+	_u.mutation.SetS3WebdavEnabled(v)
+	return _u
+}
+
+// SetNillableS3WebdavEnabled sets the "s3_webdav_enabled" field if the given value is not nil.
+func (_u *AppSettingUpdateOne) SetNillableS3WebdavEnabled(v *bool) *AppSettingUpdateOne {
+	if v != nil {
+		_u.SetS3WebdavEnabled(*v)
+	}
+	return _u
+}
+
+// SetS3WebdavActiveKey sets the "s3_webdav_active_key" field.
+func (_u *AppSettingUpdateOne) SetS3WebdavActiveKey(v string) *AppSettingUpdateOne {
+	_u.mutation.SetS3WebdavActiveKey(v)
+	return _u
+}
+
+// SetNillableS3WebdavActiveKey sets the "s3_webdav_active_key" field if the given value is not nil.
+func (_u *AppSettingUpdateOne) SetNillableS3WebdavActiveKey(v *string) *AppSettingUpdateOne {
+	if v != nil {
+		_u.SetS3WebdavActiveKey(*v)
+	}
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *AppSettingUpdateOne) SetUpdatedAt(v time.Time) *AppSettingUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -938,6 +1000,12 @@ func (_u *AppSettingUpdateOne) sqlSave(ctx context.Context) (_node *AppSetting, 
 	}
 	if value, ok := _u.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.S3WebdavEnabled(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.S3WebdavActiveKey(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavActiveKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(appsetting.FieldUpdatedAt, field.TypeTime, value)

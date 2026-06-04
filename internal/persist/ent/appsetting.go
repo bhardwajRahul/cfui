@@ -57,6 +57,10 @@ type AppSetting struct {
 	ExtraArgs string `json:"extra_args,omitempty"`
 	// McpEnabled holds the value of the "mcp_enabled" field.
 	McpEnabled bool `json:"mcp_enabled,omitempty"`
+	// S3WebdavEnabled holds the value of the "s3_webdav_enabled" field.
+	S3WebdavEnabled bool `json:"s3_webdav_enabled,omitempty"`
+	// S3WebdavActiveKey holds the value of the "s3_webdav_active_key" field.
+	S3WebdavActiveKey string `json:"s3_webdav_active_key,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -69,11 +73,11 @@ func (*AppSetting) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case appsetting.FieldAutoStart, appsetting.FieldAutoRestart, appsetting.FieldMetricsEnable, appsetting.FieldLogJSON, appsetting.FieldPostQuantum, appsetting.FieldNoTLSVerify, appsetting.FieldMcpEnabled:
+		case appsetting.FieldAutoStart, appsetting.FieldAutoRestart, appsetting.FieldMetricsEnable, appsetting.FieldLogJSON, appsetting.FieldPostQuantum, appsetting.FieldNoTLSVerify, appsetting.FieldMcpEnabled, appsetting.FieldS3WebdavEnabled:
 			values[i] = new(sql.NullBool)
 		case appsetting.FieldID, appsetting.FieldRetries, appsetting.FieldMetricsPort:
 			values[i] = new(sql.NullInt64)
-		case appsetting.FieldKey, appsetting.FieldCustomTag, appsetting.FieldSoftwareName, appsetting.FieldProtocol, appsetting.FieldGracePeriod, appsetting.FieldRegion, appsetting.FieldLogLevel, appsetting.FieldLogFile, appsetting.FieldEdgeIPVersion, appsetting.FieldEdgeBindAddress, appsetting.FieldExtraArgs:
+		case appsetting.FieldKey, appsetting.FieldCustomTag, appsetting.FieldSoftwareName, appsetting.FieldProtocol, appsetting.FieldGracePeriod, appsetting.FieldRegion, appsetting.FieldLogLevel, appsetting.FieldLogFile, appsetting.FieldEdgeIPVersion, appsetting.FieldEdgeBindAddress, appsetting.FieldExtraArgs, appsetting.FieldS3WebdavActiveKey:
 			values[i] = new(sql.NullString)
 		case appsetting.FieldCreatedAt, appsetting.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -218,6 +222,18 @@ func (_m *AppSetting) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.McpEnabled = value.Bool
 			}
+		case appsetting.FieldS3WebdavEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field s3_webdav_enabled", values[i])
+			} else if value.Valid {
+				_m.S3WebdavEnabled = value.Bool
+			}
+		case appsetting.FieldS3WebdavActiveKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field s3_webdav_active_key", values[i])
+			} else if value.Valid {
+				_m.S3WebdavActiveKey = value.String
+			}
 		case appsetting.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -325,6 +341,12 @@ func (_m *AppSetting) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("mcp_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.McpEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("s3_webdav_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.S3WebdavEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("s3_webdav_active_key=")
+	builder.WriteString(_m.S3WebdavActiveKey)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

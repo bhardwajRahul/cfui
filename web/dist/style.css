@@ -1282,7 +1282,7 @@ details.disclosure > .body {
     line-height: 1.5;
 }
 
-.r2-breadcrumb {
+.s3-breadcrumb {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -1291,7 +1291,49 @@ details.disclosure > .body {
     min-height: 36px;
 }
 
-.r2-breadcrumb button {
+.s3-mount-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.s3-mount-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    padding: 12px;
+    text-align: left;
+    cursor: pointer;
+    min-height: 86px;
+}
+
+.s3-mount-item[aria-selected="true"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.s3-mount-item__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.s3-mount-item__name {
+    font-weight: 600;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.s3-mount-item__meta {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.s3-breadcrumb button {
     min-height: 32px;
     padding: 0 8px;
     border-radius: var(--r-control);
@@ -1302,18 +1344,18 @@ details.disclosure > .body {
     font-size: var(--fs-xs);
 }
 
-.r2-breadcrumb button:hover {
+.s3-breadcrumb button:hover {
     border-color: var(--border-strong);
 }
 
-.r2-file-list {
+.s3-file-list {
     display: flex;
     flex-direction: column;
     gap: var(--gap-2);
     min-height: 160px;
 }
 
-.r2-file-row {
+.s3-file-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--gap-3);
@@ -1325,11 +1367,11 @@ details.disclosure > .body {
     border-radius: var(--r-control);
 }
 
-.r2-file-main {
+.s3-file-main {
     min-width: 0;
 }
 
-.r2-file-name {
+.s3-file-name {
     font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--text);
@@ -1337,14 +1379,14 @@ details.disclosure > .body {
     line-height: 1.4;
 }
 
-.r2-file-meta {
+.s3-file-meta {
     margin-top: 2px;
     font-size: var(--fs-xs);
     color: var(--text-muted);
     font-family: var(--font-mono);
 }
 
-.r2-file-actions {
+.s3-file-actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -1354,11 +1396,11 @@ details.disclosure > .body {
 @media (max-width: 640px) {
     .input-with-button,
     .secret-field,
-    .r2-file-row {
+    .s3-file-row {
         grid-template-columns: 1fr;
     }
 
-    .r2-file-actions {
+    .s3-file-actions {
         justify-content: flex-start;
     }
 }

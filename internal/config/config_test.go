@@ -78,7 +78,7 @@ func TestDDNSRecordCommentPersistsInDatabase(t *testing.T) {
 	}
 }
 
-func TestR2WebDAVPersistsInDatabase(t *testing.T) {
+func TestS3WebDAVPersistsInDatabase(t *testing.T) {
 	dir := t.TempDir()
 	mgr, err := NewManager(dir)
 	if err != nil {
@@ -86,13 +86,27 @@ func TestR2WebDAVPersistsInDatabase(t *testing.T) {
 	}
 
 	cfg := mgr.Get()
-	cfg.R2WebDAV = R2WebDAVConfig{
-		Enabled:            true,
-		AccountID:          "account-r2",
-		BucketName:         "cfui-r2",
-		Jurisdiction:       "eu",
-		WebDAVUsername:     "dav-user",
-		WebDAVPasswordHash: "$2a$10$hash",
+	cfg.S3WebDAV = S3WebDAVConfig{
+		Enabled:   true,
+		ActiveKey: "my-r2",
+		Mounts: []S3WebDAVMountConfig{{
+			Key:                "my-r2",
+			Name:               "My R2",
+			Enabled:            true,
+			Provider:           "cloudflare_r2",
+			EndpointURL:        "https://account-r2.r2.cloudflarestorage.com",
+			Region:             "auto",
+			PathStyle:          true,
+			AccountID:          "account-r2",
+			BucketName:         "cfui-r2",
+			RootPrefix:         "backups/cfui",
+			MountPath:          "/webdav/my_r2/",
+			Jurisdiction:       "eu",
+			AccessKeyID:        "access-key",
+			SecretAccessKey:    "secret-key",
+			WebDAVUsername:     "dav-user",
+			WebDAVPasswordHash: "$2a$10$hash",
+		}},
 	}
 	if err := mgr.Save(cfg); err != nil {
 		t.Fatalf("Save config: %v", err)
@@ -102,13 +116,17 @@ func TestR2WebDAVPersistsInDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager reload: %v", err)
 	}
-	got := reloaded.Get().R2WebDAV
-	if !got.Enabled || got.AccountID != "account-r2" || got.BucketName != "cfui-r2" || got.Jurisdiction != "eu" || got.WebDAVUsername != "dav-user" || got.WebDAVPasswordHash == "" {
-		t.Fatalf("expected persisted R2 WebDAV settings, got %#v", got)
+	got := reloaded.Get().S3WebDAV
+	if !got.Enabled || got.ActiveKey != "my-r2" || len(got.Mounts) != 1 {
+		t.Fatalf("expected persisted S3 WebDAV settings, got %#v", got)
+	}
+	mount := got.Mounts[0]
+	if mount.Provider != "cloudflare_r2" || mount.EndpointURL == "" || mount.AccountID != "account-r2" || mount.BucketName != "cfui-r2" || mount.RootPrefix != "backups/cfui" || mount.MountPath != "/webdav/my_r2/" || mount.Jurisdiction != "eu" || mount.AccessKeyID != "access-key" || mount.SecretAccessKey != "secret-key" || mount.WebDAVUsername != "dav-user" || mount.WebDAVPasswordHash == "" {
+		t.Fatalf("expected persisted S3 WebDAV mount, got %#v", mount)
 	}
 }
 
-func TestR2WebDAVJurisdictionDefaultsToDefault(t *testing.T) {
+func TestS3WebDAVDefaults(t *testing.T) {
 	dir := t.TempDir()
 	mgr, err := NewManager(dir)
 	if err != nil {
@@ -116,7 +134,7 @@ func TestR2WebDAVJurisdictionDefaultsToDefault(t *testing.T) {
 	}
 
 	cfg := mgr.Get()
-	cfg.R2WebDAV.Jurisdiction = ""
+	cfg.S3WebDAV.Mounts = []S3WebDAVMountConfig{{Key: "", Provider: "", Region: "", MountPath: "", Jurisdiction: ""}}
 	if err := mgr.Save(cfg); err != nil {
 		t.Fatalf("Save config: %v", err)
 	}
@@ -125,8 +143,9 @@ func TestR2WebDAVJurisdictionDefaultsToDefault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager reload: %v", err)
 	}
-	if got := reloaded.Get().R2WebDAV.Jurisdiction; got != "default" {
-		t.Fatalf("expected default jurisdiction, got %q", got)
+	got := reloaded.Get().S3WebDAV
+	if len(got.Mounts) != 1 || got.Mounts[0].Provider != "generic_s3" || got.Mounts[0].Region != "auto" || got.Mounts[0].MountPath != "/webdav/s3/" || got.Mounts[0].Jurisdiction != "default" {
+		t.Fatalf("expected S3 defaults, got %#v", got)
 	}
 }
 
@@ -139,13 +158,27 @@ func TestNewManagerMigratesLegacyConfigJSON(t *testing.T) {
 	legacyCfg.MCPEnabled = true
 	legacyCfg.DDNS.Enabled = true
 	legacyCfg.DDNS.IntervalMins = 9
-	legacyCfg.R2WebDAV = R2WebDAVConfig{
-		Enabled:            true,
-		AccountID:          "legacy-account",
-		BucketName:         "legacy-bucket",
-		Jurisdiction:       "fedramp",
-		WebDAVUsername:     "legacy-dav",
-		WebDAVPasswordHash: "legacy-hash",
+	legacyCfg.S3WebDAV = S3WebDAVConfig{
+		Enabled:   true,
+		ActiveKey: "legacy",
+		Mounts: []S3WebDAVMountConfig{{
+			Key:                "legacy",
+			Name:               "Legacy S3",
+			Enabled:            true,
+			Provider:           "generic_s3",
+			EndpointURL:        "https://s3.example.com",
+			Region:             "us-east-1",
+			PathStyle:          true,
+			AccessKeyID:        "legacy-ak",
+			SecretAccessKey:    "legacy-sk",
+			AccountID:          "legacy-account",
+			BucketName:         "legacy-bucket",
+			RootPrefix:         "legacy-prefix",
+			MountPath:          "/webdav/legacy/",
+			Jurisdiction:       "fedramp",
+			WebDAVUsername:     "legacy-dav",
+			WebDAVPasswordHash: "legacy-hash",
+		}},
 	}
 	legacyCfg.DDNS.Records = []DDNSRecord{{
 		Name:    "home.example.com",
@@ -175,8 +208,8 @@ func TestNewManagerMigratesLegacyConfigJSON(t *testing.T) {
 	if got.DDNS.IntervalMins != 9 || len(got.DDNS.Records) != 1 || got.DDNS.Records[0].Name != "home.example.com" {
 		t.Fatalf("legacy DDNS config not migrated correctly: %#v", got.DDNS)
 	}
-	if !got.R2WebDAV.Enabled || got.R2WebDAV.AccountID != "legacy-account" || got.R2WebDAV.BucketName != "legacy-bucket" {
-		t.Fatalf("legacy R2 WebDAV config not migrated correctly: %#v", got.R2WebDAV)
+	if !got.S3WebDAV.Enabled || len(got.S3WebDAV.Mounts) != 1 || got.S3WebDAV.Mounts[0].EndpointURL != "https://s3.example.com" || got.S3WebDAV.Mounts[0].BucketName != "legacy-bucket" || got.S3WebDAV.Mounts[0].MountPath != "/webdav/legacy/" {
+		t.Fatalf("legacy S3 WebDAV config not migrated correctly: %#v", got.S3WebDAV)
 	}
 
 	if _, err := os.Stat(filepath.Join(dir, "config.json.migrated")); err != nil {
