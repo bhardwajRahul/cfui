@@ -111,9 +111,12 @@ type VerifyTokenResponse struct {
 }
 
 const (
-	permTunnelEdit = "Argo Tunnel (Legacy)"
-	permZoneRead   = "Zone"
-	permDNSEdit    = "DNS"
+	permTunnelEdit        = "Argo Tunnel (Legacy)"
+	permZoneRead          = "Zone"
+	permDNSEdit           = "DNS"
+	permR2StorageWrite    = "Workers R2 Storage Write"
+	permR2StorageEdit     = "Workers R2 Storage Edit"
+	permR2BucketItemWrite = "Workers R2 Storage Bucket Item Write"
 )
 
 func NewManager(cfgMgr *config.Manager) *Manager {
@@ -172,11 +175,7 @@ func (m *Manager) SaveSettings(req SettingsRequest) error {
 }
 
 func (m *Manager) VerifyPermissions(ctx context.Context, req VerifyTokenRequest) VerifyTokenResponse {
-	perms := []PermissionCheck{
-		{Name: "account_tunnel_edit", Description: "Account · Argo Tunnel (Legacy) · Edit", Required: true},
-		{Name: "zone_read", Description: "Zone · Zone · Read", Required: true},
-		{Name: "zone_dns_edit", Description: "Zone · DNS · Edit", Required: true},
-	}
+	perms := defaultPermissionChecks()
 
 	// Fall back to stored credentials when the request has none.
 	// Frontend never sees saved secrets, so blank fields mean "use what's saved".
@@ -233,7 +232,7 @@ func (m *Manager) VerifyPermissions(ctx context.Context, req VerifyTokenRequest)
 func checkPermissionsFromToken(policies []cloudflare.APITokenPolicies, checks []PermissionCheck) {
 	granted := make(map[string]bool)
 	for _, policy := range policies {
-		if policy.Effect != "allow" {
+		if !strings.EqualFold(policy.Effect, "allow") {
 			continue
 		}
 		for _, group := range policy.PermissionGroups {
@@ -249,16 +248,16 @@ func checkPermissionsFromToken(policies []cloudflare.APITokenPolicies, checks []
 			checks[i].Granted = granted[permZoneRead]
 		case "zone_dns_edit":
 			checks[i].Granted = granted[permDNSEdit]
+		case "account_r2_storage_write":
+			checks[i].Granted = granted[permR2StorageWrite] || granted[permR2StorageEdit]
+		case "r2_bucket_item_write":
+			checks[i].Granted = granted[permR2BucketItemWrite]
 		}
 	}
 }
 
 func probePermissions(ctx context.Context, client cloudflareClient, req VerifyTokenRequest, accountID, tunnelID string) []PermissionCheck {
-	checks := []PermissionCheck{
-		{Name: "account_tunnel_edit", Description: "Account · Argo Tunnel (Legacy) · Edit", Required: true},
-		{Name: "zone_read", Description: "Zone · Zone · Read", Required: true},
-		{Name: "zone_dns_edit", Description: "Zone · DNS · Edit", Required: true},
-	}
+	checks := defaultPermissionChecks()
 
 	// Probe Tunnel:Edit using the stored account / tunnel IDs when
 	// available, so account-scoped tokens are evaluated correctly.
@@ -285,6 +284,16 @@ func probePermissions(ctx context.Context, client cloudflareClient, req VerifyTo
 	checks[2].Granted = checks[1].Granted
 
 	return checks
+}
+
+func defaultPermissionChecks() []PermissionCheck {
+	return []PermissionCheck{
+		{Name: "account_tunnel_edit", Description: "Account · Argo Tunnel (Legacy) · Edit", Required: true},
+		{Name: "zone_read", Description: "Zone · Zone · Read", Required: true},
+		{Name: "zone_dns_edit", Description: "Zone · DNS · Edit", Required: true},
+		{Name: "account_r2_storage_write", Description: "Account · Workers R2 Storage · Write", Required: false},
+		{Name: "r2_bucket_item_write", Description: "R2 Bucket · Workers R2 Storage Bucket Item · Write", Required: false},
+	}
 }
 
 func isPermissionError(err error) bool {

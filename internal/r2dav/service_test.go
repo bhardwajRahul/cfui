@@ -123,6 +123,47 @@ func TestAvailabilityRequiresAPIToken(t *testing.T) {
 	}
 }
 
+func TestFeatureAvailabilityAllowsTokenBeforeBucketAndCredentials(t *testing.T) {
+	svc := newTestService(t, fakeCloudflareClient{token: r2WriteToken()}, afero.NewMemMapFs())
+	cfg := svc.cfgMgr.Get()
+	cfg.TunnelManagement.APIToken = "token"
+	cfg.TunnelManagement.AccountID = "account"
+	if err := svc.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	featureAvailability := svc.FeatureAvailability(context.Background(), cfg.R2WebDAV)
+	if !featureAvailability.CanEnable || featureAvailability.Status != StatusReady {
+		t.Fatalf("unexpected feature availability: %#v", featureAvailability)
+	}
+
+	settingsAvailability := svc.Settings(context.Background()).Availability
+	if settingsAvailability.CanEnable || settingsAvailability.Status != StatusBucketRequired {
+		t.Fatalf("unexpected settings availability: %#v", settingsAvailability)
+	}
+}
+
+func TestSaveSettingsAllowsEnabledPartialConfig(t *testing.T) {
+	svc := newTestService(t, fakeCloudflareClient{token: r2WriteToken()}, afero.NewMemMapFs())
+	cfg := svc.cfgMgr.Get()
+	cfg.TunnelManagement.APIToken = "token"
+	cfg.TunnelManagement.AccountID = "account"
+	if err := svc.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	resp, err := svc.SaveSettings(context.Background(), SettingsRequest{
+		Enabled:   true,
+		AccountID: "account",
+	})
+	if err != nil {
+		t.Fatalf("SaveSettings: %v", err)
+	}
+	if !resp.Enabled || resp.Availability.Status != StatusBucketRequired {
+		t.Fatalf("unexpected settings response: %#v", resp)
+	}
+}
+
 func TestAvailabilityRejectsMissingR2WritePermission(t *testing.T) {
 	svc := newTestService(t, fakeCloudflareClient{}, afero.NewMemMapFs())
 	cfg := svc.cfgMgr.Get()

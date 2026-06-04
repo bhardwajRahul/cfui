@@ -33,7 +33,7 @@
         }
         if (state.features.mcp) await fetchMCPStatus();
         if (state.features.ddns) await refreshDDNS();
-        await fetchR2Settings();
+        if (state.features.r2_webdav) await fetchR2Settings();
         await fetchStatus();
 
         setInterval(fetchStatus, 2000);

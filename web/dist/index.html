@@ -71,7 +71,7 @@
             <button class="tab" role="tab" id="tab-manager" aria-selected="false" aria-controls="panel-manager" data-tab="manager" data-i18n="remote_tunnel_tab" tabindex="-1" hidden>Remote Tunnel Manager</button>
             <button class="tab" role="tab" id="tab-ddns" aria-selected="false" aria-controls="panel-ddns" data-tab="ddns" data-i18n="ddns_tab" tabindex="-1" hidden>DDNS</button>
             <button class="tab" role="tab" id="tab-mcp" aria-selected="false" aria-controls="panel-mcp" data-tab="mcp" data-i18n="mcp_tab" tabindex="-1" hidden>MCP</button>
-            <button class="tab" role="tab" id="tab-r2" aria-selected="false" aria-controls="panel-r2" data-tab="r2" data-i18n="r2_tab" tabindex="-1">R2 WebDAV</button>
+            <button class="tab" role="tab" id="tab-r2" aria-selected="false" aria-controls="panel-r2" data-tab="r2" data-i18n="r2_tab" tabindex="-1" hidden>R2 WebDAV</button>
             <button class="tab" role="tab" id="tab-features" aria-selected="false" aria-controls="panel-features" data-tab="features" data-i18n="features_tab" tabindex="-1" hidden>Features</button>
         </nav>
 
@@ -357,7 +357,10 @@
                                                     <span class="item" data-i18n="api_permission_tunnel">Account · Argo Tunnel · Edit</span>
                                                     <span class="item" data-i18n="api_permission_zone">Zone · Zone · Read</span>
                                                     <span class="item" data-i18n="api_permission_dns">Zone · DNS · Edit</span>
+                                                    <span class="item" data-i18n="api_permission_r2_storage">Account · Workers R2 Storage · Write</span>
+                                                    <span class="item" data-i18n="api_permission_r2_bucket_item">R2 Bucket · Workers R2 Storage Bucket Item · Write</span>
                                                     <small style="color: var(--text-muted); margin-top: 4px;" data-i18n="api_permission_note">Use account-scoped API Token when possible.</small>
+                                                    <small style="color: var(--text-muted);" data-i18n="api_permission_r2_note">R2 permissions are only required when enabling R2 WebDAV.</small>
                                                 </div>
                                             </details>
                                         </div>
@@ -375,7 +378,7 @@
                                             </button>
                                         </div>
                                         <p class="help-text" id="manager-token-state" data-i18n="api_token_not_saved">No token saved.</p>
-                                        <p class="help-text" data-i18n="api_token_help">Create a scoped API token at Cloudflare Dashboard → My Profile → API Tokens.</p>
+                                        <p class="help-text" data-i18n="api_token_help">Create at Cloudflare Dashboard → My Profile → API Tokens → Create Token. Select the tunnel permissions, then add Account · Workers R2 Storage · Write when enabling R2 WebDAV.</p>
                                         <div class="btn-row" style="margin-top: 8px;">
                                             <button id="manager-verify-permissions" type="button" class="btn btn--sm">
                                                 <span class="spinner" aria-hidden="true"></span>
@@ -652,7 +655,7 @@
                             <div class="section-head">
                                 <div>
                                     <div class="section-title" data-i18n="r2_connection">Cloudflare connection</div>
-                                    <div class="section-subtitle" data-i18n="r2_connection_help">R2 WebDAV requires API Token mode with R2 read/write permission. Global API Key mode is not supported for R2 object access.</div>
+                                    <div class="section-subtitle" data-i18n="r2_connection_help">R2 WebDAV requires API Token mode with Account · Workers R2 Storage · Write. Global API Key mode is not supported for R2 object access.</div>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -726,7 +729,12 @@
                                     <label for="r2-endpoint" data-i18n="r2_webdav_endpoint">WebDAV endpoint</label>
                                     <div class="input-with-button">
                                         <input type="text" id="r2-endpoint" class="input" readonly value="/webdav/r2/">
-                                        <button id="r2-copy-endpoint" type="button" class="btn btn--sm" data-i18n="copy">Copy</button>
+                                        <button id="r2-copy-endpoint" type="button" class="icon-btn" aria-label="Copy WebDAV endpoint" title="Copy WebDAV endpoint" data-i18n-attr="aria-label|copy_webdav_endpoint;title|copy_webdav_endpoint">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                            </svg>
+                                        </button>
                                     </div>
                                     <p class="help-text" data-i18n="r2_endpoint_help">Use this path with the WebDAV username and password after the feature is enabled.</p>
                                 </div>
@@ -753,8 +761,8 @@
                                 </div>
                             </div>
                             <div id="r2-file-disabled" class="disabled-panel" hidden>
-                                <h3 data-i18n="r2_files_disabled_title">Enable R2 WebDAV first</h3>
-                                <p data-i18n="r2_files_disabled_help">Complete the settings above, then enable the R2 WebDAV feature from the Features tab.</p>
+                                <h3 data-i18n="r2_files_disabled_title">Complete R2 setup first</h3>
+                                <p data-i18n="r2_files_disabled_help">Select a bucket and set WebDAV credentials before using the file manager.</p>
                             </div>
                             <div id="r2-file-manager" hidden>
                                 <div class="r2-breadcrumb" id="r2-breadcrumb"></div>
@@ -808,7 +816,7 @@
                         <div class="feature-row" data-feature="r2_webdav">
                             <div>
                                 <div class="section-title" data-i18n="feature_r2_name">R2 WebDAV</div>
-                                <div class="section-subtitle" data-i18n="feature_r2_desc">Expose a selected R2 bucket through WebDAV. Requires API Token mode and R2 read/write permission.</div>
+                                <div class="section-subtitle" data-i18n="feature_r2_desc">Expose a selected R2 bucket through WebDAV. Requires API Token mode and Account · Workers R2 Storage · Write.</div>
                                 <div class="feature-reason" id="feature-r2-reason"></div>
                             </div>
                             <label class="toggle">

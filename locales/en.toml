@@ -356,10 +356,10 @@ other = "Tunnel UUID"
 other = "Your tunnel's UUID. Find it at Zero Trust → Networks → Connectors → Cloudflare Tunnels → click your tunnel name → Overview. Changing this field loads the selected tunnel configuration."
 
 [auth_help]
-other = "API Token is recommended. Create one at Dashboard → My Profile → API Tokens. Requires: Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit. Blank fields keep saved values."
+other = "API Token is recommended. Create one at Dashboard → My Profile → API Tokens. Tunnel management requires: Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit. R2 WebDAV additionally requires Account · Workers R2 Storage · Write. Blank fields keep saved values."
 
 [api_token_help]
-other = "Create at Cloudflare Dashboard → My Profile → API Tokens → Create Token. Required permissions: Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit."
+other = "Create at Cloudflare Dashboard → My Profile → API Tokens → Create Token. Select Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit. Add Account · Workers R2 Storage · Write when enabling R2 WebDAV."
 
 [api_key_help]
 other = "Find your Global API Key at Cloudflare Dashboard → My Profile → API Keys. For security, prefer an API Token instead."
@@ -454,8 +454,17 @@ other = "Zone · Zone · Read"
 [api_permission_dns]
 other = "Zone · DNS · Edit"
 
+[api_permission_r2_storage]
+other = "Account · Workers R2 Storage · Write"
+
+[api_permission_r2_bucket_item]
+other = "R2 Bucket · Workers R2 Storage Bucket Item · Write"
+
 [api_permission_note]
-other = "Use an account-scoped API Token when possible. Email + Global API Key is broader."
+other = "The first three permissions are required for Remote Tunnel Manager and DDNS."
+
+[api_permission_r2_note]
+other = "R2 WebDAV additionally needs Account · Workers R2 Storage · Write so cfui can list and create buckets."
 
 [remote_manager_config]
 other = "Remote manager configuration"
@@ -558,6 +567,12 @@ other = "Zone:Read"
 
 [verify_permission_dns_edit]
 other = "DNS:Edit"
+
+[verify_permission_r2_storage_write]
+other = "R2 Storage:Write"
+
+[verify_permission_r2_bucket_item_write]
+other = "R2 Bucket Item:Write"
 
 [ddns_tab]
 other = "DDNS"
@@ -963,6 +978,9 @@ other = "MyApp-v1.0"
 [copy]
 other = "Copy"
 
+[copy_webdav_endpoint]
+other = "Copy WebDAV endpoint"
+
 [cancel]
 other = "Cancel"
 
@@ -1030,7 +1048,7 @@ other = "Ready to enable"
 other = "Cloudflare connection"
 
 [r2_connection_help]
-other = "R2 WebDAV requires API Token mode with R2 read/write permission. Global API Key mode is not supported for R2 object access."
+other = "R2 WebDAV requires API Token mode with Account · Workers R2 Storage · Write. Global API Key mode is not supported for R2 object access."
 
 [r2_account_help]
 other = "Leave empty to reuse the Remote Tunnel Manager Account ID."
@@ -1096,7 +1114,7 @@ other = "No WebDAV password saved."
 other = "WebDAV endpoint"
 
 [r2_endpoint_help]
-other = "Use this path with the WebDAV username and password after the feature is enabled."
+other = "Use this path with the WebDAV username and password after the R2 setup is complete."
 
 [r2_save_settings]
 other = "Save R2 Settings"
@@ -1108,10 +1126,10 @@ other = "Files"
 other = "Folders are R2 prefixes. Rename copies the object then deletes the original."
 
 [r2_files_disabled_title]
-other = "Enable R2 WebDAV first"
+other = "Complete R2 setup first"
 
 [r2_files_disabled_help]
-other = "Complete the settings above, then enable the R2 WebDAV feature from the Features tab."
+other = "Select a bucket and set WebDAV credentials before using the file manager."
 
 [r2_new_folder]
 other = "New Folder"
@@ -1120,10 +1138,13 @@ other = "New Folder"
 other = "R2 WebDAV"
 
 [feature_r2_desc]
-other = "Expose a selected R2 bucket through WebDAV. Requires API Token mode and R2 read/write permission."
+other = "Expose a selected R2 bucket through WebDAV. Requires API Token mode and Account · Workers R2 Storage · Write."
 
 [r2_ready]
 other = "R2 WebDAV is ready."
+
+[r2_feature_can_enable]
+other = "Token and R2 permission are ready. Enable to configure bucket and WebDAV credentials."
 
 [r2_api_token_required]
 other = "Use Cloudflare API Token mode before enabling R2 WebDAV."
@@ -1132,7 +1153,7 @@ other = "Use Cloudflare API Token mode before enabling R2 WebDAV."
 other = "Set an Account ID or configure it in Remote Tunnel Manager."
 
 [r2_permission_denied]
-other = "The API Token needs R2 read/write permission."
+other = "The API Token needs Account · Workers R2 Storage · Write."
 
 [r2_bucket_required]
 other = "Select or create an R2 bucket."

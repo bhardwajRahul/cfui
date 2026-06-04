@@ -169,6 +169,37 @@ func TestParseTunnelTokenAcceptsUnpaddedBase64(t *testing.T) {
 	}
 }
 
+func TestCheckPermissionsFromTokenIncludesR2Permissions(t *testing.T) {
+	checks := defaultPermissionChecks()
+	checkPermissionsFromToken([]cloudflare.APITokenPolicies{
+		{
+			Effect: "allow",
+			PermissionGroups: []cloudflare.APITokenPermissionGroups{
+				{Name: permTunnelEdit},
+				{Name: permZoneRead},
+				{Name: permDNSEdit},
+				{Name: permR2StorageWrite},
+				{Name: permR2BucketItemWrite},
+			},
+		},
+	}, checks)
+
+	granted := map[string]bool{}
+	required := map[string]bool{}
+	for _, check := range checks {
+		granted[check.Name] = check.Granted
+		required[check.Name] = check.Required
+	}
+	for _, name := range []string{"account_tunnel_edit", "zone_read", "zone_dns_edit", "account_r2_storage_write", "r2_bucket_item_write"} {
+		if !granted[name] {
+			t.Fatalf("expected %s to be granted: %#v", name, checks)
+		}
+	}
+	if required["account_r2_storage_write"] || required["r2_bucket_item_write"] {
+		t.Fatalf("R2 permissions should remain optional in the general token check: %#v", checks)
+	}
+}
+
 func newTestManager(t *testing.T, client *fakeCFClient) *Manager {
 	t.Helper()
 	cfgMgr := newConfigManager(t)

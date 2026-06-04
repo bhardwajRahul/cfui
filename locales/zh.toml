@@ -356,10 +356,10 @@ other = "隧道 UUID"
 other = "您的隧道 UUID。获取路径：Zero Trust → 网络 → 连接器 → Cloudflare Tunnels → 点击隧道名称 → 概览。修改此字段后会加载所选隧道配置。"
 
 [auth_help]
-other = "推荐使用 API Token。创建路径：仪表板 → 我的个人资料 → API 令牌。需要权限：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。留空则保留已保存的值。"
+other = "推荐使用 API Token。创建路径：仪表板 → 我的个人资料 → API 令牌。远程 Tunnel 管理需要：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。R2 WebDAV 还需要 Account · Workers R2 Storage · Write。留空则保留已保存的值。"
 
 [api_token_help]
-other = "在 Cloudflare 仪表板 → 我的个人资料 → API 令牌 → 创建令牌 中创建。所需权限：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。"
+other = "在 Cloudflare 仪表板 → 我的个人资料 → API 令牌 → 创建令牌 中创建。勾选 Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。启用 R2 WebDAV 时再勾选 Account · Workers R2 Storage · Write。"
 
 [api_key_help]
 other = "在 Cloudflare 仪表板 → 我的个人资料 → API 密钥 中找到 Global API Key。为安全起见，建议使用 API Token 代替。"
@@ -454,8 +454,17 @@ other = "Zone · Zone · Read"
 [api_permission_dns]
 other = "Zone · DNS · Edit"
 
+[api_permission_r2_storage]
+other = "Account · Workers R2 Storage · Write"
+
+[api_permission_r2_bucket_item]
+other = "R2 Bucket · Workers R2 Storage Bucket Item · Write"
+
 [api_permission_note]
-other = "建议使用限定账号范围的 API Token。邮箱 + Global API Key 权限更大。"
+other = "前三项是远程 Tunnel 管理和 DDNS 所需权限。"
+
+[api_permission_r2_note]
+other = "R2 WebDAV 额外需要 Account · Workers R2 Storage · Write，以便 cfui 选择和创建 bucket。"
 
 [remote_manager_config]
 other = "远程管理配置"
@@ -558,6 +567,12 @@ other = "Zone:Read"
 
 [verify_permission_dns_edit]
 other = "DNS:Edit"
+
+[verify_permission_r2_storage_write]
+other = "R2 Storage:Write"
+
+[verify_permission_r2_bucket_item_write]
+other = "R2 Bucket Item:Write"
 
 [ddns_tab]
 other = "DDNS"
@@ -963,6 +978,9 @@ other = "MyApp-v1.0"
 [copy]
 other = "复制"
 
+[copy_webdav_endpoint]
+other = "复制 WebDAV endpoint"
+
 [cancel]
 other = "取消"
 
@@ -1030,7 +1048,7 @@ other = "可启用"
 other = "Cloudflare 连接"
 
 [r2_connection_help]
-other = "R2 WebDAV 需要 API Token 模式，并且 token 具备 R2 读写权限。R2 对象访问不支持 Global API Key 模式。"
+other = "R2 WebDAV 需要 API Token 模式，并且 token 具备 Account · Workers R2 Storage · Write。R2 对象访问不支持 Global API Key 模式。"
 
 [r2_account_help]
 other = "留空则复用远程 Tunnel 管理器中的 Account ID。"
@@ -1096,7 +1114,7 @@ other = "尚未保存 WebDAV 密码。"
 other = "WebDAV endpoint"
 
 [r2_endpoint_help]
-other = "功能启用后，用这个路径配合 WebDAV 用户名和密码访问。"
+other = "R2 设置完成后，用这个路径配合 WebDAV 用户名和密码访问。"
 
 [r2_save_settings]
 other = "保存 R2 设置"
@@ -1108,10 +1126,10 @@ other = "文件"
 other = "文件夹是 R2 前缀模拟。重命名会先复制对象再删除原对象。"
 
 [r2_files_disabled_title]
-other = "先启用 R2 WebDAV"
+other = "先完成 R2 设置"
 
 [r2_files_disabled_help]
-other = "完成上方设置后，到 Features 标签页启用 R2 WebDAV 功能。"
+other = "请选择 bucket 并设置 WebDAV 账户后再使用文件管理。"
 
 [r2_new_folder]
 other = "新建文件夹"
@@ -1120,10 +1138,13 @@ other = "新建文件夹"
 other = "R2 WebDAV"
 
 [feature_r2_desc]
-other = "将选定的 R2 bucket 通过 WebDAV 暴露。需要 API Token 模式和 R2 读写权限。"
+other = "将选定的 R2 bucket 通过 WebDAV 暴露。需要 API Token 模式和 Account · Workers R2 Storage · Write。"
 
 [r2_ready]
 other = "R2 WebDAV 已准备就绪。"
+
+[r2_feature_can_enable]
+other = "Token 和 R2 权限已满足。启用后再配置 bucket 和 WebDAV 账户。"
 
 [r2_api_token_required]
 other = "启用 R2 WebDAV 前请使用 Cloudflare API Token 模式。"
@@ -1132,7 +1153,7 @@ other = "启用 R2 WebDAV 前请使用 Cloudflare API Token 模式。"
 other = "请填写 Account ID，或先在远程 Tunnel 管理器中配置。"
 
 [r2_permission_denied]
-other = "API Token 需要 R2 读写权限。"
+other = "API Token 需要 Account · Workers R2 Storage · Write。"
 
 [r2_bucket_required]
 other = "请选择或创建一个 R2 bucket。"

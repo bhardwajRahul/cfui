@@ -42,16 +42,18 @@
         $('r2-endpoint').value = s.endpoint || '/webdav/r2/';
 
         const availability = s.availability || state.features?.availability?.r2_webdav;
-        const ready = availability?.can_enable || s.enabled;
-        setR2Status(s.enabled ? 'ok' : ready ? 'warn' : 'error', s.enabled ? t('r2_status_enabled') : ready ? t('r2_status_ready_to_enable') : t('r2_status_setup'));
+        const setupReady = !!availability?.can_enable;
+        const featureOn = !!s.enabled || !!state.features?.r2_webdav;
+        setR2Status(setupReady ? 'ok' : 'warn', setupReady && featureOn ? t('r2_status_enabled') : setupReady ? t('r2_status_ready_to_enable') : t('r2_status_setup'));
         const notice = $('r2-permission-message');
         if (notice) {
             notice.textContent = r2AvailabilityText(availability);
-            notice.dataset.state = availability?.can_enable ? 'ok' : 'warn';
+            notice.dataset.state = setupReady ? 'ok' : 'warn';
         }
         renderBucketSelect(state.r2.buckets, s.bucket_name);
-        $('r2-file-disabled').hidden = !!s.enabled;
-        $('r2-file-manager').hidden = !s.enabled;
+        const filesReady = featureOn && setupReady;
+        $('r2-file-disabled').hidden = filesReady;
+        $('r2-file-manager').hidden = !filesReady;
     }
 
     function setR2Status(stateName, text) {
@@ -150,7 +152,7 @@
     }
 
     async function loadR2Files(path = state.r2.path || '/') {
-        if (!state.r2.settings?.enabled) {
+        if (!state.r2.settings?.enabled || !state.r2.settings?.availability?.can_enable) {
             renderR2Settings(state.r2.settings);
             return;
         }

@@ -356,10 +356,10 @@ other = "トンネル UUID"
 other = "トンネルの UUID。取得方法：Zero Trust → ネットワーク → コネクタ → Cloudflare Tunnels → トンネル名をクリック → 概要。この項目を変更すると、選択したトンネル設定を読み込みます。"
 
 [auth_help]
-other = "API Token を推奨します。作成方法：ダッシュボード → マイプロフィール → API トークン。必要な権限：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。空欄なら保存済みの値を保持します。"
+other = "API Token を推奨します。作成方法：ダッシュボード → マイプロフィール → API トークン。Remote Tunnel Manager には Account · Argo Tunnel (Legacy) · Edit、Zone · Zone · Read、Zone · DNS · Edit が必要です。R2 WebDAV には Account · Workers R2 Storage · Write も必要です。空欄なら保存済みの値を保持します。"
 
 [api_token_help]
-other = "Cloudflare ダッシュボード → マイプロフィール → API トークン → トークンを作成 で作成。必要な権限：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。"
+other = "Cloudflare ダッシュボード → マイプロフィール → API トークン → トークンを作成 で作成。Account · Argo Tunnel (Legacy) · Edit、Zone · Zone · Read、Zone · DNS · Edit を選択します。R2 WebDAV を有効化する場合は Account · Workers R2 Storage · Write も追加してください。"
 
 [api_key_help]
 other = "Cloudflare ダッシュボード → マイプロフィール → API キー で Global API Key を確認できます。セキュリティ上、API Token の使用を推奨します。"
@@ -454,8 +454,17 @@ other = "Zone · Zone · Read"
 [api_permission_dns]
 other = "Zone · DNS · Edit"
 
+[api_permission_r2_storage]
+other = "Account · Workers R2 Storage · Write"
+
+[api_permission_r2_bucket_item]
+other = "R2 Bucket · Workers R2 Storage Bucket Item · Write"
+
 [api_permission_note]
-other = "可能ならアカウントスコープの API Token を使ってください。メール + Global API Key は権限が広めです。"
+other = "最初の 3 つは Remote Tunnel Manager と DDNS に必要です。"
+
+[api_permission_r2_note]
+other = "R2 WebDAV には、cfui が bucket を一覧表示・作成できるよう Account · Workers R2 Storage · Write も必要です。"
 
 [remote_manager_config]
 other = "リモート管理設定"
@@ -558,6 +567,12 @@ other = "Zone:Read"
 
 [verify_permission_dns_edit]
 other = "DNS:Edit"
+
+[verify_permission_r2_storage_write]
+other = "R2 Storage:Write"
+
+[verify_permission_r2_bucket_item_write]
+other = "R2 Bucket Item:Write"
 
 [ddns_tab]
 other = "DDNS"
@@ -963,6 +978,9 @@ other = "MyApp-v1.0"
 [copy]
 other = "コピー"
 
+[copy_webdav_endpoint]
+other = "WebDAV endpoint をコピー"
+
 [cancel]
 other = "キャンセル"
 
@@ -1030,7 +1048,7 @@ other = "有効化できます"
 other = "Cloudflare 接続"
 
 [r2_connection_help]
-other = "R2 WebDAV には R2 読み書き権限を持つ API Token モードが必要です。Global API Key モードは R2 オブジェクトアクセスに対応していません。"
+other = "R2 WebDAV には Account · Workers R2 Storage · Write を持つ API Token モードが必要です。Global API Key モードは R2 オブジェクトアクセスに対応していません。"
 
 [r2_account_help]
 other = "空のままにすると Remote Tunnel Manager の Account ID を再利用します。"
@@ -1096,7 +1114,7 @@ other = "WebDAV パスワードは未設定です。"
 other = "WebDAV endpoint"
 
 [r2_endpoint_help]
-other = "機能を有効化した後、このパスを WebDAV ユーザー名とパスワードで使用します。"
+other = "R2 設定完了後、このパスを WebDAV ユーザー名とパスワードで使用します。"
 
 [r2_save_settings]
 other = "R2 設定を保存"
@@ -1108,10 +1126,10 @@ other = "ファイル"
 other = "フォルダーは R2 prefix です。リネームはコピー後に元オブジェクトを削除します。"
 
 [r2_files_disabled_title]
-other = "先に R2 WebDAV を有効化"
+other = "先に R2 設定を完了"
 
 [r2_files_disabled_help]
-other = "上の設定を完了してから、Features タブで R2 WebDAV を有効化してください。"
+other = "ファイル管理を使用する前に bucket を選択し、WebDAV 認証情報を設定してください。"
 
 [r2_new_folder]
 other = "新規フォルダー"
@@ -1120,10 +1138,13 @@ other = "新規フォルダー"
 other = "R2 WebDAV"
 
 [feature_r2_desc]
-other = "選択した R2 bucket を WebDAV として公開します。API Token モードと R2 読み書き権限が必要です。"
+other = "選択した R2 bucket を WebDAV として公開します。API Token モードと Account · Workers R2 Storage · Write が必要です。"
 
 [r2_ready]
 other = "R2 WebDAV は準備完了です。"
+
+[r2_feature_can_enable]
+other = "Token と R2 権限は準備済みです。有効化後に bucket と WebDAV 認証情報を設定します。"
 
 [r2_api_token_required]
 other = "R2 WebDAV を有効化する前に Cloudflare API Token モードを使用してください。"
@@ -1132,7 +1153,7 @@ other = "R2 WebDAV を有効化する前に Cloudflare API Token モードを使
 other = "Account ID を入力するか、Remote Tunnel Manager で設定してください。"
 
 [r2_permission_denied]
-other = "API Token には R2 読み書き権限が必要です。"
+other = "API Token には Account · Workers R2 Storage · Write が必要です。"
 
 [r2_bucket_required]
 other = "R2 bucket を選択または作成してください。"

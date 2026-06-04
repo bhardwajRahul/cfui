@@ -62,7 +62,7 @@ func (s *Service) SaveSettings(ctx context.Context, req SettingsRequest) (Settin
 
 	effective := s.withFallbackAccountID(current)
 	if req.Enabled {
-		availability := s.Availability(ctx, effective)
+		availability := s.FeatureAvailability(ctx, effective)
 		if !availability.CanEnable {
 			return SettingsResponse{}, fmt.Errorf("%s", availability.Message)
 		}
@@ -75,7 +75,7 @@ func (s *Service) SaveSettings(ctx context.Context, req SettingsRequest) (Settin
 	return s.Settings(ctx), nil
 }
 
-func (s *Service) Availability(ctx context.Context, cfg config.R2WebDAVConfig) Availability {
+func (s *Service) FeatureAvailability(ctx context.Context, cfg config.R2WebDAVConfig) Availability {
 	cfg = s.withFallbackAccountID(cfg)
 	token := strings.TrimSpace(s.cfgMgr.Get().EffectiveTunnelManagement().APIToken)
 	if token == "" {
@@ -83,12 +83,6 @@ func (s *Service) Availability(ctx context.Context, cfg config.R2WebDAVConfig) A
 	}
 	if strings.TrimSpace(cfg.AccountID) == "" {
 		return availability(StatusAccountIDRequired, "Account ID is required for R2 WebDAV.", nil)
-	}
-	if strings.TrimSpace(cfg.BucketName) == "" {
-		return availability(StatusBucketRequired, "Select or create an R2 bucket before enabling WebDAV.", nil)
-	}
-	if strings.TrimSpace(cfg.WebDAVUsername) == "" || strings.TrimSpace(cfg.WebDAVPasswordHash) == "" {
-		return availability(StatusWebDAVCredentialsRequired, "Set a WebDAV username and password before enabling R2 WebDAV.", nil)
 	}
 
 	client, err := s.newClient(token)
@@ -103,9 +97,33 @@ func (s *Service) Availability(ctx context.Context, cfg config.R2WebDAVConfig) A
 		return availability(StatusAPITokenRequired, "Cloudflare API Token is not active or could not be verified.", nil)
 	}
 	tokenDetails, err := client.GetAPIToken(ctx, verify.ID)
-	if err != nil || !hasR2WritePermission(tokenDetails.Policies) {
-		return availability(StatusR2PermissionDenied, "API Token needs R2 read/write permission.", []string{permR2StorageWrite})
+	if err != nil || !hasR2StorageWritePermission(tokenDetails.Policies) {
+		return availability(StatusR2PermissionDenied, "API Token needs Account Workers R2 Storage Write permission.", []string{permR2StorageWrite})
 	}
+	return Availability{CanEnable: true, Status: StatusReady, Message: "R2 WebDAV feature can be enabled."}
+}
+
+func (s *Service) Availability(ctx context.Context, cfg config.R2WebDAVConfig) Availability {
+	cfg = s.withFallbackAccountID(cfg)
+	token := strings.TrimSpace(s.cfgMgr.Get().EffectiveTunnelManagement().APIToken)
+	featureAvailability := s.FeatureAvailability(ctx, cfg)
+	if !featureAvailability.CanEnable {
+		return featureAvailability
+	}
+	if strings.TrimSpace(cfg.BucketName) == "" {
+		return availability(StatusBucketRequired, "Select or create an R2 bucket before using WebDAV.", nil)
+	}
+	if strings.TrimSpace(cfg.WebDAVUsername) == "" || strings.TrimSpace(cfg.WebDAVPasswordHash) == "" {
+		return availability(StatusWebDAVCredentialsRequired, "Set a WebDAV username and password before using R2 WebDAV.", nil)
+	}
+
+	client, err := s.newClient(token)
+	if err != nil {
+		return availability(StatusAPITokenRequired, "Cloudflare API Token could not be used for R2 WebDAV.", nil)
+	}
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	if _, err := client.GetR2Bucket(ctx, cloudflare.AccountIdentifier(cfg.AccountID), cfg.BucketName); err != nil {
 		return availability(StatusR2BucketNotFound, "Selected R2 bucket was not found or is not accessible.", nil)
 	}
@@ -223,6 +241,12 @@ func (s *Service) Filesystem(ctx context.Context) (afero.Fs, error) {
 	cfg := s.effectiveConfig()
 	if !cfg.Enabled {
 		return nil, fmt.Errorf("R2 WebDAV is disabled")
+	}
+	if strings.TrimSpace(cfg.AccountID) == "" {
+		return nil, fmt.Errorf("account id is required")
+	}
+	if strings.TrimSpace(cfg.BucketName) == "" {
+		return nil, fmt.Errorf("R2 bucket is required")
 	}
 	token := strings.TrimSpace(s.cfgMgr.Get().EffectiveTunnelManagement().APIToken)
 	if token == "" {

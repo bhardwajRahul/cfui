@@ -56,6 +56,35 @@ func TestR2FeatureEnableRequiresToken(t *testing.T) {
 	}
 }
 
+func TestR2FeatureEnableAllowsSetupBeforeBucketAndCredentials(t *testing.T) {
+	s := newServerTestServer(t)
+	cfg := s.cfgMgr.Get()
+	cfg.TunnelManagement.APIToken = "token"
+	cfg.TunnelManagement.AccountID = "account"
+	if err := s.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+	s.r2Svc = r2dav.NewServiceForTest(
+		s.cfgMgr,
+		func(string) (r2dav.CloudflareClient, error) {
+			return serverFakeR2Client{}, nil
+		},
+		nil,
+	)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/features", strings.NewReader(`{"r2_webdav":true}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	s.handleFeatures(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected ok, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"r2_webdav":true`) {
+		t.Fatalf("expected r2_webdav enabled response: %s", rec.Body.String())
+	}
+}
+
 func TestR2SettingsDoesNotLeakPasswordHash(t *testing.T) {
 	s := newServerTestServer(t)
 	req := httptest.NewRequest(http.MethodPost, "/api/r2/settings", strings.NewReader(`{

@@ -251,7 +251,7 @@ func (s *Server) handleFeatures(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.R2WebDAV != nil {
 		if *req.R2WebDAV {
-			availability := s.r2Svc.Availability(r.Context(), cfg.R2WebDAV)
+			availability := s.r2Svc.FeatureAvailability(r.Context(), cfg.R2WebDAV)
 			if !availability.CanEnable {
 				writeAPIError(w, http.StatusForbidden, fmt.Errorf("%s", availability.Message))
 				return
@@ -276,7 +276,7 @@ func (s *Server) featuresResponse(ctx context.Context, cfg config.Config) Featur
 		MCP:           cfg.MCPEnabled,
 		R2WebDAV:      cfg.R2WebDAV.Enabled,
 		Availability: map[string]r2dav.Availability{
-			"r2_webdav": s.r2Svc.Availability(ctx, cfg.R2WebDAV),
+			"r2_webdav": s.r2Svc.FeatureAvailability(ctx, cfg.R2WebDAV),
 		},
 	}
 }

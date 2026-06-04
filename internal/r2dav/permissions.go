@@ -13,6 +13,7 @@ import (
 
 const (
 	permR2StorageWrite    = "Workers R2 Storage Write"
+	permR2StorageEdit     = "Workers R2 Storage Edit"
 	permR2BucketItemWrite = "Workers R2 Storage Bucket Item Write"
 )
 
@@ -52,13 +53,28 @@ func deriveCredentials(ctx context.Context, token string, client CloudflareClien
 }
 
 func hasR2WritePermission(policies []cloudflare.APITokenPolicies) bool {
+	return hasR2StorageWritePermission(policies) || hasR2BucketItemWritePermission(policies)
+}
+
+func hasR2StorageWritePermission(policies []cloudflare.APITokenPolicies) bool {
+	return hasPermissionGroup(policies, permR2StorageWrite, permR2StorageEdit)
+}
+
+func hasR2BucketItemWritePermission(policies []cloudflare.APITokenPolicies) bool {
+	return hasPermissionGroup(policies, permR2BucketItemWrite)
+}
+
+func hasPermissionGroup(policies []cloudflare.APITokenPolicies, names ...string) bool {
+	allowed := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		allowed[name] = struct{}{}
+	}
 	for _, policy := range policies {
 		if !strings.EqualFold(policy.Effect, "allow") {
 			continue
 		}
 		for _, group := range policy.PermissionGroups {
-			switch group.Name {
-			case permR2StorageWrite, permR2BucketItemWrite:
+			if _, ok := allowed[group.Name]; ok {
 				return true
 			}
 		}

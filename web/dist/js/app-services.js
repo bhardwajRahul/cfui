@@ -26,9 +26,19 @@
         show('tab-manager', !!data.tunnel_manager);
         show('tab-ddns', !!data.ddns);
         show('tab-mcp', !!data.mcp);
-        show('tab-r2', true);
+        show('tab-r2', !!data.r2_webdav);
         show('tab-features', true);
+        const active = document.querySelector('.tab[aria-selected="true"]');
+        if (active?.hidden) window.cfui.activateTab?.('local');
     }
+
+    const permissionLabelKeys = {
+        account_tunnel_edit: 'verify_permission_tunnel_edit',
+        zone_read: 'verify_permission_zone_read',
+        zone_dns_edit: 'verify_permission_dns_edit',
+        account_r2_storage_write: 'verify_permission_r2_storage_write',
+        r2_bucket_item_write: 'verify_permission_r2_bucket_item_write',
+    };
 
     async function saveFeature(key, value) {
         if (key === 'ddns' && value && !state.features?.tunnel_manager) {
@@ -73,7 +83,7 @@
         toggle.disabled = !data?.r2_webdav && !!availability && !availability.can_enable;
         const reason = $('feature-r2-reason');
         if (reason) {
-            reason.textContent = data?.r2_webdav ? '' : (window.cfui.r2AvailabilityText?.(availability) || availability?.message || t('r2_configure_first'));
+            reason.textContent = data?.r2_webdav ? '' : (availability?.can_enable ? t('r2_feature_can_enable') : (window.cfui.r2AvailabilityText?.(availability) || availability?.message || t('r2_configure_first')));
         }
     }
 
@@ -315,7 +325,7 @@
             const data = await apiSend('/tunnel-manager/verify-token', 'POST', payload);
             result.innerHTML = '';
             if (data.token_status === 'inactive' || data.token_status === 'revoked') { const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', 'error'); s.textContent = t('verify_token_status') + ': ' + data.token_status; result.appendChild(s); return; }
-            for (const p of (data.permissions || [])) { const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', p.granted ? 'ok' : (p.required ? 'error' : 'ok')); const dot = document.createElement('span'); dot.className = 'dot'; const txt = document.createElement('span'); txt.textContent = ' ' + p.description; s.append(dot, txt); result.appendChild(s); }
+            for (const p of (data.permissions || [])) { const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', p.granted ? 'ok' : (p.required ? 'error' : 'warn')); const dot = document.createElement('span'); dot.className = 'dot'; const txt = document.createElement('span'); const key = permissionLabelKeys[p.name]; txt.textContent = ' ' + (key ? t(key) : p.description); s.append(dot, txt); result.appendChild(s); }
             toast[data.valid ? 'ok' : 'err'](t(data.valid ? 'verify_permissions_passed' : 'verify_permissions_failed'));
         } catch (err) { result.innerHTML = ''; const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', 'error'); s.textContent = err.message; result.appendChild(s); toast.err(t('verify_failed') + ': ' + err.message); }
         finally { setBusy(btn, false); }
