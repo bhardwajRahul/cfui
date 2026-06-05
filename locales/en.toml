@@ -1014,6 +1014,9 @@ other = "New logs"
 [action_shortcut_hint]
 other = "Ctrl/⌘ + Enter"
 
+[apply]
+other = "Apply"
+
 [s3_tab]
 other = "S3 WebDAV"
 
@@ -1040,6 +1043,51 @@ other = "Mounts"
 
 [s3_mounts_help]
 other = "Each mount has its own S3 credentials, bucket path, WebDAV path, and WebDAV login."
+
+[s3_access_mode]
+other = "WebDAV access"
+
+[s3_access_mode_help]
+other = "Choose whether WebDAV is served by the main HTTP service or a separate port."
+
+[s3_access_mode_main]
+other = "Main service"
+
+[s3_access_mode_main_help]
+other = "Use the current cfui HTTP service and keep paths like /webdav/my_r2/."
+
+[s3_access_mode_dedicated]
+other = "Separate port"
+
+[s3_access_mode_dedicated_help]
+other = "Serve only WebDAV on another HTTP port. The main /webdav/ route will be disabled."
+
+[s3_dedicated_host]
+other = "Bind host"
+
+[s3_dedicated_port]
+other = "Port"
+
+[s3_dedicated_running]
+other = "Separate port running"
+
+[s3_dedicated_starting]
+other = "Separate port pending"
+
+[s3_dedicated_waiting_feature]
+other = "Enable S3 WebDAV first"
+
+[s3_dedicated_failed]
+other = "Separate port failed"
+
+[s3_dedicated_error_help]
+other = "Separate WebDAV port failed"
+
+[s3_dedicated_port_invalid]
+other = "Dedicated WebDAV port must be between 1 and 65535."
+
+[s3_dedicated_auth_warning]
+other = "If WebDAV login is disabled, anyone who can reach this port can access enabled mounts."
 
 [s3_new_mount]
 other = "New Mount"

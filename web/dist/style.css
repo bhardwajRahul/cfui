@@ -1343,6 +1343,70 @@ details.disclosure > .body {
     gap: var(--gap-2);
 }
 
+.s3-access-panel {
+    display: grid;
+    gap: var(--gap-3);
+}
+
+.s3-access-modes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-3);
+}
+
+.s3-access-choice {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: var(--gap-3);
+    align-items: start;
+    min-height: 76px;
+    padding: var(--gap-3);
+    border: 1px solid var(--border);
+    border-radius: var(--r-control);
+    background: var(--surface-2);
+    cursor: pointer;
+}
+
+.s3-access-choice:has(input:checked) {
+    border-color: var(--cf-orange);
+    background: var(--surface);
+    box-shadow: 0 0 0 1px rgba(246, 130, 31, 0.18);
+}
+
+.s3-access-choice input {
+    margin-top: 3px;
+    accent-color: var(--cf-orange);
+}
+
+.s3-access-choice strong {
+    display: block;
+    color: var(--text);
+    font-size: var(--fs-sm);
+}
+
+.s3-access-choice small {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+}
+
+.s3-dedicated-settings {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 160px auto;
+    gap: var(--gap-3);
+    align-items: end;
+}
+
+.s3-dedicated-settings[data-enabled="false"] {
+    opacity: 0.62;
+}
+
+.s3-dedicated-settings .form-field {
+    margin-bottom: 0;
+}
+
 .s3-mount-item {
     border: 1px solid var(--border);
     border-radius: var(--r-control);
@@ -1882,7 +1946,9 @@ details.disclosure > .body {
 
 @media (max-width: 860px) {
     .s3-state-grid,
-    .s3-toggle-grid {
+    .s3-toggle-grid,
+    .s3-access-modes,
+    .s3-dedicated-settings {
         grid-template-columns: 1fr;
     }
 

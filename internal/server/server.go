@@ -102,6 +102,7 @@ type Server struct {
 	mcpSvc    *mcpbridge.Service
 	ddnsSvc   *ddns.Service
 	s3Svc     *s3dav.Service
+	s3WebDAV  *s3DedicatedServer
 	assets    embed.FS
 	locales   embed.FS
 }
@@ -118,6 +119,7 @@ func NewServer(cfgMgr *config.Manager, runner *service.Runner, assets embed.FS, 
 		mcpSvc:    mcpbridge.NewService(cfgMgr, runner, tunnelMgr, tokenStore, ddnsSvc),
 		ddnsSvc:   ddnsSvc,
 		s3Svc:     s3Svc,
+		s3WebDAV:  newS3DedicatedServer(),
 		assets:    assets,
 		locales:   locales,
 	}
@@ -147,7 +149,7 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/features", s.handleFeatures)
 	mux.Handle("/mcp", s.mcpSvc.Handler())
 	mux.Handle("/mcp/", s.mcpSvc.Handler())
-	mux.Handle("/webdav/", s.s3Svc.Handler())
+	mux.Handle("/webdav/", s.mainWebDAVHandler())
 
 	// DDNS endpoints
 	mux.HandleFunc("/api/ddns/config", s.handleDDNSConfig)
@@ -259,6 +261,9 @@ func (s *Server) handleFeatures(w http.ResponseWriter, r *http.Request) {
 		writeAPIError(w, http.StatusInternalServerError, err)
 		return
 	}
+	if req.S3WebDAV != nil {
+		s.restartS3WebDAVDedicated(context.Background())
+	}
 	if ddnsChanged {
 		s.ddnsSvc.Restart()
 	}
@@ -280,7 +285,7 @@ func (s *Server) featuresResponse(ctx context.Context, cfg config.Config) Featur
 func (s *Server) handleS3Settings(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, s.s3Svc.Settings(r.Context()))
+		writeJSON(w, s.decorateS3SettingsResponse(s.s3Svc.Settings(r.Context())))
 	case http.MethodPost:
 		var req s3dav.SettingsRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -292,7 +297,8 @@ func (s *Server) handleS3Settings(w http.ResponseWriter, r *http.Request) {
 			writeS3Error(w, err)
 			return
 		}
-		writeJSON(w, resp)
+		s.restartS3WebDAVDedicated(context.Background())
+		writeJSON(w, s.decorateS3SettingsResponse(resp))
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -313,7 +319,7 @@ func (s *Server) handleS3Mounts(w http.ResponseWriter, r *http.Request) {
 		writeS3Error(w, err)
 		return
 	}
-	writeJSON(w, resp)
+	writeJSON(w, s.decorateS3SettingsResponse(resp))
 }
 
 func (s *Server) handleS3Mount(w http.ResponseWriter, r *http.Request) {
@@ -334,14 +340,14 @@ func (s *Server) handleS3Mount(w http.ResponseWriter, r *http.Request) {
 			writeS3Error(w, err)
 			return
 		}
-		writeJSON(w, resp)
+		writeJSON(w, s.decorateS3SettingsResponse(resp))
 	case http.MethodDelete:
 		resp, err := s.s3Svc.DeleteMount(r.Context(), key)
 		if err != nil {
 			writeS3Error(w, err)
 			return
 		}
-		writeJSON(w, resp)
+		writeJSON(w, s.decorateS3SettingsResponse(resp))
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}

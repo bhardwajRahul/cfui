@@ -131,6 +131,9 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 	cfg.MCPEnabled = settingsRow.McpEnabled
 	cfg.S3WebDAV.Enabled = settingsRow.S3WebdavEnabled
 	cfg.S3WebDAV.ActiveKey = settingsRow.S3WebdavActiveKey
+	cfg.S3WebDAV.WebDAVAccessMode = normalizeS3WebDAVAccessMode(settingsRow.S3WebdavAccessMode)
+	cfg.S3WebDAV.DedicatedBindHost = strings.TrimSpace(settingsRow.S3WebdavDedicatedBindHost)
+	cfg.S3WebDAV.DedicatedPort = normalizeS3WebDAVDedicatedPort(settingsRow.S3WebdavDedicatedPort)
 
 	if tokenRow, err := m.client.TunnelToken.Query().Where(tunneltoken.Key(defaultConfigKey)).Only(ctx); err == nil {
 		cfg.Token = tokenRow.Token
@@ -229,6 +232,7 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 }
 
 func saveAppSetting(ctx context.Context, tx *ent.Tx, cfg Config) error {
+	s3Cfg := normalizeS3WebDAVConfig(cfg.S3WebDAV)
 	row, err := tx.AppSetting.Query().Where(appsetting.Key(defaultConfigKey)).Only(ctx)
 	if ent.IsNotFound(err) {
 		_, err = tx.AppSetting.Create().
@@ -252,8 +256,11 @@ func saveAppSetting(ctx context.Context, tx *ent.Tx, cfg Config) error {
 			SetNoTLSVerify(cfg.NoTLSVerify).
 			SetExtraArgs(cfg.ExtraArgs).
 			SetMcpEnabled(cfg.MCPEnabled).
-			SetS3WebdavEnabled(cfg.S3WebDAV.Enabled).
-			SetS3WebdavActiveKey(normalizeS3WebDAVConfig(cfg.S3WebDAV).ActiveKey).
+			SetS3WebdavEnabled(s3Cfg.Enabled).
+			SetS3WebdavActiveKey(s3Cfg.ActiveKey).
+			SetS3WebdavAccessMode(s3Cfg.WebDAVAccessMode).
+			SetS3WebdavDedicatedBindHost(s3Cfg.DedicatedBindHost).
+			SetS3WebdavDedicatedPort(s3Cfg.DedicatedPort).
 			Save(ctx)
 		return err
 	}
@@ -281,8 +288,11 @@ func saveAppSetting(ctx context.Context, tx *ent.Tx, cfg Config) error {
 		SetNoTLSVerify(cfg.NoTLSVerify).
 		SetExtraArgs(cfg.ExtraArgs).
 		SetMcpEnabled(cfg.MCPEnabled).
-		SetS3WebdavEnabled(cfg.S3WebDAV.Enabled).
-		SetS3WebdavActiveKey(normalizeS3WebDAVConfig(cfg.S3WebDAV).ActiveKey).
+		SetS3WebdavEnabled(s3Cfg.Enabled).
+		SetS3WebdavActiveKey(s3Cfg.ActiveKey).
+		SetS3WebdavAccessMode(s3Cfg.WebDAVAccessMode).
+		SetS3WebdavDedicatedBindHost(s3Cfg.DedicatedBindHost).
+		SetS3WebdavDedicatedPort(s3Cfg.DedicatedPort).
 		Save(ctx)
 	return err
 }
@@ -395,6 +405,9 @@ func saveS3WebDAVSettings(ctx context.Context, tx *ent.Tx, cfg S3WebDAVConfig) e
 }
 
 func normalizeS3WebDAVConfig(cfg S3WebDAVConfig) S3WebDAVConfig {
+	cfg.WebDAVAccessMode = normalizeS3WebDAVAccessMode(cfg.WebDAVAccessMode)
+	cfg.DedicatedBindHost = strings.TrimSpace(cfg.DedicatedBindHost)
+	cfg.DedicatedPort = normalizeS3WebDAVDedicatedPort(cfg.DedicatedPort)
 	if len(cfg.Mounts) == 0 {
 		cfg.Mounts = []S3WebDAVMountConfig{DefaultS3WebDAVMountConfig()}
 	}
@@ -419,6 +432,22 @@ func normalizeS3WebDAVConfig(cfg S3WebDAVConfig) S3WebDAVConfig {
 		cfg.ActiveKey = cfg.Mounts[0].Key
 	}
 	return cfg
+}
+
+func normalizeS3WebDAVAccessMode(v string) string {
+	switch strings.TrimSpace(v) {
+	case S3WebDAVAccessModeDedicated:
+		return S3WebDAVAccessModeDedicated
+	default:
+		return S3WebDAVAccessModeMain
+	}
+}
+
+func normalizeS3WebDAVDedicatedPort(port int) int {
+	if port <= 0 {
+		return 14334
+	}
+	return port
 }
 
 func normalizeS3MountConfig(mount S3WebDAVMountConfig, index int) S3WebDAVMountConfig {

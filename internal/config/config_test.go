@@ -87,8 +87,11 @@ func TestS3WebDAVPersistsInDatabase(t *testing.T) {
 
 	cfg := mgr.Get()
 	cfg.S3WebDAV = S3WebDAVConfig{
-		Enabled:   true,
-		ActiveKey: "my-r2",
+		Enabled:           true,
+		ActiveKey:         "my-r2",
+		WebDAVAccessMode:  S3WebDAVAccessModeDedicated,
+		DedicatedBindHost: "127.0.0.1",
+		DedicatedPort:     18080,
 		Mounts: []S3WebDAVMountConfig{{
 			Key:                "my-r2",
 			Name:               "My R2",
@@ -122,6 +125,9 @@ func TestS3WebDAVPersistsInDatabase(t *testing.T) {
 	if !got.Enabled || got.ActiveKey != "my-r2" || len(got.Mounts) != 1 {
 		t.Fatalf("expected persisted S3 WebDAV settings, got %#v", got)
 	}
+	if got.WebDAVAccessMode != S3WebDAVAccessModeDedicated || got.DedicatedBindHost != "127.0.0.1" || got.DedicatedPort != 18080 {
+		t.Fatalf("expected persisted S3 WebDAV access mode, got %#v", got)
+	}
 	mount := got.Mounts[0]
 	if mount.Provider != "cloudflare_r2" || !mount.WebDAVEnabled || mount.WebDAVAuthEnabled || mount.EndpointURL == "" || mount.AccountID != "account-r2" || mount.BucketName != "cfui-r2" || mount.RootPrefix != "backups/cfui" || mount.MountPath != "/webdav/my_r2/" || mount.Jurisdiction != "eu" || mount.AccessKeyID != "access-key" || mount.SecretAccessKey != "secret-key" || mount.WebDAVUsername != "dav-user" || mount.WebDAVPasswordHash == "" {
 		t.Fatalf("expected persisted S3 WebDAV mount, got %#v", mount)
@@ -146,6 +152,9 @@ func TestS3WebDAVDefaults(t *testing.T) {
 		t.Fatalf("NewManager reload: %v", err)
 	}
 	got := reloaded.Get().S3WebDAV
+	if got.WebDAVAccessMode != S3WebDAVAccessModeMain || got.DedicatedPort != 14334 {
+		t.Fatalf("expected default S3 WebDAV access mode, got %#v", got)
+	}
 	if len(got.Mounts) != 1 || got.Mounts[0].Provider != "generic_s3" || got.Mounts[0].Region != "auto" || got.Mounts[0].MountPath != "/webdav/s3/" || got.Mounts[0].Jurisdiction != "default" || !got.Mounts[0].WebDAVEnabled || !got.Mounts[0].WebDAVAuthEnabled {
 		t.Fatalf("expected S3 defaults, got %#v", got)
 	}

@@ -37,6 +37,9 @@ func (AppSetting) Fields() []ent.Field {
 		field.Bool("mcp_enabled").Default(false),
 		field.Bool("s3_webdav_enabled").Default(false),
 		field.String("s3_webdav_active_key").Default("default"),
+		field.String("s3_webdav_access_mode").Default("main"),
+		field.String("s3_webdav_dedicated_bind_host").Default(""),
+		field.Int("s3_webdav_dedicated_port").Default(14334),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

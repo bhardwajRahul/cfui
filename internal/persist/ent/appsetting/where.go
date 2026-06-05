@@ -164,6 +164,21 @@ func S3WebdavActiveKey(v string) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavActiveKey, v))
 }
 
+// S3WebdavAccessMode applies equality check predicate on the "s3_webdav_access_mode" field. It's identical to S3WebdavAccessModeEQ.
+func S3WebdavAccessMode(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavDedicatedBindHost applies equality check predicate on the "s3_webdav_dedicated_bind_host" field. It's identical to S3WebdavDedicatedBindHostEQ.
+func S3WebdavDedicatedBindHost(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedPort applies equality check predicate on the "s3_webdav_dedicated_port" field. It's identical to S3WebdavDedicatedPortEQ.
+func S3WebdavDedicatedPort(v int) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavDedicatedPort, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldCreatedAt, v))
@@ -1112,6 +1127,176 @@ func S3WebdavActiveKeyEqualFold(v string) predicate.AppSetting {
 // S3WebdavActiveKeyContainsFold applies the ContainsFold predicate on the "s3_webdav_active_key" field.
 func S3WebdavActiveKeyContainsFold(v string) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldContainsFold(FieldS3WebdavActiveKey, v))
+}
+
+// S3WebdavAccessModeEQ applies the EQ predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeNEQ applies the NEQ predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeNEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNEQ(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeIn applies the In predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldIn(FieldS3WebdavAccessMode, vs...))
+}
+
+// S3WebdavAccessModeNotIn applies the NotIn predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeNotIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNotIn(FieldS3WebdavAccessMode, vs...))
+}
+
+// S3WebdavAccessModeGT applies the GT predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeGT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGT(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeGTE applies the GTE predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeGTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGTE(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeLT applies the LT predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeLT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLT(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeLTE applies the LTE predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeLTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLTE(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeContains applies the Contains predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeContains(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContains(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeHasPrefix applies the HasPrefix predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeHasPrefix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasPrefix(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeHasSuffix applies the HasSuffix predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeHasSuffix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasSuffix(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeEqualFold applies the EqualFold predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeEqualFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEqualFold(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavAccessModeContainsFold applies the ContainsFold predicate on the "s3_webdav_access_mode" field.
+func S3WebdavAccessModeContainsFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContainsFold(FieldS3WebdavAccessMode, v))
+}
+
+// S3WebdavDedicatedBindHostEQ applies the EQ predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostNEQ applies the NEQ predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostNEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNEQ(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostIn applies the In predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldIn(FieldS3WebdavDedicatedBindHost, vs...))
+}
+
+// S3WebdavDedicatedBindHostNotIn applies the NotIn predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostNotIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNotIn(FieldS3WebdavDedicatedBindHost, vs...))
+}
+
+// S3WebdavDedicatedBindHostGT applies the GT predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostGT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGT(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostGTE applies the GTE predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostGTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGTE(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostLT applies the LT predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostLT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLT(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostLTE applies the LTE predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostLTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLTE(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostContains applies the Contains predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostContains(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContains(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostHasPrefix applies the HasPrefix predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostHasPrefix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasPrefix(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostHasSuffix applies the HasSuffix predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostHasSuffix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasSuffix(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostEqualFold applies the EqualFold predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostEqualFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEqualFold(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedBindHostContainsFold applies the ContainsFold predicate on the "s3_webdav_dedicated_bind_host" field.
+func S3WebdavDedicatedBindHostContainsFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContainsFold(FieldS3WebdavDedicatedBindHost, v))
+}
+
+// S3WebdavDedicatedPortEQ applies the EQ predicate on the "s3_webdav_dedicated_port" field.
+func S3WebdavDedicatedPortEQ(v int) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavDedicatedPort, v))
+}
+
+// S3WebdavDedicatedPortNEQ applies the NEQ predicate on the "s3_webdav_dedicated_port" field.
+func S3WebdavDedicatedPortNEQ(v int) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNEQ(FieldS3WebdavDedicatedPort, v))
+}
+
+// S3WebdavDedicatedPortIn applies the In predicate on the "s3_webdav_dedicated_port" field.
+func S3WebdavDedicatedPortIn(vs ...int) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldIn(FieldS3WebdavDedicatedPort, vs...))
+}
+
+// S3WebdavDedicatedPortNotIn applies the NotIn predicate on the "s3_webdav_dedicated_port" field.
+func S3WebdavDedicatedPortNotIn(vs ...int) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNotIn(FieldS3WebdavDedicatedPort, vs...))
+}
+
+// S3WebdavDedicatedPortGT applies the GT predicate on the "s3_webdav_dedicated_port" field.
+func S3WebdavDedicatedPortGT(v int) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGT(FieldS3WebdavDedicatedPort, v))
+}
+
+// S3WebdavDedicatedPortGTE applies the GTE predicate on the "s3_webdav_dedicated_port" field.
+func S3WebdavDedicatedPortGTE(v int) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGTE(FieldS3WebdavDedicatedPort, v))
+}
+
+// S3WebdavDedicatedPortLT applies the LT predicate on the "s3_webdav_dedicated_port" field.
+func S3WebdavDedicatedPortLT(v int) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLT(FieldS3WebdavDedicatedPort, v))
+}
+
+// S3WebdavDedicatedPortLTE applies the LTE predicate on the "s3_webdav_dedicated_port" field.
+func S3WebdavDedicatedPortLTE(v int) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLTE(FieldS3WebdavDedicatedPort, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

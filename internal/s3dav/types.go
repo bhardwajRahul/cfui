@@ -30,15 +30,24 @@ type Availability struct {
 }
 
 type SettingsRequest struct {
-	Enabled   bool   `json:"enabled"`
-	ActiveKey string `json:"active_key"`
+	Enabled           *bool   `json:"enabled,omitempty"`
+	ActiveKey         string  `json:"active_key"`
+	WebDAVAccessMode  string  `json:"webdav_access_mode"`
+	DedicatedBindHost *string `json:"dedicated_bind_host,omitempty"`
+	DedicatedPort     *int    `json:"dedicated_port,omitempty"`
 }
 
 type SettingsResponse struct {
-	Enabled      bool            `json:"enabled"`
-	ActiveKey    string          `json:"active_key"`
-	Mounts       []MountResponse `json:"mounts"`
-	Availability Availability    `json:"availability"`
+	Enabled           bool            `json:"enabled"`
+	ActiveKey         string          `json:"active_key"`
+	WebDAVAccessMode  string          `json:"webdav_access_mode"`
+	DedicatedBindHost string          `json:"dedicated_bind_host"`
+	DedicatedPort     int             `json:"dedicated_port"`
+	DedicatedRunning  bool            `json:"dedicated_running"`
+	DedicatedAddress  string          `json:"dedicated_address"`
+	DedicatedError    string          `json:"dedicated_error,omitempty"`
+	Mounts            []MountResponse `json:"mounts"`
+	Availability      Availability    `json:"availability"`
 }
 
 type MountRequest struct {

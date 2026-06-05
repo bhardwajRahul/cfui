@@ -48,12 +48,31 @@ func (s *Service) Settings(ctx context.Context) SettingsResponse {
 func (s *Service) SaveSettings(ctx context.Context, req SettingsRequest) (SettingsResponse, error) {
 	appCfg := s.cfgMgr.Get()
 	cfg := s.normalizeConfig(appCfg.S3WebDAV)
-	cfg.Enabled = req.Enabled
+	if req.Enabled != nil {
+		cfg.Enabled = *req.Enabled
+	}
 	if key := normalizeMountKey(req.ActiveKey); key != "" {
 		if _, ok := mountByKey(cfg.Mounts, key); !ok {
 			return SettingsResponse{}, fmt.Errorf("S3 mount %q was not found", key)
 		}
 		cfg.ActiveKey = key
+	}
+	if strings.TrimSpace(req.WebDAVAccessMode) != "" {
+		switch strings.TrimSpace(req.WebDAVAccessMode) {
+		case config.S3WebDAVAccessModeMain, config.S3WebDAVAccessModeDedicated:
+			cfg.WebDAVAccessMode = strings.TrimSpace(req.WebDAVAccessMode)
+		default:
+			return SettingsResponse{}, fmt.Errorf("WebDAV access mode must be %q or %q", config.S3WebDAVAccessModeMain, config.S3WebDAVAccessModeDedicated)
+		}
+	}
+	if req.DedicatedBindHost != nil {
+		cfg.DedicatedBindHost = strings.TrimSpace(*req.DedicatedBindHost)
+	}
+	if req.DedicatedPort != nil {
+		if *req.DedicatedPort < 1 || *req.DedicatedPort > 65535 {
+			return SettingsResponse{}, fmt.Errorf("dedicated WebDAV port must be between 1 and 65535")
+		}
+		cfg.DedicatedPort = *req.DedicatedPort
 	}
 	appCfg.S3WebDAV = cfg
 	if err := s.cfgMgr.Save(appCfg); err != nil {
@@ -540,6 +559,11 @@ func (s *Service) requestMount(req MountRequest, current config.S3WebDAVMountCon
 }
 
 func (s *Service) normalizeConfig(cfg config.S3WebDAVConfig) config.S3WebDAVConfig {
+	cfg.WebDAVAccessMode = normalizeAccessMode(cfg.WebDAVAccessMode)
+	cfg.DedicatedBindHost = strings.TrimSpace(cfg.DedicatedBindHost)
+	if cfg.DedicatedPort <= 0 {
+		cfg.DedicatedPort = 14334
+	}
 	if len(cfg.Mounts) == 0 {
 		cfg.Mounts = []config.S3WebDAVMountConfig{config.DefaultS3WebDAVMountConfig()}
 	}
@@ -553,6 +577,15 @@ func (s *Service) normalizeConfig(cfg config.S3WebDAVConfig) config.S3WebDAVConf
 		cfg.ActiveKey = cfg.Mounts[0].Key
 	}
 	return cfg
+}
+
+func normalizeAccessMode(mode string) string {
+	switch strings.TrimSpace(mode) {
+	case config.S3WebDAVAccessModeDedicated:
+		return config.S3WebDAVAccessModeDedicated
+	default:
+		return config.S3WebDAVAccessModeMain
+	}
 }
 
 func (s *Service) normalizeMount(mount config.S3WebDAVMountConfig) config.S3WebDAVMountConfig {
@@ -601,15 +634,19 @@ func (s *Service) defaultCloudflareAccountID() string {
 }
 
 func (s *Service) settingsResponse(ctx context.Context, cfg config.S3WebDAVConfig) SettingsResponse {
+	cfg = s.normalizeConfig(cfg)
 	mounts := make([]MountResponse, 0, len(cfg.Mounts))
 	for _, mount := range cfg.Mounts {
 		mounts = append(mounts, s.mountResponse(ctx, mount))
 	}
 	return SettingsResponse{
-		Enabled:      cfg.Enabled,
-		ActiveKey:    cfg.ActiveKey,
-		Mounts:       mounts,
-		Availability: Availability{CanEnable: true, Status: StatusReady, Message: "S3 WebDAV can be enabled."},
+		Enabled:           cfg.Enabled,
+		ActiveKey:         cfg.ActiveKey,
+		WebDAVAccessMode:  cfg.WebDAVAccessMode,
+		DedicatedBindHost: cfg.DedicatedBindHost,
+		DedicatedPort:     cfg.DedicatedPort,
+		Mounts:            mounts,
+		Availability:      Availability{CanEnable: true, Status: StatusReady, Message: "S3 WebDAV can be enabled."},
 	}
 }
 

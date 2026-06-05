@@ -44,39 +44,43 @@ const (
 // AppSettingMutation represents an operation that mutates the AppSetting nodes in the graph.
 type AppSettingMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *int
-	key                  *string
-	auto_start           *bool
-	auto_restart         *bool
-	custom_tag           *string
-	software_name        *string
-	protocol             *string
-	grace_period         *string
-	region               *string
-	retries              *int
-	addretries           *int
-	metrics_enable       *bool
-	metrics_port         *int
-	addmetrics_port      *int
-	log_level            *string
-	log_file             *string
-	log_json             *bool
-	edge_ip_version      *string
-	edge_bind_address    *string
-	post_quantum         *bool
-	no_tls_verify        *bool
-	extra_args           *string
-	mcp_enabled          *bool
-	s3_webdav_enabled    *bool
-	s3_webdav_active_key *string
-	created_at           *time.Time
-	updated_at           *time.Time
-	clearedFields        map[string]struct{}
-	done                 bool
-	oldValue             func(context.Context) (*AppSetting, error)
-	predicates           []predicate.AppSetting
+	op                            Op
+	typ                           string
+	id                            *int
+	key                           *string
+	auto_start                    *bool
+	auto_restart                  *bool
+	custom_tag                    *string
+	software_name                 *string
+	protocol                      *string
+	grace_period                  *string
+	region                        *string
+	retries                       *int
+	addretries                    *int
+	metrics_enable                *bool
+	metrics_port                  *int
+	addmetrics_port               *int
+	log_level                     *string
+	log_file                      *string
+	log_json                      *bool
+	edge_ip_version               *string
+	edge_bind_address             *string
+	post_quantum                  *bool
+	no_tls_verify                 *bool
+	extra_args                    *string
+	mcp_enabled                   *bool
+	s3_webdav_enabled             *bool
+	s3_webdav_active_key          *string
+	s3_webdav_access_mode         *string
+	s3_webdav_dedicated_bind_host *string
+	s3_webdav_dedicated_port      *int
+	adds3_webdav_dedicated_port   *int
+	created_at                    *time.Time
+	updated_at                    *time.Time
+	clearedFields                 map[string]struct{}
+	done                          bool
+	oldValue                      func(context.Context) (*AppSetting, error)
+	predicates                    []predicate.AppSetting
 }
 
 var _ ent.Mutation = (*AppSettingMutation)(nil)
@@ -1009,6 +1013,134 @@ func (m *AppSettingMutation) ResetS3WebdavActiveKey() {
 	m.s3_webdav_active_key = nil
 }
 
+// SetS3WebdavAccessMode sets the "s3_webdav_access_mode" field.
+func (m *AppSettingMutation) SetS3WebdavAccessMode(s string) {
+	m.s3_webdav_access_mode = &s
+}
+
+// S3WebdavAccessMode returns the value of the "s3_webdav_access_mode" field in the mutation.
+func (m *AppSettingMutation) S3WebdavAccessMode() (r string, exists bool) {
+	v := m.s3_webdav_access_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldS3WebdavAccessMode returns the old "s3_webdav_access_mode" field's value of the AppSetting entity.
+// If the AppSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AppSettingMutation) OldS3WebdavAccessMode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldS3WebdavAccessMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldS3WebdavAccessMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldS3WebdavAccessMode: %w", err)
+	}
+	return oldValue.S3WebdavAccessMode, nil
+}
+
+// ResetS3WebdavAccessMode resets all changes to the "s3_webdav_access_mode" field.
+func (m *AppSettingMutation) ResetS3WebdavAccessMode() {
+	m.s3_webdav_access_mode = nil
+}
+
+// SetS3WebdavDedicatedBindHost sets the "s3_webdav_dedicated_bind_host" field.
+func (m *AppSettingMutation) SetS3WebdavDedicatedBindHost(s string) {
+	m.s3_webdav_dedicated_bind_host = &s
+}
+
+// S3WebdavDedicatedBindHost returns the value of the "s3_webdav_dedicated_bind_host" field in the mutation.
+func (m *AppSettingMutation) S3WebdavDedicatedBindHost() (r string, exists bool) {
+	v := m.s3_webdav_dedicated_bind_host
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldS3WebdavDedicatedBindHost returns the old "s3_webdav_dedicated_bind_host" field's value of the AppSetting entity.
+// If the AppSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AppSettingMutation) OldS3WebdavDedicatedBindHost(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldS3WebdavDedicatedBindHost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldS3WebdavDedicatedBindHost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldS3WebdavDedicatedBindHost: %w", err)
+	}
+	return oldValue.S3WebdavDedicatedBindHost, nil
+}
+
+// ResetS3WebdavDedicatedBindHost resets all changes to the "s3_webdav_dedicated_bind_host" field.
+func (m *AppSettingMutation) ResetS3WebdavDedicatedBindHost() {
+	m.s3_webdav_dedicated_bind_host = nil
+}
+
+// SetS3WebdavDedicatedPort sets the "s3_webdav_dedicated_port" field.
+func (m *AppSettingMutation) SetS3WebdavDedicatedPort(i int) {
+	m.s3_webdav_dedicated_port = &i
+	m.adds3_webdav_dedicated_port = nil
+}
+
+// S3WebdavDedicatedPort returns the value of the "s3_webdav_dedicated_port" field in the mutation.
+func (m *AppSettingMutation) S3WebdavDedicatedPort() (r int, exists bool) {
+	v := m.s3_webdav_dedicated_port
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldS3WebdavDedicatedPort returns the old "s3_webdav_dedicated_port" field's value of the AppSetting entity.
+// If the AppSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AppSettingMutation) OldS3WebdavDedicatedPort(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldS3WebdavDedicatedPort is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldS3WebdavDedicatedPort requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldS3WebdavDedicatedPort: %w", err)
+	}
+	return oldValue.S3WebdavDedicatedPort, nil
+}
+
+// AddS3WebdavDedicatedPort adds i to the "s3_webdav_dedicated_port" field.
+func (m *AppSettingMutation) AddS3WebdavDedicatedPort(i int) {
+	if m.adds3_webdav_dedicated_port != nil {
+		*m.adds3_webdav_dedicated_port += i
+	} else {
+		m.adds3_webdav_dedicated_port = &i
+	}
+}
+
+// AddedS3WebdavDedicatedPort returns the value that was added to the "s3_webdav_dedicated_port" field in this mutation.
+func (m *AppSettingMutation) AddedS3WebdavDedicatedPort() (r int, exists bool) {
+	v := m.adds3_webdav_dedicated_port
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetS3WebdavDedicatedPort resets all changes to the "s3_webdav_dedicated_port" field.
+func (m *AppSettingMutation) ResetS3WebdavDedicatedPort() {
+	m.s3_webdav_dedicated_port = nil
+	m.adds3_webdav_dedicated_port = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *AppSettingMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -1115,7 +1247,7 @@ func (m *AppSettingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AppSettingMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 27)
 	if m.key != nil {
 		fields = append(fields, appsetting.FieldKey)
 	}
@@ -1182,6 +1314,15 @@ func (m *AppSettingMutation) Fields() []string {
 	if m.s3_webdav_active_key != nil {
 		fields = append(fields, appsetting.FieldS3WebdavActiveKey)
 	}
+	if m.s3_webdav_access_mode != nil {
+		fields = append(fields, appsetting.FieldS3WebdavAccessMode)
+	}
+	if m.s3_webdav_dedicated_bind_host != nil {
+		fields = append(fields, appsetting.FieldS3WebdavDedicatedBindHost)
+	}
+	if m.s3_webdav_dedicated_port != nil {
+		fields = append(fields, appsetting.FieldS3WebdavDedicatedPort)
+	}
 	if m.created_at != nil {
 		fields = append(fields, appsetting.FieldCreatedAt)
 	}
@@ -1240,6 +1381,12 @@ func (m *AppSettingMutation) Field(name string) (ent.Value, bool) {
 		return m.S3WebdavEnabled()
 	case appsetting.FieldS3WebdavActiveKey:
 		return m.S3WebdavActiveKey()
+	case appsetting.FieldS3WebdavAccessMode:
+		return m.S3WebdavAccessMode()
+	case appsetting.FieldS3WebdavDedicatedBindHost:
+		return m.S3WebdavDedicatedBindHost()
+	case appsetting.FieldS3WebdavDedicatedPort:
+		return m.S3WebdavDedicatedPort()
 	case appsetting.FieldCreatedAt:
 		return m.CreatedAt()
 	case appsetting.FieldUpdatedAt:
@@ -1297,6 +1444,12 @@ func (m *AppSettingMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldS3WebdavEnabled(ctx)
 	case appsetting.FieldS3WebdavActiveKey:
 		return m.OldS3WebdavActiveKey(ctx)
+	case appsetting.FieldS3WebdavAccessMode:
+		return m.OldS3WebdavAccessMode(ctx)
+	case appsetting.FieldS3WebdavDedicatedBindHost:
+		return m.OldS3WebdavDedicatedBindHost(ctx)
+	case appsetting.FieldS3WebdavDedicatedPort:
+		return m.OldS3WebdavDedicatedPort(ctx)
 	case appsetting.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case appsetting.FieldUpdatedAt:
@@ -1464,6 +1617,27 @@ func (m *AppSettingMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetS3WebdavActiveKey(v)
 		return nil
+	case appsetting.FieldS3WebdavAccessMode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetS3WebdavAccessMode(v)
+		return nil
+	case appsetting.FieldS3WebdavDedicatedBindHost:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetS3WebdavDedicatedBindHost(v)
+		return nil
+	case appsetting.FieldS3WebdavDedicatedPort:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetS3WebdavDedicatedPort(v)
+		return nil
 	case appsetting.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -1492,6 +1666,9 @@ func (m *AppSettingMutation) AddedFields() []string {
 	if m.addmetrics_port != nil {
 		fields = append(fields, appsetting.FieldMetricsPort)
 	}
+	if m.adds3_webdav_dedicated_port != nil {
+		fields = append(fields, appsetting.FieldS3WebdavDedicatedPort)
+	}
 	return fields
 }
 
@@ -1504,6 +1681,8 @@ func (m *AppSettingMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRetries()
 	case appsetting.FieldMetricsPort:
 		return m.AddedMetricsPort()
+	case appsetting.FieldS3WebdavDedicatedPort:
+		return m.AddedS3WebdavDedicatedPort()
 	}
 	return nil, false
 }
@@ -1526,6 +1705,13 @@ func (m *AppSettingMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddMetricsPort(v)
+		return nil
+	case appsetting.FieldS3WebdavDedicatedPort:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddS3WebdavDedicatedPort(v)
 		return nil
 	}
 	return fmt.Errorf("unknown AppSetting numeric field %s", name)
@@ -1619,6 +1805,15 @@ func (m *AppSettingMutation) ResetField(name string) error {
 		return nil
 	case appsetting.FieldS3WebdavActiveKey:
 		m.ResetS3WebdavActiveKey()
+		return nil
+	case appsetting.FieldS3WebdavAccessMode:
+		m.ResetS3WebdavAccessMode()
+		return nil
+	case appsetting.FieldS3WebdavDedicatedBindHost:
+		m.ResetS3WebdavDedicatedBindHost()
+		return nil
+	case appsetting.FieldS3WebdavDedicatedPort:
+		m.ResetS3WebdavDedicatedPort()
 		return nil
 	case appsetting.FieldCreatedAt:
 		m.ResetCreatedAt()

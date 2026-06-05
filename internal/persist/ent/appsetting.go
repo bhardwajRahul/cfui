@@ -61,6 +61,12 @@ type AppSetting struct {
 	S3WebdavEnabled bool `json:"s3_webdav_enabled,omitempty"`
 	// S3WebdavActiveKey holds the value of the "s3_webdav_active_key" field.
 	S3WebdavActiveKey string `json:"s3_webdav_active_key,omitempty"`
+	// S3WebdavAccessMode holds the value of the "s3_webdav_access_mode" field.
+	S3WebdavAccessMode string `json:"s3_webdav_access_mode,omitempty"`
+	// S3WebdavDedicatedBindHost holds the value of the "s3_webdav_dedicated_bind_host" field.
+	S3WebdavDedicatedBindHost string `json:"s3_webdav_dedicated_bind_host,omitempty"`
+	// S3WebdavDedicatedPort holds the value of the "s3_webdav_dedicated_port" field.
+	S3WebdavDedicatedPort int `json:"s3_webdav_dedicated_port,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -75,9 +81,9 @@ func (*AppSetting) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case appsetting.FieldAutoStart, appsetting.FieldAutoRestart, appsetting.FieldMetricsEnable, appsetting.FieldLogJSON, appsetting.FieldPostQuantum, appsetting.FieldNoTLSVerify, appsetting.FieldMcpEnabled, appsetting.FieldS3WebdavEnabled:
 			values[i] = new(sql.NullBool)
-		case appsetting.FieldID, appsetting.FieldRetries, appsetting.FieldMetricsPort:
+		case appsetting.FieldID, appsetting.FieldRetries, appsetting.FieldMetricsPort, appsetting.FieldS3WebdavDedicatedPort:
 			values[i] = new(sql.NullInt64)
-		case appsetting.FieldKey, appsetting.FieldCustomTag, appsetting.FieldSoftwareName, appsetting.FieldProtocol, appsetting.FieldGracePeriod, appsetting.FieldRegion, appsetting.FieldLogLevel, appsetting.FieldLogFile, appsetting.FieldEdgeIPVersion, appsetting.FieldEdgeBindAddress, appsetting.FieldExtraArgs, appsetting.FieldS3WebdavActiveKey:
+		case appsetting.FieldKey, appsetting.FieldCustomTag, appsetting.FieldSoftwareName, appsetting.FieldProtocol, appsetting.FieldGracePeriod, appsetting.FieldRegion, appsetting.FieldLogLevel, appsetting.FieldLogFile, appsetting.FieldEdgeIPVersion, appsetting.FieldEdgeBindAddress, appsetting.FieldExtraArgs, appsetting.FieldS3WebdavActiveKey, appsetting.FieldS3WebdavAccessMode, appsetting.FieldS3WebdavDedicatedBindHost:
 			values[i] = new(sql.NullString)
 		case appsetting.FieldCreatedAt, appsetting.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -234,6 +240,24 @@ func (_m *AppSetting) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.S3WebdavActiveKey = value.String
 			}
+		case appsetting.FieldS3WebdavAccessMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field s3_webdav_access_mode", values[i])
+			} else if value.Valid {
+				_m.S3WebdavAccessMode = value.String
+			}
+		case appsetting.FieldS3WebdavDedicatedBindHost:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field s3_webdav_dedicated_bind_host", values[i])
+			} else if value.Valid {
+				_m.S3WebdavDedicatedBindHost = value.String
+			}
+		case appsetting.FieldS3WebdavDedicatedPort:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field s3_webdav_dedicated_port", values[i])
+			} else if value.Valid {
+				_m.S3WebdavDedicatedPort = int(value.Int64)
+			}
 		case appsetting.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -347,6 +371,15 @@ func (_m *AppSetting) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("s3_webdav_active_key=")
 	builder.WriteString(_m.S3WebdavActiveKey)
+	builder.WriteString(", ")
+	builder.WriteString("s3_webdav_access_mode=")
+	builder.WriteString(_m.S3WebdavAccessMode)
+	builder.WriteString(", ")
+	builder.WriteString("s3_webdav_dedicated_bind_host=")
+	builder.WriteString(_m.S3WebdavDedicatedBindHost)
+	builder.WriteString(", ")
+	builder.WriteString("s3_webdav_dedicated_port=")
+	builder.WriteString(fmt.Sprintf("%v", _m.S3WebdavDedicatedPort))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

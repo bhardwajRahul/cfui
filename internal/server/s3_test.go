@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"cfui/internal/config"
 	"cfui/internal/s3dav"
@@ -215,4 +218,232 @@ func TestWebDAVPutThroughServerRouteCreatesNestedObject(t *testing.T) {
 	if string(got) != "hello" {
 		t.Fatalf("unexpected uploaded content %q", string(got))
 	}
+}
+
+func TestWebDAVAccessModeDedicatedDisablesMainRoute(t *testing.T) {
+	s := newServerTestServer(t)
+	cfg := s.cfgMgr.Get()
+	cfg.S3WebDAV = config.S3WebDAVConfig{
+		Enabled:          true,
+		ActiveKey:        "datasync",
+		WebDAVAccessMode: config.S3WebDAVAccessModeDedicated,
+		DedicatedPort:    14334,
+		Mounts: []config.S3WebDAVMountConfig{{
+			Key:               "datasync",
+			Name:              "Data Sync",
+			Enabled:           true,
+			WebDAVEnabled:     true,
+			WebDAVAuthEnabled: false,
+			Provider:          s3dav.ProviderGenericS3,
+			EndpointURL:       "https://s3.example.com",
+			Region:            "us-east-1",
+			PathStyle:         true,
+			BucketName:        "bucket",
+			MountPath:         "/webdav/datasync/",
+			AccessKeyID:       "ak",
+			SecretAccessKey:   "sk",
+		}},
+	}
+	if err := s.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+	memFS := afero.NewMemMapFs()
+	s.s3Svc = s3dav.NewServiceForTest(
+		s.cfgMgr,
+		func(string) (s3dav.CloudflareClient, error) {
+			return serverFakeR2Client{}, nil
+		},
+		func(context.Context, s3dav.FSConfig, s3dav.Credentials) (afero.Fs, error) {
+			return memFS, nil
+		},
+	)
+
+	mainReq := httptest.NewRequest(http.MethodPut, "/webdav/datasync/db.sql", bytes.NewBufferString("main"))
+	mainRec := httptest.NewRecorder()
+	s.GetHandler().ServeHTTP(mainRec, mainReq)
+	if mainRec.Code != http.StatusNotFound {
+		t.Fatalf("expected main WebDAV route disabled, got %d: %s", mainRec.Code, mainRec.Body.String())
+	}
+
+	dedicatedReq := httptest.NewRequest(http.MethodPut, "/webdav/datasync/db.sql", bytes.NewBufferString("dedicated"))
+	dedicatedRec := httptest.NewRecorder()
+	s.dedicatedWebDAVHandler().ServeHTTP(dedicatedRec, dedicatedReq)
+	if dedicatedRec.Code != http.StatusCreated && dedicatedRec.Code != http.StatusNoContent {
+		t.Fatalf("dedicated WebDAV PUT status %d: %s", dedicatedRec.Code, dedicatedRec.Body.String())
+	}
+	got, err := afero.ReadFile(memFS, "/db.sql")
+	if err != nil {
+		t.Fatalf("read dedicated uploaded file: %v", err)
+	}
+	if string(got) != "dedicated" {
+		t.Fatalf("unexpected dedicated uploaded content %q", string(got))
+	}
+}
+
+func TestDedicatedWebDAVServerStartsOnConfiguredPort(t *testing.T) {
+	s := newServerTestServer(t)
+	port := freeLocalPort(t)
+	cfg := s.cfgMgr.Get()
+	cfg.S3WebDAV = config.S3WebDAVConfig{
+		Enabled:           true,
+		ActiveKey:         "datasync",
+		WebDAVAccessMode:  config.S3WebDAVAccessModeDedicated,
+		DedicatedBindHost: "127.0.0.1",
+		DedicatedPort:     port,
+		Mounts: []config.S3WebDAVMountConfig{{
+			Key:               "datasync",
+			Name:              "Data Sync",
+			Enabled:           true,
+			WebDAVEnabled:     true,
+			WebDAVAuthEnabled: false,
+			Provider:          s3dav.ProviderGenericS3,
+			EndpointURL:       "https://s3.example.com",
+			Region:            "us-east-1",
+			PathStyle:         true,
+			BucketName:        "bucket",
+			MountPath:         "/webdav/datasync/",
+			AccessKeyID:       "ak",
+			SecretAccessKey:   "sk",
+		}},
+	}
+	if err := s.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+	memFS := afero.NewMemMapFs()
+	s.s3Svc = s3dav.NewServiceForTest(
+		s.cfgMgr,
+		func(string) (s3dav.CloudflareClient, error) {
+			return serverFakeR2Client{}, nil
+		},
+		func(context.Context, s3dav.FSConfig, s3dav.Credentials) (afero.Fs, error) {
+			return memFS, nil
+		},
+	)
+
+	s.StartS3WebDAV()
+	defer s.StopS3WebDAV(context.Background())
+	settings := s.decorateS3SettingsResponse(s.s3Svc.Settings(context.Background()))
+	if !settings.DedicatedRunning || settings.DedicatedError != "" {
+		t.Fatalf("expected dedicated WebDAV running, got %#v", settings)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://127.0.0.1:%d/webdav/datasync/live.txt", port), bytes.NewBufferString("live"))
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("dedicated WebDAV PUT: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("dedicated WebDAV PUT status %d", resp.StatusCode)
+	}
+	got, err := afero.ReadFile(memFS, "/live.txt")
+	if err != nil {
+		t.Fatalf("read dedicated uploaded file: %v", err)
+	}
+	if string(got) != "live" {
+		t.Fatalf("unexpected dedicated uploaded content %q", string(got))
+	}
+}
+
+func TestSwitchingWebDAVAccessModeStopsDedicatedServerAndRestoresMainRoute(t *testing.T) {
+	s := newServerTestServer(t)
+	port := freeLocalPort(t)
+	cfg := s.cfgMgr.Get()
+	cfg.S3WebDAV = config.S3WebDAVConfig{
+		Enabled:           true,
+		ActiveKey:         "datasync",
+		WebDAVAccessMode:  config.S3WebDAVAccessModeDedicated,
+		DedicatedBindHost: "127.0.0.1",
+		DedicatedPort:     port,
+		Mounts: []config.S3WebDAVMountConfig{{
+			Key:               "datasync",
+			Name:              "Data Sync",
+			Enabled:           true,
+			WebDAVEnabled:     true,
+			WebDAVAuthEnabled: false,
+			Provider:          s3dav.ProviderGenericS3,
+			EndpointURL:       "https://s3.example.com",
+			Region:            "us-east-1",
+			PathStyle:         true,
+			BucketName:        "bucket",
+			MountPath:         "/webdav/datasync/",
+			AccessKeyID:       "ak",
+			SecretAccessKey:   "sk",
+		}},
+	}
+	if err := s.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+	memFS := afero.NewMemMapFs()
+	s.s3Svc = s3dav.NewServiceForTest(
+		s.cfgMgr,
+		func(string) (s3dav.CloudflareClient, error) {
+			return serverFakeR2Client{}, nil
+		},
+		func(context.Context, s3dav.FSConfig, s3dav.Credentials) (afero.Fs, error) {
+			return memFS, nil
+		},
+	)
+
+	s.StartS3WebDAV()
+	defer s.StopS3WebDAV(context.Background())
+	if running, _, errMsg := s.s3WebDAV.snapshot(); !running || errMsg != "" {
+		t.Fatalf("expected dedicated WebDAV running before switch, running=%v err=%q", running, errMsg)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/s3/settings", strings.NewReader(fmt.Sprintf(`{
+		"enabled": true,
+		"active_key": "datasync",
+		"webdav_access_mode": "main",
+		"dedicated_bind_host": "127.0.0.1",
+		"dedicated_port": %d
+	}`, port)))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	s.handleS3Settings(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("settings status %d: %s", rec.Code, rec.Body.String())
+	}
+	var settings s3dav.SettingsResponse
+	if err := json.NewDecoder(rec.Body).Decode(&settings); err != nil {
+		t.Fatalf("decode settings: %v", err)
+	}
+	if settings.WebDAVAccessMode != config.S3WebDAVAccessModeMain || settings.DedicatedRunning {
+		t.Fatalf("expected main mode and stopped dedicated server, got %#v", settings)
+	}
+
+	dedicatedReq := httptest.NewRequest(http.MethodPut, "/webdav/datasync/dedicated.txt", bytes.NewBufferString("dedicated"))
+	dedicatedRec := httptest.NewRecorder()
+	s.dedicatedWebDAVHandler().ServeHTTP(dedicatedRec, dedicatedReq)
+	if dedicatedRec.Code != http.StatusNotFound {
+		t.Fatalf("expected dedicated handler disabled after switch, got %d: %s", dedicatedRec.Code, dedicatedRec.Body.String())
+	}
+
+	mainReq := httptest.NewRequest(http.MethodPut, "/webdav/datasync/main.txt", bytes.NewBufferString("main"))
+	mainRec := httptest.NewRecorder()
+	s.GetHandler().ServeHTTP(mainRec, mainReq)
+	if mainRec.Code != http.StatusCreated && mainRec.Code != http.StatusNoContent {
+		t.Fatalf("main WebDAV PUT status %d: %s", mainRec.Code, mainRec.Body.String())
+	}
+	got, err := afero.ReadFile(memFS, "/main.txt")
+	if err != nil {
+		t.Fatalf("read main uploaded file: %v", err)
+	}
+	if string(got) != "main" {
+		t.Fatalf("unexpected main uploaded content %q", string(got))
+	}
+}
+
+func freeLocalPort(t *testing.T) int {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen on local port: %v", err)
+	}
+	defer ln.Close()
+	return ln.Addr().(*net.TCPAddr).Port
 }

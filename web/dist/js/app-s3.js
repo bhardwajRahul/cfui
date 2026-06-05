@@ -7,6 +7,8 @@
 
     const PROVIDER_R2 = 'cloudflare_r2';
     const DEFAULT_MOUNT = '/webdav/s3/';
+    const ACCESS_MAIN = 'main';
+    const ACCESS_DEDICATED = 'dedicated';
 
     const availabilityKeys = {
         READY: 's3_ready',
@@ -42,6 +44,7 @@
 
     function renderS3Settings(settings) {
         if (!settings) return;
+        renderS3Access(settings);
         renderMountList(settings);
         const mount = activeMount();
         const ready = !!mount?.availability?.can_enable;
@@ -139,7 +142,7 @@
         actions.append(edit, del);
         top.append(identity, actions);
 
-        const endpoint = copyField(t('s3_webdav_endpoint'), webDAVEndpointFor(mount.mount_path || DEFAULT_MOUNT), () => copyMountEndpoint(mount));
+        const endpoint = copyField(t('s3_webdav_endpoint'), webDAVEndpointForMount(settings, mount), () => copyMountEndpoint(settings, mount));
         const toggles = document.createElement('div');
         toggles.className = 's3-state-grid';
         toggles.append(
@@ -169,6 +172,64 @@
 
         detail.append(top, endpoint, toggles, fileBrowser(settings, mount));
         return detail;
+    }
+
+    function renderS3Access(settings) {
+        const mode = accessMode(settings);
+        const main = $('s3-access-main');
+        const dedicated = $('s3-access-dedicated');
+        const dedicatedSettings = $('s3-dedicated-settings');
+        const host = $('s3-dedicated-host');
+        const port = $('s3-dedicated-port');
+        const warning = $('s3-dedicated-warning');
+        if (main) main.checked = mode === ACCESS_MAIN;
+        if (dedicated) dedicated.checked = mode === ACCESS_DEDICATED;
+        if (host) {
+            host.value = settings.dedicated_bind_host || '';
+            host.disabled = mode !== ACCESS_DEDICATED;
+        }
+        if (port) {
+            port.value = String(settings.dedicated_port || 14334);
+            port.disabled = mode !== ACCESS_DEDICATED;
+        }
+        $('s3-dedicated-apply')?.toggleAttribute('disabled', mode !== ACCESS_DEDICATED);
+        if (dedicatedSettings) dedicatedSettings.dataset.enabled = String(mode === ACCESS_DEDICATED);
+        if (warning) {
+            if (mode === ACCESS_DEDICATED && settings.dedicated_error) {
+                warning.hidden = false;
+                warning.dataset.state = 'error';
+                warning.textContent = `${t('s3_dedicated_error_help')}: ${settings.dedicated_error}`;
+            } else {
+                warning.dataset.state = 'warn';
+                warning.textContent = t('s3_dedicated_auth_warning');
+                warning.hidden = !(mode === ACCESS_DEDICATED && (settings.mounts || []).some((m) => m.webdav_enabled && !m.webdav_auth_enabled));
+            }
+        }
+        renderS3DedicatedStatus(settings);
+    }
+
+    function renderS3DedicatedStatus(settings) {
+        const el = $('s3-dedicated-status');
+        if (!el) return;
+        const text = el.querySelector('.text');
+        const mode = accessMode(settings);
+        if (mode === ACCESS_MAIN) {
+            el.dataset.state = 'neutral';
+            if (text) text.textContent = t('s3_access_mode_main');
+            return;
+        }
+        if (!settings.enabled) {
+            el.dataset.state = 'warn';
+            if (text) text.textContent = t('s3_dedicated_waiting_feature');
+            return;
+        }
+        if (settings.dedicated_error) {
+            el.dataset.state = 'error';
+            if (text) text.textContent = t('s3_dedicated_failed');
+            return;
+        }
+        el.dataset.state = settings.dedicated_running ? 'ok' : 'warn';
+        if (text) text.textContent = settings.dedicated_running ? t('s3_dedicated_running') : t('s3_dedicated_starting');
     }
 
     function fileBrowser(settings, mount) {
@@ -421,18 +482,72 @@
         return `/webdav/s3-${Date.now()}/`;
     }
 
-    function webDAVEndpointFor(path) {
+    function accessMode(settings) {
+        return settings?.webdav_access_mode === ACCESS_DEDICATED ? ACCESS_DEDICATED : ACCESS_MAIN;
+    }
+
+    function activeWebDAVOrigin(settings) {
+        return accessMode(settings) === ACCESS_DEDICATED ? dedicatedOrigin(settings) : window.location.origin;
+    }
+
+    function dedicatedOrigin(settings) {
+        const protocol = window.location.protocol || 'http:';
+        let host = (settings?.dedicated_bind_host || '').trim();
+        if (!host || host === '0.0.0.0' || host === '::' || host === '[::]') host = window.location.hostname || 'localhost';
+        if (host.includes(':') && !host.startsWith('[')) host = `[${host}]`;
+        const port = Number(settings?.dedicated_port || 14334);
+        return `${protocol}//${host}:${port}`;
+    }
+
+    function webDAVEndpointFor(path, origin = activeWebDAVOrigin(state.s3.settings)) {
         const normalized = (path || DEFAULT_MOUNT).trim() || DEFAULT_MOUNT;
         try {
-            return new URL(normalized, window.location.origin).toString();
+            return new URL(normalized, origin).toString();
         } catch {
             return normalized;
         }
     }
 
-    function copyMountEndpoint(mount) {
-        const value = webDAVEndpointFor(mount.mount_path || DEFAULT_MOUNT);
+    function webDAVEndpointForMount(settings, mount) {
+        return webDAVEndpointFor(mount?.mount_path || DEFAULT_MOUNT, activeWebDAVOrigin(settings));
+    }
+
+    function copyMountEndpoint(settings, mount) {
+        const value = webDAVEndpointForMount(settings, mount);
         navigator.clipboard?.writeText(value).then(() => toast.ok(t('copied_to_clipboard')), () => toast.err(t('copy_failed')));
+    }
+
+    async function saveS3AccessSettings(overrides = {}, control) {
+        const settings = state.s3.settings;
+        if (!settings) return;
+        if (control) setBusy(control, true);
+        const hostValue = $('s3-dedicated-host')?.value ?? settings.dedicated_bind_host ?? '';
+        const portValue = Number($('s3-dedicated-port')?.value || settings.dedicated_port || 14334);
+        if (!Number.isInteger(portValue) || portValue < 1 || portValue > 65535) {
+            toast.err(t('s3_dedicated_port_invalid'));
+            if (control) setBusy(control, false);
+            return;
+        }
+        try {
+            const data = await apiSend('/s3/settings', 'POST', {
+                enabled: !!settings.enabled,
+                active_key: state.s3.activeKey || settings.active_key,
+                webdav_access_mode: overrides.webdav_access_mode || accessMode(settings),
+                dedicated_bind_host: overrides.dedicated_bind_host ?? hostValue,
+                dedicated_port: overrides.dedicated_port ?? portValue,
+            });
+            state.s3.settings = data;
+            state.s3.activeKey = data.active_key || state.s3.activeKey;
+            renderS3Settings(data);
+            const mount = activeMount();
+            if (canBrowseFiles(data, mount)) await loadS3Files(state.s3.path || '/');
+            toast.ok(t('s3_settings_saved'));
+        } catch (err) {
+            toast.err(t('s3_settings_save_failed') + ': ' + err.message);
+            renderS3Settings(state.s3.settings);
+        } finally {
+            if (control) setBusy(control, false);
+        }
     }
 
     async function loadS3Files(path = state.s3.path || '/') {
@@ -778,6 +893,13 @@
 
     function wireS3() {
         $('s3-new-mount')?.addEventListener('click', () => window.cfui.openS3Wizard?.({ mode: 'create' }));
+        $('s3-access-main')?.addEventListener('change', (e) => {
+            if (e.target.checked) saveS3AccessSettings({ webdav_access_mode: ACCESS_MAIN }, e.target);
+        });
+        $('s3-access-dedicated')?.addEventListener('change', (e) => {
+            if (e.target.checked) saveS3AccessSettings({ webdav_access_mode: ACCESS_DEDICATED }, e.target);
+        });
+        $('s3-dedicated-apply')?.addEventListener('click', (e) => saveS3AccessSettings({}, e.currentTarget));
         $('s3-upload-input')?.addEventListener('change', (e) => {
             const file = e.target.files?.[0];
             e.target.value = '';
@@ -790,6 +912,7 @@
     ns.s3AvailabilityText = s3AvailabilityText;
     ns.s3ProviderLabel = providerLabel;
     ns.s3WebDAVEndpointFor = webDAVEndpointFor;
+    ns.s3WebDAVOrigin = () => activeWebDAVOrigin(state.s3.settings);
     ns.s3NextMountPath = nextMountPath;
     ns.s3ActiveMount = activeMount;
     ns.renderS3Settings = renderS3Settings;

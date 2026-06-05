@@ -15,6 +15,11 @@ import (
 
 const DefaultDDNSRecordComment = "cfui"
 
+const (
+	S3WebDAVAccessModeMain      = "main"
+	S3WebDAVAccessModeDedicated = "dedicated"
+)
+
 func NormalizeDDNSRecordComment(comment string) string {
 	comment = strings.TrimSpace(comment)
 	if comment == "" {
@@ -143,9 +148,12 @@ type encodedTunnelToken struct {
 
 // S3WebDAVConfig stores global state for optional S3-backed WebDAV mounts.
 type S3WebDAVConfig struct {
-	Enabled   bool                  `json:"enabled"`
-	ActiveKey string                `json:"active_key"`
-	Mounts    []S3WebDAVMountConfig `json:"mounts"`
+	Enabled           bool                  `json:"enabled"`
+	ActiveKey         string                `json:"active_key"`
+	WebDAVAccessMode  string                `json:"webdav_access_mode"`
+	DedicatedBindHost string                `json:"dedicated_bind_host"`
+	DedicatedPort     int                   `json:"dedicated_port"`
+	Mounts            []S3WebDAVMountConfig `json:"mounts"`
 }
 
 // S3WebDAVMountConfig stores settings for one S3-backed WebDAV mount.
@@ -195,9 +203,11 @@ func DefaultConfig() Config {
 		},
 		DDNS: DefaultDDNSConfig(),
 		S3WebDAV: S3WebDAVConfig{
-			Enabled:   false,
-			ActiveKey: "default",
-			Mounts:    []S3WebDAVMountConfig{DefaultS3WebDAVMountConfig()},
+			Enabled:          false,
+			ActiveKey:        "default",
+			WebDAVAccessMode: S3WebDAVAccessModeMain,
+			DedicatedPort:    14334,
+			Mounts:           []S3WebDAVMountConfig{DefaultS3WebDAVMountConfig()},
 		},
 	}
 }

@@ -109,12 +109,24 @@ func init() {
 	appsettingDescS3WebdavActiveKey := appsettingFields[21].Descriptor()
 	// appsetting.DefaultS3WebdavActiveKey holds the default value on creation for the s3_webdav_active_key field.
 	appsetting.DefaultS3WebdavActiveKey = appsettingDescS3WebdavActiveKey.Default.(string)
+	// appsettingDescS3WebdavAccessMode is the schema descriptor for s3_webdav_access_mode field.
+	appsettingDescS3WebdavAccessMode := appsettingFields[22].Descriptor()
+	// appsetting.DefaultS3WebdavAccessMode holds the default value on creation for the s3_webdav_access_mode field.
+	appsetting.DefaultS3WebdavAccessMode = appsettingDescS3WebdavAccessMode.Default.(string)
+	// appsettingDescS3WebdavDedicatedBindHost is the schema descriptor for s3_webdav_dedicated_bind_host field.
+	appsettingDescS3WebdavDedicatedBindHost := appsettingFields[23].Descriptor()
+	// appsetting.DefaultS3WebdavDedicatedBindHost holds the default value on creation for the s3_webdav_dedicated_bind_host field.
+	appsetting.DefaultS3WebdavDedicatedBindHost = appsettingDescS3WebdavDedicatedBindHost.Default.(string)
+	// appsettingDescS3WebdavDedicatedPort is the schema descriptor for s3_webdav_dedicated_port field.
+	appsettingDescS3WebdavDedicatedPort := appsettingFields[24].Descriptor()
+	// appsetting.DefaultS3WebdavDedicatedPort holds the default value on creation for the s3_webdav_dedicated_port field.
+	appsetting.DefaultS3WebdavDedicatedPort = appsettingDescS3WebdavDedicatedPort.Default.(int)
 	// appsettingDescCreatedAt is the schema descriptor for created_at field.
-	appsettingDescCreatedAt := appsettingFields[22].Descriptor()
+	appsettingDescCreatedAt := appsettingFields[25].Descriptor()
 	// appsetting.DefaultCreatedAt holds the default value on creation for the created_at field.
 	appsetting.DefaultCreatedAt = appsettingDescCreatedAt.Default.(func() time.Time)
 	// appsettingDescUpdatedAt is the schema descriptor for updated_at field.
-	appsettingDescUpdatedAt := appsettingFields[23].Descriptor()
+	appsettingDescUpdatedAt := appsettingFields[26].Descriptor()
 	// appsetting.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	appsetting.DefaultUpdatedAt = appsettingDescUpdatedAt.Default.(func() time.Time)
 	// appsetting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

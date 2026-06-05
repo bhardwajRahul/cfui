@@ -1014,6 +1014,9 @@ other = "新日志"
 [action_shortcut_hint]
 other = "Ctrl/⌘ + Enter"
 
+[apply]
+other = "应用"
+
 [s3_tab]
 other = "S3 WebDAV"
 
@@ -1040,6 +1043,51 @@ other = "挂载配置"
 
 [s3_mounts_help]
 other = "每个挂载配置都有独立的 S3 凭证、bucket 路径、WebDAV 路径和 WebDAV 登录账户。"
+
+[s3_access_mode]
+other = "WebDAV 访问方式"
+
+[s3_access_mode_help]
+other = "选择 WebDAV 走主 HTTP 服务，还是使用单独端口。"
+
+[s3_access_mode_main]
+other = "主服务"
+
+[s3_access_mode_main_help]
+other = "使用当前 cfui HTTP 服务，路径保持 /webdav/my_r2/ 这种形式。"
+
+[s3_access_mode_dedicated]
+other = "单独端口"
+
+[s3_access_mode_dedicated_help]
+other = "只在另一个 HTTP 端口提供 WebDAV，主服务的 /webdav/ 路由会关闭。"
+
+[s3_dedicated_host]
+other = "绑定地址"
+
+[s3_dedicated_port]
+other = "端口"
+
+[s3_dedicated_running]
+other = "单独端口运行中"
+
+[s3_dedicated_starting]
+other = "单独端口待启动"
+
+[s3_dedicated_waiting_feature]
+other = "先启用 S3 WebDAV"
+
+[s3_dedicated_failed]
+other = "单独端口启动失败"
+
+[s3_dedicated_error_help]
+other = "独立 WebDAV 端口启动失败"
+
+[s3_dedicated_port_invalid]
+other = "独立 WebDAV 端口必须在 1 到 65535 之间。"
+
+[s3_dedicated_auth_warning]
+other = "如果关闭 WebDAV 登录，任何能访问这个端口的人都能访问已启用的挂载。"
 
 [s3_new_mount]
 other = "新建挂载"

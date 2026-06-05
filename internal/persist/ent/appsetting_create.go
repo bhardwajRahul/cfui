@@ -320,6 +320,48 @@ func (_c *AppSettingCreate) SetNillableS3WebdavActiveKey(v *string) *AppSettingC
 	return _c
 }
 
+// SetS3WebdavAccessMode sets the "s3_webdav_access_mode" field.
+func (_c *AppSettingCreate) SetS3WebdavAccessMode(v string) *AppSettingCreate {
+	_c.mutation.SetS3WebdavAccessMode(v)
+	return _c
+}
+
+// SetNillableS3WebdavAccessMode sets the "s3_webdav_access_mode" field if the given value is not nil.
+func (_c *AppSettingCreate) SetNillableS3WebdavAccessMode(v *string) *AppSettingCreate {
+	if v != nil {
+		_c.SetS3WebdavAccessMode(*v)
+	}
+	return _c
+}
+
+// SetS3WebdavDedicatedBindHost sets the "s3_webdav_dedicated_bind_host" field.
+func (_c *AppSettingCreate) SetS3WebdavDedicatedBindHost(v string) *AppSettingCreate {
+	_c.mutation.SetS3WebdavDedicatedBindHost(v)
+	return _c
+}
+
+// SetNillableS3WebdavDedicatedBindHost sets the "s3_webdav_dedicated_bind_host" field if the given value is not nil.
+func (_c *AppSettingCreate) SetNillableS3WebdavDedicatedBindHost(v *string) *AppSettingCreate {
+	if v != nil {
+		_c.SetS3WebdavDedicatedBindHost(*v)
+	}
+	return _c
+}
+
+// SetS3WebdavDedicatedPort sets the "s3_webdav_dedicated_port" field.
+func (_c *AppSettingCreate) SetS3WebdavDedicatedPort(v int) *AppSettingCreate {
+	_c.mutation.SetS3WebdavDedicatedPort(v)
+	return _c
+}
+
+// SetNillableS3WebdavDedicatedPort sets the "s3_webdav_dedicated_port" field if the given value is not nil.
+func (_c *AppSettingCreate) SetNillableS3WebdavDedicatedPort(v *int) *AppSettingCreate {
+	if v != nil {
+		_c.SetS3WebdavDedicatedPort(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *AppSettingCreate) SetCreatedAt(v time.Time) *AppSettingCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -467,6 +509,18 @@ func (_c *AppSettingCreate) defaults() {
 		v := appsetting.DefaultS3WebdavActiveKey
 		_c.mutation.SetS3WebdavActiveKey(v)
 	}
+	if _, ok := _c.mutation.S3WebdavAccessMode(); !ok {
+		v := appsetting.DefaultS3WebdavAccessMode
+		_c.mutation.SetS3WebdavAccessMode(v)
+	}
+	if _, ok := _c.mutation.S3WebdavDedicatedBindHost(); !ok {
+		v := appsetting.DefaultS3WebdavDedicatedBindHost
+		_c.mutation.SetS3WebdavDedicatedBindHost(v)
+	}
+	if _, ok := _c.mutation.S3WebdavDedicatedPort(); !ok {
+		v := appsetting.DefaultS3WebdavDedicatedPort
+		_c.mutation.SetS3WebdavDedicatedPort(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := appsetting.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -549,6 +603,15 @@ func (_c *AppSettingCreate) check() error {
 	}
 	if _, ok := _c.mutation.S3WebdavActiveKey(); !ok {
 		return &ValidationError{Name: "s3_webdav_active_key", err: errors.New(`ent: missing required field "AppSetting.s3_webdav_active_key"`)}
+	}
+	if _, ok := _c.mutation.S3WebdavAccessMode(); !ok {
+		return &ValidationError{Name: "s3_webdav_access_mode", err: errors.New(`ent: missing required field "AppSetting.s3_webdav_access_mode"`)}
+	}
+	if _, ok := _c.mutation.S3WebdavDedicatedBindHost(); !ok {
+		return &ValidationError{Name: "s3_webdav_dedicated_bind_host", err: errors.New(`ent: missing required field "AppSetting.s3_webdav_dedicated_bind_host"`)}
+	}
+	if _, ok := _c.mutation.S3WebdavDedicatedPort(); !ok {
+		return &ValidationError{Name: "s3_webdav_dedicated_port", err: errors.New(`ent: missing required field "AppSetting.s3_webdav_dedicated_port"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "AppSetting.created_at"`)}
@@ -669,6 +732,18 @@ func (_c *AppSettingCreate) createSpec() (*AppSetting, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.S3WebdavActiveKey(); ok {
 		_spec.SetField(appsetting.FieldS3WebdavActiveKey, field.TypeString, value)
 		_node.S3WebdavActiveKey = value
+	}
+	if value, ok := _c.mutation.S3WebdavAccessMode(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavAccessMode, field.TypeString, value)
+		_node.S3WebdavAccessMode = value
+	}
+	if value, ok := _c.mutation.S3WebdavDedicatedBindHost(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavDedicatedBindHost, field.TypeString, value)
+		_node.S3WebdavDedicatedBindHost = value
+	}
+	if value, ok := _c.mutation.S3WebdavDedicatedPort(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavDedicatedPort, field.TypeInt, value)
+		_node.S3WebdavDedicatedPort = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(appsetting.FieldCreatedAt, field.TypeTime, value)

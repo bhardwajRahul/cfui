@@ -34,6 +34,9 @@ var (
 		{Name: "mcp_enabled", Type: field.TypeBool, Default: false},
 		{Name: "s3_webdav_enabled", Type: field.TypeBool, Default: false},
 		{Name: "s3_webdav_active_key", Type: field.TypeString, Default: "default"},
+		{Name: "s3_webdav_access_mode", Type: field.TypeString, Default: "main"},
+		{Name: "s3_webdav_dedicated_bind_host", Type: field.TypeString, Default: ""},
+		{Name: "s3_webdav_dedicated_port", Type: field.TypeInt, Default: 14334},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}

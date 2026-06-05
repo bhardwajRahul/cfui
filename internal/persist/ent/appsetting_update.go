@@ -350,6 +350,55 @@ func (_u *AppSettingUpdate) SetNillableS3WebdavActiveKey(v *string) *AppSettingU
 	return _u
 }
 
+// SetS3WebdavAccessMode sets the "s3_webdav_access_mode" field.
+func (_u *AppSettingUpdate) SetS3WebdavAccessMode(v string) *AppSettingUpdate {
+	_u.mutation.SetS3WebdavAccessMode(v)
+	return _u
+}
+
+// SetNillableS3WebdavAccessMode sets the "s3_webdav_access_mode" field if the given value is not nil.
+func (_u *AppSettingUpdate) SetNillableS3WebdavAccessMode(v *string) *AppSettingUpdate {
+	if v != nil {
+		_u.SetS3WebdavAccessMode(*v)
+	}
+	return _u
+}
+
+// SetS3WebdavDedicatedBindHost sets the "s3_webdav_dedicated_bind_host" field.
+func (_u *AppSettingUpdate) SetS3WebdavDedicatedBindHost(v string) *AppSettingUpdate {
+	_u.mutation.SetS3WebdavDedicatedBindHost(v)
+	return _u
+}
+
+// SetNillableS3WebdavDedicatedBindHost sets the "s3_webdav_dedicated_bind_host" field if the given value is not nil.
+func (_u *AppSettingUpdate) SetNillableS3WebdavDedicatedBindHost(v *string) *AppSettingUpdate {
+	if v != nil {
+		_u.SetS3WebdavDedicatedBindHost(*v)
+	}
+	return _u
+}
+
+// SetS3WebdavDedicatedPort sets the "s3_webdav_dedicated_port" field.
+func (_u *AppSettingUpdate) SetS3WebdavDedicatedPort(v int) *AppSettingUpdate {
+	_u.mutation.ResetS3WebdavDedicatedPort()
+	_u.mutation.SetS3WebdavDedicatedPort(v)
+	return _u
+}
+
+// SetNillableS3WebdavDedicatedPort sets the "s3_webdav_dedicated_port" field if the given value is not nil.
+func (_u *AppSettingUpdate) SetNillableS3WebdavDedicatedPort(v *int) *AppSettingUpdate {
+	if v != nil {
+		_u.SetS3WebdavDedicatedPort(*v)
+	}
+	return _u
+}
+
+// AddS3WebdavDedicatedPort adds value to the "s3_webdav_dedicated_port" field.
+func (_u *AppSettingUpdate) AddS3WebdavDedicatedPort(v int) *AppSettingUpdate {
+	_u.mutation.AddS3WebdavDedicatedPort(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *AppSettingUpdate) SetUpdatedAt(v time.Time) *AppSettingUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -490,6 +539,18 @@ func (_u *AppSettingUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.S3WebdavActiveKey(); ok {
 		_spec.SetField(appsetting.FieldS3WebdavActiveKey, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.S3WebdavAccessMode(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavAccessMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.S3WebdavDedicatedBindHost(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavDedicatedBindHost, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.S3WebdavDedicatedPort(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavDedicatedPort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedS3WebdavDedicatedPort(); ok {
+		_spec.AddField(appsetting.FieldS3WebdavDedicatedPort, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(appsetting.FieldUpdatedAt, field.TypeTime, value)
@@ -836,6 +897,55 @@ func (_u *AppSettingUpdateOne) SetNillableS3WebdavActiveKey(v *string) *AppSetti
 	return _u
 }
 
+// SetS3WebdavAccessMode sets the "s3_webdav_access_mode" field.
+func (_u *AppSettingUpdateOne) SetS3WebdavAccessMode(v string) *AppSettingUpdateOne {
+	_u.mutation.SetS3WebdavAccessMode(v)
+	return _u
+}
+
+// SetNillableS3WebdavAccessMode sets the "s3_webdav_access_mode" field if the given value is not nil.
+func (_u *AppSettingUpdateOne) SetNillableS3WebdavAccessMode(v *string) *AppSettingUpdateOne {
+	if v != nil {
+		_u.SetS3WebdavAccessMode(*v)
+	}
+	return _u
+}
+
+// SetS3WebdavDedicatedBindHost sets the "s3_webdav_dedicated_bind_host" field.
+func (_u *AppSettingUpdateOne) SetS3WebdavDedicatedBindHost(v string) *AppSettingUpdateOne {
+	_u.mutation.SetS3WebdavDedicatedBindHost(v)
+	return _u
+}
+
+// SetNillableS3WebdavDedicatedBindHost sets the "s3_webdav_dedicated_bind_host" field if the given value is not nil.
+func (_u *AppSettingUpdateOne) SetNillableS3WebdavDedicatedBindHost(v *string) *AppSettingUpdateOne {
+	if v != nil {
+		_u.SetS3WebdavDedicatedBindHost(*v)
+	}
+	return _u
+}
+
+// SetS3WebdavDedicatedPort sets the "s3_webdav_dedicated_port" field.
+func (_u *AppSettingUpdateOne) SetS3WebdavDedicatedPort(v int) *AppSettingUpdateOne {
+	_u.mutation.ResetS3WebdavDedicatedPort()
+	_u.mutation.SetS3WebdavDedicatedPort(v)
+	return _u
+}
+
+// SetNillableS3WebdavDedicatedPort sets the "s3_webdav_dedicated_port" field if the given value is not nil.
+func (_u *AppSettingUpdateOne) SetNillableS3WebdavDedicatedPort(v *int) *AppSettingUpdateOne {
+	if v != nil {
+		_u.SetS3WebdavDedicatedPort(*v)
+	}
+	return _u
+}
+
+// AddS3WebdavDedicatedPort adds value to the "s3_webdav_dedicated_port" field.
+func (_u *AppSettingUpdateOne) AddS3WebdavDedicatedPort(v int) *AppSettingUpdateOne {
+	_u.mutation.AddS3WebdavDedicatedPort(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *AppSettingUpdateOne) SetUpdatedAt(v time.Time) *AppSettingUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -1006,6 +1116,18 @@ func (_u *AppSettingUpdateOne) sqlSave(ctx context.Context) (_node *AppSetting, 
 	}
 	if value, ok := _u.mutation.S3WebdavActiveKey(); ok {
 		_spec.SetField(appsetting.FieldS3WebdavActiveKey, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.S3WebdavAccessMode(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavAccessMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.S3WebdavDedicatedBindHost(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavDedicatedBindHost, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.S3WebdavDedicatedPort(); ok {
+		_spec.SetField(appsetting.FieldS3WebdavDedicatedPort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedS3WebdavDedicatedPort(); ok {
+		_spec.AddField(appsetting.FieldS3WebdavDedicatedPort, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(appsetting.FieldUpdatedAt, field.TypeTime, value)

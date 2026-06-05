@@ -1014,6 +1014,9 @@ other = "新しいログ"
 [action_shortcut_hint]
 other = "Ctrl/⌘ + Enter"
 
+[apply]
+other = "適用"
+
 [s3_tab]
 other = "S3 WebDAV"
 
@@ -1040,6 +1043,51 @@ other = "マウント設定"
 
 [s3_mounts_help]
 other = "各マウントは S3 認証情報、bucket パス、WebDAV パス、WebDAV ログインを個別に持ちます。"
+
+[s3_access_mode]
+other = "WebDAV アクセス"
+
+[s3_access_mode_help]
+other = "WebDAV をメイン HTTP サービスで提供するか、別ポートで提供するかを選びます。"
+
+[s3_access_mode_main]
+other = "メインサービス"
+
+[s3_access_mode_main_help]
+other = "現在の cfui HTTP サービスを使い、/webdav/my_r2/ のようなパスを維持します。"
+
+[s3_access_mode_dedicated]
+other = "別ポート"
+
+[s3_access_mode_dedicated_help]
+other = "別の HTTP ポートで WebDAV だけを提供します。メインの /webdav/ ルートは無効になります。"
+
+[s3_dedicated_host]
+other = "バインド先"
+
+[s3_dedicated_port]
+other = "ポート"
+
+[s3_dedicated_running]
+other = "別ポート稼働中"
+
+[s3_dedicated_starting]
+other = "別ポート待機中"
+
+[s3_dedicated_waiting_feature]
+other = "先に S3 WebDAV を有効化"
+
+[s3_dedicated_failed]
+other = "別ポートの起動に失敗"
+
+[s3_dedicated_error_help]
+other = "専用 WebDAV ポートの起動に失敗しました"
+
+[s3_dedicated_port_invalid]
+other = "専用 WebDAV ポートは 1 から 65535 の間で指定してください。"
+
+[s3_dedicated_auth_warning]
+other = "WebDAV ログインを無効にすると、このポートに到達できる人は有効なマウントにアクセスできます。"
 
 [s3_new_mount]
 other = "マウントを追加"

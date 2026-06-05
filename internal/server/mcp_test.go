@@ -85,5 +85,6 @@ func newServerTestServer(t *testing.T) *Server {
 		mcpSvc:    mcpbridge.NewService(cfgMgr, nil, tunnelMgr, mcpbridge.NewTokenStore(t.TempDir()), ddnsSvc),
 		ddnsSvc:   ddnsSvc,
 		s3Svc:     s3dav.NewService(cfgMgr),
+		s3WebDAV:  newS3DedicatedServer(),
 	}
 }

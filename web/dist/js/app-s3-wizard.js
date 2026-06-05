@@ -308,7 +308,7 @@
     function updateEndpointPreview() {
         const origin = $('s3-wizard-webdav-origin');
         const path = $('s3-wizard-webdav-endpoint');
-        if (origin) origin.value = window.location.origin;
+        if (origin) origin.value = window.cfui.s3WebDAVOrigin?.() || window.location.origin;
         if (path) path.value = value('s3-wizard-mount-path') || DEFAULT_MOUNT;
     }
 

@@ -95,6 +95,8 @@ func main() {
 	// Start DDNS service if enabled
 	srv.StartDDNS()
 	logger.Sugar.Info("DDNS service check complete")
+	srv.StartS3WebDAV()
+	logger.Sugar.Info("S3 WebDAV service check complete")
 	// Bind Host
 	bindHost := os.Getenv("BIND_HOST")
 	if bindHost == "" {
@@ -150,6 +152,9 @@ func main() {
 
 		// Stop DDNS service
 		srv.StopDDNS()
+		if err := srv.StopS3WebDAV(ctx); err != nil {
+			logger.Sugar.Errorf("S3 WebDAV server shutdown error: %v", err)
+		}
 
 		// Shutdown runner (stops tunnel if running)
 		if err := runner.Shutdown(); err != nil {

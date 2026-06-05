@@ -649,6 +649,49 @@
                     <div class="card-body">
                         <div id="s3-status-message" class="notice" data-state="warn" role="status"></div>
 
+                        <div class="section s3-access-section">
+                            <div class="section-head">
+                                <div>
+                                    <div class="section-title" data-i18n="s3_access_mode">WebDAV access</div>
+                                    <div class="section-subtitle" data-i18n="s3_access_mode_help">Choose whether WebDAV is served by the main HTTP service or a separate port.</div>
+                                </div>
+                                <span id="s3-dedicated-status" class="pill" data-state="neutral">
+                                    <span class="dot" aria-hidden="true"></span>
+                                    <span class="text" data-i18n="s3_access_mode_main">Main service</span>
+                                </span>
+                            </div>
+                            <div class="s3-access-panel">
+                                <div class="s3-access-modes" role="radiogroup" aria-label="WebDAV access mode" data-i18n-attr="aria-label|s3_access_mode">
+                                    <label class="s3-access-choice">
+                                        <input type="radio" name="s3-webdav-access-mode" id="s3-access-main" value="main" checked>
+                                        <span>
+                                            <strong data-i18n="s3_access_mode_main">Main service</strong>
+                                            <small data-i18n="s3_access_mode_main_help">Use the current cfui HTTP service and keep paths like /webdav/my_r2/.</small>
+                                        </span>
+                                    </label>
+                                    <label class="s3-access-choice">
+                                        <input type="radio" name="s3-webdav-access-mode" id="s3-access-dedicated" value="dedicated">
+                                        <span>
+                                            <strong data-i18n="s3_access_mode_dedicated">Separate port</strong>
+                                            <small data-i18n="s3_access_mode_dedicated_help">Serve only WebDAV on another HTTP port. The main /webdav/ route will be disabled.</small>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div id="s3-dedicated-settings" class="s3-dedicated-settings">
+                                    <div class="form-field">
+                                        <label for="s3-dedicated-host" data-i18n="s3_dedicated_host">Bind host</label>
+                                        <input type="text" id="s3-dedicated-host" class="input" placeholder="0.0.0.0" spellcheck="false" autocomplete="off">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="s3-dedicated-port" data-i18n="s3_dedicated_port">Port</label>
+                                        <input type="number" id="s3-dedicated-port" class="input" min="1" max="65535" value="14334" inputmode="numeric">
+                                    </div>
+                                    <button id="s3-dedicated-apply" type="button" class="btn btn--sm" data-i18n="apply">Apply</button>
+                                </div>
+                                <div id="s3-dedicated-warning" class="notice" data-state="warn" hidden data-i18n="s3_dedicated_auth_warning">If WebDAV login is disabled, anyone who can reach this port can access enabled mounts.</div>
+                            </div>
+                        </div>
+
                         <div class="section s3-mount-section">
                             <div class="section-head">
                                 <div>

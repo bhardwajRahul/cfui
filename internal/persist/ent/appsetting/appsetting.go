@@ -57,6 +57,12 @@ const (
 	FieldS3WebdavEnabled = "s3_webdav_enabled"
 	// FieldS3WebdavActiveKey holds the string denoting the s3_webdav_active_key field in the database.
 	FieldS3WebdavActiveKey = "s3_webdav_active_key"
+	// FieldS3WebdavAccessMode holds the string denoting the s3_webdav_access_mode field in the database.
+	FieldS3WebdavAccessMode = "s3_webdav_access_mode"
+	// FieldS3WebdavDedicatedBindHost holds the string denoting the s3_webdav_dedicated_bind_host field in the database.
+	FieldS3WebdavDedicatedBindHost = "s3_webdav_dedicated_bind_host"
+	// FieldS3WebdavDedicatedPort holds the string denoting the s3_webdav_dedicated_port field in the database.
+	FieldS3WebdavDedicatedPort = "s3_webdav_dedicated_port"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -90,6 +96,9 @@ var Columns = []string{
 	FieldMcpEnabled,
 	FieldS3WebdavEnabled,
 	FieldS3WebdavActiveKey,
+	FieldS3WebdavAccessMode,
+	FieldS3WebdavDedicatedBindHost,
+	FieldS3WebdavDedicatedPort,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -149,6 +158,12 @@ var (
 	DefaultS3WebdavEnabled bool
 	// DefaultS3WebdavActiveKey holds the default value on creation for the "s3_webdav_active_key" field.
 	DefaultS3WebdavActiveKey string
+	// DefaultS3WebdavAccessMode holds the default value on creation for the "s3_webdav_access_mode" field.
+	DefaultS3WebdavAccessMode string
+	// DefaultS3WebdavDedicatedBindHost holds the default value on creation for the "s3_webdav_dedicated_bind_host" field.
+	DefaultS3WebdavDedicatedBindHost string
+	// DefaultS3WebdavDedicatedPort holds the default value on creation for the "s3_webdav_dedicated_port" field.
+	DefaultS3WebdavDedicatedPort int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -273,6 +288,21 @@ func ByS3WebdavEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByS3WebdavActiveKey orders the results by the s3_webdav_active_key field.
 func ByS3WebdavActiveKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldS3WebdavActiveKey, opts...).ToFunc()
+}
+
+// ByS3WebdavAccessMode orders the results by the s3_webdav_access_mode field.
+func ByS3WebdavAccessMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldS3WebdavAccessMode, opts...).ToFunc()
+}
+
+// ByS3WebdavDedicatedBindHost orders the results by the s3_webdav_dedicated_bind_host field.
+func ByS3WebdavDedicatedBindHost(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldS3WebdavDedicatedBindHost, opts...).ToFunc()
+}
+
+// ByS3WebdavDedicatedPort orders the results by the s3_webdav_dedicated_port field.
+func ByS3WebdavDedicatedPort(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldS3WebdavDedicatedPort, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
