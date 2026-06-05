@@ -230,6 +230,82 @@ func TestWebDAVPutUsesSlashlessS3ObjectKey(t *testing.T) {
 	}
 }
 
+func TestWebDAVOpenFileWriteOnlyCreateCreatesParentPrefixes(t *testing.T) {
+	source := s3StyleWriteOnlyFS{Fs: afero.NewMemMapFs()}
+	fs := aferoWebDAVFS{fs: source}
+
+	file, err := fs.OpenFile(context.Background(), "/cc-switch-sync/v2/db.sql", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		t.Fatalf("OpenFile write-only create: %v", err)
+	}
+	if _, err := file.Write([]byte("hello")); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	info, err := file.Stat()
+	if err != nil {
+		t.Fatalf("Stat before close: %v", err)
+	}
+	if info.Size() != int64(len("hello")) {
+		t.Fatalf("expected synthetic size %d, got %d", len("hello"), info.Size())
+	}
+	if err := file.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	got, err := afero.ReadFile(source.Fs, "/cc-switch-sync/v2/db.sql")
+	if err != nil {
+		t.Fatalf("read uploaded file: %v", err)
+	}
+	if string(got) != "hello" {
+		t.Fatalf("unexpected uploaded content %q", string(got))
+	}
+}
+
+func TestWebDAVOpenFileReadWriteWithoutCreateFallsBackToReadOnly(t *testing.T) {
+	source := s3StyleWriteOnlyFS{Fs: afero.NewMemMapFs()}
+	if err := afero.WriteFile(source.Fs, "/props.txt", []byte("hello"), 0644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	fs := aferoWebDAVFS{fs: source}
+
+	file, err := fs.OpenFile(context.Background(), "/props.txt", os.O_RDWR, 0)
+	if err != nil {
+		t.Fatalf("OpenFile O_RDWR without create should not hit S3 read/write mode: %v", err)
+	}
+	defer file.Close()
+	got := make([]byte, 5)
+	if _, err := file.Read(got); err != nil {
+		t.Fatalf("Read: %v", err)
+	}
+	if string(got) != "hello" {
+		t.Fatalf("unexpected content %q", string(got))
+	}
+}
+
+func TestWebDAVWriteFileStatAfterCloseFallsBackToSyntheticInfo(t *testing.T) {
+	source := afero.NewMemMapFs()
+	file, err := source.OpenFile("/db.sql", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		t.Fatalf("OpenFile: %v", err)
+	}
+	wrapped := &webDAVWriteFile{File: statNeverFile{File: file}, name: "/db.sql"}
+	if _, err := wrapped.Write([]byte("hello")); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := wrapped.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	info, err := wrapped.Stat()
+	if err != nil {
+		t.Fatalf("Stat after close: %v", err)
+	}
+	if info.Name() != "db.sql" {
+		t.Fatalf("expected synthetic name db.sql, got %q", info.Name())
+	}
+	if info.Size() != int64(len("hello")) {
+		t.Fatalf("expected synthetic size %d, got %d", len("hello"), info.Size())
+	}
+}
+
 func TestWebDAVPropfindMountRootWorksWhenS3RootHasNoDirectoryObject(t *testing.T) {
 	fs := rootStatNotFoundFS{Fs: afero.NewMemMapFs()}
 	svc := newTestService(t, fakeCloudflareClient{}, fs)
@@ -335,6 +411,42 @@ func TestBrowserHeadDirectoryReturnsListingHeadersOnly(t *testing.T) {
 	}
 }
 
+func TestBrowserGetFileSupportsRangeRequest(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	if err := fs.MkdirAll("/docs", 0755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err := afero.WriteFile(fs, "/docs/readme.txt", []byte("hello world"), 0644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	svc := newTestService(t, fakeCloudflareClient{}, fs)
+	cfg := svc.cfgMgr.Get()
+	cfg.S3WebDAV.Enabled = true
+	cfg.S3WebDAV.Mounts[0].EndpointURL = "https://s3.example.com"
+	cfg.S3WebDAV.Mounts[0].BucketName = "bucket"
+	cfg.S3WebDAV.Mounts[0].MountPath = "/webdav/public/"
+	cfg.S3WebDAV.Mounts[0].AccessKeyID = "ak"
+	cfg.S3WebDAV.Mounts[0].SecretAccessKey = "sk"
+	cfg.S3WebDAV.Mounts[0].WebDAVAuthEnabled = false
+	if err := svc.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/webdav/public/docs/readme.txt", nil)
+	req.Header.Set("Range", "bytes=0-4")
+	rec := httptest.NewRecorder()
+	svc.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusPartialContent {
+		t.Fatalf("expected partial content, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if rec.Body.String() != "hello" {
+		t.Fatalf("expected ranged body %q, got %q", "hello", rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Range"); got != "bytes 0-4/11" {
+		t.Fatalf("unexpected Content-Range %q", got)
+	}
+}
+
 func TestWebDAVHandlerAllowsRequestsWhenAuthDisabled(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	if err := fs.MkdirAll("/docs", 0755); err != nil {
@@ -426,6 +538,14 @@ func (f *s3StyleWriteOnlyFile) Stat() (os.FileInfo, error) {
 func (f *s3StyleWriteOnlyFile) Close() error {
 	f.closed = true
 	return f.File.Close()
+}
+
+type statNeverFile struct {
+	afero.File
+}
+
+func (f statNeverFile) Stat() (os.FileInfo, error) {
+	return nil, &os.PathError{Op: "stat", Path: f.Name(), Err: os.ErrNotExist}
 }
 
 type rootStatNotFoundFS struct {

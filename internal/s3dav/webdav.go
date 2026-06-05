@@ -437,8 +437,8 @@ func (a aferoWebDAVFS) OpenFile(_ context.Context, name string, flag int, perm o
 	if err != nil {
 		return nil, err
 	}
-	writeCreate := flag&os.O_RDWR != 0 && flag&os.O_CREATE != 0
-	if writeCreate {
+	wholeObjectWrite := webDAVWholeObjectWrite(flag)
+	if wholeObjectWrite {
 		parent := ParentPath(cleaned)
 		if parent != "" && parent != "/" {
 			if err := a.fs.MkdirAll(parent, 0755); err != nil {
@@ -446,15 +446,21 @@ func (a aferoWebDAVFS) OpenFile(_ context.Context, name string, flag int, perm o
 			}
 		}
 		flag = (flag &^ os.O_RDWR) | os.O_WRONLY
+	} else if flag&os.O_RDWR != 0 {
+		flag &^= os.O_RDWR
 	}
 	file, err := a.fs.OpenFile(cleaned, flag, perm)
 	if err != nil {
 		return nil, err
 	}
-	if writeCreate {
+	if wholeObjectWrite {
 		return &webDAVWriteFile{File: file, name: cleaned, modTime: time.Now()}, nil
 	}
 	return file, nil
+}
+
+func webDAVWholeObjectWrite(flag int) bool {
+	return flag&(os.O_CREATE|os.O_TRUNC|os.O_WRONLY) != 0
 }
 
 func (a aferoWebDAVFS) RemoveAll(_ context.Context, name string) error {
@@ -514,9 +520,6 @@ func (f *webDAVWriteFile) Stat() (os.FileInfo, error) {
 	info, err := f.File.Stat()
 	if err == nil {
 		return info, nil
-	}
-	if f.closed {
-		return nil, err
 	}
 	if f.modTime.IsZero() {
 		f.modTime = time.Now()
