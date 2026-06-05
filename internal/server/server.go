@@ -368,7 +368,12 @@ func (s *Server) handleS3Test(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleS3Buckets(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		resp, err := s.s3Svc.ListBuckets(r.Context(), r.URL.Query().Get("mount_key"))
+		q := r.URL.Query()
+		resp, err := s.s3Svc.ListBucketsFor(r.Context(), s3dav.BucketRequest{
+			MountKey:     q.Get("mount_key"),
+			AccountID:    q.Get("account_id"),
+			Jurisdiction: q.Get("jurisdiction"),
+		})
 		if err != nil {
 			writeS3Error(w, err)
 			return

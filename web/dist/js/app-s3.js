@@ -1,9 +1,9 @@
 /* =========================================================================
-   CloudFlared UI - S3 WebDAV
+   CloudFlared UI - S3 WebDAV overview and file browser
    ========================================================================= */
 (() => {
     'use strict';
-    const { state, $, t, API_BASE, apiGet, apiSend, toast, setBusy, flashField, setTokenVisible } = window.cfui;
+    const { state, $, t, API_BASE, apiGet, apiSend, toast, setBusy } = window.cfui;
 
     const PROVIDER_R2 = 'cloudflare_r2';
     const DEFAULT_MOUNT = '/webdav/s3/';
@@ -31,7 +31,8 @@
             state.s3.settings = data;
             state.s3.activeKey = data.active_key || data.mounts?.[0]?.key || 'default';
             renderS3Settings(data);
-            if (data.enabled) await loadS3Files(state.s3.path || '/');
+            const mount = activeMount();
+            if (data.enabled && mount?.availability?.can_enable) await loadS3Files(state.s3.path || '/');
         } catch (err) {
             setS3Status('error', err.message);
         }
@@ -41,8 +42,6 @@
         if (!settings) return;
         renderMountList(settings);
         const mount = activeMount();
-        renderMountForm(mount);
-
         const featureOn = !!settings.enabled || !!state.features?.s3_webdav;
         const ready = !!mount?.availability?.can_enable;
         setS3Status(ready ? 'ok' : 'warn', ready && featureOn ? t('s3_status_enabled') : ready ? t('s3_status_ready_to_enable') : t('s3_status_setup'));
@@ -66,41 +65,109 @@
     function renderMountList(settings) {
         const list = $('s3-mount-list');
         if (!list) return;
+        const mounts = settings.mounts || [];
         const activeKey = state.s3.activeKey || settings.active_key;
         list.innerHTML = '';
-        for (const mount of settings.mounts || []) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 's3-mount-item';
-            btn.setAttribute('role', 'option');
-            btn.setAttribute('aria-selected', String(mount.key === activeKey));
-            btn.addEventListener('click', () => selectMount(mount.key));
-
-            const head = document.createElement('div');
-            head.className = 's3-mount-item__head';
-            const name = document.createElement('div');
-            name.className = 's3-mount-item__name';
-            name.textContent = mount.name || mount.key;
-            const statePill = document.createElement('span');
-            statePill.className = 'pill';
-            statePill.dataset.state = mount.availability?.can_enable ? 'ok' : 'warn';
-            statePill.innerHTML = '<span class="dot" aria-hidden="true"></span><span class="text"></span>';
-            statePill.querySelector('.text').textContent = mount.enabled ? (mount.availability?.can_enable ? t('ready') : t('s3_status_setup')) : t('disabled');
-            head.append(name, statePill);
-
-            const meta = document.createElement('div');
-            meta.className = 's3-mount-item__meta';
-            meta.textContent = `${providerLabel(mount.provider)} · ${mount.mount_path || DEFAULT_MOUNT}`;
-            const bucket = document.createElement('div');
-            bucket.className = 's3-mount-item__meta';
-            bucket.textContent = mount.bucket_name || t('s3_bucket_required');
-            btn.append(head, meta, bucket);
-            list.appendChild(btn);
+        if (!mounts.length) {
+            const empty = document.createElement('div');
+            empty.className = 'empty';
+            empty.textContent = t('s3_empty_mounts');
+            list.appendChild(empty);
+            return;
         }
+        for (const mount of mounts) list.appendChild(mountItem(mount, mount.key === activeKey));
+    }
+
+    function mountItem(mount, active) {
+        const item = document.createElement('article');
+        item.className = 's3-mount-item';
+        item.dataset.active = String(active);
+        item.setAttribute('role', 'listitem');
+
+        const main = document.createElement('div');
+        main.className = 's3-mount-main';
+
+        const head = document.createElement('div');
+        head.className = 's3-mount-item__head';
+        const titleWrap = document.createElement('div');
+        titleWrap.className = 's3-mount-title';
+        const name = document.createElement('div');
+        name.className = 's3-mount-item__name';
+        name.textContent = mount.name || mount.key;
+        const detail = document.createElement('div');
+        detail.className = 's3-mount-item__meta';
+        detail.textContent = `${providerLabel(mount.provider)} · ${mount.bucket_name || t('s3_bucket_required')}${mount.root_prefix ? '/' + mount.root_prefix : ''}`;
+        titleWrap.append(name, detail);
+        head.append(titleWrap, statusPill(mount));
+
+        const endpoint = document.createElement('div');
+        endpoint.className = 's3-mount-endpoint';
+        const endpointLabel = document.createElement('div');
+        endpointLabel.className = 's3-mount-label';
+        endpointLabel.textContent = t('s3_webdav_endpoint');
+        const endpointBox = document.createElement('div');
+        endpointBox.className = 's3-copy-line';
+        const endpointInput = document.createElement('input');
+        endpointInput.type = 'text';
+        endpointInput.className = 'input';
+        endpointInput.readOnly = true;
+        endpointInput.value = webDAVEndpointFor(mount.mount_path || DEFAULT_MOUNT);
+        endpointInput.setAttribute('aria-label', t('s3_webdav_endpoint'));
+        const copy = iconButton('copy_webdav_endpoint', copyIcon());
+        copy.addEventListener('click', () => copyMountEndpoint(mount));
+        endpointBox.append(endpointInput, copy);
+        endpoint.append(endpointLabel, endpointBox);
+
+        const meta = document.createElement('div');
+        meta.className = 's3-mount-badges';
+        meta.append(
+            badge(mount.access_key_id && mount.secret_access_key_set ? t('s3_s3_keys_ready') : t('s3_s3_keys_missing'), mount.access_key_id && mount.secret_access_key_set ? 'ok' : 'warn'),
+            badge(mount.webdav_username && mount.password_set ? t('s3_webdav_login_ready') : t('s3_webdav_login_missing'), mount.webdav_username && mount.password_set ? 'ok' : 'warn'),
+            badge(mount.mount_path || DEFAULT_MOUNT, 'neutral')
+        );
+
+        main.append(head, endpoint, meta);
+
+        const actions = document.createElement('div');
+        actions.className = 's3-mount-actions';
+        const files = textButton(t('s3_mount_files'), 'btn--sm');
+        files.addEventListener('click', () => selectMount(mount.key));
+        const edit = textButton(t('edit'), 'btn--sm');
+        edit.addEventListener('click', () => window.cfui.openS3Wizard?.({ mode: 'edit', mount }));
+        const del = textButton(t('delete'), 'btn--sm btn--danger');
+        del.addEventListener('click', () => deleteS3Mount(mount.key, del));
+        actions.append(files, edit, del);
+
+        item.append(main, actions);
+        return item;
+    }
+
+    function statusPill(mount) {
+        const pill = document.createElement('span');
+        pill.className = 'pill';
+        pill.dataset.state = mount.availability?.can_enable ? 'ok' : 'warn';
+        pill.innerHTML = '<span class="dot" aria-hidden="true"></span><span class="text"></span>';
+        pill.querySelector('.text').textContent = mount.enabled ? (mount.availability?.can_enable ? t('ready') : t('s3_status_setup')) : t('disabled');
+        return pill;
+    }
+
+    function badge(text, stateName) {
+        const el = document.createElement('span');
+        el.className = 's3-badge';
+        el.dataset.state = stateName;
+        el.textContent = text;
+        return el;
     }
 
     function providerLabel(provider) {
         return provider === PROVIDER_R2 ? t('s3_provider_r2') : t('s3_provider_generic');
+    }
+
+    function setS3Status(stateName, text) {
+        const el = $('s3-status');
+        if (!el) return;
+        el.dataset.state = stateName;
+        el.querySelector('.text').textContent = text;
     }
 
     async function selectMount(key) {
@@ -112,146 +179,21 @@
             state.s3.settings = data;
             state.s3.activeKey = data.active_key || key;
             renderS3Settings(data);
-            if (data.enabled) await loadS3Files('/');
+            if (data.enabled && activeMount()?.availability?.can_enable) await loadS3Files('/');
         } catch (err) {
             toast.err(err.message);
         }
     }
 
-    function renderMountForm(mount) {
+    async function deleteS3Mount(key, btn) {
+        const mount = (state.s3.settings?.mounts || []).find((m) => m.key === key);
         if (!mount) return;
-        $('s3-mount-name').value = mount.name || '';
-        $('s3-provider').value = mount.provider || 'generic_s3';
-        $('s3-endpoint-url').value = mount.endpoint_url || '';
-        $('s3-region').value = mount.region || 'auto';
-        $('s3-path-style').checked = mount.path_style !== false;
-        $('s3-account-id').value = mount.account_id || '';
-        $('s3-jurisdiction').value = mount.jurisdiction || 'default';
-        $('s3-bucket-name').value = mount.bucket_name || '';
-        $('s3-root-prefix').value = mount.root_prefix || '';
-        $('s3-mount-path').value = mount.mount_path || DEFAULT_MOUNT;
-        $('s3-access-key-id').value = mount.access_key_id || '';
-        $('s3-secret-access-key').value = '';
-        $('s3-secret-state').textContent = t(mount.secret_access_key_set ? 's3_secret_set' : 's3_secret_not_set');
-        $('s3-webdav-username').value = mount.webdav_username || '';
-        $('s3-webdav-password').value = '';
-        $('s3-password-state').textContent = t(mount.password_set ? 's3_password_set' : 's3_password_not_set');
-        updateWebDAVEndpoint();
-        setCreateBucketPanel(false);
-        renderBucketSelect(state.s3.buckets, mount.bucket_name);
-        renderR2ManagementState(mount.r2_bucket_management);
-        renderR2TokenPath();
-        updateProviderUI();
-    }
-
-    function updateProviderUI() {
-        const provider = $('s3-provider')?.value || 'generic_s3';
-        const isR2 = provider === PROVIDER_R2;
-        $('s3-r2-guide').hidden = !isR2;
-        $('s3-r2-management-section').hidden = !isR2;
-        if (isR2) {
-            if (!$('s3-region').value.trim()) $('s3-region').value = 'auto';
-            $('s3-path-style').checked = true;
-            applyR2EndpointPreset();
-        }
-        renderR2TokenPath();
-    }
-
-    function applyR2EndpointPreset() {
-        const endpoint = $('s3-endpoint-url');
-        const accountID = $('s3-account-id')?.value.trim();
-        if (!endpoint || endpoint.value.trim() || !accountID) return;
-        endpoint.value = r2EndpointFor(accountID, $('s3-jurisdiction')?.value || 'default');
-        renderR2TokenPath();
-    }
-
-    function r2EndpointFor(accountID, jurisdiction) {
-        if (jurisdiction === 'eu') return `https://${accountID}.eu.r2.cloudflarestorage.com`;
-        if (jurisdiction === 'fedramp') return `https://${accountID}.fedramp.r2.cloudflarestorage.com`;
-        return `https://${accountID}.r2.cloudflarestorage.com`;
-    }
-
-    function webDAVEndpointFor(path) {
-        const normalized = (path || DEFAULT_MOUNT).trim() || DEFAULT_MOUNT;
-        try {
-            return new URL(normalized, window.location.origin).toString();
-        } catch {
-            return normalized;
-        }
-    }
-
-    function updateWebDAVEndpoint() {
-        const origin = $('s3-webdav-origin');
-        const path = $('s3-webdav-endpoint');
-        if (origin) origin.value = window.location.origin;
-        if (path) path.value = ($('s3-mount-path')?.value || activeMount()?.mount_path || DEFAULT_MOUNT).trim() || DEFAULT_MOUNT;
-    }
-
-    function renderR2TokenPath() {
-        const link = $('s3-r2-token-link');
-        const placeholder = $('s3-r2-token-placeholder');
-        if (!link || !placeholder) return;
-        const accountID = $('s3-account-id')?.value.trim();
-        if (!accountID) {
-            link.hidden = true;
-            link.removeAttribute('href');
-            link.textContent = '';
-            placeholder.hidden = false;
-            return;
-        }
-        const url = `https://dash.cloudflare.com/${encodeURIComponent(accountID)}/r2/api-tokens`;
-        link.href = url;
-        link.textContent = url;
-        link.hidden = false;
-        placeholder.hidden = true;
-    }
-
-    function renderR2ManagementState(management) {
-        const el = $('s3-r2-management-state');
-        if (!el) return;
-        if (!management) {
-            el.textContent = t('s3_r2_management_unavailable');
-            return;
-        }
-        el.textContent = management.message || (management.enabled ? t('s3_r2_management_ready') : t('s3_r2_management_unavailable'));
-    }
-
-    function setS3Status(stateName, text) {
-        const el = $('s3-status');
-        if (!el) return;
-        el.dataset.state = stateName;
-        el.querySelector('.text').textContent = text;
-    }
-
-    async function createS3Mount() {
-        const btn = $('s3-new-mount');
-        setBusy(btn, true, t('creating'));
-        try {
-            const data = await apiSend('/s3/mounts', 'POST', {
-                name: t('s3_new_mount_default'),
-                enabled: true,
-                provider: 'generic_s3',
-                region: 'auto',
-                path_style: true,
-                mount_path: nextMountPath(),
-            });
-            state.s3.settings = data;
-            state.s3.activeKey = data.active_key;
-            renderS3Settings(data);
-            toast.ok(t('s3_mount_created'));
-        } catch (err) {
-            toast.err(t('s3_mount_create_failed') + ': ' + err.message);
-        } finally {
-            setBusy(btn, false);
-        }
-    }
-
-    async function deleteS3Mount() {
-        const mount = activeMount();
-        if (!mount) return;
-        const ok = await window.cfui.confirm({ title: t('s3_delete_mount_title'), message: t('s3_delete_mount_message', { name: mount.name || mount.key }), okText: t('delete') });
+        const ok = await window.cfui.confirm({
+            title: t('s3_delete_mount_title'),
+            message: t('s3_delete_mount_message', { name: mount.name || mount.key }),
+            okText: t('delete'),
+        });
         if (!ok) return;
-        const btn = $('s3-delete-mount');
         setBusy(btn, true);
         try {
             const data = await apiSend(`/s3/mounts/${encodeURIComponent(mount.key)}`, 'DELETE');
@@ -271,149 +213,24 @@
         const used = new Set((state.s3.settings?.mounts || []).map((m) => m.mount_path));
         if (!used.has(DEFAULT_MOUNT)) return DEFAULT_MOUNT;
         for (let i = 2; i < 100; i += 1) {
-            const path = `/webdav/s3-${i}/`;
-            if (!used.has(path)) return path;
+            const p = `/webdav/s3-${i}/`;
+            if (!used.has(p)) return p;
         }
         return `/webdav/s3-${Date.now()}/`;
     }
 
-    async function loadS3Buckets() {
-        const mount = activeMount();
-        if (!mount || ($('s3-provider')?.value || '') !== PROVIDER_R2) return;
-        const btn = $('s3-refresh-buckets');
-        setBusy(btn, true);
+    function webDAVEndpointFor(path) {
+        const normalized = (path || DEFAULT_MOUNT).trim() || DEFAULT_MOUNT;
         try {
-            const data = await apiGet('/s3/buckets?mount_key=' + encodeURIComponent(mount.key));
-            state.s3.buckets = data.buckets || [];
-            renderBucketSelect(state.s3.buckets, $('s3-bucket-name')?.value || mount.bucket_name);
-            toast.ok(t('s3_buckets_loaded'));
-        } catch (err) {
-            toast.err(t('s3_bucket_load_failed') + ': ' + err.message);
-        } finally {
-            setBusy(btn, false);
+            return new URL(normalized, window.location.origin).toString();
+        } catch {
+            return normalized;
         }
     }
 
-    function renderBucketSelect(buckets = [], selected = '') {
-        const sel = $('s3-bucket-select');
-        if (!sel) return;
-        const current = selected || $('s3-bucket-name')?.value || '';
-        sel.innerHTML = '';
-        const empty = document.createElement('option');
-        empty.value = '';
-        empty.textContent = t('s3_bucket_choose');
-        sel.appendChild(empty);
-        const names = new Set();
-        for (const bucket of buckets) {
-            names.add(bucket.name);
-            const opt = document.createElement('option');
-            opt.value = bucket.name;
-            opt.textContent = bucket.location ? `${bucket.name} (${bucket.location})` : bucket.name;
-            sel.appendChild(opt);
-        }
-        if (current && !names.has(current)) {
-            const opt = document.createElement('option');
-            opt.value = current;
-            opt.textContent = current;
-            sel.appendChild(opt);
-        }
-        sel.value = current;
-    }
-
-    function setCreateBucketPanel(open) {
-        const panel = $('s3-create-bucket-panel');
-        const toggle = $('s3-toggle-create-bucket');
-        if (!panel || !toggle) return;
-        panel.hidden = !open;
-        toggle.setAttribute('aria-expanded', String(open));
-        if (open) $('s3-create-bucket-name')?.focus();
-    }
-
-    async function createS3Bucket() {
-        const mount = activeMount();
-        const btn = $('s3-create-bucket');
-        const input = $('s3-create-bucket-name');
-        const name = input.value.trim();
-        if (!mount || !name) {
-            toast.err(t('s3_bucket_name_required'));
-            return;
-        }
-        setBusy(btn, true, t('creating'));
-        try {
-            const bucket = await apiSend('/s3/buckets?mount_key=' + encodeURIComponent(mount.key), 'POST', { mount_key: mount.key, name });
-            state.s3.buckets = [...state.s3.buckets.filter((b) => b.name !== bucket.name), bucket];
-            renderBucketSelect(state.s3.buckets, bucket.name);
-            $('s3-bucket-name').value = bucket.name;
-            input.value = '';
-            setCreateBucketPanel(false);
-            toast.ok(t('s3_bucket_created'));
-        } catch (err) {
-            toast.err(t('s3_bucket_create_failed') + ': ' + err.message);
-        } finally {
-            setBusy(btn, false);
-        }
-    }
-
-    function currentPayload() {
-        const mount = activeMount();
-        return {
-            key: mount?.key || '',
-            name: $('s3-mount-name').value.trim(),
-            enabled: true,
-            provider: $('s3-provider').value,
-            endpoint_url: $('s3-endpoint-url').value.trim(),
-            region: $('s3-region').value.trim(),
-            path_style: $('s3-path-style').checked,
-            account_id: $('s3-account-id').value.trim(),
-            bucket_name: $('s3-bucket-name').value.trim(),
-            root_prefix: $('s3-root-prefix').value.trim(),
-            mount_path: $('s3-mount-path').value.trim(),
-            jurisdiction: $('s3-jurisdiction').value,
-            access_key_id: $('s3-access-key-id').value.trim(),
-            secret_access_key: $('s3-secret-access-key').value,
-            webdav_username: $('s3-webdav-username').value.trim(),
-            webdav_password: $('s3-webdav-password').value,
-        };
-    }
-
-    async function saveS3Settings() {
-        const mount = activeMount();
-        if (!mount) return;
-        const btn = $('s3-save-settings');
-        setBusy(btn, true, t('saving'));
-        try {
-            const data = await apiSend(`/s3/mounts/${encodeURIComponent(mount.key)}`, 'PUT', currentPayload());
-            state.s3.settings = data;
-            state.s3.activeKey = data.active_key || mount.key;
-            renderS3Settings(data);
-            await window.cfui.fetchFeatures();
-            flashField('s3-save-settings');
-            toast.ok(t('s3_settings_saved'));
-        } catch (err) {
-            toast.err(t('s3_settings_save_failed') + ': ' + err.message);
-        } finally {
-            setBusy(btn, false);
-        }
-    }
-
-    async function testS3Connection() {
-        const mount = activeMount();
-        if (!mount) return;
-        const btn = $('s3-test-connection');
-        setBusy(btn, true, t('testing'));
-        try {
-            const data = await apiSend('/s3/test?mount_key=' + encodeURIComponent(mount.key), 'POST', currentPayload());
-            const notice = $('s3-status-message');
-            if (notice) {
-                notice.textContent = data.message || (data.success ? t('s3_test_success') : t('s3_test_failed'));
-                notice.dataset.state = data.success ? 'ok' : 'error';
-            }
-            toast[data.success ? 'ok' : 'err'](data.message || (data.success ? t('s3_test_success') : t('s3_test_failed')));
-        } catch (err) {
-            toast.err(t('s3_test_failed') + ': ' + err.message);
-        } finally {
-            setBusy(btn, false);
-        }
+    function copyMountEndpoint(mount) {
+        const value = webDAVEndpointFor(mount.mount_path || DEFAULT_MOUNT);
+        navigator.clipboard?.writeText(value).then(() => toast.ok(t('copied_to_clipboard')), () => toast.err(t('copy_failed')));
     }
 
     async function loadS3Files(path = state.s3.path || '/') {
@@ -495,10 +312,7 @@
     }
 
     function actionButton(label, fn, extra = '') {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `btn btn--sm ${extra}`.trim();
-        btn.textContent = label;
+        const btn = textButton(label, `btn--sm ${extra}`.trim());
         btn.addEventListener('click', fn);
         return btn;
     }
@@ -509,6 +323,28 @@
         a.href = href;
         a.textContent = label;
         return a;
+    }
+
+    function textButton(label, extra = '') {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `btn ${extra}`.trim();
+        btn.textContent = label;
+        return btn;
+    }
+
+    function iconButton(labelKey, svg) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'icon-btn';
+        btn.setAttribute('aria-label', t(labelKey));
+        btn.setAttribute('title', t(labelKey));
+        btn.innerHTML = svg;
+        return btn;
+    }
+
+    function copyIcon() {
+        return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
     }
 
     async function uploadS3File(file) {
@@ -606,31 +442,7 @@
     }
 
     function wireS3() {
-        $('s3-new-mount')?.addEventListener('click', createS3Mount);
-        $('s3-delete-mount')?.addEventListener('click', deleteS3Mount);
-        $('s3-provider')?.addEventListener('change', () => updateProviderUI());
-        $('s3-account-id')?.addEventListener('input', renderR2TokenPath);
-        $('s3-account-id')?.addEventListener('blur', applyR2EndpointPreset);
-        $('s3-jurisdiction')?.addEventListener('change', () => {
-            const endpoint = $('s3-endpoint-url');
-            const accountID = $('s3-account-id')?.value.trim();
-            if (endpoint && accountID && $('s3-provider')?.value === PROVIDER_R2) endpoint.value = r2EndpointFor(accountID, $('s3-jurisdiction').value);
-            renderR2TokenPath();
-        });
-        $('s3-mount-path')?.addEventListener('input', () => {
-            updateWebDAVEndpoint();
-        });
-        $('s3-bucket-select')?.addEventListener('change', () => {
-            $('s3-bucket-name').value = $('s3-bucket-select').value;
-        });
-        $('s3-refresh-buckets')?.addEventListener('click', loadS3Buckets);
-        $('s3-toggle-create-bucket')?.addEventListener('click', () => {
-            const panel = $('s3-create-bucket-panel');
-            setCreateBucketPanel(!!panel?.hidden);
-        });
-        $('s3-create-bucket')?.addEventListener('click', createS3Bucket);
-        $('s3-save-settings')?.addEventListener('click', saveS3Settings);
-        $('s3-test-connection')?.addEventListener('click', testS3Connection);
+        $('s3-new-mount')?.addEventListener('click', () => window.cfui.openS3Wizard?.({ mode: 'create' }));
         $('s3-refresh-files')?.addEventListener('click', () => loadS3Files(state.s3.path || '/'));
         $('s3-new-folder')?.addEventListener('click', createS3Folder);
         $('s3-upload-input')?.addEventListener('change', (e) => {
@@ -638,29 +450,17 @@
             e.target.value = '';
             uploadS3File(file);
         });
-        $('s3-copy-endpoint')?.addEventListener('click', () => {
-            updateWebDAVEndpoint();
-            const v = webDAVEndpointFor($('s3-webdav-endpoint')?.value || DEFAULT_MOUNT);
-            navigator.clipboard?.writeText(v).then(() => toast.ok(t('copied_to_clipboard')), () => toast.err(t('copy_failed')));
-        });
-        bindVisibility('s3-secret-toggle', 's3-secret-access-key');
-        bindVisibility('s3-password-toggle', 's3-webdav-password');
-    }
-
-    function bindVisibility(buttonID, inputID) {
-        const btn = $(buttonID);
-        const input = $(inputID);
-        if (!btn || !input) return;
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            setTokenVisible(input, btn, input.type === 'password');
-        });
+        window.cfui.wireS3Wizard?.();
     }
 
     const ns = window.cfui;
     ns.s3AvailabilityText = s3AvailabilityText;
+    ns.s3ProviderLabel = providerLabel;
+    ns.s3WebDAVEndpointFor = webDAVEndpointFor;
+    ns.s3NextMountPath = nextMountPath;
+    ns.s3ActiveMount = activeMount;
+    ns.renderS3Settings = renderS3Settings;
     ns.fetchS3Settings = fetchS3Settings;
-    ns.loadS3Buckets = loadS3Buckets;
     ns.loadS3Files = loadS3Files;
     ns.wireS3 = wireS3;
 })();

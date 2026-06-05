@@ -1257,6 +1257,72 @@ other = "Set endpoint, bucket, S3 credentials, and WebDAV login before using the
 [s3_new_folder]
 other = "New Folder"
 
+[s3_empty_mounts]
+other = "No S3 WebDAV mounts yet. Create one with the setup wizard."
+
+[s3_mount_files]
+other = "Files"
+
+[s3_s3_keys_ready]
+other = "S3 keys set"
+
+[s3_s3_keys_missing]
+other = "S3 keys missing"
+
+[s3_webdav_login_ready]
+other = "WebDAV login set"
+
+[s3_webdav_login_missing]
+other = "WebDAV login missing"
+
+[s3_wizard_title]
+other = "S3 WebDAV setup"
+
+[s3_wizard_subtitle]
+other = "Follow the steps to create or edit one S3 WebDAV mount."
+
+[s3_wizard_create_title]
+other = "New S3 WebDAV mount"
+
+[s3_wizard_create_subtitle]
+other = "Choose a provider, connect a bucket path, then set the WebDAV login."
+
+[s3_wizard_edit_title]
+other = "Edit S3 WebDAV mount"
+
+[s3_wizard_edit_subtitle]
+other = "Update storage, credentials, or the WebDAV access path for this mount."
+
+[s3_wizard_step_type]
+other = "Type"
+
+[s3_wizard_step_storage]
+other = "Storage"
+
+[s3_wizard_step_s3]
+other = "S3 keys"
+
+[s3_wizard_step_webdav]
+other = "WebDAV"
+
+[s3_wizard_step_review]
+other = "Review"
+
+[s3_wizard_generic_help]
+other = "Use this for MinIO, Qiniu, AWS S3, and most S3-compatible services."
+
+[s3_wizard_r2_help]
+other = "Uses R2 endpoint presets and can optionally list or create buckets."
+
+[s3_wizard_skip_bucket]
+other = "Skip bucket selection for now"
+
+[s3_wizard_bucket_skipped]
+other = "Skipped for now"
+
+[s3_mount_name_required]
+other = "Enter a mount name."
+
 [feature_s3_name]
 other = "S3 WebDAV"
 
@@ -1391,3 +1457,9 @@ other = "Rename"
 
 [download]
 other = "Download"
+
+[back]
+other = "Back"
+
+[next]
+other = "Next"

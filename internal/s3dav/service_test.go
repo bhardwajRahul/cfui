@@ -30,6 +30,19 @@ func (f fakeCloudflareClient) CreateR2Bucket(context.Context, *cloudflare.Resour
 	return cloudflare.R2Bucket{Name: "bucket"}, nil
 }
 
+type captureCloudflareClient struct {
+	listAccount string
+}
+
+func (f *captureCloudflareClient) ListR2Buckets(_ context.Context, rc *cloudflare.ResourceContainer, _ cloudflare.ListR2BucketsParams) ([]cloudflare.R2Bucket, error) {
+	f.listAccount = rc.Identifier
+	return []cloudflare.R2Bucket{{Name: "bucket"}}, nil
+}
+
+func (f *captureCloudflareClient) CreateR2Bucket(context.Context, *cloudflare.ResourceContainer, cloudflare.CreateR2BucketParameters) (cloudflare.R2Bucket, error) {
+	return cloudflare.R2Bucket{Name: "bucket"}, nil
+}
+
 func newTestService(t *testing.T, client CloudflareClient, fs afero.Fs) *Service {
 	t.Helper()
 	cfgMgr, err := config.NewManager(t.TempDir())
@@ -217,6 +230,28 @@ func TestR2MountUsesAccountIDFromTunnelToken(t *testing.T) {
 	}
 	if mount.EndpointURL != "https://account-from-token.r2.cloudflarestorage.com" {
 		t.Fatalf("expected R2 endpoint from token account id, got %q", mount.EndpointURL)
+	}
+}
+
+func TestR2BucketListCanOverrideSavedMountAccountID(t *testing.T) {
+	client := &captureCloudflareClient{}
+	svc := newTestService(t, client, afero.NewMemMapFs())
+	cfg := svc.cfgMgr.Get()
+	cfg.TunnelManagement.APIToken = "api-token"
+	cfg.S3WebDAV.Mounts[0].Provider = ProviderCloudflareR2
+	cfg.S3WebDAV.Mounts[0].AccountID = "old-account"
+	if err := svc.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	if _, err := svc.ListBucketsFor(context.Background(), BucketRequest{
+		MountKey:  "default",
+		AccountID: "new-account",
+	}); err != nil {
+		t.Fatalf("ListBucketsFor: %v", err)
+	}
+	if client.listAccount != "new-account" {
+		t.Fatalf("expected explicit account id to win, got %q", client.listAccount)
 	}
 }
 

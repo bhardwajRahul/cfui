@@ -4,7 +4,9 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"path"
 	"strings"
+	"time"
 
 	"github.com/spf13/afero"
 	"golang.org/x/net/webdav"
@@ -58,7 +60,24 @@ func (a aferoWebDAVFS) OpenFile(_ context.Context, name string, flag int, perm o
 	if err != nil {
 		return nil, err
 	}
-	return a.fs.OpenFile(cleaned, flag, perm)
+	writeCreate := flag&os.O_RDWR != 0 && flag&os.O_CREATE != 0
+	if writeCreate {
+		parent := ParentPath(cleaned)
+		if parent != "" && parent != "/" {
+			if err := a.fs.MkdirAll(parent, 0755); err != nil {
+				return nil, err
+			}
+		}
+		flag = (flag &^ os.O_RDWR) | os.O_WRONLY
+	}
+	file, err := a.fs.OpenFile(cleaned, flag, perm)
+	if err != nil {
+		return nil, err
+	}
+	if writeCreate {
+		return &webDAVWriteFile{File: file, name: cleaned, modTime: time.Now()}, nil
+	}
+	return file, nil
 }
 
 func (a aferoWebDAVFS) RemoveAll(_ context.Context, name string) error {
@@ -80,3 +99,50 @@ func (a aferoWebDAVFS) Stat(_ context.Context, name string) (os.FileInfo, error)
 	}
 	return a.fs.Stat(cleaned)
 }
+
+type webDAVWriteFile struct {
+	afero.File
+	name    string
+	size    int64
+	modTime time.Time
+	closed  bool
+}
+
+func (f *webDAVWriteFile) Write(p []byte) (int, error) {
+	n, err := f.File.Write(p)
+	f.size += int64(n)
+	f.modTime = time.Now()
+	return n, err
+}
+
+func (f *webDAVWriteFile) Close() error {
+	f.closed = true
+	return f.File.Close()
+}
+
+func (f *webDAVWriteFile) Stat() (os.FileInfo, error) {
+	info, err := f.File.Stat()
+	if err == nil {
+		return info, nil
+	}
+	if f.closed {
+		return nil, err
+	}
+	if f.modTime.IsZero() {
+		f.modTime = time.Now()
+	}
+	return webDAVFileInfo{name: path.Base(f.name), size: f.size, modTime: f.modTime}, nil
+}
+
+type webDAVFileInfo struct {
+	name    string
+	size    int64
+	modTime time.Time
+}
+
+func (i webDAVFileInfo) Name() string       { return i.name }
+func (i webDAVFileInfo) Size() int64        { return i.size }
+func (i webDAVFileInfo) Mode() os.FileMode  { return 0644 }
+func (i webDAVFileInfo) ModTime() time.Time { return i.modTime }
+func (i webDAVFileInfo) IsDir() bool        { return false }
+func (i webDAVFileInfo) Sys() any           { return nil }

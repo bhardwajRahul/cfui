@@ -240,27 +240,17 @@ func (s *Service) R2Management(ctx context.Context, mount config.S3WebDAVMountCo
 }
 
 func (s *Service) ListBuckets(ctx context.Context, key string) (BucketsResponse, error) {
-	mount, err := s.requireMount(key)
-	if err != nil {
-		return BucketsResponse{}, err
-	}
-	if mount.Provider != ProviderCloudflareR2 {
-		return BucketsResponse{}, fmt.Errorf("bucket listing is only available in Cloudflare R2 mode")
-	}
-	token := strings.TrimSpace(s.cfgMgr.Get().EffectiveTunnelManagement().APIToken)
-	if token == "" {
-		return BucketsResponse{}, fmt.Errorf("Cloudflare API Token is required for R2 bucket management")
-	}
-	if strings.TrimSpace(mount.AccountID) == "" {
-		return BucketsResponse{}, fmt.Errorf("account id is required")
-	}
-	client, err := s.newClient(token)
+	return s.ListBucketsFor(ctx, BucketRequest{MountKey: key})
+}
+
+func (s *Service) ListBucketsFor(ctx context.Context, req BucketRequest) (BucketsResponse, error) {
+	accountID, client, err := s.r2BucketClient(req.MountKey, req.AccountID, req.Jurisdiction)
 	if err != nil {
 		return BucketsResponse{}, err
 	}
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	rows, err := client.ListR2Buckets(ctx, cloudflare.AccountIdentifier(mount.AccountID), cloudflare.ListR2BucketsParams{})
+	rows, err := client.ListR2Buckets(ctx, cloudflare.AccountIdentifier(accountID), cloudflare.ListR2BucketsParams{})
 	if err != nil {
 		return BucketsResponse{}, err
 	}
@@ -272,31 +262,17 @@ func (s *Service) ListBuckets(ctx context.Context, key string) (BucketsResponse,
 }
 
 func (s *Service) CreateBucket(ctx context.Context, req CreateBucketRequest) (Bucket, error) {
-	mount, err := s.requireMount(req.MountKey)
+	accountID, client, err := s.r2BucketClient(req.MountKey, req.AccountID, req.Jurisdiction)
 	if err != nil {
 		return Bucket{}, err
-	}
-	if mount.Provider != ProviderCloudflareR2 {
-		return Bucket{}, fmt.Errorf("bucket creation is only available in Cloudflare R2 mode")
-	}
-	token := strings.TrimSpace(s.cfgMgr.Get().EffectiveTunnelManagement().APIToken)
-	if token == "" {
-		return Bucket{}, fmt.Errorf("Cloudflare API Token is required for R2 bucket management")
-	}
-	if strings.TrimSpace(mount.AccountID) == "" {
-		return Bucket{}, fmt.Errorf("account id is required")
 	}
 	name := strings.TrimSpace(req.Name)
 	if err := validateBucketName(name); err != nil {
 		return Bucket{}, err
 	}
-	client, err := s.newClient(token)
-	if err != nil {
-		return Bucket{}, err
-	}
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	row, err := client.CreateR2Bucket(ctx, cloudflare.AccountIdentifier(mount.AccountID), cloudflare.CreateR2BucketParameters{
+	row, err := client.CreateR2Bucket(ctx, cloudflare.AccountIdentifier(accountID), cloudflare.CreateR2BucketParameters{
 		Name:         name,
 		LocationHint: strings.TrimSpace(req.LocationHint),
 	})
@@ -304,6 +280,37 @@ func (s *Service) CreateBucket(ctx context.Context, req CreateBucketRequest) (Bu
 		return Bucket{}, err
 	}
 	return Bucket{Name: row.Name, CreationDate: row.CreationDate, Location: row.Location}, nil
+}
+
+func (s *Service) r2BucketClient(mountKey, accountID, jurisdiction string) (string, CloudflareClient, error) {
+	accountID = strings.TrimSpace(accountID)
+	if strings.TrimSpace(mountKey) != "" {
+		mount, err := s.requireMount(mountKey)
+		if err != nil {
+			return "", nil, err
+		}
+		if mount.Provider != ProviderCloudflareR2 {
+			return "", nil, fmt.Errorf("bucket management is only available in Cloudflare R2 mode")
+		}
+		if accountID == "" {
+			accountID = mount.AccountID
+		}
+	} else if accountID == "" {
+		accountID = s.defaultCloudflareAccountID()
+	}
+	_ = normalizeJurisdiction(jurisdiction)
+	if strings.TrimSpace(accountID) == "" {
+		return "", nil, fmt.Errorf("account id is required")
+	}
+	token := strings.TrimSpace(s.cfgMgr.Get().EffectiveTunnelManagement().APIToken)
+	if token == "" {
+		return "", nil, fmt.Errorf("Cloudflare API Token is required for R2 bucket management")
+	}
+	client, err := s.newClient(token)
+	if err != nil {
+		return "", nil, err
+	}
+	return strings.TrimSpace(accountID), client, nil
 }
 
 func (s *Service) ListFiles(ctx context.Context, key, rawPath string) (FilesResponse, error) {

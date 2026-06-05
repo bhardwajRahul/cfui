@@ -1257,6 +1257,72 @@ other = "请先填写 endpoint、bucket、S3 凭证和 WebDAV 登录账户。"
 [s3_new_folder]
 other = "新建文件夹"
 
+[s3_empty_mounts]
+other = "还没有 S3 WebDAV 挂载。使用设置向导创建一个。"
+
+[s3_mount_files]
+other = "文件"
+
+[s3_s3_keys_ready]
+other = "S3 凭证已配置"
+
+[s3_s3_keys_missing]
+other = "缺少 S3 凭证"
+
+[s3_webdav_login_ready]
+other = "WebDAV 登录已配置"
+
+[s3_webdav_login_missing]
+other = "缺少 WebDAV 登录"
+
+[s3_wizard_title]
+other = "S3 WebDAV 设置向导"
+
+[s3_wizard_subtitle]
+other = "按步骤创建或编辑一个 S3 WebDAV 挂载。"
+
+[s3_wizard_create_title]
+other = "新建 S3 WebDAV 挂载"
+
+[s3_wizard_create_subtitle]
+other = "选择服务类型，连接 bucket 路径，然后设置 WebDAV 登录账户。"
+
+[s3_wizard_edit_title]
+other = "编辑 S3 WebDAV 挂载"
+
+[s3_wizard_edit_subtitle]
+other = "修改这个挂载的存储、凭证或 WebDAV 访问路径。"
+
+[s3_wizard_step_type]
+other = "类型"
+
+[s3_wizard_step_storage]
+other = "存储"
+
+[s3_wizard_step_s3]
+other = "S3 凭证"
+
+[s3_wizard_step_webdav]
+other = "WebDAV"
+
+[s3_wizard_step_review]
+other = "确认"
+
+[s3_wizard_generic_help]
+other = "用于 MinIO、七牛、AWS S3 和大多数兼容 S3 的服务。"
+
+[s3_wizard_r2_help]
+other = "使用 R2 endpoint 预设，也可以选择列出或创建 bucket。"
+
+[s3_wizard_skip_bucket]
+other = "暂时跳过 bucket 选择"
+
+[s3_wizard_bucket_skipped]
+other = "暂时跳过"
+
+[s3_mount_name_required]
+other = "请填写挂载名称。"
+
 [feature_s3_name]
 other = "S3 WebDAV"
 
@@ -1391,3 +1457,9 @@ other = "重命名"
 
 [download]
 other = "下载"
+
+[back]
+other = "上一步"
+
+[next]
+other = "下一步"

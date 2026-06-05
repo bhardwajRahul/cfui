@@ -92,6 +92,12 @@ type R2Management struct {
 	Message string `json:"message"`
 }
 
+type BucketRequest struct {
+	MountKey     string `json:"mount_key"`
+	AccountID    string `json:"account_id"`
+	Jurisdiction string `json:"jurisdiction"`
+}
+
 type Bucket struct {
 	Name         string     `json:"name"`
 	CreationDate *time.Time `json:"creation_date,omitempty"`
@@ -104,6 +110,8 @@ type BucketsResponse struct {
 
 type CreateBucketRequest struct {
 	MountKey     string `json:"mount_key"`
+	AccountID    string `json:"account_id"`
+	Jurisdiction string `json:"jurisdiction"`
 	Name         string `json:"name"`
 	LocationHint string `json:"location_hint"`
 }

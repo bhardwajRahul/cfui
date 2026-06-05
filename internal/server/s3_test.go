@@ -77,6 +77,32 @@ func TestS3SettingsDoesNotLeakSecrets(t *testing.T) {
 	}
 }
 
+func TestS3BucketsCanUseTemporaryR2AccountID(t *testing.T) {
+	s := newServerTestServer(t)
+	cfg := s.cfgMgr.Get()
+	cfg.TunnelManagement.APIToken = "api-token"
+	if err := s.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+	s.s3Svc = s3dav.NewServiceForTest(
+		s.cfgMgr,
+		func(string) (s3dav.CloudflareClient, error) {
+			return serverFakeR2Client{}, nil
+		},
+		nil,
+	)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/s3/buckets?account_id=account-r2&jurisdiction=eu", nil)
+	rec := httptest.NewRecorder()
+	s.handleS3Buckets(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("bucket status %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"name":"bucket"`) {
+		t.Fatalf("expected bucket response: %s", rec.Body.String())
+	}
+}
+
 func TestS3FileUploadAndListWithFakeFS(t *testing.T) {
 	s := newServerTestServer(t)
 	cfg := s.cfgMgr.Get()
@@ -128,5 +154,61 @@ func TestS3FileUploadAndListWithFakeFS(t *testing.T) {
 	}
 	if !strings.Contains(listRec.Body.String(), "readme.txt") {
 		t.Fatalf("expected uploaded file in list response: %s", listRec.Body.String())
+	}
+}
+
+func TestWebDAVPutThroughServerRouteCreatesNestedObject(t *testing.T) {
+	s := newServerTestServer(t)
+	hash, err := s3dav.HashPassword("secret")
+	if err != nil {
+		t.Fatalf("HashPassword: %v", err)
+	}
+	cfg := s.cfgMgr.Get()
+	cfg.S3WebDAV = config.S3WebDAVConfig{
+		Enabled:   true,
+		ActiveKey: "datasync",
+		Mounts: []config.S3WebDAVMountConfig{{
+			Key:                "datasync",
+			Name:               "Data Sync",
+			Enabled:            true,
+			Provider:           s3dav.ProviderGenericS3,
+			EndpointURL:        "https://s3.example.com",
+			Region:             "us-east-1",
+			PathStyle:          true,
+			BucketName:         "bucket",
+			MountPath:          "/webdav/datasync/",
+			AccessKeyID:        "ak",
+			SecretAccessKey:    "sk",
+			WebDAVUsername:     "dav",
+			WebDAVPasswordHash: hash,
+		}},
+	}
+	if err := s.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+	memFS := afero.NewMemMapFs()
+	s.s3Svc = s3dav.NewServiceForTest(
+		s.cfgMgr,
+		func(string) (s3dav.CloudflareClient, error) {
+			return serverFakeR2Client{}, nil
+		},
+		func(context.Context, s3dav.FSConfig, s3dav.Credentials) (afero.Fs, error) {
+			return memFS, nil
+		},
+	)
+
+	req := httptest.NewRequest(http.MethodPut, "/webdav/datasync/cc-switch-sync/v2/db-v6/default/db.sql", bytes.NewBufferString("hello"))
+	req.SetBasicAuth("dav", "secret")
+	rec := httptest.NewRecorder()
+	s.GetHandler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated && rec.Code != http.StatusNoContent {
+		t.Fatalf("WebDAV PUT status %d: %s", rec.Code, rec.Body.String())
+	}
+	got, err := afero.ReadFile(memFS, "/cc-switch-sync/v2/db-v6/default/db.sql")
+	if err != nil {
+		t.Fatalf("read uploaded file: %v", err)
+	}
+	if string(got) != "hello" {
+		t.Fatalf("unexpected uploaded content %q", string(got))
 	}
 }

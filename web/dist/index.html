@@ -649,7 +649,7 @@
                     <div class="card-body">
                         <div id="s3-status-message" class="notice" data-state="warn" role="status"></div>
 
-                        <div class="section">
+                        <div class="section s3-mount-section">
                             <div class="section-head">
                                 <div>
                                     <div class="section-title" data-i18n="s3_mounts">Mounts</div>
@@ -657,217 +657,7 @@
                                 </div>
                                 <button id="s3-new-mount" type="button" class="btn btn--sm" data-i18n="s3_new_mount">New Mount</button>
                             </div>
-                            <div id="s3-mount-list" class="s3-mount-list" role="listbox" aria-label="S3 WebDAV mounts"></div>
-                        </div>
-
-                        <div class="section">
-                            <div class="section-head">
-                                <div>
-                                    <div class="section-title" data-i18n="s3_provider">Storage provider</div>
-                                    <div class="section-subtitle" data-i18n="s3_provider_help">Use generic S3 for most services. Choose Cloudflare R2 only when you want cfui to help list or create R2 buckets.</div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-field">
-                                    <label for="s3-mount-name" data-i18n="s3_mount_name">Mount name</label>
-                                    <input type="text" id="s3-mount-name" class="input" spellcheck="false" autocomplete="off" placeholder="My R2">
-                                    <p class="help-text" data-i18n="s3_mount_name_help">Shown only inside cfui so you can tell multiple mounts apart.</p>
-                                </div>
-                                <div class="form-field">
-                                    <label for="s3-provider" data-i18n="s3_provider_label">Provider</label>
-                                    <select id="s3-provider" class="form-select">
-                                        <option value="generic_s3" data-i18n="s3_provider_generic">Generic S3</option>
-                                        <option value="cloudflare_r2" data-i18n="s3_provider_r2">Cloudflare R2</option>
-                                    </select>
-                                    <p class="help-text" data-i18n="s3_provider_label_help">This only changes presets and optional bucket management. File access always uses S3 credentials.</p>
-                                </div>
-                                <div class="form-field">
-                                    <label for="s3-endpoint-url" data-i18n="s3_endpoint_url">S3 endpoint</label>
-                                    <input type="url" id="s3-endpoint-url" class="input" spellcheck="false" autocomplete="off" placeholder="https://s3.example.com">
-                                    <p class="help-text" data-i18n="s3_endpoint_url_help">For R2, use https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com.</p>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-field">
-                                    <label for="s3-region" data-i18n="s3_region">Region</label>
-                                    <input type="text" id="s3-region" class="input" spellcheck="false" autocomplete="off" placeholder="auto">
-                                    <p class="help-text" data-i18n="s3_region_help">Use auto for Cloudflare R2. Other S3 services usually require their documented region.</p>
-                                </div>
-                                <div class="form-field">
-                                    <label class="checkbox-row" for="s3-path-style" style="margin-top: 28px;">
-                                        <input type="checkbox" id="s3-path-style">
-                                        <span data-i18n="s3_path_style">Use path-style requests</span>
-                                    </label>
-                                    <p class="help-text" data-i18n="s3_path_style_help">Keep this on for R2 and most S3-compatible providers unless your provider requires virtual-host style.</p>
-                                </div>
-                            </div>
-                            <div id="s3-r2-guide" class="notice" data-state="warn" hidden>
-                                <p data-i18n="s3_r2_credentials_guide">Create an R2 API token from the R2 console to get the Access Key ID and Secret Access Key. The Secret Access Key is only shown once.</p>
-                                <p><span data-i18n="s3_r2_tokens_path">Direct path:</span> <a id="s3-r2-token-link" class="s3-token-link" href="#" target="_blank" rel="noopener" hidden></a><code id="s3-r2-token-placeholder">https://dash.cloudflare.com/&lt;ACCOUNT_ID&gt;/r2/api-tokens</code></p>
-                            </div>
-                        </div>
-
-                        <div class="section" id="s3-r2-management-section" hidden>
-                            <div class="section-head">
-                                <div>
-                                    <div class="section-title" data-i18n="s3_r2_management">Optional R2 bucket management</div>
-                                    <div class="section-subtitle" data-i18n="s3_r2_management_help">Only needed if you want cfui to list or create buckets. WebDAV file access does not use this Cloudflare API token.</div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-field">
-                                    <label for="s3-account-id" data-i18n="account_id">Account ID / App ID</label>
-                                    <input type="text" id="s3-account-id" class="input" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|account_id_placeholder">
-                                    <p class="help-text" data-i18n="s3_account_help">Used to build the R2 endpoint and to call the optional bucket list/create API. Leave it empty to use the Account ID from Remote Tunnel Manager or the local tunnel token.</p>
-                                </div>
-                                <div class="form-field">
-                                    <label for="s3-jurisdiction" data-i18n="s3_jurisdiction">Jurisdiction</label>
-                                    <select id="s3-jurisdiction" class="form-select">
-                                        <option value="default" data-i18n="s3_jurisdiction_default">Default</option>
-                                        <option value="eu" data-i18n="s3_jurisdiction_eu">EU</option>
-                                        <option value="fedramp" data-i18n="s3_jurisdiction_fedramp">FedRAMP</option>
-                                    </select>
-                                    <p class="help-text" data-i18n="s3_jurisdiction_help">Match the endpoint shown in your R2 Overview page.</p>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-field">
-                                    <label for="s3-bucket-select" data-i18n="s3_bucket_select">Choose from R2 buckets</label>
-                                    <div class="s3-bucket-picker">
-                                        <select id="s3-bucket-select" class="form-select"></select>
-                                        <button id="s3-refresh-buckets" type="button" class="icon-btn" aria-label="Refresh R2 buckets" title="Refresh R2 buckets" data-i18n-attr="aria-label|s3_refresh_buckets;title|s3_refresh_buckets">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-                                                <path d="M3 21v-5h5"></path>
-                                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-                                                <path d="M16 8h5V3"></path>
-                                            </svg>
-                                        </button>
-                                        <button id="s3-toggle-create-bucket" type="button" class="icon-btn" aria-label="Create R2 bucket" title="Create R2 bucket" aria-expanded="false" aria-controls="s3-create-bucket-panel" data-i18n-attr="aria-label|s3_create_bucket;title|s3_create_bucket">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <path d="M12 5v14"></path>
-                                                <path d="M5 12h14"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div id="s3-create-bucket-panel" class="s3-create-bucket-panel" hidden>
-                                        <div class="input-with-button">
-                                            <input type="text" id="s3-create-bucket-name" class="input" spellcheck="false" autocomplete="off" placeholder="cfui-files" data-i18n-attr="aria-label|s3_create_bucket">
-                                            <button id="s3-create-bucket" type="button" class="btn btn--sm" data-i18n="create">Create</button>
-                                        </div>
-                                        <p class="help-text" data-i18n="s3_create_bucket_help">Use lowercase letters, numbers, dots, and hyphens.</p>
-                                    </div>
-                                    <p class="help-text" id="s3-r2-management-state" data-i18n="s3_r2_management_unavailable">Bucket list/create is optional and needs a Cloudflare API Token with Workers R2 Storage Edit.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="section">
-                            <div class="section-head">
-                                <div>
-                                    <div class="section-title" data-i18n="s3_bucket_path">Bucket and exposed path</div>
-                                    <div class="section-subtitle" data-i18n="s3_bucket_path_help">Choose the bucket, optional object prefix, and the WebDAV URL path shown by cfui.</div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-field">
-                                    <label for="s3-bucket-name" data-i18n="s3_bucket_name">Bucket name</label>
-                                    <input type="text" id="s3-bucket-name" class="input" spellcheck="false" autocomplete="off" placeholder="my-bucket">
-                                    <p class="help-text" data-i18n="s3_bucket_name_help">cfui mounts this bucket only. For generic S3, create the bucket outside cfui first.</p>
-                                </div>
-                                <div class="form-field">
-                                    <label for="s3-root-prefix" data-i18n="s3_root_prefix">Bucket subpath</label>
-                                    <input type="text" id="s3-root-prefix" class="input" spellcheck="false" autocomplete="off" placeholder="backups/cfui">
-                                    <p class="help-text" data-i18n="s3_root_prefix_help">Optional. WebDAV will only see files under this prefix.</p>
-                                </div>
-                            </div>
-                            <div class="form-row single-column">
-                                <div class="form-field">
-                                    <label for="s3-mount-path" data-i18n="s3_mount_path">WebDAV path</label>
-                                    <input type="text" id="s3-mount-path" class="input" spellcheck="false" autocomplete="off" value="/webdav/s3/">
-                                    <p class="help-text" data-i18n="s3_mount_path_help">Must start with /webdav/. Examples: /webdav/my_r2/ or /webdav/qiniu/.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="section">
-                            <div class="section-head">
-                                <div>
-                                    <div class="section-title" data-i18n="s3_s3_credentials">S3 credentials</div>
-                                    <div class="section-subtitle" data-i18n="s3_s3_credentials_help">These credentials are used by cfui to read and write objects. They are separate from the WebDAV login below.</div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-field">
-                                    <label for="s3-access-key-id" data-i18n="s3_access_key_id">Access Key ID</label>
-                                    <input type="text" id="s3-access-key-id" class="input" spellcheck="false" autocomplete="off">
-                                </div>
-                                <div class="form-field">
-                                    <label for="s3-secret-access-key" data-i18n="s3_secret_access_key">Secret Access Key</label>
-                                    <div class="secret-field">
-                                        <input type="password" id="s3-secret-access-key" class="input" autocomplete="new-password" spellcheck="false" data-i18n-attr="placeholder|s3_secret_placeholder">
-                                        <button id="s3-secret-toggle" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show;title|token_show" title="Show token">
-                                            <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                        </button>
-                                    </div>
-                                    <p class="help-text" id="s3-secret-state" data-i18n="s3_secret_not_set">No Secret Access Key saved.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="section">
-                            <div class="section-head">
-                                <div>
-                                    <div class="section-title" data-i18n="s3_webdav_credentials">WebDAV login</div>
-                                    <div class="section-subtitle" data-i18n="s3_webdav_credentials_help">These credentials are only for WebDAV clients connecting to cfui.</div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-field">
-                                    <label for="s3-webdav-username" data-i18n="s3_webdav_username">WebDAV username</label>
-                                    <input type="text" id="s3-webdav-username" class="input" autocomplete="username" spellcheck="false">
-                                </div>
-                                <div class="form-field">
-                                    <label for="s3-webdav-password" data-i18n="s3_webdav_password">WebDAV password</label>
-                                    <div class="secret-field">
-                                        <input type="password" id="s3-webdav-password" class="input" autocomplete="new-password" spellcheck="false" data-i18n-attr="placeholder|s3_password_placeholder">
-                                        <button id="s3-password-toggle" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show;title|token_show" title="Show token">
-                                            <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                        </button>
-                                    </div>
-                                    <p class="help-text" id="s3-password-state" data-i18n="s3_password_not_set">No WebDAV password saved.</p>
-                                </div>
-                            </div>
-                            <div class="form-row single-column">
-                                <div class="form-field">
-                                    <label for="s3-webdav-endpoint" data-i18n="s3_webdav_endpoint">WebDAV endpoint</label>
-                                    <div class="s3-webdav-endpoint">
-                                        <input type="text" id="s3-webdav-origin" class="input" readonly value="" aria-label="Current host" title="Current host" data-i18n-attr="aria-label|s3_webdav_host;title|s3_webdav_host">
-                                        <input type="text" id="s3-webdav-endpoint" class="input" readonly value="/webdav/s3/" aria-label="WebDAV path" title="WebDAV path" data-i18n-attr="aria-label|s3_webdav_path;title|s3_webdav_path">
-                                        <button id="s3-copy-endpoint" type="button" class="icon-btn" aria-label="Copy WebDAV endpoint" title="Copy WebDAV endpoint" data-i18n-attr="aria-label|copy_webdav_endpoint;title|copy_webdav_endpoint">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <p class="help-text" data-i18n="s3_endpoint_help">The first field is the current host, and the second is the WebDAV path. The copy button copies the full URL.</p>
-                                </div>
-                            </div>
-                            <div class="btn-row btn-row--end">
-                                <button id="s3-delete-mount" type="button" class="btn btn--danger">
-                                    <span class="spinner" aria-hidden="true"></span>
-                                    <span class="text" data-i18n="s3_delete_mount">Delete mount</span>
-                                </button>
-                                <button id="s3-test-connection" type="button" class="btn">
-                                    <span class="spinner" aria-hidden="true"></span>
-                                    <span class="text" data-i18n="s3_test_connection">Test connection</span>
-                                </button>
-                                <button id="s3-save-settings" type="button" class="btn btn--primary">
-                                    <span class="spinner" aria-hidden="true"></span>
-                                    <span class="text" data-i18n="s3_save_settings">Save settings</span>
-                                </button>
-                            </div>
+                            <div id="s3-mount-list" class="s3-mount-list" role="list" aria-label="S3 WebDAV mounts"></div>
                         </div>
 
                         <div class="section" id="s3-file-section">
@@ -895,6 +685,217 @@
                     </div>
                 </div>
             </section>
+
+            <!-- S3 WebDAV setup wizard -->
+            <div id="s3-wizard-dialog" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="s3-wizard-title" hidden>
+                <div class="modal modal--wide">
+                    <div class="modal-head">
+                        <div>
+                            <h2 id="s3-wizard-title" data-i18n="s3_wizard_title">S3 WebDAV setup</h2>
+                            <p class="subtitle" id="s3-wizard-subtitle" data-i18n="s3_wizard_subtitle">Follow the steps to create or edit one S3 WebDAV mount.</p>
+                        </div>
+                        <button type="button" class="icon-btn" data-close-dialog aria-label="Close" title="Close" data-i18n-attr="aria-label|toast_close;title|toast_close">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <div class="modal-body s3-wizard">
+                        <div class="s3-wizard-steps" id="s3-wizard-steps" aria-label="S3 WebDAV setup steps">
+                            <button type="button" class="s3-step" data-step="0"><span class="s3-step__num">1</span><span class="s3-step__label" data-i18n="s3_wizard_step_type">Type</span></button>
+                            <button type="button" class="s3-step" data-step="1"><span class="s3-step__num">2</span><span class="s3-step__label" data-i18n="s3_wizard_step_storage">Storage</span></button>
+                            <button type="button" class="s3-step" data-step="2"><span class="s3-step__num">3</span><span class="s3-step__label" data-i18n="s3_wizard_step_s3">S3 keys</span></button>
+                            <button type="button" class="s3-step" data-step="3"><span class="s3-step__num">4</span><span class="s3-step__label" data-i18n="s3_wizard_step_webdav">WebDAV</span></button>
+                            <button type="button" class="s3-step" data-step="4"><span class="s3-step__num">5</span><span class="s3-step__label" data-i18n="s3_wizard_step_review">Review</span></button>
+                        </div>
+
+                        <div id="s3-wizard-alert" class="notice" data-state="warn" role="status"></div>
+
+                        <form id="s3-wizard-form">
+                            <section class="s3-wizard-panel" data-panel="0">
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label for="s3-wizard-name" data-i18n="s3_mount_name">Mount name</label>
+                                        <input type="text" id="s3-wizard-name" class="input" spellcheck="false" autocomplete="off" placeholder="My R2">
+                                        <p class="help-text" data-i18n="s3_mount_name_help">Shown only inside cfui so you can tell multiple mounts apart.</p>
+                                    </div>
+                                </div>
+                                <div class="s3-provider-choice" role="radiogroup" aria-label="Storage provider">
+                                    <button type="button" class="s3-provider-card" data-provider="generic_s3" role="radio" aria-checked="true">
+                                        <span class="s3-provider-card__title" data-i18n="s3_provider_generic">Generic S3</span>
+                                        <span class="s3-provider-card__text" data-i18n="s3_wizard_generic_help">Use this for MinIO, Qiniu, AWS S3, and most S3-compatible services.</span>
+                                    </button>
+                                    <button type="button" class="s3-provider-card" data-provider="cloudflare_r2" role="radio" aria-checked="false">
+                                        <span class="s3-provider-card__title" data-i18n="s3_provider_r2">Cloudflare R2</span>
+                                        <span class="s3-provider-card__text" data-i18n="s3_wizard_r2_help">Uses R2 endpoint presets and can optionally list or create buckets.</span>
+                                    </button>
+                                </div>
+                            </section>
+
+                            <section class="s3-wizard-panel" data-panel="1" hidden>
+                                <div id="s3-wizard-r2-guide" class="notice" data-state="warn" hidden>
+                                    <p data-i18n="s3_r2_credentials_guide">Create an R2 API token from the R2 console to get the Access Key ID and Secret Access Key. The Secret Access Key is only shown once.</p>
+                                    <p><span data-i18n="s3_r2_tokens_path">Direct path:</span> <a id="s3-wizard-r2-token-link" class="s3-token-link" href="#" target="_blank" rel="noopener" hidden></a><code id="s3-wizard-r2-token-placeholder">https://dash.cloudflare.com/&lt;ACCOUNT_ID&gt;/r2/api-tokens</code></p>
+                                </div>
+                                <div class="form-row" id="s3-wizard-r2-account-row" hidden>
+                                    <div class="form-field">
+                                        <label for="s3-wizard-account-id" data-i18n="account_id">Account ID / App ID</label>
+                                        <input type="text" id="s3-wizard-account-id" class="input" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder|account_id_placeholder">
+                                        <p class="help-text" data-i18n="s3_account_help">Used to build the R2 endpoint and to call the optional bucket list/create API. Leave it empty to use the Account ID from Remote Tunnel Manager or the local tunnel token.</p>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="s3-wizard-jurisdiction" data-i18n="s3_jurisdiction">Jurisdiction</label>
+                                        <select id="s3-wizard-jurisdiction" class="form-select">
+                                            <option value="default" data-i18n="s3_jurisdiction_default">Default</option>
+                                            <option value="eu" data-i18n="s3_jurisdiction_eu">EU</option>
+                                            <option value="fedramp" data-i18n="s3_jurisdiction_fedramp">FedRAMP</option>
+                                        </select>
+                                        <p class="help-text" data-i18n="s3_jurisdiction_help">Match the endpoint shown in your R2 Overview page.</p>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label for="s3-wizard-endpoint-url" data-i18n="s3_endpoint_url">S3 endpoint</label>
+                                        <input type="url" id="s3-wizard-endpoint-url" class="input" spellcheck="false" autocomplete="off" placeholder="https://s3.example.com">
+                                        <p class="help-text" data-i18n="s3_endpoint_url_help">For R2, use https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com.</p>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="s3-wizard-region" data-i18n="s3_region">Region</label>
+                                        <input type="text" id="s3-wizard-region" class="input" spellcheck="false" autocomplete="off" placeholder="auto">
+                                        <p class="help-text" data-i18n="s3_region_help">Use auto for Cloudflare R2. Other S3 services usually require their documented region.</p>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label for="s3-wizard-bucket-name" data-i18n="s3_bucket_name">Bucket name</label>
+                                        <input type="text" id="s3-wizard-bucket-name" class="input" spellcheck="false" autocomplete="off" placeholder="my-bucket">
+                                        <p class="help-text" id="s3-wizard-bucket-help" data-i18n="s3_bucket_name_help">cfui mounts this bucket only. For generic S3, create the bucket outside cfui first.</p>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="s3-wizard-root-prefix" data-i18n="s3_root_prefix">Bucket subpath</label>
+                                        <input type="text" id="s3-wizard-root-prefix" class="input" spellcheck="false" autocomplete="off" placeholder="backups/cfui">
+                                        <p class="help-text" data-i18n="s3_root_prefix_help">Optional. WebDAV will only see files under this prefix.</p>
+                                    </div>
+                                </div>
+                                <div id="s3-wizard-r2-buckets" class="form-row single-column" hidden>
+                                    <div class="form-field">
+                                        <label for="s3-wizard-bucket-select" data-i18n="s3_bucket_select">Choose from R2 buckets</label>
+                                        <div class="s3-bucket-picker">
+                                            <select id="s3-wizard-bucket-select" class="form-select"></select>
+                                            <button id="s3-wizard-refresh-buckets" type="button" class="icon-btn" aria-label="Refresh R2 buckets" title="Refresh R2 buckets" data-i18n-attr="aria-label|s3_refresh_buckets;title|s3_refresh_buckets">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                                    <path d="M3 21v-5h5"></path>
+                                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                                    <path d="M16 8h5V3"></path>
+                                                </svg>
+                                            </button>
+                                            <button id="s3-wizard-toggle-create-bucket" type="button" class="icon-btn" aria-label="Create R2 bucket" title="Create R2 bucket" aria-expanded="false" aria-controls="s3-wizard-create-bucket-panel" data-i18n-attr="aria-label|s3_create_bucket;title|s3_create_bucket">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M12 5v14"></path>
+                                                    <path d="M5 12h14"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div id="s3-wizard-create-bucket-panel" class="s3-create-bucket-panel" hidden>
+                                            <div class="input-with-button">
+                                                <input type="text" id="s3-wizard-create-bucket-name" class="input" spellcheck="false" autocomplete="off" placeholder="cfui-files" data-i18n-attr="aria-label|s3_create_bucket">
+                                                <button id="s3-wizard-create-bucket" type="button" class="btn btn--sm" data-i18n="create">Create</button>
+                                            </div>
+                                            <p class="help-text" data-i18n="s3_create_bucket_help">Use lowercase letters, numbers, dots, and hyphens.</p>
+                                        </div>
+                                        <label class="checkbox-row s3-skip-bucket" for="s3-wizard-skip-bucket">
+                                            <input type="checkbox" id="s3-wizard-skip-bucket">
+                                            <span data-i18n="s3_wizard_skip_bucket">Skip bucket selection for now</span>
+                                        </label>
+                                        <p class="help-text" id="s3-wizard-r2-management-state" data-i18n="s3_r2_management_unavailable">Bucket list/create is optional and needs a Cloudflare API Token with Workers R2 Storage Edit.</p>
+                                    </div>
+                                </div>
+                                <label class="checkbox-row" for="s3-wizard-path-style">
+                                    <input type="checkbox" id="s3-wizard-path-style">
+                                    <span data-i18n="s3_path_style">Use path-style requests</span>
+                                </label>
+                            </section>
+
+                            <section class="s3-wizard-panel" data-panel="2" hidden>
+                                <div class="notice" data-state="warn" data-i18n="s3_s3_credentials_help">These credentials are used by cfui to read and write objects. They are separate from the WebDAV login below.</div>
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label for="s3-wizard-access-key-id" data-i18n="s3_access_key_id">Access Key ID</label>
+                                        <input type="text" id="s3-wizard-access-key-id" class="input" spellcheck="false" autocomplete="off">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="s3-wizard-secret-access-key" data-i18n="s3_secret_access_key">Secret Access Key</label>
+                                        <div class="secret-field">
+                                            <input type="password" id="s3-wizard-secret-access-key" class="input" autocomplete="new-password" spellcheck="false" data-i18n-attr="placeholder|s3_secret_placeholder">
+                                            <button id="s3-wizard-secret-toggle" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show;title|token_show" title="Show token">
+                                                <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            </button>
+                                        </div>
+                                        <p class="help-text" id="s3-wizard-secret-state" data-i18n="s3_secret_not_set">No Secret Access Key saved.</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="s3-wizard-panel" data-panel="3" hidden>
+                                <div class="notice" data-state="warn" data-i18n="s3_webdav_credentials_help">These credentials are only for WebDAV clients connecting to cfui.</div>
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label for="s3-wizard-webdav-username" data-i18n="s3_webdav_username">WebDAV username</label>
+                                        <input type="text" id="s3-wizard-webdav-username" class="input" autocomplete="username" spellcheck="false">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="s3-wizard-webdav-password" data-i18n="s3_webdav_password">WebDAV password</label>
+                                        <div class="secret-field">
+                                            <input type="password" id="s3-wizard-webdav-password" class="input" autocomplete="new-password" spellcheck="false" data-i18n-attr="placeholder|s3_password_placeholder">
+                                            <button id="s3-wizard-password-toggle" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show;title|token_show" title="Show token">
+                                                <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            </button>
+                                        </div>
+                                        <p class="help-text" id="s3-wizard-password-state" data-i18n="s3_password_not_set">No WebDAV password saved.</p>
+                                    </div>
+                                </div>
+                                <div class="form-row single-column">
+                                    <div class="form-field">
+                                        <label for="s3-wizard-mount-path" data-i18n="s3_mount_path">WebDAV path</label>
+                                        <input type="text" id="s3-wizard-mount-path" class="input" spellcheck="false" autocomplete="off" value="/webdav/s3/">
+                                        <p class="help-text" data-i18n="s3_mount_path_help">Must start with /webdav/. Examples: /webdav/my_r2/ or /webdav/qiniu/.</p>
+                                    </div>
+                                </div>
+                                <div class="form-row single-column">
+                                    <div class="form-field">
+                                        <label for="s3-wizard-webdav-endpoint" data-i18n="s3_webdav_endpoint">WebDAV endpoint</label>
+                                        <div class="s3-webdav-endpoint">
+                                            <input type="text" id="s3-wizard-webdav-origin" class="input" readonly value="" aria-label="Current host" title="Current host" data-i18n-attr="aria-label|s3_webdav_host;title|s3_webdav_host">
+                                            <input type="text" id="s3-wizard-webdav-endpoint" class="input" readonly value="/webdav/s3/" aria-label="WebDAV path" title="WebDAV path" data-i18n-attr="aria-label|s3_webdav_path;title|s3_webdav_path">
+                                            <button id="s3-wizard-copy-endpoint" type="button" class="icon-btn" aria-label="Copy WebDAV endpoint" title="Copy WebDAV endpoint" data-i18n-attr="aria-label|copy_webdav_endpoint;title|copy_webdav_endpoint">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="s3-wizard-panel" data-panel="4" hidden>
+                                <div id="s3-wizard-review" class="s3-review"></div>
+                            </section>
+                        </form>
+                    </div>
+                    <div class="modal-foot s3-wizard-foot">
+                        <button type="button" class="btn btn--ghost" id="s3-wizard-prev" data-i18n="back">Back</button>
+                        <button type="button" class="btn" id="s3-wizard-test">
+                            <span class="spinner" aria-hidden="true"></span>
+                            <span class="text" data-i18n="s3_test_connection">Test connection</span>
+                        </button>
+                        <button type="button" class="btn btn--primary" id="s3-wizard-next" data-i18n="next">Next</button>
+                        <button type="button" class="btn btn--primary" id="s3-wizard-save">
+                            <span class="spinner" aria-hidden="true"></span>
+                            <span class="text" data-i18n="s3_save_settings">Save settings</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Features panel -->
             <section id="panel-features" class="tab-panel" role="tabpanel" aria-labelledby="tab-features" hidden>
@@ -1178,6 +1179,7 @@
     <script src="js/app-tunnel.js"></script>
     <script src="js/app-logs.js"></script>
     <script src="js/app-services.js"></script>
+    <script src="js/app-s3-wizard.js"></script>
     <script src="js/app-s3.js"></script>
     <script src="js/app-init.js"></script>
 </body>
