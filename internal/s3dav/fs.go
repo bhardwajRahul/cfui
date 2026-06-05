@@ -7,6 +7,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	aferos3 "github.com/fclairamb/afero-s3"
 	"github.com/spf13/afero"
@@ -39,10 +40,75 @@ func newS3FS(_ context.Context, cfg FSConfig, creds Credentials) (afero.Fs, erro
 		options.UsePathStyle = cfg.PathStyle
 	})
 	fs := aferos3.NewFsFromClient(cfg.BucketName, client)
-	if cfg.RootPrefix == "" {
-		return fs, nil
+	return s3ObjectKeyFS{Fs: fs, rootPrefix: cfg.RootPrefix}, nil
+}
+
+type s3ObjectKeyFS struct {
+	afero.Fs
+	rootPrefix string
+}
+
+func (fs s3ObjectKeyFS) s3Path(name string) string {
+	rootPrefix := strings.Trim(fs.rootPrefix, "/")
+	key := strings.TrimLeft(name, "/")
+	if key == "" {
+		if rootPrefix != "" {
+			return rootPrefix
+		}
+		return "/"
 	}
-	return afero.NewBasePathFs(fs, "/"+cfg.RootPrefix), nil
+	if rootPrefix == "" {
+		return key
+	}
+	return path.Join(rootPrefix, key)
+}
+
+func (fs s3ObjectKeyFS) Create(name string) (afero.File, error) {
+	return fs.Fs.Create(fs.s3Path(name))
+}
+
+func (fs s3ObjectKeyFS) Chmod(name string, mode os.FileMode) error {
+	return fs.Fs.Chmod(fs.s3Path(name), mode)
+}
+
+func (fs s3ObjectKeyFS) Chown(name string, uid, gid int) error {
+	return fs.Fs.Chown(fs.s3Path(name), uid, gid)
+}
+
+func (fs s3ObjectKeyFS) Chtimes(name string, atime, mtime time.Time) error {
+	return fs.Fs.Chtimes(fs.s3Path(name), atime, mtime)
+}
+
+func (fs s3ObjectKeyFS) Mkdir(name string, perm os.FileMode) error {
+	return fs.Fs.Mkdir(fs.s3Path(name), perm)
+}
+
+func (fs s3ObjectKeyFS) MkdirAll(name string, perm os.FileMode) error {
+	return fs.Fs.MkdirAll(fs.s3Path(name), perm)
+}
+
+func (fs s3ObjectKeyFS) Open(name string) (afero.File, error) {
+	return fs.Fs.Open(fs.s3Path(name))
+}
+
+func (fs s3ObjectKeyFS) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
+	return fs.Fs.OpenFile(fs.s3Path(name), flag, perm)
+}
+
+func (fs s3ObjectKeyFS) Remove(name string) error {
+	return fs.Fs.Remove(fs.s3Path(name))
+}
+
+func (fs s3ObjectKeyFS) RemoveAll(name string) error {
+	return fs.Fs.RemoveAll(fs.s3Path(name))
+}
+
+func (fs s3ObjectKeyFS) Rename(oldname, newname string) error {
+	return fs.Fs.Rename(fs.s3Path(oldname), fs.s3Path(newname))
+}
+
+func (fs s3ObjectKeyFS) Stat(name string) (os.FileInfo, error) {
+	return fs.Fs.Stat(fs.s3Path(name))
 }
 
 func listFiles(fs afero.Fs, rawPath string) (FilesResponse, error) {

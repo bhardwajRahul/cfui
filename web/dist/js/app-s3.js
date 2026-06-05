@@ -193,7 +193,10 @@
             port.disabled = mode !== ACCESS_DEDICATED;
         }
         $('s3-dedicated-apply')?.toggleAttribute('disabled', mode !== ACCESS_DEDICATED);
-        if (dedicatedSettings) dedicatedSettings.dataset.enabled = String(mode === ACCESS_DEDICATED);
+        if (dedicatedSettings) {
+            dedicatedSettings.hidden = mode !== ACCESS_DEDICATED;
+            dedicatedSettings.dataset.enabled = String(mode === ACCESS_DEDICATED);
+        }
         if (warning) {
             if (mode === ACCESS_DEDICATED && settings.dedicated_error) {
                 warning.hidden = false;

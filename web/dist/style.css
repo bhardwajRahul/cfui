@@ -1399,8 +1399,8 @@ details.disclosure > .body {
     align-items: end;
 }
 
-.s3-dedicated-settings[data-enabled="false"] {
-    opacity: 0.62;
+.s3-dedicated-settings[hidden] {
+    display: none;
 }
 
 .s3-dedicated-settings .form-field {

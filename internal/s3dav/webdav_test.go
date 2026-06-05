@@ -135,6 +135,41 @@ func TestWebDAVPutWorksWithS3StyleWriteOnlyFiles(t *testing.T) {
 	}
 }
 
+func TestWebDAVPutUsesSlashlessS3ObjectKey(t *testing.T) {
+	source := &recordingFS{Fs: afero.NewMemMapFs()}
+	fs := s3ObjectKeyFS{Fs: s3StyleWriteOnlyFS{Fs: source}}
+	svc := newTestService(t, fakeCloudflareClient{}, fs)
+	cfg := svc.cfgMgr.Get()
+	cfg.S3WebDAV.Enabled = true
+	cfg.S3WebDAV.Mounts[0].EndpointURL = "https://s3.example.com"
+	cfg.S3WebDAV.Mounts[0].BucketName = "bucket"
+	cfg.S3WebDAV.Mounts[0].MountPath = "/webdav/datasync/"
+	cfg.S3WebDAV.Mounts[0].AccessKeyID = "ak"
+	cfg.S3WebDAV.Mounts[0].SecretAccessKey = "sk"
+	cfg.S3WebDAV.Mounts[0].WebDAVAuthEnabled = false
+	if err := svc.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPut, "/webdav/datasync/cc-switch-sync/v2/db-v6/default/db.sql", bytes.NewBufferString("hello"))
+	rec := httptest.NewRecorder()
+	svc.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated && rec.Code != http.StatusNoContent {
+		t.Fatalf("expected WebDAV PUT to create nested object, got %d: %s", rec.Code, rec.Body.String())
+	}
+	want := "cc-switch-sync/v2/db-v6/default/db.sql"
+	if len(source.openFileNames) == 0 || source.openFileNames[len(source.openFileNames)-1] != want {
+		t.Fatalf("expected slashless object key %q, got %#v", want, source.openFileNames)
+	}
+	got, err := afero.ReadFile(source.Fs, want)
+	if err != nil {
+		t.Fatalf("read uploaded file: %v", err)
+	}
+	if string(got) != "hello" {
+		t.Fatalf("unexpected uploaded content %q", string(got))
+	}
+}
+
 func TestWebDAVHandlerAllowsRequestsWhenAuthDisabled(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	if err := fs.MkdirAll("/docs", 0755); err != nil {
