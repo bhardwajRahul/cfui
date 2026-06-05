@@ -1407,27 +1407,54 @@ details.disclosure > .body {
     margin-bottom: 0;
 }
 
-.s3-mount-item {
+.s3-mount-switcher-shell {
+    position: relative;
+    min-width: 0;
+}
+
+.s3-mount-switcher {
+    display: flex;
+    gap: var(--gap-2);
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.s3-mount-switcher::-webkit-scrollbar {
+    display: none;
+}
+
+.s3-mount-switcher-shell[data-overflow="true"] .s3-mount-switcher {
+    padding-inline: 44px;
+    scroll-padding-inline: 44px;
+}
+
+.s3-mount-switch-item {
+    flex: 0 0 clamp(220px, 28vw, 300px);
+    scroll-snap-align: start;
     border: 1px solid var(--border);
     border-radius: var(--r-control);
     background: var(--surface-2);
-    overflow: hidden;
-    min-height: 52px;
+    min-width: 0;
 }
 
-.s3-mount-item[data-active="true"] {
+.s3-mount-switch-item[data-active="true"] {
     border-color: var(--cf-orange);
     background: var(--surface);
+    box-shadow: 0 0 0 1px rgba(246, 130, 31, 0.16);
 }
 
-.s3-mount-summary {
+.s3-mount-switch-btn {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--gap-3);
     width: 100%;
-    min-height: 52px;
-    padding: 0 var(--gap-4);
+    min-height: 58px;
+    padding: 10px var(--gap-3);
     border: 0;
     background: transparent;
     color: var(--text);
@@ -1435,33 +1462,109 @@ details.disclosure > .body {
     cursor: pointer;
 }
 
-.s3-mount-summary:hover {
+.s3-mount-switch-btn:hover {
     background: rgba(128, 137, 149, 0.08);
 }
 
-.s3-mount-summary:focus-visible {
+.s3-mount-switch-btn:focus-visible {
     outline: none;
     box-shadow: inset 0 0 0 3px rgba(246, 130, 31, 0.22);
 }
 
-.s3-mount-chevron {
+.s3-mount-pager {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
     display: inline-grid;
     place-items: center;
-    width: 24px;
-    height: 24px;
-    color: var(--text-muted);
-    transition: transform 0.16s var(--ease-out);
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: opacity 0.16s var(--ease-out), transform 0.16s var(--ease-out);
 }
 
-.s3-mount-item[data-active="true"] .s3-mount-chevron {
-    transform: rotate(90deg);
+.s3-mount-pager:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+}
+
+.s3-mount-pager:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(246, 130, 31, 0.22), var(--shadow-soft);
+}
+
+.s3-mount-pager[hidden] {
+    display: none;
+}
+
+.s3-mount-pager--prev {
+    left: 4px;
+}
+
+.s3-mount-pager--next {
+    right: 4px;
+}
+
+.s3-mount-switch-copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.s3-mount-switch-meta {
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.s3-mount-health {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex: 0 0 auto;
+}
+
+.s3-health-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--text-muted);
+}
+
+.s3-health-dot[data-state="ok"] {
+    background: var(--state-ok);
+}
+
+.s3-health-dot[data-state="warn"] {
+    background: var(--state-warn);
+}
+
+.s3-health-dot[data-state="neutral"] {
+    background: var(--border-strong);
+}
+
+.s3-mount-detail-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--r-control);
+    background: var(--surface);
+    overflow: hidden;
 }
 
 .s3-mount-detail {
     display: grid;
     gap: var(--gap-4);
     padding: var(--gap-4);
-    border-top: 1px solid var(--border);
 }
 
 .s3-mount-detail__top {
@@ -1995,8 +2098,24 @@ details.disclosure > .body {
         grid-template-columns: 1fr;
     }
 
+    .s3-mount-switch-item {
+        flex-basis: min(260px, calc(100vw - 92px));
+    }
+
+    .s3-mount-switcher-shell[data-overflow="true"] .s3-mount-switcher {
+        padding-inline: 38px;
+        scroll-padding-inline: 38px;
+    }
+
+    .s3-mount-pager {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+    }
+
     .s3-mount-detail,
-    .s3-mount-summary {
+    .s3-mount-switch-btn {
         padding-left: var(--gap-3);
         padding-right: var(--gap-3);
     }

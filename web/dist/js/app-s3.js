@@ -78,6 +78,10 @@
         if (!list) return;
         const mounts = settings.mounts || [];
         const activeKey = state.s3.activeKey || settings.active_key;
+        if (state.s3.mountSwitcherObserver) {
+            state.s3.mountSwitcherObserver.disconnect();
+            state.s3.mountSwitcherObserver = null;
+        }
         list.innerHTML = '';
         if (!mounts.length) {
             const empty = document.createElement('div');
@@ -86,32 +90,105 @@
             list.appendChild(empty);
             return;
         }
-        for (const mount of mounts) list.appendChild(mountItem(settings, mount, mount.key === activeKey));
+        const selected = mounts.find((m) => m.key === activeKey) || mounts[0];
+        const switcherShell = document.createElement('div');
+        switcherShell.className = 's3-mount-switcher-shell';
+        const switcher = document.createElement('div');
+        switcher.className = 's3-mount-switcher';
+        switcher.setAttribute('role', 'list');
+        for (const mount of mounts) switcher.appendChild(mountSwitchItem(mount, mount.key === selected.key));
+        const prev = mountPagerButton('prev');
+        const next = mountPagerButton('next');
+        prev.addEventListener('click', () => scrollMountSwitcher(switcher, -1));
+        next.addEventListener('click', () => scrollMountSwitcher(switcher, 1));
+        switcher.addEventListener('scroll', () => updateMountPager(switcherShell, switcher, prev, next), { passive: true });
+        switcherShell.append(prev, switcher, next);
+
+        const detail = document.createElement('div');
+        detail.className = 's3-mount-detail-panel';
+        detail.appendChild(mountDetail(settings, selected));
+        list.append(switcherShell, detail);
+        if (window.ResizeObserver) {
+            const ro = new ResizeObserver(() => updateMountPager(switcherShell, switcher, prev, next));
+            ro.observe(switcher);
+            state.s3.mountSwitcherObserver = ro;
+        }
+        requestAnimationFrame(() => {
+            switcher.querySelector('[data-active="true"]')?.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+            updateMountPager(switcherShell, switcher, prev, next);
+        });
     }
 
-    function mountItem(settings, mount, active) {
+    function mountSwitchItem(mount, active) {
         const item = document.createElement('article');
-        item.className = 's3-mount-item';
+        item.className = 's3-mount-switch-item';
         item.dataset.active = String(active);
         item.setAttribute('role', 'listitem');
 
         const summary = document.createElement('button');
         summary.type = 'button';
-        summary.className = 's3-mount-summary';
-        summary.setAttribute('aria-expanded', String(active));
+        summary.className = 's3-mount-switch-btn';
+        summary.setAttribute('aria-pressed', String(active));
         summary.addEventListener('click', () => selectMount(mount.key));
 
+        const copy = document.createElement('span');
+        copy.className = 's3-mount-switch-copy';
         const name = document.createElement('span');
         name.className = 's3-mount-item__name';
         name.textContent = mount.name || mount.key;
-        const chevron = document.createElement('span');
-        chevron.className = 's3-mount-chevron';
-        chevron.innerHTML = chevronIcon();
-        summary.append(name, chevron);
+        const meta = document.createElement('span');
+        meta.className = 's3-mount-switch-meta';
+        meta.textContent = `${providerLabel(mount.provider)} · ${mount.bucket_name || t('s3_bucket_required')}`;
+        copy.append(name, meta);
+        summary.append(copy, mountHealthDots(mount));
         item.appendChild(summary);
-
-        if (active) item.appendChild(mountDetail(settings, mount));
         return item;
+    }
+
+    function mountPagerButton(direction) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `s3-mount-pager s3-mount-pager--${direction}`;
+        btn.hidden = true;
+        btn.setAttribute('aria-label', t(direction === 'prev' ? 's3_mount_scroll_prev' : 's3_mount_scroll_next'));
+        btn.innerHTML = direction === 'prev' ? chevronLeftIcon() : chevronRightIcon();
+        return btn;
+    }
+
+    function scrollMountSwitcher(switcher, direction) {
+        const amount = Math.max(180, switcher.clientWidth - 56) * direction;
+        const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        switcher.scrollBy({ left: amount, behavior: reduceMotion ? 'auto' : 'smooth' });
+    }
+
+    function updateMountPager(shell, switcher, prev, next) {
+        const max = Math.max(0, switcher.scrollWidth - switcher.clientWidth);
+        const overflow = max > 2;
+        const canPrev = overflow && switcher.scrollLeft > 2;
+        const canNext = overflow && switcher.scrollLeft < max - 2;
+        shell.dataset.overflow = String(overflow);
+        prev.hidden = !canPrev;
+        next.hidden = !canNext;
+    }
+
+    function mountHealthDots(mount) {
+        const wrap = document.createElement('span');
+        wrap.className = 's3-mount-health';
+        wrap.append(
+            healthDot(mount.enabled && mount.availability?.can_enable ? 'ok' : mount.enabled ? 'warn' : 'neutral', t('s3_config_status')),
+            healthDot(mount.webdav_enabled && mount.webdav_availability?.can_enable ? 'ok' : mount.webdav_enabled ? 'warn' : 'neutral', t('s3_webdav_status')),
+            healthDot(!mount.webdav_auth_enabled ? 'warn' : mount.webdav_username && mount.password_set ? 'ok' : 'warn', t('s3_webdav_auth_status'))
+        );
+        return wrap;
+    }
+
+    function healthDot(state, label) {
+        const dot = document.createElement('span');
+        dot.className = 's3-health-dot';
+        dot.dataset.state = state;
+        dot.title = label;
+        dot.setAttribute('aria-label', label);
+        return dot;
     }
 
     function mountDetail(settings, mount) {
@@ -858,7 +935,11 @@
         return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
     }
 
-    function chevronIcon() {
+    function chevronLeftIcon() {
+        return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>';
+    }
+
+    function chevronRightIcon() {
         return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>';
     }
 

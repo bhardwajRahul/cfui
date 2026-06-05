@@ -1092,6 +1092,12 @@ other = "If WebDAV login is disabled, anyone who can reach this port can access 
 [s3_new_mount]
 other = "New Mount"
 
+[s3_mount_scroll_prev]
+other = "Scroll mounts left"
+
+[s3_mount_scroll_next]
+other = "Scroll mounts right"
+
 [s3_new_mount_default]
 other = "New S3 Mount"
 

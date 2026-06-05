@@ -1092,6 +1092,12 @@ other = "如果关闭 WebDAV 登录，任何能访问这个端口的人都能访
 [s3_new_mount]
 other = "新建挂载"
 
+[s3_mount_scroll_prev]
+other = "向左切换挂载配置"
+
+[s3_mount_scroll_next]
+other = "向右切换挂载配置"
+
 [s3_new_mount_default]
 other = "新 S3 挂载"
 
