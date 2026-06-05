@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -250,6 +251,87 @@ func TestWebDAVPropfindMountRootWorksWhenS3RootHasNoDirectoryObject(t *testing.T
 	svc.Handler().ServeHTTP(rec, req)
 	if rec.Code != webDAVMultiStatus {
 		t.Fatalf("expected mount root PROPFIND to succeed, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestBrowserGetDirectoryShowsReadOnlyListing(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	if err := fs.MkdirAll("/docs", 0755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err := afero.WriteFile(fs, "/docs/readme.txt", []byte("hello"), 0644); err != nil {
+		t.Fatalf("WriteFile readme: %v", err)
+	}
+	if err := afero.WriteFile(fs, "/a<b>.txt", []byte("unsafe name"), 0644); err != nil {
+		t.Fatalf("WriteFile unsafe: %v", err)
+	}
+	svc := newTestService(t, fakeCloudflareClient{}, fs)
+	cfg := svc.cfgMgr.Get()
+	cfg.S3WebDAV.Enabled = true
+	cfg.S3WebDAV.Mounts[0].EndpointURL = "https://s3.example.com"
+	cfg.S3WebDAV.Mounts[0].BucketName = "bucket"
+	cfg.S3WebDAV.Mounts[0].MountPath = "/webdav/public/"
+	cfg.S3WebDAV.Mounts[0].AccessKeyID = "ak"
+	cfg.S3WebDAV.Mounts[0].SecretAccessKey = "sk"
+	cfg.S3WebDAV.Mounts[0].WebDAVAuthEnabled = false
+	if err := svc.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/webdav/public/", nil)
+	req.Header.Set("Accept", "*/*")
+	rec := httptest.NewRecorder()
+	svc.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected browser directory listing, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Type"); !strings.Contains(got, "text/html") {
+		t.Fatalf("expected HTML content type, got %q", got)
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		`href="/webdav/public/docs/"`,
+		`href="/webdav/public/a%3Cb%3E.txt"`,
+		`a&lt;b&gt;.txt`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected listing to contain %q, body: %s", want, body)
+		}
+	}
+	if strings.Contains(body, "<button") || strings.Contains(body, "Upload") || strings.Contains(body, "Delete") {
+		t.Fatalf("expected read-only listing without write controls, body: %s", body)
+	}
+}
+
+func TestBrowserHeadDirectoryReturnsListingHeadersOnly(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	if err := fs.MkdirAll("/docs", 0755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	svc := newTestService(t, fakeCloudflareClient{}, fs)
+	cfg := svc.cfgMgr.Get()
+	cfg.S3WebDAV.Enabled = true
+	cfg.S3WebDAV.Mounts[0].EndpointURL = "https://s3.example.com"
+	cfg.S3WebDAV.Mounts[0].BucketName = "bucket"
+	cfg.S3WebDAV.Mounts[0].MountPath = "/webdav/public/"
+	cfg.S3WebDAV.Mounts[0].AccessKeyID = "ak"
+	cfg.S3WebDAV.Mounts[0].SecretAccessKey = "sk"
+	cfg.S3WebDAV.Mounts[0].WebDAVAuthEnabled = false
+	if err := svc.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodHead, "/webdav/public/", nil)
+	rec := httptest.NewRecorder()
+	svc.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected browser directory HEAD to succeed, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Type"); !strings.Contains(got, "text/html") {
+		t.Fatalf("expected HTML content type, got %q", got)
+	}
+	if rec.Body.Len() != 0 {
+		t.Fatalf("expected HEAD response body to be empty, got %q", rec.Body.String())
 	}
 }
 
