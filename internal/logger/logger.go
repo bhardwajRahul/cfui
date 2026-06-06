@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"bytes"
 	"container/ring"
 	"io"
 	"os"
@@ -293,8 +294,10 @@ func (b *LogBroadcaster) Unsubscribe(ch chan string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	delete(b.subscribers, ch)
-	close(ch)
+	if _, ok := b.subscribers[ch]; ok {
+		delete(b.subscribers, ch)
+		close(ch)
+	}
 }
 
 // Broadcast sends a log line to all subscribers
@@ -376,13 +379,7 @@ func (bw *broadcastWriter) Write(p []byte) (n int, err error) {
 
 	// Broadcast each complete line
 	for {
-		idx := -1
-		for i, b := range bw.buffer {
-			if b == '\n' {
-				idx = i
-				break
-			}
-		}
+		idx := bytes.IndexByte(bw.buffer, '\n')
 		if idx == -1 {
 			break
 		}

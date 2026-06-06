@@ -79,3 +79,41 @@ func TestGetConfigReturnsDefaultIPSourcesWhenStoredSourcesEmpty(t *testing.T) {
 		t.Fatalf("expected default sources in response, got default=%d effective=%d", len(resp.DefaultIPSources), len(resp.IPSources))
 	}
 }
+
+func TestStopCancelsRunningDetectionBackoff(t *testing.T) {
+	ddnsTestLoggerOnce.Do(func() {
+		logDir, err := os.MkdirTemp("", "cfui-ddns-test-logs-*")
+		if err != nil {
+			t.Fatalf("create log dir: %v", err)
+		}
+		if err := logger.Initialize(&logger.Config{LogDir: logDir, LogLevel: "error"}); err != nil {
+			t.Fatalf("initialize logger: %v", err)
+		}
+	})
+
+	cfgMgr, err := config.NewManager(t.TempDir())
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	cfg := cfgMgr.Get()
+	cfg.DDNS.Enabled = true
+	cfg.DDNS.MaxRetries = 10
+	cfg.DDNS.IPSources = []config.IPSource{{URL: "://bad-url", IPType: "auto"}}
+	cfg.DDNS.Records = []config.DDNSRecord{{
+		Name: "home.example.com", ZoneID: "zone-1", ZoneName: "example.com",
+		Type: "A", Value: "{IPV4}", TTL: 1,
+	}}
+	if err := cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	svc := NewService(cfgMgr)
+	svc.Start()
+
+	start := time.Now()
+	svc.Stop()
+	if elapsed := time.Since(start); elapsed > 500*time.Millisecond {
+		t.Fatalf("Stop waited too long for DDNS detection to cancel: %v", elapsed)
+	}
+}

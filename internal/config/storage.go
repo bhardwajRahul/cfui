@@ -22,7 +22,7 @@ import (
 
 const defaultConfigKey = "default"
 
-func (m *Manager) loadLocked(ctx context.Context) (Config, error) {
+func (m *Manager) loadConfig(ctx context.Context) (Config, error) {
 	if cfg, ok, err := m.loadStructuredConfig(ctx); err != nil {
 		return Config{}, err
 	} else if ok {
@@ -41,7 +41,7 @@ func (m *Manager) loadLocked(ctx context.Context) (Config, error) {
 		if err != nil {
 			return Config{}, err
 		}
-		if err := m.saveLocked(ctx, cfg); err != nil {
+		if err := m.saveConfig(ctx, cfg); err != nil {
 			return Config{}, err
 		}
 		logLegacyMigration(legacy.Source, m.dir)
@@ -50,7 +50,7 @@ func (m *Manager) loadLocked(ctx context.Context) (Config, error) {
 	}
 
 	cfg := DefaultConfig()
-	if err := m.saveLocked(ctx, cfg); err != nil {
+	if err := m.saveConfig(ctx, cfg); err != nil {
 		return Config{}, err
 	}
 	if logger.Sugar != nil {
@@ -59,7 +59,7 @@ func (m *Manager) loadLocked(ctx context.Context) (Config, error) {
 	return cfg, nil
 }
 
-func (m *Manager) saveLocked(ctx context.Context, cfg Config) error {
+func (m *Manager) saveConfig(ctx context.Context, cfg Config) error {
 	tx, err := m.client.Tx(ctx)
 	if err != nil {
 		return err

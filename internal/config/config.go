@@ -323,6 +323,7 @@ func parseBool(v string) bool {
 type Manager struct {
 	dir    string
 	client *ent.Client
+	saveMu sync.Mutex
 	mu     sync.RWMutex
 	cfg    Config
 }
@@ -355,37 +356,45 @@ func NewManager(dir string) (*Manager, error) {
 }
 
 func (m *Manager) Load() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.saveMu.Lock()
+	defer m.saveMu.Unlock()
 
-	cfg, err := m.loadLocked(context.Background())
+	cfg, err := m.loadConfig(context.Background())
 	if err != nil {
 		return err
 	}
 
-	m.cfg = cfg
+	m.mu.Lock()
+	m.cfg = cloneConfig(cfg)
+	m.mu.Unlock()
 	return nil
 }
 
 func (m *Manager) Save(cfg Config) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.saveMu.Lock()
+	defer m.saveMu.Unlock()
 
+	m.mu.RLock()
+	current := cloneConfig(m.cfg)
+	m.mu.RUnlock()
 	if cfg.DDNS.IPSources == nil {
-		cfg.DDNS.IPSources = m.cfg.DDNS.IPSources
+		cfg.DDNS.IPSources = cloneSlice(current.DDNS.IPSources)
 	}
 	if cfg.DDNS.Records == nil {
-		cfg.DDNS.Records = m.cfg.DDNS.Records
+		cfg.DDNS.Records = cloneSlice(current.DDNS.Records)
 	}
+	cfg = cloneConfig(cfg)
 
-	if err := m.saveLocked(context.Background(), cfg); err != nil {
+	if err := m.saveConfig(context.Background(), cfg); err != nil {
 		if logger.Sugar != nil {
 			logger.Sugar.Errorf("Failed to write config: %v", err)
 		}
 		return err
 	}
 
-	m.cfg = cfg
+	m.mu.Lock()
+	m.cfg = cloneConfig(cfg)
+	m.mu.Unlock()
 	if logger.Sugar != nil {
 		logger.Sugar.Debugf("Configuration saved successfully to %s", persist.DBPath(m.dir))
 	}
@@ -395,9 +404,25 @@ func (m *Manager) Save(cfg Config) error {
 func (m *Manager) Get() Config {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return m.cfg
+	return cloneConfig(m.cfg)
 }
 
 func (m *Manager) Dir() string {
 	return m.dir
+}
+
+func cloneConfig(cfg Config) Config {
+	cfg.DDNS.IPSources = cloneSlice(cfg.DDNS.IPSources)
+	cfg.DDNS.Records = cloneSlice(cfg.DDNS.Records)
+	cfg.S3WebDAV.Mounts = cloneSlice(cfg.S3WebDAV.Mounts)
+	return cfg
+}
+
+func cloneSlice[T any](in []T) []T {
+	if in == nil {
+		return nil
+	}
+	out := make([]T, len(in))
+	copy(out, in)
+	return out
 }

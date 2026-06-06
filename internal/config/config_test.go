@@ -78,6 +78,40 @@ func TestDDNSRecordCommentPersistsInDatabase(t *testing.T) {
 	}
 }
 
+func TestManagerGetReturnsIndependentConfigSlices(t *testing.T) {
+	dir := t.TempDir()
+	mgr, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	cfg := mgr.Get()
+	cfg.DDNS.Records = []DDNSRecord{{
+		Name: "home.example.com", ZoneID: "zone-1", ZoneName: "example.com",
+		Type: "A", Value: "{IPV4}", Comment: "custom comment", TTL: 1,
+	}}
+	cfg.S3WebDAV.Mounts[0].BucketName = "original-bucket"
+	if err := mgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	got := mgr.Get()
+	got.DDNS.IPSources[0].URL = "https://mutated.example.com"
+	got.DDNS.Records[0].Name = "mutated.example.com"
+	got.S3WebDAV.Mounts[0].BucketName = "mutated-bucket"
+
+	again := mgr.Get()
+	if again.DDNS.IPSources[0].URL == "https://mutated.example.com" {
+		t.Fatal("mutating returned IP sources changed manager state")
+	}
+	if again.DDNS.Records[0].Name != "home.example.com" {
+		t.Fatalf("mutating returned DDNS records changed manager state: %#v", again.DDNS.Records)
+	}
+	if again.S3WebDAV.Mounts[0].BucketName != "original-bucket" {
+		t.Fatalf("mutating returned S3 mounts changed manager state: %#v", again.S3WebDAV.Mounts)
+	}
+}
+
 func TestS3WebDAVPersistsInDatabase(t *testing.T) {
 	dir := t.TempDir()
 	mgr, err := NewManager(dir)

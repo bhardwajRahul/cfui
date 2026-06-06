@@ -246,7 +246,14 @@ func (r *Runner) Start() (err error) {
 func (r *Runner) Stop() error {
 	r.mu.Lock()
 	if !r.running {
+		cancel := r.cancel
+		r.cancel = nil
 		r.mu.Unlock()
+		if cancel != nil {
+			cancel()
+			logger.Sugar.Debug("Canceled pending tunnel restart")
+			return nil
+		}
 		logger.Sugar.Debug("Stop called but tunnel is not running")
 		return nil
 	}
@@ -255,6 +262,7 @@ func (r *Runner) Stop() error {
 	// Cancel the context to signal shutdown
 	if r.cancel != nil {
 		r.cancel()
+		r.cancel = nil
 	}
 
 	// Signal graceful shutdown to cloudflared
@@ -451,7 +459,7 @@ func (r *Runner) runTunnel(ctx context.Context, token string) {
 
 		if ctx.Err() == nil {
 			logger.Sugar.Warn("Tunnel exited unexpectedly, checking auto-restart policy")
-			r.checkAutoRestart()
+			r.checkAutoRestart(ctx)
 		}
 	}()
 
@@ -668,7 +676,12 @@ func (r *Runner) cleanupConfigFile() {
 	}
 }
 
-func (r *Runner) checkAutoRestart() {
+func (r *Runner) checkAutoRestart(ctx context.Context) {
+	if err := ctx.Err(); err != nil {
+		logger.Sugar.Debugf("Auto-restart canceled: %v", err)
+		return
+	}
+
 	cfg := r.cfgMgr.Get()
 	if !cfg.AutoRestart {
 		logger.Sugar.Info("Auto-restart is disabled, tunnel will not restart")
@@ -700,10 +713,21 @@ func (r *Runner) checkAutoRestart() {
 	attemptNum := r.restartCount
 	r.mu.Unlock()
 
-	// Sleep without holding the lock to avoid blocking other operations
 	logger.Sugar.Infof("Auto-restarting in %v (attempt %d)...", delay, attemptNum)
-	time.Sleep(delay)
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
 
+	select {
+	case <-ctx.Done():
+		logger.Sugar.Infof("Auto-restart canceled before attempt %d: %v", attemptNum, ctx.Err())
+		return
+	case <-timer.C:
+	}
+
+	if err := ctx.Err(); err != nil {
+		logger.Sugar.Infof("Auto-restart canceled before attempt %d: %v", attemptNum, err)
+		return
+	}
 	if err := r.Start(); err != nil {
 		logger.Sugar.Errorf("Failed to restart tunnel: %v", err)
 	}

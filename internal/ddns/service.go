@@ -25,15 +25,18 @@ const (
 type Service struct {
 	cfgMgr *config.Manager
 
-	mu        sync.Mutex
-	currentV4 string
-	currentV6 string
-	lastCheck time.Time
-	lastError string
-	results   []SyncResult // recent sync results (circular)
-	running   bool
+	lifecycleMu sync.Mutex
+	mu          sync.Mutex
+	currentV4   string
+	currentV6   string
+	lastCheck   time.Time
+	lastError   string
+	results     []SyncResult // recent sync results (circular)
+	running     bool
 
-	stopCh chan struct{}
+	stopCh     chan struct{}
+	stopCancel context.CancelFunc
+	loopDone   chan struct{}
 }
 
 // SyncResult records the outcome of a single DNS sync operation.
@@ -109,6 +112,9 @@ func NewService(cfgMgr *config.Manager) *Service {
 
 // Start begins the background DDNS loop if enabled.
 func (s *Service) Start() {
+	s.lifecycleMu.Lock()
+	defer s.lifecycleMu.Unlock()
+
 	cfg := s.cfgMgr.Get()
 	if !cfg.DDNS.Enabled {
 		return
@@ -119,22 +125,53 @@ func (s *Service) Start() {
 		return
 	}
 	s.running = true
-	s.stopCh = make(chan struct{})
+	stopCh := make(chan struct{})
+	loopCtx, cancel := context.WithCancel(context.Background())
+	s.stopCh = stopCh
+	s.stopCancel = cancel
+	loopDone := make(chan struct{})
+	s.loopDone = loopDone
 	s.mu.Unlock()
 
-	go s.loop()
+	go func() {
+		defer close(loopDone)
+		s.loop(loopCtx, stopCh)
+	}()
 	logger.Sugar.Info("DDNS service started")
 }
 
 // Stop halts the background loop.
 func (s *Service) Stop() {
+	s.lifecycleMu.Lock()
+	defer s.lifecycleMu.Unlock()
+
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if !s.running {
+		cancel := s.stopCancel
+		s.mu.Unlock()
+		if cancel != nil {
+			cancel()
+		}
 		return
 	}
 	s.running = false
-	close(s.stopCh)
+	stopCh := s.stopCh
+	cancel := s.stopCancel
+	loopDone := s.loopDone
+	s.stopCh = nil
+	s.stopCancel = nil
+	s.loopDone = nil
+	if cancel != nil {
+		cancel()
+	}
+	if stopCh != nil {
+		close(stopCh)
+	}
+	s.mu.Unlock()
+
+	if loopDone != nil {
+		<-loopDone
+	}
 	logger.Sugar.Info("DDNS service stopped")
 }
 
@@ -144,7 +181,7 @@ func (s *Service) Restart() {
 	s.Start()
 }
 
-func (s *Service) loop() {
+func (s *Service) loop(ctx context.Context, stopCh <-chan struct{}) {
 	cfg := s.cfgMgr.Get()
 	interval := time.Duration(cfg.DDNS.IntervalMins) * time.Minute
 	if interval < time.Minute {
@@ -155,17 +192,19 @@ func (s *Service) loop() {
 	}
 
 	// Run immediately on start
-	s.checkAndSync()
+	s.checkAndSync(ctx)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-s.stopCh:
+		case <-stopCh:
+			return
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			s.checkAndSync()
+			s.checkAndSync(ctx)
 		}
 	}
 }
@@ -178,24 +217,30 @@ func (s *Service) DetectIPs(ctx context.Context) (v4, v6 string, err error) {
 		sources = config.DefaultDDNSConfig().IPSources
 	}
 
-	var v4Err, v6Err error
+	type detectResult struct {
+		ip  string
+		err error
+	}
+
+	var v4Result, v6Result detectResult
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
-		v4, v4Err = s.detectIP(ctx, sources, "ipv4")
+		v4Result.ip, v4Result.err = s.detectIP(ctx, sources, "ipv4")
 	}()
 
 	go func() {
 		defer wg.Done()
-		v6, v6Err = s.detectIP(ctx, sources, "ipv6")
+		v6Result.ip, v6Result.err = s.detectIP(ctx, sources, "ipv6")
 	}()
 
 	wg.Wait()
 
+	v4, v6 = v4Result.ip, v6Result.ip
 	if v4 == "" && v6 == "" {
-		return "", "", fmt.Errorf("failed to detect any IP: v4=%v v6=%v", v4Err, v6Err)
+		return "", "", fmt.Errorf("failed to detect any IP: v4=%v v6=%v", v4Result.err, v6Result.err)
 	}
 
 	return v4, v6, nil
@@ -307,7 +352,7 @@ func (s *Service) fetchIP(ctx context.Context, client *http.Client, url string) 
 	return strings.TrimSpace(string(body)), nil
 }
 
-func (s *Service) checkAndSync() {
+func (s *Service) checkAndSync(parent context.Context) {
 	cfg := s.cfgMgr.Get()
 	if !cfg.DDNS.Enabled || len(cfg.DDNS.Records) == 0 {
 		s.mu.Lock()
@@ -316,7 +361,7 @@ func (s *Service) checkAndSync() {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(parent, 60*time.Second)
 	defer cancel()
 
 	v4, v6, err := s.DetectIPs(ctx)
