@@ -759,6 +759,16 @@ func TestSyncJobListAndControl(t *testing.T) {
 	if ctx.Err() == nil {
 		t.Fatalf("expected sync job context to be canceled")
 	}
+	cleared, err := svc.ControlSyncJob("sync-test", "clear")
+	if err != nil {
+		t.Fatalf("clear terminal sync job: %v", err)
+	}
+	if cleared.JobID != "sync-test" || cleared.Status != SyncJobCanceled {
+		t.Fatalf("unexpected cleared job response: %#v", cleared)
+	}
+	if _, err := svc.SyncJob("sync-test"); err == nil || !strings.Contains(err.Error(), "not found") {
+		t.Fatalf("expected cleared sync job to be removed, got %v", err)
+	}
 
 	pausedCtx, pausedCancel := context.WithCancel(context.Background())
 	pausedJob := newSyncJob(SyncJobResponse{
@@ -783,6 +793,25 @@ func TestSyncJobListAndControl(t *testing.T) {
 	}
 	if canceledPaused.Status != SyncJobCanceled || pausedCtx.Err() == nil {
 		t.Fatalf("expected paused job to cancel, got %#v", canceledPaused)
+	}
+
+	runningCtx, runningCancel := context.WithCancel(context.Background())
+	defer runningCancel()
+	runningJob := newSyncJob(SyncJobResponse{
+		JobID:           "sync-running",
+		Status:          SyncJobRunning,
+		SourceMountKey:  "source",
+		TargetMountKeys: []string{"target"},
+		SourcePath:      "/docs",
+		DestinationPath: "/backup",
+		StartedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+	}, runningCtx, runningCancel)
+	svc.syncJobsMu.Lock()
+	svc.syncJobs[runningJob.resp.JobID] = runningJob
+	svc.syncJobsMu.Unlock()
+	if _, err := svc.ControlSyncJob("sync-running", "clear"); err == nil || !strings.Contains(err.Error(), "cannot clear") {
+		t.Fatalf("expected running sync job clear to fail, got %v", err)
 	}
 }
 

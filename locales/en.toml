@@ -1767,6 +1767,9 @@ other = "Resume"
 [s3_sync_cancel]
 other = "Cancel task"
 
+[s3_sync_clear]
+other = "Clear"
+
 [s3_sync_pausing]
 other = "Pausing"
 
@@ -1775,6 +1778,12 @@ other = "Resuming"
 
 [s3_sync_canceling]
 other = "Canceling"
+
+[s3_sync_clearing]
+other = "Clearing"
+
+[s3_sync_cleared]
+other = "Sync task cleared"
 
 [s3_sync_paused]
 other = "Paused"

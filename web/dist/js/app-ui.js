@@ -79,9 +79,16 @@
 
     /* ---- Dialog ---- */
 
-    function openDialog(dialog) {
+    function openDialog(dialog, options = {}) {
         if (!dialog) return;
-        if (state.activeDialog && state.activeDialog !== dialog) closeDialog(state.activeDialog);
+        if (state.activeDialog && state.activeDialog !== dialog) {
+            if (options.stack) {
+                if (!Array.isArray(state.dialogStack)) state.dialogStack = [];
+                state.dialogStack.push({ dialog: state.activeDialog, lastFocused: state.lastFocused });
+            } else {
+                closeDialog(state.activeDialog);
+            }
+        }
         state.lastFocused = document.activeElement;
         state.activeDialog = dialog;
         dialog.hidden = false;
@@ -94,13 +101,28 @@
 
     function closeDialog(dialog) {
         if (!dialog || dialog.hidden) return;
+        const focusTarget = state.lastFocused;
+        const wasActive = state.activeDialog === dialog;
         dialog.hidden = true;
-        if (state.activeDialog === dialog) {
+        if (wasActive) {
             state.activeDialog = null;
             if (state.confirmResolver) { state.confirmResolver(false); state.confirmResolver = null; }
+            const previous = Array.isArray(state.dialogStack) ? state.dialogStack.pop() : null;
+            if (previous?.dialog && !previous.dialog.hidden) {
+                state.activeDialog = previous.dialog;
+                state.lastFocused = previous.lastFocused || null;
+            }
         }
         if (!$$('.modal-backdrop').some((d) => !d.hidden)) document.body.classList.remove('modal-open');
-        if (state.lastFocused?.focus) state.lastFocused.focus();
+        if (state.activeDialog) {
+            if (focusTarget?.focus && state.activeDialog.contains(focusTarget)) {
+                focusTarget.focus();
+            } else {
+                state.activeDialog.querySelector('input, select, textarea, button')?.focus();
+            }
+        } else if (focusTarget?.focus) {
+            focusTarget.focus();
+        }
     }
 
     function confirm({ title, message, okText, okClass = 'btn--danger' }) {
@@ -112,7 +134,7 @@
             $('confirm-ok').className = `btn ${okClass}`;
             $('confirm-ok-text').textContent = okText || t('confirm');
             state.confirmResolver = resolve;
-            openDialog(dialog);
+            openDialog(dialog, { stack: true });
         });
     }
 

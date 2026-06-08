@@ -33,6 +33,7 @@
         pendingConfigSignature: '',
         localConfigSignature: '',
         activeDialog: null,
+        dialogStack: [],
         lastFocused: null,
         confirmResolver: null,
         nextLogId: 1,

@@ -1575,6 +1575,15 @@
         state.s3.syncJobs = sortSyncJobs(jobs);
     }
 
+    function removeS3SyncJob(jobID) {
+        if (!jobID) return;
+        ensureS3SyncRuntime();
+        state.s3.syncJobs = sortSyncJobs(state.s3.syncJobs.filter((item) => item.job_id !== jobID));
+        if (state.s3.selectedSyncJobID === jobID) {
+            state.s3.selectedSyncJobID = state.s3.syncJobs[0]?.job_id || '';
+        }
+    }
+
     function sortSyncJobs(jobs) {
         return jobs.slice().sort((a, b) => syncJobTime(b.started_at) - syncJobTime(a.started_at));
     }
@@ -1713,9 +1722,15 @@
     }
 
     function syncJobActions(job) {
-        if (!job || isTerminalSyncStatus(job.status)) return null;
+        if (!job) return null;
         const actions = document.createElement('div');
         actions.className = 'btn-row btn-row--end s3-sync-job-actions';
+        if (isTerminalSyncStatus(job.status)) {
+            const clear = iconTextButton(t('s3_sync_clear'), trashIcon(), 'btn--sm');
+            clear.addEventListener('click', (e) => controlS3SyncJob(job.job_id, 'clear', e.currentTarget));
+            actions.appendChild(clear);
+            return actions;
+        }
         if (job.status === 'paused') {
             const resume = iconTextButton(t('s3_sync_resume'), playIcon(), 'btn--sm btn--primary');
             resume.addEventListener('click', (e) => controlS3SyncJob(job.job_id, 'resume', e.currentTarget));
@@ -1733,11 +1748,22 @@
 
     async function controlS3SyncJob(jobID, action, control) {
         if (!jobID || !action) return;
-        const busyText = action === 'pause' ? t('s3_sync_pausing') : action === 'resume' ? t('s3_sync_resuming') : t('s3_sync_canceling');
+        const busyText = action === 'pause'
+            ? t('s3_sync_pausing')
+            : action === 'resume'
+                ? t('s3_sync_resuming')
+                : action === 'clear'
+                    ? t('s3_sync_clearing')
+                    : t('s3_sync_canceling');
         setBusy(control, true, busyText);
         try {
             const job = await apiSend('/s3/files/sync/' + encodeURIComponent(jobID), 'POST', { action });
-            upsertS3SyncJob(job);
+            if (action === 'clear') {
+                removeS3SyncJob(jobID);
+                toast.info(t('s3_sync_cleared'));
+            } else {
+                upsertS3SyncJob(job);
+            }
             renderS3SyncTaskSlot();
             renderS3SyncJobsDialog();
             if (hasActiveSyncJobs()) startS3SyncPolling();

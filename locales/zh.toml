@@ -1767,6 +1767,9 @@ other = "继续"
 [s3_sync_cancel]
 other = "取消任务"
 
+[s3_sync_clear]
+other = "清除"
+
 [s3_sync_pausing]
 other = "正在暂停"
 
@@ -1775,6 +1778,12 @@ other = "正在继续"
 
 [s3_sync_canceling]
 other = "正在取消"
+
+[s3_sync_clearing]
+other = "正在清除"
+
+[s3_sync_cleared]
+other = "同步任务已清除"
 
 [s3_sync_paused]
 other = "已暂停"

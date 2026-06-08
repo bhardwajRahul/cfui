@@ -155,6 +155,9 @@ func (s *Service) SyncJob(id string) (SyncJobResponse, error) {
 func (s *Service) ControlSyncJob(id, action string) (SyncJobResponse, error) {
 	id = strings.TrimSpace(id)
 	action = strings.TrimSpace(strings.ToLower(action))
+	if action == "clear" {
+		return s.clearSyncJob(id)
+	}
 	s.syncJobsMu.RLock()
 	job, ok := s.syncJobs[id]
 	s.syncJobsMu.RUnlock()
@@ -171,6 +174,21 @@ func (s *Service) ControlSyncJob(id, action string) (SyncJobResponse, error) {
 	default:
 		return SyncJobResponse{}, fmt.Errorf("unsupported sync job action %q", action)
 	}
+}
+
+func (s *Service) clearSyncJob(id string) (SyncJobResponse, error) {
+	s.syncJobsMu.Lock()
+	defer s.syncJobsMu.Unlock()
+	job, ok := s.syncJobs[id]
+	if !ok {
+		return SyncJobResponse{}, fmt.Errorf("sync job %q was not found", id)
+	}
+	resp := job.snapshot()
+	if !isTerminalSyncStatus(resp.Status) {
+		return SyncJobResponse{}, fmt.Errorf("cannot clear sync job %q while it is %s", id, resp.Status)
+	}
+	delete(s.syncJobs, id)
+	return resp, nil
 }
 
 func (s *Service) Sync(ctx context.Context, req SyncRequest) (SyncResponse, error) {

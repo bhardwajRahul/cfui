@@ -330,6 +330,27 @@ func TestS3SyncEndpointStartsJobAndReportsCompletion(t *testing.T) {
 	if actionResp.Status != s3dav.SyncJobCompleted {
 		t.Fatalf("expected completed job to remain terminal after action, got %#v", actionResp)
 	}
+
+	clearReq := httptest.NewRequest(http.MethodPost, "/api/s3/files/sync/"+started.JobID, strings.NewReader(`{"action":"clear"}`))
+	clearReq.Header.Set("Content-Type", "application/json")
+	clearRec := httptest.NewRecorder()
+	s.handleS3SyncJob(clearRec, clearReq)
+	if clearRec.Code != http.StatusOK {
+		t.Fatalf("sync clear status %d: %s", clearRec.Code, clearRec.Body.String())
+	}
+	listAfterClearReq := httptest.NewRequest(http.MethodGet, "/api/s3/files/sync", nil)
+	listAfterClearRec := httptest.NewRecorder()
+	s.handleS3Sync(listAfterClearRec, listAfterClearReq)
+	if listAfterClearRec.Code != http.StatusOK {
+		t.Fatalf("sync list after clear status %d: %s", listAfterClearRec.Code, listAfterClearRec.Body.String())
+	}
+	var listAfterClear s3dav.SyncJobsResponse
+	if err := json.NewDecoder(listAfterClearRec.Body).Decode(&listAfterClear); err != nil {
+		t.Fatalf("decode sync job list after clear: %v", err)
+	}
+	if len(listAfterClear.Jobs) != 0 {
+		t.Fatalf("expected cleared sync job to be removed from list, got %#v", listAfterClear)
+	}
 }
 
 func waitForServerSyncJob(t *testing.T, s *Server, id string) s3dav.SyncJobResponse {
