@@ -92,6 +92,18 @@ func (f TunnelManagementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TunnelManagementMutation", m)
 }
 
+// The TunnelProfileFunc type is an adapter to allow the use of ordinary
+// function as TunnelProfile mutator.
+type TunnelProfileFunc func(context.Context, *ent.TunnelProfileMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TunnelProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TunnelProfileMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TunnelProfileMutation", m)
+}
+
 // The TunnelTokenFunc type is an adapter to allow the use of ordinary
 // function as TunnelToken mutator.
 type TunnelTokenFunc func(context.Context, *ent.TunnelTokenMutation) (ent.Value, error)

@@ -3,7 +3,7 @@
 package ent
 
 import (
-	"cfui/internal/persist/ent/appsetting"
+	"cfui/internal/persist/ent/tunnelprofile"
 	"fmt"
 	"strings"
 	"time"
@@ -12,13 +12,27 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// AppSetting is the model entity for the AppSetting schema.
-type AppSetting struct {
+// TunnelProfile is the model entity for the TunnelProfile schema.
+type TunnelProfile struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// Key holds the value of the "key" field.
 	Key string `json:"key,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
+	// SortOrder holds the value of the "sort_order" field.
+	SortOrder int `json:"sort_order,omitempty"`
+	// Token holds the value of the "token" field.
+	Token string `json:"-"`
+	// LocalEnabled holds the value of the "local_enabled" field.
+	LocalEnabled bool `json:"local_enabled,omitempty"`
+	// RemoteManagementEnabled holds the value of the "remote_management_enabled" field.
+	RemoteManagementEnabled bool `json:"remote_management_enabled,omitempty"`
+	// AccountID holds the value of the "account_id" field.
+	AccountID string `json:"account_id,omitempty"`
+	// TunnelID holds the value of the "tunnel_id" field.
+	TunnelID string `json:"tunnel_id,omitempty"`
 	// AutoStart holds the value of the "auto_start" field.
 	AutoStart bool `json:"auto_start,omitempty"`
 	// AutoRestart holds the value of the "auto_restart" field.
@@ -55,28 +69,6 @@ type AppSetting struct {
 	NoTLSVerify bool `json:"no_tls_verify,omitempty"`
 	// ExtraArgs holds the value of the "extra_args" field.
 	ExtraArgs string `json:"extra_args,omitempty"`
-	// ActiveTunnelKey holds the value of the "active_tunnel_key" field.
-	ActiveTunnelKey string `json:"active_tunnel_key,omitempty"`
-	// McpEnabled holds the value of the "mcp_enabled" field.
-	McpEnabled bool `json:"mcp_enabled,omitempty"`
-	// S3WebdavEnabled holds the value of the "s3_webdav_enabled" field.
-	S3WebdavEnabled bool `json:"s3_webdav_enabled,omitempty"`
-	// S3WebdavActiveKey holds the value of the "s3_webdav_active_key" field.
-	S3WebdavActiveKey string `json:"s3_webdav_active_key,omitempty"`
-	// S3WebdavAccessMode holds the value of the "s3_webdav_access_mode" field.
-	S3WebdavAccessMode string `json:"s3_webdav_access_mode,omitempty"`
-	// S3WebdavDedicatedBindHost holds the value of the "s3_webdav_dedicated_bind_host" field.
-	S3WebdavDedicatedBindHost string `json:"s3_webdav_dedicated_bind_host,omitempty"`
-	// S3WebdavDedicatedPort holds the value of the "s3_webdav_dedicated_port" field.
-	S3WebdavDedicatedPort int `json:"s3_webdav_dedicated_port,omitempty"`
-	// S3WebdavDedicatedAutoStart holds the value of the "s3_webdav_dedicated_auto_start" field.
-	S3WebdavDedicatedAutoStart bool `json:"s3_webdav_dedicated_auto_start,omitempty"`
-	// S3WebdavDedicatedDomainMode holds the value of the "s3_webdav_dedicated_domain_mode" field.
-	S3WebdavDedicatedDomainMode string `json:"s3_webdav_dedicated_domain_mode,omitempty"`
-	// S3WebdavDedicatedCustomDomain holds the value of the "s3_webdav_dedicated_custom_domain" field.
-	S3WebdavDedicatedCustomDomain string `json:"s3_webdav_dedicated_custom_domain,omitempty"`
-	// S3WebdavDedicatedTunnelHostname holds the value of the "s3_webdav_dedicated_tunnel_hostname" field.
-	S3WebdavDedicatedTunnelHostname string `json:"s3_webdav_dedicated_tunnel_hostname,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -85,17 +77,17 @@ type AppSetting struct {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*AppSetting) scanValues(columns []string) ([]any, error) {
+func (*TunnelProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case appsetting.FieldAutoStart, appsetting.FieldAutoRestart, appsetting.FieldMetricsEnable, appsetting.FieldLogJSON, appsetting.FieldPostQuantum, appsetting.FieldNoTLSVerify, appsetting.FieldMcpEnabled, appsetting.FieldS3WebdavEnabled, appsetting.FieldS3WebdavDedicatedAutoStart:
+		case tunnelprofile.FieldLocalEnabled, tunnelprofile.FieldRemoteManagementEnabled, tunnelprofile.FieldAutoStart, tunnelprofile.FieldAutoRestart, tunnelprofile.FieldMetricsEnable, tunnelprofile.FieldLogJSON, tunnelprofile.FieldPostQuantum, tunnelprofile.FieldNoTLSVerify:
 			values[i] = new(sql.NullBool)
-		case appsetting.FieldID, appsetting.FieldRetries, appsetting.FieldMetricsPort, appsetting.FieldS3WebdavDedicatedPort:
+		case tunnelprofile.FieldID, tunnelprofile.FieldSortOrder, tunnelprofile.FieldRetries, tunnelprofile.FieldMetricsPort:
 			values[i] = new(sql.NullInt64)
-		case appsetting.FieldKey, appsetting.FieldCustomTag, appsetting.FieldSoftwareName, appsetting.FieldProtocol, appsetting.FieldGracePeriod, appsetting.FieldRegion, appsetting.FieldLogLevel, appsetting.FieldLogFile, appsetting.FieldEdgeIPVersion, appsetting.FieldEdgeBindAddress, appsetting.FieldExtraArgs, appsetting.FieldActiveTunnelKey, appsetting.FieldS3WebdavActiveKey, appsetting.FieldS3WebdavAccessMode, appsetting.FieldS3WebdavDedicatedBindHost, appsetting.FieldS3WebdavDedicatedDomainMode, appsetting.FieldS3WebdavDedicatedCustomDomain, appsetting.FieldS3WebdavDedicatedTunnelHostname:
+		case tunnelprofile.FieldKey, tunnelprofile.FieldName, tunnelprofile.FieldToken, tunnelprofile.FieldAccountID, tunnelprofile.FieldTunnelID, tunnelprofile.FieldCustomTag, tunnelprofile.FieldSoftwareName, tunnelprofile.FieldProtocol, tunnelprofile.FieldGracePeriod, tunnelprofile.FieldRegion, tunnelprofile.FieldLogLevel, tunnelprofile.FieldLogFile, tunnelprofile.FieldEdgeIPVersion, tunnelprofile.FieldEdgeBindAddress, tunnelprofile.FieldExtraArgs:
 			values[i] = new(sql.NullString)
-		case appsetting.FieldCreatedAt, appsetting.FieldUpdatedAt:
+		case tunnelprofile.FieldCreatedAt, tunnelprofile.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -105,206 +97,182 @@ func (*AppSetting) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the AppSetting fields.
-func (_m *AppSetting) assignValues(columns []string, values []any) error {
+// to the TunnelProfile fields.
+func (_m *TunnelProfile) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case appsetting.FieldID:
+		case tunnelprofile.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int(value.Int64)
-		case appsetting.FieldKey:
+		case tunnelprofile.FieldKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field key", values[i])
 			} else if value.Valid {
 				_m.Key = value.String
 			}
-		case appsetting.FieldAutoStart:
+		case tunnelprofile.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				_m.Name = value.String
+			}
+		case tunnelprofile.FieldSortOrder:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field sort_order", values[i])
+			} else if value.Valid {
+				_m.SortOrder = int(value.Int64)
+			}
+		case tunnelprofile.FieldToken:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field token", values[i])
+			} else if value.Valid {
+				_m.Token = value.String
+			}
+		case tunnelprofile.FieldLocalEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field local_enabled", values[i])
+			} else if value.Valid {
+				_m.LocalEnabled = value.Bool
+			}
+		case tunnelprofile.FieldRemoteManagementEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field remote_management_enabled", values[i])
+			} else if value.Valid {
+				_m.RemoteManagementEnabled = value.Bool
+			}
+		case tunnelprofile.FieldAccountID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field account_id", values[i])
+			} else if value.Valid {
+				_m.AccountID = value.String
+			}
+		case tunnelprofile.FieldTunnelID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tunnel_id", values[i])
+			} else if value.Valid {
+				_m.TunnelID = value.String
+			}
+		case tunnelprofile.FieldAutoStart:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field auto_start", values[i])
 			} else if value.Valid {
 				_m.AutoStart = value.Bool
 			}
-		case appsetting.FieldAutoRestart:
+		case tunnelprofile.FieldAutoRestart:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field auto_restart", values[i])
 			} else if value.Valid {
 				_m.AutoRestart = value.Bool
 			}
-		case appsetting.FieldCustomTag:
+		case tunnelprofile.FieldCustomTag:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field custom_tag", values[i])
 			} else if value.Valid {
 				_m.CustomTag = value.String
 			}
-		case appsetting.FieldSoftwareName:
+		case tunnelprofile.FieldSoftwareName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field software_name", values[i])
 			} else if value.Valid {
 				_m.SoftwareName = value.String
 			}
-		case appsetting.FieldProtocol:
+		case tunnelprofile.FieldProtocol:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field protocol", values[i])
 			} else if value.Valid {
 				_m.Protocol = value.String
 			}
-		case appsetting.FieldGracePeriod:
+		case tunnelprofile.FieldGracePeriod:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field grace_period", values[i])
 			} else if value.Valid {
 				_m.GracePeriod = value.String
 			}
-		case appsetting.FieldRegion:
+		case tunnelprofile.FieldRegion:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field region", values[i])
 			} else if value.Valid {
 				_m.Region = value.String
 			}
-		case appsetting.FieldRetries:
+		case tunnelprofile.FieldRetries:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field retries", values[i])
 			} else if value.Valid {
 				_m.Retries = int(value.Int64)
 			}
-		case appsetting.FieldMetricsEnable:
+		case tunnelprofile.FieldMetricsEnable:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field metrics_enable", values[i])
 			} else if value.Valid {
 				_m.MetricsEnable = value.Bool
 			}
-		case appsetting.FieldMetricsPort:
+		case tunnelprofile.FieldMetricsPort:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field metrics_port", values[i])
 			} else if value.Valid {
 				_m.MetricsPort = int(value.Int64)
 			}
-		case appsetting.FieldLogLevel:
+		case tunnelprofile.FieldLogLevel:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field log_level", values[i])
 			} else if value.Valid {
 				_m.LogLevel = value.String
 			}
-		case appsetting.FieldLogFile:
+		case tunnelprofile.FieldLogFile:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field log_file", values[i])
 			} else if value.Valid {
 				_m.LogFile = value.String
 			}
-		case appsetting.FieldLogJSON:
+		case tunnelprofile.FieldLogJSON:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field log_json", values[i])
 			} else if value.Valid {
 				_m.LogJSON = value.Bool
 			}
-		case appsetting.FieldEdgeIPVersion:
+		case tunnelprofile.FieldEdgeIPVersion:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field edge_ip_version", values[i])
 			} else if value.Valid {
 				_m.EdgeIPVersion = value.String
 			}
-		case appsetting.FieldEdgeBindAddress:
+		case tunnelprofile.FieldEdgeBindAddress:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field edge_bind_address", values[i])
 			} else if value.Valid {
 				_m.EdgeBindAddress = value.String
 			}
-		case appsetting.FieldPostQuantum:
+		case tunnelprofile.FieldPostQuantum:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field post_quantum", values[i])
 			} else if value.Valid {
 				_m.PostQuantum = value.Bool
 			}
-		case appsetting.FieldNoTLSVerify:
+		case tunnelprofile.FieldNoTLSVerify:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field no_tls_verify", values[i])
 			} else if value.Valid {
 				_m.NoTLSVerify = value.Bool
 			}
-		case appsetting.FieldExtraArgs:
+		case tunnelprofile.FieldExtraArgs:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field extra_args", values[i])
 			} else if value.Valid {
 				_m.ExtraArgs = value.String
 			}
-		case appsetting.FieldActiveTunnelKey:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field active_tunnel_key", values[i])
-			} else if value.Valid {
-				_m.ActiveTunnelKey = value.String
-			}
-		case appsetting.FieldMcpEnabled:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field mcp_enabled", values[i])
-			} else if value.Valid {
-				_m.McpEnabled = value.Bool
-			}
-		case appsetting.FieldS3WebdavEnabled:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field s3_webdav_enabled", values[i])
-			} else if value.Valid {
-				_m.S3WebdavEnabled = value.Bool
-			}
-		case appsetting.FieldS3WebdavActiveKey:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field s3_webdav_active_key", values[i])
-			} else if value.Valid {
-				_m.S3WebdavActiveKey = value.String
-			}
-		case appsetting.FieldS3WebdavAccessMode:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field s3_webdav_access_mode", values[i])
-			} else if value.Valid {
-				_m.S3WebdavAccessMode = value.String
-			}
-		case appsetting.FieldS3WebdavDedicatedBindHost:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field s3_webdav_dedicated_bind_host", values[i])
-			} else if value.Valid {
-				_m.S3WebdavDedicatedBindHost = value.String
-			}
-		case appsetting.FieldS3WebdavDedicatedPort:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field s3_webdav_dedicated_port", values[i])
-			} else if value.Valid {
-				_m.S3WebdavDedicatedPort = int(value.Int64)
-			}
-		case appsetting.FieldS3WebdavDedicatedAutoStart:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field s3_webdav_dedicated_auto_start", values[i])
-			} else if value.Valid {
-				_m.S3WebdavDedicatedAutoStart = value.Bool
-			}
-		case appsetting.FieldS3WebdavDedicatedDomainMode:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field s3_webdav_dedicated_domain_mode", values[i])
-			} else if value.Valid {
-				_m.S3WebdavDedicatedDomainMode = value.String
-			}
-		case appsetting.FieldS3WebdavDedicatedCustomDomain:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field s3_webdav_dedicated_custom_domain", values[i])
-			} else if value.Valid {
-				_m.S3WebdavDedicatedCustomDomain = value.String
-			}
-		case appsetting.FieldS3WebdavDedicatedTunnelHostname:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field s3_webdav_dedicated_tunnel_hostname", values[i])
-			} else if value.Valid {
-				_m.S3WebdavDedicatedTunnelHostname = value.String
-			}
-		case appsetting.FieldCreatedAt:
+		case tunnelprofile.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
-		case appsetting.FieldUpdatedAt:
+		case tunnelprofile.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
@@ -317,37 +285,57 @@ func (_m *AppSetting) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the AppSetting.
+// Value returns the ent.Value that was dynamically selected and assigned to the TunnelProfile.
 // This includes values selected through modifiers, order, etc.
-func (_m *AppSetting) Value(name string) (ent.Value, error) {
+func (_m *TunnelProfile) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// Update returns a builder for updating this AppSetting.
-// Note that you need to call AppSetting.Unwrap() before calling this method if this AppSetting
+// Update returns a builder for updating this TunnelProfile.
+// Note that you need to call TunnelProfile.Unwrap() before calling this method if this TunnelProfile
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *AppSetting) Update() *AppSettingUpdateOne {
-	return NewAppSettingClient(_m.config).UpdateOne(_m)
+func (_m *TunnelProfile) Update() *TunnelProfileUpdateOne {
+	return NewTunnelProfileClient(_m.config).UpdateOne(_m)
 }
 
-// Unwrap unwraps the AppSetting entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the TunnelProfile entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *AppSetting) Unwrap() *AppSetting {
+func (_m *TunnelProfile) Unwrap() *TunnelProfile {
 	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: AppSetting is not a transactional entity")
+		panic("ent: TunnelProfile is not a transactional entity")
 	}
 	_m.config.driver = _tx.drv
 	return _m
 }
 
 // String implements the fmt.Stringer.
-func (_m *AppSetting) String() string {
+func (_m *TunnelProfile) String() string {
 	var builder strings.Builder
-	builder.WriteString("AppSetting(")
+	builder.WriteString("TunnelProfile(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("key=")
 	builder.WriteString(_m.Key)
+	builder.WriteString(", ")
+	builder.WriteString("name=")
+	builder.WriteString(_m.Name)
+	builder.WriteString(", ")
+	builder.WriteString("sort_order=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))
+	builder.WriteString(", ")
+	builder.WriteString("token=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("local_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LocalEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("remote_management_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RemoteManagementEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("account_id=")
+	builder.WriteString(_m.AccountID)
+	builder.WriteString(", ")
+	builder.WriteString("tunnel_id=")
+	builder.WriteString(_m.TunnelID)
 	builder.WriteString(", ")
 	builder.WriteString("auto_start=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AutoStart))
@@ -403,39 +391,6 @@ func (_m *AppSetting) String() string {
 	builder.WriteString("extra_args=")
 	builder.WriteString(_m.ExtraArgs)
 	builder.WriteString(", ")
-	builder.WriteString("active_tunnel_key=")
-	builder.WriteString(_m.ActiveTunnelKey)
-	builder.WriteString(", ")
-	builder.WriteString("mcp_enabled=")
-	builder.WriteString(fmt.Sprintf("%v", _m.McpEnabled))
-	builder.WriteString(", ")
-	builder.WriteString("s3_webdav_enabled=")
-	builder.WriteString(fmt.Sprintf("%v", _m.S3WebdavEnabled))
-	builder.WriteString(", ")
-	builder.WriteString("s3_webdav_active_key=")
-	builder.WriteString(_m.S3WebdavActiveKey)
-	builder.WriteString(", ")
-	builder.WriteString("s3_webdav_access_mode=")
-	builder.WriteString(_m.S3WebdavAccessMode)
-	builder.WriteString(", ")
-	builder.WriteString("s3_webdav_dedicated_bind_host=")
-	builder.WriteString(_m.S3WebdavDedicatedBindHost)
-	builder.WriteString(", ")
-	builder.WriteString("s3_webdav_dedicated_port=")
-	builder.WriteString(fmt.Sprintf("%v", _m.S3WebdavDedicatedPort))
-	builder.WriteString(", ")
-	builder.WriteString("s3_webdav_dedicated_auto_start=")
-	builder.WriteString(fmt.Sprintf("%v", _m.S3WebdavDedicatedAutoStart))
-	builder.WriteString(", ")
-	builder.WriteString("s3_webdav_dedicated_domain_mode=")
-	builder.WriteString(_m.S3WebdavDedicatedDomainMode)
-	builder.WriteString(", ")
-	builder.WriteString("s3_webdav_dedicated_custom_domain=")
-	builder.WriteString(_m.S3WebdavDedicatedCustomDomain)
-	builder.WriteString(", ")
-	builder.WriteString("s3_webdav_dedicated_tunnel_hostname=")
-	builder.WriteString(_m.S3WebdavDedicatedTunnelHostname)
-	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
@@ -445,5 +400,5 @@ func (_m *AppSetting) String() string {
 	return builder.String()
 }
 
-// AppSettings is a parsable slice of AppSetting.
-type AppSettings []*AppSetting
+// TunnelProfiles is a parsable slice of TunnelProfile.
+type TunnelProfiles []*TunnelProfile

@@ -13,11 +13,35 @@ other = "错误"
 [app_title]
 other = "CloudFlared UI"
 
+[skip_to_content]
+other = "跳到主要内容"
+
 [tunnel_config]
 other = "隧道配置"
 
 [tunnel_config_subtitle]
 other = "管理您的 Cloudflare Tunnel 连接"
+
+[tunnel_profile_editing]
+other = "正在编辑的隧道"
+
+[active_local_tunnel]
+other = "本地运行器"
+
+[other_tunnel_profiles]
+other = "其他隧道"
+
+[use_for_local_runner]
+other = "设为本地运行器"
+
+[add_tunnel_profile]
+other = "添加隧道"
+
+[delete_tunnel_profile]
+other = "删除隧道"
+
+[tunnel_profile_name]
+other = "隧道名称"
 
 [tunnel_token]
 other = "隧道 Token"
@@ -184,6 +208,18 @@ other = "远程隧道管理"
 [remote_tunnel_manager_subtitle]
 other = "独立管理 Cloudflare 托管的 ingress 规则，不影响本地运行器。"
 
+[remote_manager_tunnel_profile]
+other = "隧道配置"
+
+[remote_manager_tunnel_help]
+other = "远程管理可以编辑任意隧道配置，不需要切换本地运行器。"
+
+[remote_manager_profile_summary_active]
+other = "正在编辑 {name}。该配置也是当前本地运行器。"
+
+[remote_manager_profile_summary_inactive]
+other = "正在编辑 {name}。当前本地运行器仍为 {active}。"
+
 [manager_enable]
 other = "启用远程管理"
 
@@ -271,6 +307,12 @@ other = "就绪"
 [manager_status_disabled]
 other = "已禁用"
 
+[manager_status_ready_for_tunnel]
+other = "就绪：{name}"
+
+[manager_status_disabled_for_tunnel]
+other = "已禁用：{name}"
+
 [manager_status_loading]
 other = "正在加载远程配置..."
 
@@ -330,6 +372,24 @@ other = "隧道规则已更新"
 
 [tunnel_rule_deleted]
 other = "隧道规则已删除"
+
+[activate_tunnel_first]
+other = "请先将此配置设为本地运行器，再启动或停止隧道。"
+
+[cannot_delete_active_tunnel]
+other = "不能删除当前本地运行器配置。"
+
+[local_runner_updated]
+other = "本地运行器隧道已更新"
+
+[tunnel_profile_added]
+other = "隧道配置已添加"
+
+[delete_tunnel_profile_message]
+other = "确认删除隧道配置 {name}？当前本地运行器不受影响。"
+
+[tunnel_profile_deleted]
+other = "隧道配置已删除"
 
 [public_hostname_section]
 other = "公共主机名"
@@ -1163,6 +1223,9 @@ other = "请先在功能开关启用远程隧道管理。"
 
 [s3_tunnel_manager_required]
 other = "请先完成远程隧道管理的账户、隧道和 API 凭证配置。"
+
+[s3_tunnel_uses_active_runner]
+other = "Cloudflare Tunnel 发布使用当前本地运行器隧道：{name}。"
 
 [s3_tunnel_permission_required]
 other = "当前 Cloudflare API 凭证权限不足，请先在远程隧道管理里检查权限。"

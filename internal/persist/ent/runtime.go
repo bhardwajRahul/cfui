@@ -11,6 +11,7 @@ import (
 	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/schema"
 	"cfui/internal/persist/ent/tunnelmanagement"
+	"cfui/internal/persist/ent/tunnelprofile"
 	"cfui/internal/persist/ent/tunneltoken"
 	"time"
 )
@@ -97,52 +98,56 @@ func init() {
 	appsettingDescExtraArgs := appsettingFields[18].Descriptor()
 	// appsetting.DefaultExtraArgs holds the default value on creation for the extra_args field.
 	appsetting.DefaultExtraArgs = appsettingDescExtraArgs.Default.(string)
+	// appsettingDescActiveTunnelKey is the schema descriptor for active_tunnel_key field.
+	appsettingDescActiveTunnelKey := appsettingFields[19].Descriptor()
+	// appsetting.DefaultActiveTunnelKey holds the default value on creation for the active_tunnel_key field.
+	appsetting.DefaultActiveTunnelKey = appsettingDescActiveTunnelKey.Default.(string)
 	// appsettingDescMcpEnabled is the schema descriptor for mcp_enabled field.
-	appsettingDescMcpEnabled := appsettingFields[19].Descriptor()
+	appsettingDescMcpEnabled := appsettingFields[20].Descriptor()
 	// appsetting.DefaultMcpEnabled holds the default value on creation for the mcp_enabled field.
 	appsetting.DefaultMcpEnabled = appsettingDescMcpEnabled.Default.(bool)
 	// appsettingDescS3WebdavEnabled is the schema descriptor for s3_webdav_enabled field.
-	appsettingDescS3WebdavEnabled := appsettingFields[20].Descriptor()
+	appsettingDescS3WebdavEnabled := appsettingFields[21].Descriptor()
 	// appsetting.DefaultS3WebdavEnabled holds the default value on creation for the s3_webdav_enabled field.
 	appsetting.DefaultS3WebdavEnabled = appsettingDescS3WebdavEnabled.Default.(bool)
 	// appsettingDescS3WebdavActiveKey is the schema descriptor for s3_webdav_active_key field.
-	appsettingDescS3WebdavActiveKey := appsettingFields[21].Descriptor()
+	appsettingDescS3WebdavActiveKey := appsettingFields[22].Descriptor()
 	// appsetting.DefaultS3WebdavActiveKey holds the default value on creation for the s3_webdav_active_key field.
 	appsetting.DefaultS3WebdavActiveKey = appsettingDescS3WebdavActiveKey.Default.(string)
 	// appsettingDescS3WebdavAccessMode is the schema descriptor for s3_webdav_access_mode field.
-	appsettingDescS3WebdavAccessMode := appsettingFields[22].Descriptor()
+	appsettingDescS3WebdavAccessMode := appsettingFields[23].Descriptor()
 	// appsetting.DefaultS3WebdavAccessMode holds the default value on creation for the s3_webdav_access_mode field.
 	appsetting.DefaultS3WebdavAccessMode = appsettingDescS3WebdavAccessMode.Default.(string)
 	// appsettingDescS3WebdavDedicatedBindHost is the schema descriptor for s3_webdav_dedicated_bind_host field.
-	appsettingDescS3WebdavDedicatedBindHost := appsettingFields[23].Descriptor()
+	appsettingDescS3WebdavDedicatedBindHost := appsettingFields[24].Descriptor()
 	// appsetting.DefaultS3WebdavDedicatedBindHost holds the default value on creation for the s3_webdav_dedicated_bind_host field.
 	appsetting.DefaultS3WebdavDedicatedBindHost = appsettingDescS3WebdavDedicatedBindHost.Default.(string)
 	// appsettingDescS3WebdavDedicatedPort is the schema descriptor for s3_webdav_dedicated_port field.
-	appsettingDescS3WebdavDedicatedPort := appsettingFields[24].Descriptor()
+	appsettingDescS3WebdavDedicatedPort := appsettingFields[25].Descriptor()
 	// appsetting.DefaultS3WebdavDedicatedPort holds the default value on creation for the s3_webdav_dedicated_port field.
 	appsetting.DefaultS3WebdavDedicatedPort = appsettingDescS3WebdavDedicatedPort.Default.(int)
 	// appsettingDescS3WebdavDedicatedAutoStart is the schema descriptor for s3_webdav_dedicated_auto_start field.
-	appsettingDescS3WebdavDedicatedAutoStart := appsettingFields[25].Descriptor()
+	appsettingDescS3WebdavDedicatedAutoStart := appsettingFields[26].Descriptor()
 	// appsetting.DefaultS3WebdavDedicatedAutoStart holds the default value on creation for the s3_webdav_dedicated_auto_start field.
 	appsetting.DefaultS3WebdavDedicatedAutoStart = appsettingDescS3WebdavDedicatedAutoStart.Default.(bool)
 	// appsettingDescS3WebdavDedicatedDomainMode is the schema descriptor for s3_webdav_dedicated_domain_mode field.
-	appsettingDescS3WebdavDedicatedDomainMode := appsettingFields[26].Descriptor()
+	appsettingDescS3WebdavDedicatedDomainMode := appsettingFields[27].Descriptor()
 	// appsetting.DefaultS3WebdavDedicatedDomainMode holds the default value on creation for the s3_webdav_dedicated_domain_mode field.
 	appsetting.DefaultS3WebdavDedicatedDomainMode = appsettingDescS3WebdavDedicatedDomainMode.Default.(string)
 	// appsettingDescS3WebdavDedicatedCustomDomain is the schema descriptor for s3_webdav_dedicated_custom_domain field.
-	appsettingDescS3WebdavDedicatedCustomDomain := appsettingFields[27].Descriptor()
+	appsettingDescS3WebdavDedicatedCustomDomain := appsettingFields[28].Descriptor()
 	// appsetting.DefaultS3WebdavDedicatedCustomDomain holds the default value on creation for the s3_webdav_dedicated_custom_domain field.
 	appsetting.DefaultS3WebdavDedicatedCustomDomain = appsettingDescS3WebdavDedicatedCustomDomain.Default.(string)
 	// appsettingDescS3WebdavDedicatedTunnelHostname is the schema descriptor for s3_webdav_dedicated_tunnel_hostname field.
-	appsettingDescS3WebdavDedicatedTunnelHostname := appsettingFields[28].Descriptor()
+	appsettingDescS3WebdavDedicatedTunnelHostname := appsettingFields[29].Descriptor()
 	// appsetting.DefaultS3WebdavDedicatedTunnelHostname holds the default value on creation for the s3_webdav_dedicated_tunnel_hostname field.
 	appsetting.DefaultS3WebdavDedicatedTunnelHostname = appsettingDescS3WebdavDedicatedTunnelHostname.Default.(string)
 	// appsettingDescCreatedAt is the schema descriptor for created_at field.
-	appsettingDescCreatedAt := appsettingFields[29].Descriptor()
+	appsettingDescCreatedAt := appsettingFields[30].Descriptor()
 	// appsetting.DefaultCreatedAt holds the default value on creation for the created_at field.
 	appsetting.DefaultCreatedAt = appsettingDescCreatedAt.Default.(func() time.Time)
 	// appsettingDescUpdatedAt is the schema descriptor for updated_at field.
-	appsettingDescUpdatedAt := appsettingFields[30].Descriptor()
+	appsettingDescUpdatedAt := appsettingFields[31].Descriptor()
 	// appsetting.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	appsetting.DefaultUpdatedAt = appsettingDescUpdatedAt.Default.(func() time.Time)
 	// appsetting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -393,6 +398,122 @@ func init() {
 	tunnelmanagement.DefaultUpdatedAt = tunnelmanagementDescUpdatedAt.Default.(func() time.Time)
 	// tunnelmanagement.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	tunnelmanagement.UpdateDefaultUpdatedAt = tunnelmanagementDescUpdatedAt.UpdateDefault.(func() time.Time)
+	tunnelprofileFields := schema.TunnelProfile{}.Fields()
+	_ = tunnelprofileFields
+	// tunnelprofileDescKey is the schema descriptor for key field.
+	tunnelprofileDescKey := tunnelprofileFields[0].Descriptor()
+	// tunnelprofile.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	tunnelprofile.KeyValidator = tunnelprofileDescKey.Validators[0].(func(string) error)
+	// tunnelprofileDescName is the schema descriptor for name field.
+	tunnelprofileDescName := tunnelprofileFields[1].Descriptor()
+	// tunnelprofile.DefaultName holds the default value on creation for the name field.
+	tunnelprofile.DefaultName = tunnelprofileDescName.Default.(string)
+	// tunnelprofileDescSortOrder is the schema descriptor for sort_order field.
+	tunnelprofileDescSortOrder := tunnelprofileFields[2].Descriptor()
+	// tunnelprofile.DefaultSortOrder holds the default value on creation for the sort_order field.
+	tunnelprofile.DefaultSortOrder = tunnelprofileDescSortOrder.Default.(int)
+	// tunnelprofileDescToken is the schema descriptor for token field.
+	tunnelprofileDescToken := tunnelprofileFields[3].Descriptor()
+	// tunnelprofile.DefaultToken holds the default value on creation for the token field.
+	tunnelprofile.DefaultToken = tunnelprofileDescToken.Default.(string)
+	// tunnelprofileDescLocalEnabled is the schema descriptor for local_enabled field.
+	tunnelprofileDescLocalEnabled := tunnelprofileFields[4].Descriptor()
+	// tunnelprofile.DefaultLocalEnabled holds the default value on creation for the local_enabled field.
+	tunnelprofile.DefaultLocalEnabled = tunnelprofileDescLocalEnabled.Default.(bool)
+	// tunnelprofileDescRemoteManagementEnabled is the schema descriptor for remote_management_enabled field.
+	tunnelprofileDescRemoteManagementEnabled := tunnelprofileFields[5].Descriptor()
+	// tunnelprofile.DefaultRemoteManagementEnabled holds the default value on creation for the remote_management_enabled field.
+	tunnelprofile.DefaultRemoteManagementEnabled = tunnelprofileDescRemoteManagementEnabled.Default.(bool)
+	// tunnelprofileDescAccountID is the schema descriptor for account_id field.
+	tunnelprofileDescAccountID := tunnelprofileFields[6].Descriptor()
+	// tunnelprofile.DefaultAccountID holds the default value on creation for the account_id field.
+	tunnelprofile.DefaultAccountID = tunnelprofileDescAccountID.Default.(string)
+	// tunnelprofileDescTunnelID is the schema descriptor for tunnel_id field.
+	tunnelprofileDescTunnelID := tunnelprofileFields[7].Descriptor()
+	// tunnelprofile.DefaultTunnelID holds the default value on creation for the tunnel_id field.
+	tunnelprofile.DefaultTunnelID = tunnelprofileDescTunnelID.Default.(string)
+	// tunnelprofileDescAutoStart is the schema descriptor for auto_start field.
+	tunnelprofileDescAutoStart := tunnelprofileFields[8].Descriptor()
+	// tunnelprofile.DefaultAutoStart holds the default value on creation for the auto_start field.
+	tunnelprofile.DefaultAutoStart = tunnelprofileDescAutoStart.Default.(bool)
+	// tunnelprofileDescAutoRestart is the schema descriptor for auto_restart field.
+	tunnelprofileDescAutoRestart := tunnelprofileFields[9].Descriptor()
+	// tunnelprofile.DefaultAutoRestart holds the default value on creation for the auto_restart field.
+	tunnelprofile.DefaultAutoRestart = tunnelprofileDescAutoRestart.Default.(bool)
+	// tunnelprofileDescCustomTag is the schema descriptor for custom_tag field.
+	tunnelprofileDescCustomTag := tunnelprofileFields[10].Descriptor()
+	// tunnelprofile.DefaultCustomTag holds the default value on creation for the custom_tag field.
+	tunnelprofile.DefaultCustomTag = tunnelprofileDescCustomTag.Default.(string)
+	// tunnelprofileDescSoftwareName is the schema descriptor for software_name field.
+	tunnelprofileDescSoftwareName := tunnelprofileFields[11].Descriptor()
+	// tunnelprofile.DefaultSoftwareName holds the default value on creation for the software_name field.
+	tunnelprofile.DefaultSoftwareName = tunnelprofileDescSoftwareName.Default.(string)
+	// tunnelprofileDescProtocol is the schema descriptor for protocol field.
+	tunnelprofileDescProtocol := tunnelprofileFields[12].Descriptor()
+	// tunnelprofile.DefaultProtocol holds the default value on creation for the protocol field.
+	tunnelprofile.DefaultProtocol = tunnelprofileDescProtocol.Default.(string)
+	// tunnelprofileDescGracePeriod is the schema descriptor for grace_period field.
+	tunnelprofileDescGracePeriod := tunnelprofileFields[13].Descriptor()
+	// tunnelprofile.DefaultGracePeriod holds the default value on creation for the grace_period field.
+	tunnelprofile.DefaultGracePeriod = tunnelprofileDescGracePeriod.Default.(string)
+	// tunnelprofileDescRegion is the schema descriptor for region field.
+	tunnelprofileDescRegion := tunnelprofileFields[14].Descriptor()
+	// tunnelprofile.DefaultRegion holds the default value on creation for the region field.
+	tunnelprofile.DefaultRegion = tunnelprofileDescRegion.Default.(string)
+	// tunnelprofileDescRetries is the schema descriptor for retries field.
+	tunnelprofileDescRetries := tunnelprofileFields[15].Descriptor()
+	// tunnelprofile.DefaultRetries holds the default value on creation for the retries field.
+	tunnelprofile.DefaultRetries = tunnelprofileDescRetries.Default.(int)
+	// tunnelprofileDescMetricsEnable is the schema descriptor for metrics_enable field.
+	tunnelprofileDescMetricsEnable := tunnelprofileFields[16].Descriptor()
+	// tunnelprofile.DefaultMetricsEnable holds the default value on creation for the metrics_enable field.
+	tunnelprofile.DefaultMetricsEnable = tunnelprofileDescMetricsEnable.Default.(bool)
+	// tunnelprofileDescMetricsPort is the schema descriptor for metrics_port field.
+	tunnelprofileDescMetricsPort := tunnelprofileFields[17].Descriptor()
+	// tunnelprofile.DefaultMetricsPort holds the default value on creation for the metrics_port field.
+	tunnelprofile.DefaultMetricsPort = tunnelprofileDescMetricsPort.Default.(int)
+	// tunnelprofileDescLogLevel is the schema descriptor for log_level field.
+	tunnelprofileDescLogLevel := tunnelprofileFields[18].Descriptor()
+	// tunnelprofile.DefaultLogLevel holds the default value on creation for the log_level field.
+	tunnelprofile.DefaultLogLevel = tunnelprofileDescLogLevel.Default.(string)
+	// tunnelprofileDescLogFile is the schema descriptor for log_file field.
+	tunnelprofileDescLogFile := tunnelprofileFields[19].Descriptor()
+	// tunnelprofile.DefaultLogFile holds the default value on creation for the log_file field.
+	tunnelprofile.DefaultLogFile = tunnelprofileDescLogFile.Default.(string)
+	// tunnelprofileDescLogJSON is the schema descriptor for log_json field.
+	tunnelprofileDescLogJSON := tunnelprofileFields[20].Descriptor()
+	// tunnelprofile.DefaultLogJSON holds the default value on creation for the log_json field.
+	tunnelprofile.DefaultLogJSON = tunnelprofileDescLogJSON.Default.(bool)
+	// tunnelprofileDescEdgeIPVersion is the schema descriptor for edge_ip_version field.
+	tunnelprofileDescEdgeIPVersion := tunnelprofileFields[21].Descriptor()
+	// tunnelprofile.DefaultEdgeIPVersion holds the default value on creation for the edge_ip_version field.
+	tunnelprofile.DefaultEdgeIPVersion = tunnelprofileDescEdgeIPVersion.Default.(string)
+	// tunnelprofileDescEdgeBindAddress is the schema descriptor for edge_bind_address field.
+	tunnelprofileDescEdgeBindAddress := tunnelprofileFields[22].Descriptor()
+	// tunnelprofile.DefaultEdgeBindAddress holds the default value on creation for the edge_bind_address field.
+	tunnelprofile.DefaultEdgeBindAddress = tunnelprofileDescEdgeBindAddress.Default.(string)
+	// tunnelprofileDescPostQuantum is the schema descriptor for post_quantum field.
+	tunnelprofileDescPostQuantum := tunnelprofileFields[23].Descriptor()
+	// tunnelprofile.DefaultPostQuantum holds the default value on creation for the post_quantum field.
+	tunnelprofile.DefaultPostQuantum = tunnelprofileDescPostQuantum.Default.(bool)
+	// tunnelprofileDescNoTLSVerify is the schema descriptor for no_tls_verify field.
+	tunnelprofileDescNoTLSVerify := tunnelprofileFields[24].Descriptor()
+	// tunnelprofile.DefaultNoTLSVerify holds the default value on creation for the no_tls_verify field.
+	tunnelprofile.DefaultNoTLSVerify = tunnelprofileDescNoTLSVerify.Default.(bool)
+	// tunnelprofileDescExtraArgs is the schema descriptor for extra_args field.
+	tunnelprofileDescExtraArgs := tunnelprofileFields[25].Descriptor()
+	// tunnelprofile.DefaultExtraArgs holds the default value on creation for the extra_args field.
+	tunnelprofile.DefaultExtraArgs = tunnelprofileDescExtraArgs.Default.(string)
+	// tunnelprofileDescCreatedAt is the schema descriptor for created_at field.
+	tunnelprofileDescCreatedAt := tunnelprofileFields[26].Descriptor()
+	// tunnelprofile.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tunnelprofile.DefaultCreatedAt = tunnelprofileDescCreatedAt.Default.(func() time.Time)
+	// tunnelprofileDescUpdatedAt is the schema descriptor for updated_at field.
+	tunnelprofileDescUpdatedAt := tunnelprofileFields[27].Descriptor()
+	// tunnelprofile.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	tunnelprofile.DefaultUpdatedAt = tunnelprofileDescUpdatedAt.Default.(func() time.Time)
+	// tunnelprofile.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	tunnelprofile.UpdateDefaultUpdatedAt = tunnelprofileDescUpdatedAt.UpdateDefault.(func() time.Time)
 	tunneltokenFields := schema.TunnelToken{}.Fields()
 	_ = tunneltokenFields
 	// tunneltokenDescKey is the schema descriptor for key field.

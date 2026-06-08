@@ -133,11 +133,14 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/config", s.handleConfig)
 	mux.HandleFunc("/api/status", s.handleStatus)
 	mux.HandleFunc("/api/control", s.handleControl)
+	mux.HandleFunc("/api/tunnels", s.handleTunnels)
+	mux.HandleFunc("/api/tunnels/", s.handleTunnel)
 	mux.HandleFunc("/api/version", s.handleVersion)
 	mux.HandleFunc("/api/i18n/", s.handleI18n)
 	mux.HandleFunc("/api/logs/stream", s.handleLogStream)
 	mux.HandleFunc("/api/logs/recent", s.handleRecentLogs)
 	mux.HandleFunc("/api/tunnel-manager/settings", s.handleTunnelManagerSettings)
+	mux.HandleFunc("/api/tunnel-manager/tunnel", s.handleTunnelManagerTunnel)
 	mux.HandleFunc("/api/tunnel-manager/config", s.handleTunnelManagerConfig)
 	mux.HandleFunc("/api/tunnel-manager/zones", s.handleTunnelManagerZones)
 	mux.HandleFunc("/api/tunnel-manager/entries", s.handleTunnelManagerEntries)
@@ -673,20 +676,21 @@ func (s *Server) handleMCPToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleTunnelManagerSettings(w http.ResponseWriter, r *http.Request) {
+	tunnelKey := r.URL.Query().Get("tunnel_key")
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, s.tunnelMgr.Settings())
+		writeJSON(w, s.tunnelMgr.SettingsFor(tunnelKey))
 	case http.MethodPost:
 		var req tunnelmgr.SettingsRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			writeAPIError(w, http.StatusBadRequest, err)
 			return
 		}
-		if err := s.tunnelMgr.SaveSettings(req); err != nil {
+		if err := s.tunnelMgr.SaveSettingsFor(tunnelKey, req); err != nil {
 			writeAPIError(w, http.StatusInternalServerError, err)
 			return
 		}
-		writeJSON(w, s.tunnelMgr.Settings())
+		writeJSON(w, s.tunnelMgr.SettingsFor(tunnelKey))
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -697,7 +701,7 @@ func (s *Server) handleTunnelManagerZones(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	zones, err := s.tunnelMgr.ListZones(r.Context())
+	zones, err := s.tunnelMgr.ListZonesFor(r.Context(), r.URL.Query().Get("tunnel_key"))
 	if err != nil {
 		writeTunnelManagerError(w, err)
 		return
@@ -715,7 +719,20 @@ func (s *Server) handleTunnelManagerVerifyToken(w http.ResponseWriter, r *http.R
 		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
-	resp := s.tunnelMgr.VerifyPermissions(r.Context(), req)
+	resp := s.tunnelMgr.VerifyPermissionsFor(r.Context(), r.URL.Query().Get("tunnel_key"), req)
+	writeJSON(w, resp)
+}
+
+func (s *Server) handleTunnelManagerTunnel(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	resp, err := s.tunnelMgr.FetchTunnelDetailsFor(r.Context(), r.URL.Query().Get("tunnel_key"))
+	if err != nil {
+		writeTunnelManagerError(w, err)
+		return
+	}
 	writeJSON(w, resp)
 }
 
@@ -724,7 +741,7 @@ func (s *Server) handleTunnelManagerConfig(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	cfg, err := s.tunnelMgr.Fetch(r.Context())
+	cfg, err := s.tunnelMgr.FetchFor(r.Context(), r.URL.Query().Get("tunnel_key"))
 	if err != nil {
 		writeTunnelManagerError(w, err)
 		return
@@ -742,7 +759,7 @@ func (s *Server) handleTunnelManagerEntries(w http.ResponseWriter, r *http.Reque
 		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
-	cfg, err := s.tunnelMgr.AddEntry(r.Context(), entry)
+	cfg, err := s.tunnelMgr.AddEntryFor(r.Context(), r.URL.Query().Get("tunnel_key"), entry)
 	if err != nil {
 		writeTunnelManagerError(w, err)
 		return
@@ -765,14 +782,14 @@ func (s *Server) handleTunnelManagerEntry(w http.ResponseWriter, r *http.Request
 			writeAPIError(w, http.StatusBadRequest, err)
 			return
 		}
-		cfg, err := s.tunnelMgr.UpdateEntry(r.Context(), index, entry)
+		cfg, err := s.tunnelMgr.UpdateEntryFor(r.Context(), r.URL.Query().Get("tunnel_key"), index, entry)
 		if err != nil {
 			writeTunnelManagerError(w, err)
 			return
 		}
 		writeJSON(w, cfg)
 	case http.MethodDelete:
-		cfg, err := s.tunnelMgr.DeleteEntry(r.Context(), index)
+		cfg, err := s.tunnelMgr.DeleteEntryFor(r.Context(), r.URL.Query().Get("tunnel_key"), index)
 		if err != nil {
 			writeTunnelManagerError(w, err)
 			return
@@ -787,6 +804,8 @@ func writeTunnelManagerError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, tunnelmgr.ErrDisabled):
 		writeAPIError(w, http.StatusConflict, err)
+	case strings.Contains(err.Error(), "not found"):
+		writeAPIError(w, http.StatusNotFound, err)
 	case strings.Contains(err.Error(), "required"), strings.Contains(err.Error(), "out of range"):
 		writeAPIError(w, http.StatusBadRequest, err)
 	default:
@@ -858,7 +877,160 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
+type TunnelsResponse struct {
+	ActiveTunnelKey string                       `json:"active_tunnel_key"`
+	Tunnels         []config.TunnelProfileConfig `json:"tunnels"`
+}
+
+func (s *Server) handleTunnels(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		cfg := s.cfgMgr.Get()
+		writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+	case http.MethodPost:
+		var req config.TunnelProfileConfig
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		cfg, err := s.cfgMgr.SaveTunnelProfile("", req)
+		if err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleTunnel(w http.ResponseWriter, r *http.Request) {
+	rest := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/tunnels/"), "/")
+	if rest == "" {
+		writeAPIError(w, http.StatusBadRequest, fmt.Errorf("tunnel key is required"))
+		return
+	}
+	parts := strings.Split(rest, "/")
+	key := strings.TrimSpace(parts[0])
+	action := ""
+	if len(parts) > 1 {
+		action = strings.TrimSpace(parts[1])
+	}
+
+	switch action {
+	case "":
+		s.handleTunnelProfile(w, r, key)
+	case "activate-local":
+		s.handleTunnelActivateLocal(w, r, key)
+	case "status":
+		s.handleTunnelStatus(w, r, key)
+	case "control":
+		s.handleTunnelControl(w, r, key)
+	default:
+		writeAPIError(w, http.StatusNotFound, fmt.Errorf("unknown tunnel action %q", action))
+	}
+}
+
+func (s *Server) handleTunnelProfile(w http.ResponseWriter, r *http.Request, key string) {
+	switch r.Method {
+	case http.MethodGet:
+		tunnel, ok := s.cfgMgr.Get().TunnelProfile(key)
+		if !ok {
+			writeAPIError(w, http.StatusNotFound, fmt.Errorf("tunnel profile %q not found", key))
+			return
+		}
+		writeJSON(w, tunnel)
+	case http.MethodPut, http.MethodPost:
+		var req config.TunnelProfileConfig
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		cfg, err := s.cfgMgr.SaveTunnelProfile(key, req)
+		if err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+	case http.MethodDelete:
+		cfg, err := s.cfgMgr.DeleteTunnelProfile(key)
+		if err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleTunnelActivateLocal(w http.ResponseWriter, r *http.Request, key string) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	cfg := s.cfgMgr.Get()
+	if cfg.ActiveTunnelKey != key {
+		running := false
+		if s.runner != nil {
+			running, _, _ = s.runner.Status()
+		}
+		if running {
+			writeAPIError(w, http.StatusConflict, fmt.Errorf("stop the current tunnel before switching the local runner"))
+			return
+		}
+	}
+	cfg, err := s.cfgMgr.ActivateTunnelProfile(key)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+}
+
+func (s *Server) handleTunnelStatus(w http.ResponseWriter, r *http.Request, key string) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	cfg := s.cfgMgr.Get()
+	if _, ok := cfg.TunnelProfile(key); !ok {
+		writeAPIError(w, http.StatusNotFound, fmt.Errorf("tunnel profile %q not found", key))
+		return
+	}
+	if cfg.ActiveTunnelKey != key {
+		writeJSON(w, StatusResponse{Running: false, Status: "inactive", Protocol: ""})
+		return
+	}
+	s.writeRunnerStatus(w)
+}
+
+func (s *Server) handleTunnelControl(w http.ResponseWriter, r *http.Request, key string) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	cfg := s.cfgMgr.Get()
+	if _, ok := cfg.TunnelProfile(key); !ok {
+		writeAPIError(w, http.StatusNotFound, fmt.Errorf("tunnel profile %q not found", key))
+		return
+	}
+	if cfg.ActiveTunnelKey != key {
+		writeAPIError(w, http.StatusConflict, fmt.Errorf("activate this tunnel as the local runner before controlling it"))
+		return
+	}
+	s.handleControl(w, r)
+}
+
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
+	s.writeRunnerStatus(w)
+}
+
+func (s *Server) writeRunnerStatus(w http.ResponseWriter) {
+	if s.runner == nil {
+		writeJSON(w, StatusResponse{Running: false, Status: "unavailable"})
+		return
+	}
 	running, err, protocol := s.runner.Status()
 	status := "stopped"
 	if running {

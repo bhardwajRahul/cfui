@@ -10,6 +10,7 @@ import (
 	"cfui/internal/persist/ent/mcptoken"
 	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
+	"cfui/internal/persist/ent/tunnelprofile"
 	"cfui/internal/persist/ent/tunneltoken"
 	"context"
 	"errors"
@@ -87,6 +88,7 @@ func checkColumn(t, c string) error {
 			mcptoken.Table:         mcptoken.ValidColumn,
 			s3webdavsetting.Table:  s3webdavsetting.ValidColumn,
 			tunnelmanagement.Table: tunnelmanagement.ValidColumn,
+			tunnelprofile.Table:    tunnelprofile.ValidColumn,
 			tunneltoken.Table:      tunneltoken.ValidColumn,
 		})
 	})

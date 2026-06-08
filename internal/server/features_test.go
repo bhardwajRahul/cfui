@@ -70,3 +70,76 @@ func TestConfigPostMergesOmittedFeatureConfig(t *testing.T) {
 		t.Fatalf("config post did not merge omitted fields: %#v", resp)
 	}
 }
+
+func TestTunnelProfileCanBeEditedWithoutActivatingLocalRunner(t *testing.T) {
+	s := newServerTestServer(t)
+	cfg := s.cfgMgr.Get()
+	cfg.Tunnels = []config.TunnelProfileConfig{
+		{
+			Key:           "home",
+			Name:          "Home",
+			Token:         "home-token",
+			LocalEnabled:  true,
+			AutoRestart:   true,
+			SoftwareName:  "cfui",
+			Protocol:      "auto",
+			GracePeriod:   "30s",
+			Retries:       5,
+			MetricsPort:   60123,
+			LogLevel:      "info",
+			EdgeIPVersion: "auto",
+		},
+		{
+			Key:           "office",
+			Name:          "Office",
+			Token:         "office-token",
+			LocalEnabled:  true,
+			AutoRestart:   true,
+			SoftwareName:  "cfui",
+			Protocol:      "auto",
+			GracePeriod:   "30s",
+			Retries:       5,
+			MetricsPort:   60123,
+			LogLevel:      "info",
+			EdgeIPVersion: "auto",
+		},
+	}
+	cfg.ActiveTunnelKey = "home"
+	if err := s.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPut, "/api/tunnels/office", strings.NewReader(`{
+		"key":"office",
+		"name":"Office Updated",
+		"token":"office-token-updated",
+		"local_enabled":true,
+		"remote_management_enabled":true,
+		"account_id":"office-account",
+		"tunnel_id":"office-tunnel",
+		"auto_restart":true,
+		"software_name":"cfui",
+		"protocol":"http2",
+		"grace_period":"30s",
+		"retries":5,
+		"metrics_port":60123,
+		"log_level":"info",
+		"edge_ip_version":"auto"
+	}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	s.handleTunnel(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("update tunnel status %d: %s", rec.Code, rec.Body.String())
+	}
+
+	got := s.cfgMgr.Get()
+	if got.ActiveTunnelKey != "home" || got.Token != "home-token" {
+		t.Fatalf("editing non-active tunnel changed active runner config: %#v", got)
+	}
+	office, ok := got.TunnelProfile("office")
+	if !ok || office.Name != "Office Updated" || office.Token != "office-token-updated" || office.Protocol != "http2" {
+		t.Fatalf("office profile was not updated: %#v", got.Tunnels)
+	}
+}

@@ -371,6 +371,7 @@
     function renderS3TunnelDomainInputs(settings, enabled) {
         const host = normalizeHost(settings?.dedicated_tunnel_hostname || '');
         const split = splitHostnameForZones(host);
+        renderS3TunnelProfileHelp();
         const subdomain = $('s3-dedicated-tunnel-subdomain');
         if (subdomain) {
             subdomain.value = split.subdomain;
@@ -380,6 +381,13 @@
         const domain = $('s3-dedicated-tunnel-domain');
         if (domain) domain.disabled = !enabled;
         $('s3-dedicated-tunnel-open')?.toggleAttribute('disabled', !enabled);
+    }
+
+    function renderS3TunnelProfileHelp() {
+        const help = $('s3-dedicated-tunnel-profile-help');
+        if (!help) return;
+        const profile = activeTunnelProfile();
+        help.textContent = t('s3_tunnel_uses_active_runner', { name: profile?.name || profile?.key || activeTunnelKey() });
     }
 
     function renderS3TunnelDomainOptions(selected = '') {
@@ -880,6 +888,8 @@
             window.cfui.activateTab?.('features');
             return false;
         }
+        state.tunnelManager.selectedTunnelKey = activeTunnelKey();
+        window.cfui.renderTunnelManagerProfileSelector?.();
         await window.cfui.fetchTunnelManagerSettings?.();
         const settings = state.tunnelManager?.settings || {};
         if (!settings.enabled || !settings.account_id || !settings.tunnel_id || !(settings.api_token_set || settings.api_key_set)) {
@@ -887,7 +897,7 @@
             window.cfui.activateTab?.('manager');
             return false;
         }
-        const verify = await apiSend('/tunnel-manager/verify-token', 'POST', { auth_mode: settings.auth_mode || 'token' });
+        const verify = await apiSend('/tunnel-manager/verify-token' + activeTunnelQuery(), 'POST', { auth_mode: settings.auth_mode || 'token' });
         const missing = (verify.permissions || []).filter((perm) => perm.required && !perm.granted);
         if (!verify.valid || missing.length) {
             toast.err(t('s3_tunnel_permission_required'));
@@ -901,6 +911,23 @@
             return false;
         }
         return true;
+    }
+
+    function tunnelProfiles() {
+        return Array.isArray(state.config?.tunnels) ? state.config.tunnels : [];
+    }
+
+    function activeTunnelKey() {
+        return state.config?.active_tunnel_key || tunnelProfiles()[0]?.key || 'default';
+    }
+
+    function activeTunnelProfile() {
+        const key = activeTunnelKey();
+        return tunnelProfiles().find((profile) => profile.key === key) || null;
+    }
+
+    function activeTunnelQuery() {
+        return '?tunnel_key=' + encodeURIComponent(activeTunnelKey());
     }
 
     async function loadS3Files(path = state.s3.path || '/') {

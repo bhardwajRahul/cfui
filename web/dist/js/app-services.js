@@ -81,9 +81,109 @@
        Tunnel Manager
        ==================================================================== */
 
+    function tunnelProfiles() {
+        return Array.isArray(state.config?.tunnels) ? state.config.tunnels : [];
+    }
+
+    function activeTunnelKey() {
+        return state.config?.active_tunnel_key || tunnelProfiles()[0]?.key || 'default';
+    }
+
+    function selectExistingTunnelKey(key) {
+        const profiles = tunnelProfiles();
+        if (profiles.some((profile) => profile.key === key)) return key;
+        return activeTunnelKey();
+    }
+
+    function tunnelProfileByKey(key) {
+        return tunnelProfiles().find((profile) => profile.key === key) || null;
+    }
+
+    function tunnelDisplayName(profile) {
+        if (!profile) return activeTunnelKey();
+        return profile.name || profile.key;
+    }
+
+    function tunnelManagerKey() {
+        const key = selectExistingTunnelKey(state.tunnelManager.selectedTunnelKey || activeTunnelKey());
+        state.tunnelManager.selectedTunnelKey = key;
+        return key;
+    }
+
+    function tunnelManagerQuery() {
+        return '?tunnel_key=' + encodeURIComponent(tunnelManagerKey());
+    }
+
+    function appendTunnelProfileOptionGroups(select, profiles, activeKey) {
+        select.innerHTML = '';
+        const appendGroup = (label, items) => {
+            if (!items.length) return;
+            const group = document.createElement('optgroup');
+            group.label = label;
+            for (const profile of items) {
+                const opt = document.createElement('option');
+                opt.value = profile.key;
+                opt.textContent = tunnelDisplayName(profile);
+                group.appendChild(opt);
+            }
+            select.appendChild(group);
+        };
+        appendGroup(t('active_local_tunnel'), profiles.filter((profile) => profile.key === activeKey));
+        appendGroup(t('other_tunnel_profiles'), profiles.filter((profile) => profile.key !== activeKey));
+    }
+
+    function renderTunnelManagerProfileSummary() {
+        const summary = $('manager-tunnel-summary');
+        if (!summary) return;
+        const selected = tunnelProfileByKey(tunnelManagerKey());
+        if (!selected) {
+            summary.textContent = '';
+            summary.removeAttribute('data-state');
+            return;
+        }
+        const active = tunnelProfileByKey(activeTunnelKey());
+        const selectedName = tunnelDisplayName(selected);
+        const activeName = tunnelDisplayName(active);
+        const isActive = selected.key === active?.key;
+        const key = isActive ? 'remote_manager_profile_summary_active' : 'remote_manager_profile_summary_inactive';
+        const text = t(key, { name: selectedName, active: activeName });
+        summary.textContent = text;
+        summary.title = text;
+        summary.setAttribute('data-state', isActive ? 'ok' : 'info');
+    }
+
+    function renderTunnelManagerProfileSelector() {
+        const select = $('manager-tunnel-select');
+        if (!select) {
+            renderTunnelManagerProfileSummary();
+            return;
+        }
+        const profiles = tunnelProfiles();
+        const current = tunnelManagerKey();
+        appendTunnelProfileOptionGroups(select, profiles, activeTunnelKey());
+        select.value = current;
+        select.disabled = profiles.length <= 1;
+        select.title = t('remote_manager_tunnel_help');
+        renderTunnelManagerProfileSummary();
+    }
+
+    async function onManagerTunnelChange() {
+        const key = $('manager-tunnel-select')?.value || activeTunnelKey();
+        state.tunnelManager.selectedTunnelKey = selectExistingTunnelKey(key);
+        state.tunnelManager.zones = [];
+        state.tunnelManager.zonesLoaded = false;
+        state.tunnelManager.config = null;
+        if ($('manager-config-panel')) $('manager-config-panel').hidden = true;
+        renderTunnelManagerProfileSelector();
+        await fetchTunnelManagerSettings();
+        if (canLoadTunnelManagerZones()) await loadTunnelManagerZones(true);
+        else renderTunnelManagerZones();
+    }
+
     async function fetchTunnelManagerSettings() {
         try {
-            const data = await apiGet('/tunnel-manager/settings');
+            renderTunnelManagerProfileSelector();
+            const data = await apiGet('/tunnel-manager/settings' + tunnelManagerQuery());
             state.tunnelManager.settings = data;
             renderTunnelManagerSettings(data);
         } catch (err) {
@@ -103,7 +203,11 @@
         $('manager-token-state').textContent = t(s.api_token_set ? 'api_token_configured' : 'api_token_not_saved');
         $('manager-key-state').textContent = t(s.api_key_set ? 'api_key_configured' : 'api_key_not_saved');
         updateManagerAuthMode();
-        setManagerStatus(s.enabled ? 'ok' : 'disabled', t(s.enabled ? 'manager_status_ready' : 'manager_status_disabled'));
+        const selected = tunnelProfileByKey(tunnelManagerKey());
+        renderTunnelManagerProfileSummary();
+        setManagerStatus(s.enabled ? 'ok' : 'disabled', t(s.enabled ? 'manager_status_ready_for_tunnel' : 'manager_status_disabled_for_tunnel', { name: tunnelDisplayName(selected) }));
+        $('manager-account-help').textContent = t('account_id_help');
+        $('manager-tunnel-help').textContent = t('tunnel_id_help');
         if (s.derived_from_token) {
             $('manager-account-help').textContent = t('account_id_derived_from_token');
             $('manager-tunnel-help').textContent = t('tunnel_id_derived_from_token');
@@ -144,11 +248,12 @@
             api_key: $('manager-auth-mode').value === 'key' ? $('manager-api-key').value.trim() : '',
         };
         try {
-            const data = await apiSend('/tunnel-manager/settings', 'POST', payload);
+            const data = await apiSend('/tunnel-manager/settings' + tunnelManagerQuery(), 'POST', payload);
             state.tunnelManager.settings = data;
             state.tunnelManager.zonesLoaded = false;
             renderTunnelManagerSettings(data);
             if (showFeedback) { toast.ok(t('manager_settings_saved')); flashField('manager-save-settings'); }
+            if (canLoadTunnelManagerDetails(data)) await refreshTunnelManagerDetails(true);
             if (canLoadTunnelManagerZones(data)) await loadTunnelManagerZones(true);
             else { state.tunnelManager.zones = []; renderTunnelManagerZones(); }
         } catch (err) {
@@ -158,13 +263,29 @@
     }
 
     function canLoadTunnelManagerZones(s = state.tunnelManager.settings) { return !!(s?.enabled && s?.account_id && (s?.api_token_set || s?.api_key_set)); }
+    function canLoadTunnelManagerDetails(s = state.tunnelManager.settings) { return !!(s?.enabled && s?.account_id && s?.tunnel_id && (s?.api_token_set || s?.api_key_set)); }
+
+    async function refreshTunnelManagerDetails(silent = false) {
+        if (!canLoadTunnelManagerDetails()) return null;
+        try {
+            const data = await apiGet('/tunnel-manager/tunnel' + tunnelManagerQuery());
+            if (data.name) {
+                await window.cfui.fetchConfig?.();
+                renderTunnelManagerProfileSelector();
+            }
+            return data;
+        } catch (err) {
+            if (!silent) toast.err(err.message);
+            return null;
+        }
+    }
 
     async function loadTunnelManagerZones(silent = false) {
         const btn = silent ? null : $('manager-refresh-zones');
         if (btn) setBusy(btn, true);
         try {
             if (!silent) setManagerStatus('loading', t('manager_status_loading_zones'));
-            const data = await apiGet('/tunnel-manager/zones');
+            const data = await apiGet('/tunnel-manager/zones' + tunnelManagerQuery());
             state.tunnelManager.zones = data.zones || [];
             state.tunnelManager.zonesLoaded = true;
             renderTunnelManagerZones();
@@ -206,9 +327,10 @@
         if (btn) setBusy(btn, true);
         try {
             setManagerStatus('loading', t('manager_status_loading'));
-            const data = await apiGet('/tunnel-manager/config');
+            const data = await apiGet('/tunnel-manager/config' + tunnelManagerQuery());
             state.tunnelManager.config = data;
             renderTunnelManagerConfig(data);
+            if (data.tunnel_name) await window.cfui.fetchConfig?.();
             setManagerStatus('ok', t('manager_status_loaded'));
             if (!silent) toast.ok(t('manager_config_loaded'));
             return data;
@@ -220,7 +342,10 @@
         $('manager-config-panel').hidden = false;
         const meta = $('manager-config-meta');
         meta.innerHTML = '';
-        const parts = [t('tunnel_label') + ' ' + (cfg.tunnel_id || $('manager-tunnel-id').value), t('version_label') + ' ' + (cfg.version || 0), (cfg.entries?.length || 0) + ' ' + t('rules_label')];
+        const tunnelPart = cfg.tunnel_name
+            ? `${t('tunnel_label')} ${cfg.tunnel_name} (${cfg.tunnel_id || $('manager-tunnel-id').value})`
+            : t('tunnel_label') + ' ' + (cfg.tunnel_id || $('manager-tunnel-id').value);
+        const parts = [tunnelPart, t('version_label') + ' ' + (cfg.version || 0), (cfg.entries?.length || 0) + ' ' + t('rules_label')];
         parts.forEach((p, i) => { if (i > 0) { const sep = document.createElement('span'); sep.className = 'sep'; meta.appendChild(sep); } const span = document.createElement('span'); span.textContent = p; meta.appendChild(span); });
         const list = $('manager-rules-list');
         list.innerHTML = '';
@@ -292,14 +417,14 @@
         const entry = { hostname: buildHostname($('manager-entry-subdomain').value, $('manager-entry-domain').value), path: $('manager-entry-path').value.trim(), service: buildService($('manager-entry-service-type').value, $('manager-entry-service').value), comment: $('manager-entry-comment')?.value.trim() || '', no_tls_verify: $('manager-entry-no-tls').checked, http_host_header: $('manager-entry-http-host-header').value.trim(), origin_server_name: $('manager-entry-origin-server-name').value.trim() };
         if (!entry.service) { toast.err(t('service_required')); return; }
         const btn = $('manager-entry-submit'); setBusy(btn, true);
-        const url = index === '' ? '/tunnel-manager/entries' : `/tunnel-manager/entries/${index}`;
+        const url = (index === '' ? '/tunnel-manager/entries' : `/tunnel-manager/entries/${index}`) + tunnelManagerQuery();
         try { const data = await apiSend(url, index === '' ? 'POST' : 'PUT', entry); state.tunnelManager.config = data; renderTunnelManagerConfig(data); resetTunnelEntryForm(); window.cfui.closeDialog($('manager-entry-dialog')); toast.ok(t(index === '' ? 'tunnel_rule_added' : 'tunnel_rule_updated')); }
         catch (err) { toast.err(t('tunnel_rule_save_failed') + ': ' + err.message); }
         finally { setBusy(btn, false); }
     }
 
     async function deleteTunnelManagerEntry(index) {
-        try { const data = await apiSend(`/tunnel-manager/entries/${index}`, 'DELETE'); state.tunnelManager.config = data; renderTunnelManagerConfig(data); toast.ok(t('tunnel_rule_deleted')); }
+        try { const data = await apiSend(`/tunnel-manager/entries/${index}` + tunnelManagerQuery(), 'DELETE'); state.tunnelManager.config = data; renderTunnelManagerConfig(data); toast.ok(t('tunnel_rule_deleted')); }
         catch (err) { toast.err(t('tunnel_rule_delete_failed') + ': ' + err.message); }
     }
 
@@ -315,7 +440,7 @@
         setBusy(btn, true, t('verify_checking')); result.hidden = false; result.innerHTML = '';
         const loading = document.createElement('span'); loading.className = 'pill'; loading.setAttribute('data-state', 'loading'); loading.textContent = t('verify_checking'); result.appendChild(loading);
         try {
-            const data = await apiSend('/tunnel-manager/verify-token', 'POST', payload);
+            const data = await apiSend('/tunnel-manager/verify-token' + tunnelManagerQuery(), 'POST', payload);
             result.innerHTML = '';
             if (data.token_status === 'inactive' || data.token_status === 'revoked') { const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', 'error'); s.textContent = t('verify_token_status') + ': ' + data.token_status; result.appendChild(s); return; }
             for (const p of (data.permissions || [])) { const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', p.granted ? 'ok' : (p.required ? 'error' : 'warn')); const dot = document.createElement('span'); dot.className = 'dot'; const txt = document.createElement('span'); const key = permissionLabelKeys[p.name]; txt.textContent = ' ' + (key ? t(key) : p.description); s.append(dot, txt); result.appendChild(s); }
@@ -609,6 +734,7 @@
         $('feature-s3-toggle')?.addEventListener('change', (e) => saveFeature('s3_webdav', e.target.checked));
 
         /* Manager */
+        $('manager-tunnel-select')?.addEventListener('change', onManagerTunnelChange);
         $('manager-auth-mode')?.addEventListener('change', updateManagerAuthMode);
         $('manager-save-settings')?.addEventListener('click', () => saveTunnelManagerSettings({ showFeedback: true }));
         $('manager-load-config')?.addEventListener('click', () => loadTunnelManagerConfig(false));
@@ -647,6 +773,11 @@
             else if (name === 'ddns' && state.features?.ddns) refreshDDNS();
             else if (name === 's3') window.cfui.fetchS3Settings?.();
         });
+
+        document.addEventListener('localechange', () => {
+            renderTunnelManagerProfileSelector();
+            if (state.tunnelManager.settings) renderTunnelManagerSettings(state.tunnelManager.settings);
+        });
     }
 
     /* ---- Export ---- */
@@ -655,6 +786,7 @@
     ns.saveFeature = saveFeature;
     ns.renderS3FeatureToggle = renderS3FeatureToggle;
     ns.fetchTunnelManagerSettings = fetchTunnelManagerSettings;
+    ns.renderTunnelManagerProfileSelector = renderTunnelManagerProfileSelector;
     ns.maybeLoadTunnelManagerZones = maybeLoadTunnelManagerZones;
     ns.loadTunnelManagerConfig = loadTunnelManagerConfig;
     ns.openTunnelEntryDialog = openTunnelEntryDialog;

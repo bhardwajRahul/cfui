@@ -31,6 +31,7 @@ var (
 		{Name: "post_quantum", Type: field.TypeBool, Default: false},
 		{Name: "no_tls_verify", Type: field.TypeBool, Default: false},
 		{Name: "extra_args", Type: field.TypeString, Default: ""},
+		{Name: "active_tunnel_key", Type: field.TypeString, Default: "default"},
 		{Name: "mcp_enabled", Type: field.TypeBool, Default: false},
 		{Name: "s3_webdav_enabled", Type: field.TypeBool, Default: false},
 		{Name: "s3_webdav_active_key", Type: field.TypeString, Default: "default"},
@@ -180,6 +181,44 @@ var (
 		Columns:    TunnelManagementsColumns,
 		PrimaryKey: []*schema.Column{TunnelManagementsColumns[0]},
 	}
+	// TunnelProfilesColumns holds the columns for the "tunnel_profiles" table.
+	TunnelProfilesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString, Unique: true},
+		{Name: "name", Type: field.TypeString, Default: "Default Tunnel"},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "token", Type: field.TypeString, Default: ""},
+		{Name: "local_enabled", Type: field.TypeBool, Default: true},
+		{Name: "remote_management_enabled", Type: field.TypeBool, Default: false},
+		{Name: "account_id", Type: field.TypeString, Default: ""},
+		{Name: "tunnel_id", Type: field.TypeString, Default: ""},
+		{Name: "auto_start", Type: field.TypeBool, Default: false},
+		{Name: "auto_restart", Type: field.TypeBool, Default: true},
+		{Name: "custom_tag", Type: field.TypeString, Default: ""},
+		{Name: "software_name", Type: field.TypeString, Default: "cfui"},
+		{Name: "protocol", Type: field.TypeString, Default: "auto"},
+		{Name: "grace_period", Type: field.TypeString, Default: "30s"},
+		{Name: "region", Type: field.TypeString, Default: ""},
+		{Name: "retries", Type: field.TypeInt, Default: 5},
+		{Name: "metrics_enable", Type: field.TypeBool, Default: false},
+		{Name: "metrics_port", Type: field.TypeInt, Default: 60123},
+		{Name: "log_level", Type: field.TypeString, Default: "info"},
+		{Name: "log_file", Type: field.TypeString, Default: ""},
+		{Name: "log_json", Type: field.TypeBool, Default: false},
+		{Name: "edge_ip_version", Type: field.TypeString, Default: "auto"},
+		{Name: "edge_bind_address", Type: field.TypeString, Default: ""},
+		{Name: "post_quantum", Type: field.TypeBool, Default: false},
+		{Name: "no_tls_verify", Type: field.TypeBool, Default: false},
+		{Name: "extra_args", Type: field.TypeString, Default: ""},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// TunnelProfilesTable holds the schema information for the "tunnel_profiles" table.
+	TunnelProfilesTable = &schema.Table{
+		Name:       "tunnel_profiles",
+		Columns:    TunnelProfilesColumns,
+		PrimaryKey: []*schema.Column{TunnelProfilesColumns[0]},
+	}
 	// TunnelTokensColumns holds the columns for the "tunnel_tokens" table.
 	TunnelTokensColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -203,6 +242,7 @@ var (
 		McpTokensTable,
 		S3WebdavSettingsTable,
 		TunnelManagementsTable,
+		TunnelProfilesTable,
 		TunnelTokensTable,
 	}
 )
@@ -210,5 +250,8 @@ var (
 func init() {
 	S3WebdavSettingsTable.Annotation = &entsql.Annotation{
 		Table: "s3_webdav_settings",
+	}
+	TunnelProfilesTable.Annotation = &entsql.Annotation{
+		Table: "tunnel_profiles",
 	}
 }

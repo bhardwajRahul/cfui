@@ -11,6 +11,7 @@ import (
 	"cfui/internal/persist/ent/predicate"
 	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
+	"cfui/internal/persist/ent/tunnelprofile"
 	"cfui/internal/persist/ent/tunneltoken"
 	"context"
 	"errors"
@@ -38,6 +39,7 @@ const (
 	TypeMCPToken         = "MCPToken"
 	TypeS3WebDAVSetting  = "S3WebDAVSetting"
 	TypeTunnelManagement = "TunnelManagement"
+	TypeTunnelProfile    = "TunnelProfile"
 	TypeTunnelToken      = "TunnelToken"
 )
 
@@ -68,6 +70,7 @@ type AppSettingMutation struct {
 	post_quantum                        *bool
 	no_tls_verify                       *bool
 	extra_args                          *string
+	active_tunnel_key                   *string
 	mcp_enabled                         *bool
 	s3_webdav_enabled                   *bool
 	s3_webdav_active_key                *string
@@ -909,6 +912,42 @@ func (m *AppSettingMutation) ResetExtraArgs() {
 	m.extra_args = nil
 }
 
+// SetActiveTunnelKey sets the "active_tunnel_key" field.
+func (m *AppSettingMutation) SetActiveTunnelKey(s string) {
+	m.active_tunnel_key = &s
+}
+
+// ActiveTunnelKey returns the value of the "active_tunnel_key" field in the mutation.
+func (m *AppSettingMutation) ActiveTunnelKey() (r string, exists bool) {
+	v := m.active_tunnel_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActiveTunnelKey returns the old "active_tunnel_key" field's value of the AppSetting entity.
+// If the AppSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AppSettingMutation) OldActiveTunnelKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActiveTunnelKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActiveTunnelKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActiveTunnelKey: %w", err)
+	}
+	return oldValue.ActiveTunnelKey, nil
+}
+
+// ResetActiveTunnelKey resets all changes to the "active_tunnel_key" field.
+func (m *AppSettingMutation) ResetActiveTunnelKey() {
+	m.active_tunnel_key = nil
+}
+
 // SetMcpEnabled sets the "mcp_enabled" field.
 func (m *AppSettingMutation) SetMcpEnabled(b bool) {
 	m.mcp_enabled = &b
@@ -1395,7 +1434,7 @@ func (m *AppSettingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AppSettingMutation) Fields() []string {
-	fields := make([]string, 0, 31)
+	fields := make([]string, 0, 32)
 	if m.key != nil {
 		fields = append(fields, appsetting.FieldKey)
 	}
@@ -1452,6 +1491,9 @@ func (m *AppSettingMutation) Fields() []string {
 	}
 	if m.extra_args != nil {
 		fields = append(fields, appsetting.FieldExtraArgs)
+	}
+	if m.active_tunnel_key != nil {
+		fields = append(fields, appsetting.FieldActiveTunnelKey)
 	}
 	if m.mcp_enabled != nil {
 		fields = append(fields, appsetting.FieldMcpEnabled)
@@ -1535,6 +1577,8 @@ func (m *AppSettingMutation) Field(name string) (ent.Value, bool) {
 		return m.NoTLSVerify()
 	case appsetting.FieldExtraArgs:
 		return m.ExtraArgs()
+	case appsetting.FieldActiveTunnelKey:
+		return m.ActiveTunnelKey()
 	case appsetting.FieldMcpEnabled:
 		return m.McpEnabled()
 	case appsetting.FieldS3WebdavEnabled:
@@ -1606,6 +1650,8 @@ func (m *AppSettingMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldNoTLSVerify(ctx)
 	case appsetting.FieldExtraArgs:
 		return m.OldExtraArgs(ctx)
+	case appsetting.FieldActiveTunnelKey:
+		return m.OldActiveTunnelKey(ctx)
 	case appsetting.FieldMcpEnabled:
 		return m.OldMcpEnabled(ctx)
 	case appsetting.FieldS3WebdavEnabled:
@@ -1771,6 +1817,13 @@ func (m *AppSettingMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetExtraArgs(v)
+		return nil
+	case appsetting.FieldActiveTunnelKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActiveTunnelKey(v)
 		return nil
 	case appsetting.FieldMcpEnabled:
 		v, ok := value.(bool)
@@ -2000,6 +2053,9 @@ func (m *AppSettingMutation) ResetField(name string) error {
 		return nil
 	case appsetting.FieldExtraArgs:
 		m.ResetExtraArgs()
+		return nil
+	case appsetting.FieldActiveTunnelKey:
+		m.ResetActiveTunnelKey()
 		return nil
 	case appsetting.FieldMcpEnabled:
 		m.ResetMcpEnabled()
@@ -6953,6 +7009,1892 @@ func (m *TunnelManagementMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *TunnelManagementMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown TunnelManagement edge %s", name)
+}
+
+// TunnelProfileMutation represents an operation that mutates the TunnelProfile nodes in the graph.
+type TunnelProfileMutation struct {
+	config
+	op                        Op
+	typ                       string
+	id                        *int
+	key                       *string
+	name                      *string
+	sort_order                *int
+	addsort_order             *int
+	token                     *string
+	local_enabled             *bool
+	remote_management_enabled *bool
+	account_id                *string
+	tunnel_id                 *string
+	auto_start                *bool
+	auto_restart              *bool
+	custom_tag                *string
+	software_name             *string
+	protocol                  *string
+	grace_period              *string
+	region                    *string
+	retries                   *int
+	addretries                *int
+	metrics_enable            *bool
+	metrics_port              *int
+	addmetrics_port           *int
+	log_level                 *string
+	log_file                  *string
+	log_json                  *bool
+	edge_ip_version           *string
+	edge_bind_address         *string
+	post_quantum              *bool
+	no_tls_verify             *bool
+	extra_args                *string
+	created_at                *time.Time
+	updated_at                *time.Time
+	clearedFields             map[string]struct{}
+	done                      bool
+	oldValue                  func(context.Context) (*TunnelProfile, error)
+	predicates                []predicate.TunnelProfile
+}
+
+var _ ent.Mutation = (*TunnelProfileMutation)(nil)
+
+// tunnelprofileOption allows management of the mutation configuration using functional options.
+type tunnelprofileOption func(*TunnelProfileMutation)
+
+// newTunnelProfileMutation creates new mutation for the TunnelProfile entity.
+func newTunnelProfileMutation(c config, op Op, opts ...tunnelprofileOption) *TunnelProfileMutation {
+	m := &TunnelProfileMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTunnelProfile,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTunnelProfileID sets the ID field of the mutation.
+func withTunnelProfileID(id int) tunnelprofileOption {
+	return func(m *TunnelProfileMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *TunnelProfile
+		)
+		m.oldValue = func(ctx context.Context) (*TunnelProfile, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().TunnelProfile.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTunnelProfile sets the old TunnelProfile of the mutation.
+func withTunnelProfile(node *TunnelProfile) tunnelprofileOption {
+	return func(m *TunnelProfileMutation) {
+		m.oldValue = func(context.Context) (*TunnelProfile, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TunnelProfileMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TunnelProfileMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TunnelProfileMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TunnelProfileMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().TunnelProfile.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetKey sets the "key" field.
+func (m *TunnelProfileMutation) SetKey(s string) {
+	m.key = &s
+}
+
+// Key returns the value of the "key" field in the mutation.
+func (m *TunnelProfileMutation) Key() (r string, exists bool) {
+	v := m.key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKey returns the old "key" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKey: %w", err)
+	}
+	return oldValue.Key, nil
+}
+
+// ResetKey resets all changes to the "key" field.
+func (m *TunnelProfileMutation) ResetKey() {
+	m.key = nil
+}
+
+// SetName sets the "name" field.
+func (m *TunnelProfileMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *TunnelProfileMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *TunnelProfileMutation) ResetName() {
+	m.name = nil
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (m *TunnelProfileMutation) SetSortOrder(i int) {
+	m.sort_order = &i
+	m.addsort_order = nil
+}
+
+// SortOrder returns the value of the "sort_order" field in the mutation.
+func (m *TunnelProfileMutation) SortOrder() (r int, exists bool) {
+	v := m.sort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSortOrder returns the old "sort_order" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldSortOrder(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSortOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSortOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSortOrder: %w", err)
+	}
+	return oldValue.SortOrder, nil
+}
+
+// AddSortOrder adds i to the "sort_order" field.
+func (m *TunnelProfileMutation) AddSortOrder(i int) {
+	if m.addsort_order != nil {
+		*m.addsort_order += i
+	} else {
+		m.addsort_order = &i
+	}
+}
+
+// AddedSortOrder returns the value that was added to the "sort_order" field in this mutation.
+func (m *TunnelProfileMutation) AddedSortOrder() (r int, exists bool) {
+	v := m.addsort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSortOrder resets all changes to the "sort_order" field.
+func (m *TunnelProfileMutation) ResetSortOrder() {
+	m.sort_order = nil
+	m.addsort_order = nil
+}
+
+// SetToken sets the "token" field.
+func (m *TunnelProfileMutation) SetToken(s string) {
+	m.token = &s
+}
+
+// Token returns the value of the "token" field in the mutation.
+func (m *TunnelProfileMutation) Token() (r string, exists bool) {
+	v := m.token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToken returns the old "token" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToken: %w", err)
+	}
+	return oldValue.Token, nil
+}
+
+// ResetToken resets all changes to the "token" field.
+func (m *TunnelProfileMutation) ResetToken() {
+	m.token = nil
+}
+
+// SetLocalEnabled sets the "local_enabled" field.
+func (m *TunnelProfileMutation) SetLocalEnabled(b bool) {
+	m.local_enabled = &b
+}
+
+// LocalEnabled returns the value of the "local_enabled" field in the mutation.
+func (m *TunnelProfileMutation) LocalEnabled() (r bool, exists bool) {
+	v := m.local_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocalEnabled returns the old "local_enabled" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldLocalEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocalEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocalEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocalEnabled: %w", err)
+	}
+	return oldValue.LocalEnabled, nil
+}
+
+// ResetLocalEnabled resets all changes to the "local_enabled" field.
+func (m *TunnelProfileMutation) ResetLocalEnabled() {
+	m.local_enabled = nil
+}
+
+// SetRemoteManagementEnabled sets the "remote_management_enabled" field.
+func (m *TunnelProfileMutation) SetRemoteManagementEnabled(b bool) {
+	m.remote_management_enabled = &b
+}
+
+// RemoteManagementEnabled returns the value of the "remote_management_enabled" field in the mutation.
+func (m *TunnelProfileMutation) RemoteManagementEnabled() (r bool, exists bool) {
+	v := m.remote_management_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemoteManagementEnabled returns the old "remote_management_enabled" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldRemoteManagementEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemoteManagementEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemoteManagementEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemoteManagementEnabled: %w", err)
+	}
+	return oldValue.RemoteManagementEnabled, nil
+}
+
+// ResetRemoteManagementEnabled resets all changes to the "remote_management_enabled" field.
+func (m *TunnelProfileMutation) ResetRemoteManagementEnabled() {
+	m.remote_management_enabled = nil
+}
+
+// SetAccountID sets the "account_id" field.
+func (m *TunnelProfileMutation) SetAccountID(s string) {
+	m.account_id = &s
+}
+
+// AccountID returns the value of the "account_id" field in the mutation.
+func (m *TunnelProfileMutation) AccountID() (r string, exists bool) {
+	v := m.account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountID returns the old "account_id" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldAccountID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountID: %w", err)
+	}
+	return oldValue.AccountID, nil
+}
+
+// ResetAccountID resets all changes to the "account_id" field.
+func (m *TunnelProfileMutation) ResetAccountID() {
+	m.account_id = nil
+}
+
+// SetTunnelID sets the "tunnel_id" field.
+func (m *TunnelProfileMutation) SetTunnelID(s string) {
+	m.tunnel_id = &s
+}
+
+// TunnelID returns the value of the "tunnel_id" field in the mutation.
+func (m *TunnelProfileMutation) TunnelID() (r string, exists bool) {
+	v := m.tunnel_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTunnelID returns the old "tunnel_id" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldTunnelID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTunnelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTunnelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTunnelID: %w", err)
+	}
+	return oldValue.TunnelID, nil
+}
+
+// ResetTunnelID resets all changes to the "tunnel_id" field.
+func (m *TunnelProfileMutation) ResetTunnelID() {
+	m.tunnel_id = nil
+}
+
+// SetAutoStart sets the "auto_start" field.
+func (m *TunnelProfileMutation) SetAutoStart(b bool) {
+	m.auto_start = &b
+}
+
+// AutoStart returns the value of the "auto_start" field in the mutation.
+func (m *TunnelProfileMutation) AutoStart() (r bool, exists bool) {
+	v := m.auto_start
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutoStart returns the old "auto_start" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldAutoStart(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutoStart is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutoStart requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutoStart: %w", err)
+	}
+	return oldValue.AutoStart, nil
+}
+
+// ResetAutoStart resets all changes to the "auto_start" field.
+func (m *TunnelProfileMutation) ResetAutoStart() {
+	m.auto_start = nil
+}
+
+// SetAutoRestart sets the "auto_restart" field.
+func (m *TunnelProfileMutation) SetAutoRestart(b bool) {
+	m.auto_restart = &b
+}
+
+// AutoRestart returns the value of the "auto_restart" field in the mutation.
+func (m *TunnelProfileMutation) AutoRestart() (r bool, exists bool) {
+	v := m.auto_restart
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutoRestart returns the old "auto_restart" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldAutoRestart(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutoRestart is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutoRestart requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutoRestart: %w", err)
+	}
+	return oldValue.AutoRestart, nil
+}
+
+// ResetAutoRestart resets all changes to the "auto_restart" field.
+func (m *TunnelProfileMutation) ResetAutoRestart() {
+	m.auto_restart = nil
+}
+
+// SetCustomTag sets the "custom_tag" field.
+func (m *TunnelProfileMutation) SetCustomTag(s string) {
+	m.custom_tag = &s
+}
+
+// CustomTag returns the value of the "custom_tag" field in the mutation.
+func (m *TunnelProfileMutation) CustomTag() (r string, exists bool) {
+	v := m.custom_tag
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomTag returns the old "custom_tag" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldCustomTag(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomTag is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomTag requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomTag: %w", err)
+	}
+	return oldValue.CustomTag, nil
+}
+
+// ResetCustomTag resets all changes to the "custom_tag" field.
+func (m *TunnelProfileMutation) ResetCustomTag() {
+	m.custom_tag = nil
+}
+
+// SetSoftwareName sets the "software_name" field.
+func (m *TunnelProfileMutation) SetSoftwareName(s string) {
+	m.software_name = &s
+}
+
+// SoftwareName returns the value of the "software_name" field in the mutation.
+func (m *TunnelProfileMutation) SoftwareName() (r string, exists bool) {
+	v := m.software_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSoftwareName returns the old "software_name" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldSoftwareName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSoftwareName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSoftwareName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSoftwareName: %w", err)
+	}
+	return oldValue.SoftwareName, nil
+}
+
+// ResetSoftwareName resets all changes to the "software_name" field.
+func (m *TunnelProfileMutation) ResetSoftwareName() {
+	m.software_name = nil
+}
+
+// SetProtocol sets the "protocol" field.
+func (m *TunnelProfileMutation) SetProtocol(s string) {
+	m.protocol = &s
+}
+
+// Protocol returns the value of the "protocol" field in the mutation.
+func (m *TunnelProfileMutation) Protocol() (r string, exists bool) {
+	v := m.protocol
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProtocol returns the old "protocol" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldProtocol(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProtocol is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProtocol requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProtocol: %w", err)
+	}
+	return oldValue.Protocol, nil
+}
+
+// ResetProtocol resets all changes to the "protocol" field.
+func (m *TunnelProfileMutation) ResetProtocol() {
+	m.protocol = nil
+}
+
+// SetGracePeriod sets the "grace_period" field.
+func (m *TunnelProfileMutation) SetGracePeriod(s string) {
+	m.grace_period = &s
+}
+
+// GracePeriod returns the value of the "grace_period" field in the mutation.
+func (m *TunnelProfileMutation) GracePeriod() (r string, exists bool) {
+	v := m.grace_period
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGracePeriod returns the old "grace_period" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldGracePeriod(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGracePeriod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGracePeriod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGracePeriod: %w", err)
+	}
+	return oldValue.GracePeriod, nil
+}
+
+// ResetGracePeriod resets all changes to the "grace_period" field.
+func (m *TunnelProfileMutation) ResetGracePeriod() {
+	m.grace_period = nil
+}
+
+// SetRegion sets the "region" field.
+func (m *TunnelProfileMutation) SetRegion(s string) {
+	m.region = &s
+}
+
+// Region returns the value of the "region" field in the mutation.
+func (m *TunnelProfileMutation) Region() (r string, exists bool) {
+	v := m.region
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRegion returns the old "region" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldRegion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRegion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRegion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRegion: %w", err)
+	}
+	return oldValue.Region, nil
+}
+
+// ResetRegion resets all changes to the "region" field.
+func (m *TunnelProfileMutation) ResetRegion() {
+	m.region = nil
+}
+
+// SetRetries sets the "retries" field.
+func (m *TunnelProfileMutation) SetRetries(i int) {
+	m.retries = &i
+	m.addretries = nil
+}
+
+// Retries returns the value of the "retries" field in the mutation.
+func (m *TunnelProfileMutation) Retries() (r int, exists bool) {
+	v := m.retries
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRetries returns the old "retries" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldRetries(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRetries is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRetries requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRetries: %w", err)
+	}
+	return oldValue.Retries, nil
+}
+
+// AddRetries adds i to the "retries" field.
+func (m *TunnelProfileMutation) AddRetries(i int) {
+	if m.addretries != nil {
+		*m.addretries += i
+	} else {
+		m.addretries = &i
+	}
+}
+
+// AddedRetries returns the value that was added to the "retries" field in this mutation.
+func (m *TunnelProfileMutation) AddedRetries() (r int, exists bool) {
+	v := m.addretries
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRetries resets all changes to the "retries" field.
+func (m *TunnelProfileMutation) ResetRetries() {
+	m.retries = nil
+	m.addretries = nil
+}
+
+// SetMetricsEnable sets the "metrics_enable" field.
+func (m *TunnelProfileMutation) SetMetricsEnable(b bool) {
+	m.metrics_enable = &b
+}
+
+// MetricsEnable returns the value of the "metrics_enable" field in the mutation.
+func (m *TunnelProfileMutation) MetricsEnable() (r bool, exists bool) {
+	v := m.metrics_enable
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetricsEnable returns the old "metrics_enable" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldMetricsEnable(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetricsEnable is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetricsEnable requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetricsEnable: %w", err)
+	}
+	return oldValue.MetricsEnable, nil
+}
+
+// ResetMetricsEnable resets all changes to the "metrics_enable" field.
+func (m *TunnelProfileMutation) ResetMetricsEnable() {
+	m.metrics_enable = nil
+}
+
+// SetMetricsPort sets the "metrics_port" field.
+func (m *TunnelProfileMutation) SetMetricsPort(i int) {
+	m.metrics_port = &i
+	m.addmetrics_port = nil
+}
+
+// MetricsPort returns the value of the "metrics_port" field in the mutation.
+func (m *TunnelProfileMutation) MetricsPort() (r int, exists bool) {
+	v := m.metrics_port
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetricsPort returns the old "metrics_port" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldMetricsPort(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetricsPort is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetricsPort requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetricsPort: %w", err)
+	}
+	return oldValue.MetricsPort, nil
+}
+
+// AddMetricsPort adds i to the "metrics_port" field.
+func (m *TunnelProfileMutation) AddMetricsPort(i int) {
+	if m.addmetrics_port != nil {
+		*m.addmetrics_port += i
+	} else {
+		m.addmetrics_port = &i
+	}
+}
+
+// AddedMetricsPort returns the value that was added to the "metrics_port" field in this mutation.
+func (m *TunnelProfileMutation) AddedMetricsPort() (r int, exists bool) {
+	v := m.addmetrics_port
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMetricsPort resets all changes to the "metrics_port" field.
+func (m *TunnelProfileMutation) ResetMetricsPort() {
+	m.metrics_port = nil
+	m.addmetrics_port = nil
+}
+
+// SetLogLevel sets the "log_level" field.
+func (m *TunnelProfileMutation) SetLogLevel(s string) {
+	m.log_level = &s
+}
+
+// LogLevel returns the value of the "log_level" field in the mutation.
+func (m *TunnelProfileMutation) LogLevel() (r string, exists bool) {
+	v := m.log_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLogLevel returns the old "log_level" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldLogLevel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLogLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLogLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLogLevel: %w", err)
+	}
+	return oldValue.LogLevel, nil
+}
+
+// ResetLogLevel resets all changes to the "log_level" field.
+func (m *TunnelProfileMutation) ResetLogLevel() {
+	m.log_level = nil
+}
+
+// SetLogFile sets the "log_file" field.
+func (m *TunnelProfileMutation) SetLogFile(s string) {
+	m.log_file = &s
+}
+
+// LogFile returns the value of the "log_file" field in the mutation.
+func (m *TunnelProfileMutation) LogFile() (r string, exists bool) {
+	v := m.log_file
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLogFile returns the old "log_file" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldLogFile(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLogFile is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLogFile requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLogFile: %w", err)
+	}
+	return oldValue.LogFile, nil
+}
+
+// ResetLogFile resets all changes to the "log_file" field.
+func (m *TunnelProfileMutation) ResetLogFile() {
+	m.log_file = nil
+}
+
+// SetLogJSON sets the "log_json" field.
+func (m *TunnelProfileMutation) SetLogJSON(b bool) {
+	m.log_json = &b
+}
+
+// LogJSON returns the value of the "log_json" field in the mutation.
+func (m *TunnelProfileMutation) LogJSON() (r bool, exists bool) {
+	v := m.log_json
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLogJSON returns the old "log_json" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldLogJSON(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLogJSON is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLogJSON requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLogJSON: %w", err)
+	}
+	return oldValue.LogJSON, nil
+}
+
+// ResetLogJSON resets all changes to the "log_json" field.
+func (m *TunnelProfileMutation) ResetLogJSON() {
+	m.log_json = nil
+}
+
+// SetEdgeIPVersion sets the "edge_ip_version" field.
+func (m *TunnelProfileMutation) SetEdgeIPVersion(s string) {
+	m.edge_ip_version = &s
+}
+
+// EdgeIPVersion returns the value of the "edge_ip_version" field in the mutation.
+func (m *TunnelProfileMutation) EdgeIPVersion() (r string, exists bool) {
+	v := m.edge_ip_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEdgeIPVersion returns the old "edge_ip_version" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldEdgeIPVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEdgeIPVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEdgeIPVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEdgeIPVersion: %w", err)
+	}
+	return oldValue.EdgeIPVersion, nil
+}
+
+// ResetEdgeIPVersion resets all changes to the "edge_ip_version" field.
+func (m *TunnelProfileMutation) ResetEdgeIPVersion() {
+	m.edge_ip_version = nil
+}
+
+// SetEdgeBindAddress sets the "edge_bind_address" field.
+func (m *TunnelProfileMutation) SetEdgeBindAddress(s string) {
+	m.edge_bind_address = &s
+}
+
+// EdgeBindAddress returns the value of the "edge_bind_address" field in the mutation.
+func (m *TunnelProfileMutation) EdgeBindAddress() (r string, exists bool) {
+	v := m.edge_bind_address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEdgeBindAddress returns the old "edge_bind_address" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldEdgeBindAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEdgeBindAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEdgeBindAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEdgeBindAddress: %w", err)
+	}
+	return oldValue.EdgeBindAddress, nil
+}
+
+// ResetEdgeBindAddress resets all changes to the "edge_bind_address" field.
+func (m *TunnelProfileMutation) ResetEdgeBindAddress() {
+	m.edge_bind_address = nil
+}
+
+// SetPostQuantum sets the "post_quantum" field.
+func (m *TunnelProfileMutation) SetPostQuantum(b bool) {
+	m.post_quantum = &b
+}
+
+// PostQuantum returns the value of the "post_quantum" field in the mutation.
+func (m *TunnelProfileMutation) PostQuantum() (r bool, exists bool) {
+	v := m.post_quantum
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostQuantum returns the old "post_quantum" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldPostQuantum(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPostQuantum is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPostQuantum requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostQuantum: %w", err)
+	}
+	return oldValue.PostQuantum, nil
+}
+
+// ResetPostQuantum resets all changes to the "post_quantum" field.
+func (m *TunnelProfileMutation) ResetPostQuantum() {
+	m.post_quantum = nil
+}
+
+// SetNoTLSVerify sets the "no_tls_verify" field.
+func (m *TunnelProfileMutation) SetNoTLSVerify(b bool) {
+	m.no_tls_verify = &b
+}
+
+// NoTLSVerify returns the value of the "no_tls_verify" field in the mutation.
+func (m *TunnelProfileMutation) NoTLSVerify() (r bool, exists bool) {
+	v := m.no_tls_verify
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNoTLSVerify returns the old "no_tls_verify" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldNoTLSVerify(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNoTLSVerify is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNoTLSVerify requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNoTLSVerify: %w", err)
+	}
+	return oldValue.NoTLSVerify, nil
+}
+
+// ResetNoTLSVerify resets all changes to the "no_tls_verify" field.
+func (m *TunnelProfileMutation) ResetNoTLSVerify() {
+	m.no_tls_verify = nil
+}
+
+// SetExtraArgs sets the "extra_args" field.
+func (m *TunnelProfileMutation) SetExtraArgs(s string) {
+	m.extra_args = &s
+}
+
+// ExtraArgs returns the value of the "extra_args" field in the mutation.
+func (m *TunnelProfileMutation) ExtraArgs() (r string, exists bool) {
+	v := m.extra_args
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExtraArgs returns the old "extra_args" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldExtraArgs(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExtraArgs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExtraArgs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExtraArgs: %w", err)
+	}
+	return oldValue.ExtraArgs, nil
+}
+
+// ResetExtraArgs resets all changes to the "extra_args" field.
+func (m *TunnelProfileMutation) ResetExtraArgs() {
+	m.extra_args = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *TunnelProfileMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *TunnelProfileMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *TunnelProfileMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *TunnelProfileMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *TunnelProfileMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the TunnelProfile entity.
+// If the TunnelProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TunnelProfileMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *TunnelProfileMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the TunnelProfileMutation builder.
+func (m *TunnelProfileMutation) Where(ps ...predicate.TunnelProfile) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TunnelProfileMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TunnelProfileMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.TunnelProfile, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TunnelProfileMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TunnelProfileMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (TunnelProfile).
+func (m *TunnelProfileMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TunnelProfileMutation) Fields() []string {
+	fields := make([]string, 0, 28)
+	if m.key != nil {
+		fields = append(fields, tunnelprofile.FieldKey)
+	}
+	if m.name != nil {
+		fields = append(fields, tunnelprofile.FieldName)
+	}
+	if m.sort_order != nil {
+		fields = append(fields, tunnelprofile.FieldSortOrder)
+	}
+	if m.token != nil {
+		fields = append(fields, tunnelprofile.FieldToken)
+	}
+	if m.local_enabled != nil {
+		fields = append(fields, tunnelprofile.FieldLocalEnabled)
+	}
+	if m.remote_management_enabled != nil {
+		fields = append(fields, tunnelprofile.FieldRemoteManagementEnabled)
+	}
+	if m.account_id != nil {
+		fields = append(fields, tunnelprofile.FieldAccountID)
+	}
+	if m.tunnel_id != nil {
+		fields = append(fields, tunnelprofile.FieldTunnelID)
+	}
+	if m.auto_start != nil {
+		fields = append(fields, tunnelprofile.FieldAutoStart)
+	}
+	if m.auto_restart != nil {
+		fields = append(fields, tunnelprofile.FieldAutoRestart)
+	}
+	if m.custom_tag != nil {
+		fields = append(fields, tunnelprofile.FieldCustomTag)
+	}
+	if m.software_name != nil {
+		fields = append(fields, tunnelprofile.FieldSoftwareName)
+	}
+	if m.protocol != nil {
+		fields = append(fields, tunnelprofile.FieldProtocol)
+	}
+	if m.grace_period != nil {
+		fields = append(fields, tunnelprofile.FieldGracePeriod)
+	}
+	if m.region != nil {
+		fields = append(fields, tunnelprofile.FieldRegion)
+	}
+	if m.retries != nil {
+		fields = append(fields, tunnelprofile.FieldRetries)
+	}
+	if m.metrics_enable != nil {
+		fields = append(fields, tunnelprofile.FieldMetricsEnable)
+	}
+	if m.metrics_port != nil {
+		fields = append(fields, tunnelprofile.FieldMetricsPort)
+	}
+	if m.log_level != nil {
+		fields = append(fields, tunnelprofile.FieldLogLevel)
+	}
+	if m.log_file != nil {
+		fields = append(fields, tunnelprofile.FieldLogFile)
+	}
+	if m.log_json != nil {
+		fields = append(fields, tunnelprofile.FieldLogJSON)
+	}
+	if m.edge_ip_version != nil {
+		fields = append(fields, tunnelprofile.FieldEdgeIPVersion)
+	}
+	if m.edge_bind_address != nil {
+		fields = append(fields, tunnelprofile.FieldEdgeBindAddress)
+	}
+	if m.post_quantum != nil {
+		fields = append(fields, tunnelprofile.FieldPostQuantum)
+	}
+	if m.no_tls_verify != nil {
+		fields = append(fields, tunnelprofile.FieldNoTLSVerify)
+	}
+	if m.extra_args != nil {
+		fields = append(fields, tunnelprofile.FieldExtraArgs)
+	}
+	if m.created_at != nil {
+		fields = append(fields, tunnelprofile.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, tunnelprofile.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TunnelProfileMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case tunnelprofile.FieldKey:
+		return m.Key()
+	case tunnelprofile.FieldName:
+		return m.Name()
+	case tunnelprofile.FieldSortOrder:
+		return m.SortOrder()
+	case tunnelprofile.FieldToken:
+		return m.Token()
+	case tunnelprofile.FieldLocalEnabled:
+		return m.LocalEnabled()
+	case tunnelprofile.FieldRemoteManagementEnabled:
+		return m.RemoteManagementEnabled()
+	case tunnelprofile.FieldAccountID:
+		return m.AccountID()
+	case tunnelprofile.FieldTunnelID:
+		return m.TunnelID()
+	case tunnelprofile.FieldAutoStart:
+		return m.AutoStart()
+	case tunnelprofile.FieldAutoRestart:
+		return m.AutoRestart()
+	case tunnelprofile.FieldCustomTag:
+		return m.CustomTag()
+	case tunnelprofile.FieldSoftwareName:
+		return m.SoftwareName()
+	case tunnelprofile.FieldProtocol:
+		return m.Protocol()
+	case tunnelprofile.FieldGracePeriod:
+		return m.GracePeriod()
+	case tunnelprofile.FieldRegion:
+		return m.Region()
+	case tunnelprofile.FieldRetries:
+		return m.Retries()
+	case tunnelprofile.FieldMetricsEnable:
+		return m.MetricsEnable()
+	case tunnelprofile.FieldMetricsPort:
+		return m.MetricsPort()
+	case tunnelprofile.FieldLogLevel:
+		return m.LogLevel()
+	case tunnelprofile.FieldLogFile:
+		return m.LogFile()
+	case tunnelprofile.FieldLogJSON:
+		return m.LogJSON()
+	case tunnelprofile.FieldEdgeIPVersion:
+		return m.EdgeIPVersion()
+	case tunnelprofile.FieldEdgeBindAddress:
+		return m.EdgeBindAddress()
+	case tunnelprofile.FieldPostQuantum:
+		return m.PostQuantum()
+	case tunnelprofile.FieldNoTLSVerify:
+		return m.NoTLSVerify()
+	case tunnelprofile.FieldExtraArgs:
+		return m.ExtraArgs()
+	case tunnelprofile.FieldCreatedAt:
+		return m.CreatedAt()
+	case tunnelprofile.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TunnelProfileMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case tunnelprofile.FieldKey:
+		return m.OldKey(ctx)
+	case tunnelprofile.FieldName:
+		return m.OldName(ctx)
+	case tunnelprofile.FieldSortOrder:
+		return m.OldSortOrder(ctx)
+	case tunnelprofile.FieldToken:
+		return m.OldToken(ctx)
+	case tunnelprofile.FieldLocalEnabled:
+		return m.OldLocalEnabled(ctx)
+	case tunnelprofile.FieldRemoteManagementEnabled:
+		return m.OldRemoteManagementEnabled(ctx)
+	case tunnelprofile.FieldAccountID:
+		return m.OldAccountID(ctx)
+	case tunnelprofile.FieldTunnelID:
+		return m.OldTunnelID(ctx)
+	case tunnelprofile.FieldAutoStart:
+		return m.OldAutoStart(ctx)
+	case tunnelprofile.FieldAutoRestart:
+		return m.OldAutoRestart(ctx)
+	case tunnelprofile.FieldCustomTag:
+		return m.OldCustomTag(ctx)
+	case tunnelprofile.FieldSoftwareName:
+		return m.OldSoftwareName(ctx)
+	case tunnelprofile.FieldProtocol:
+		return m.OldProtocol(ctx)
+	case tunnelprofile.FieldGracePeriod:
+		return m.OldGracePeriod(ctx)
+	case tunnelprofile.FieldRegion:
+		return m.OldRegion(ctx)
+	case tunnelprofile.FieldRetries:
+		return m.OldRetries(ctx)
+	case tunnelprofile.FieldMetricsEnable:
+		return m.OldMetricsEnable(ctx)
+	case tunnelprofile.FieldMetricsPort:
+		return m.OldMetricsPort(ctx)
+	case tunnelprofile.FieldLogLevel:
+		return m.OldLogLevel(ctx)
+	case tunnelprofile.FieldLogFile:
+		return m.OldLogFile(ctx)
+	case tunnelprofile.FieldLogJSON:
+		return m.OldLogJSON(ctx)
+	case tunnelprofile.FieldEdgeIPVersion:
+		return m.OldEdgeIPVersion(ctx)
+	case tunnelprofile.FieldEdgeBindAddress:
+		return m.OldEdgeBindAddress(ctx)
+	case tunnelprofile.FieldPostQuantum:
+		return m.OldPostQuantum(ctx)
+	case tunnelprofile.FieldNoTLSVerify:
+		return m.OldNoTLSVerify(ctx)
+	case tunnelprofile.FieldExtraArgs:
+		return m.OldExtraArgs(ctx)
+	case tunnelprofile.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case tunnelprofile.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown TunnelProfile field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TunnelProfileMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case tunnelprofile.FieldKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKey(v)
+		return nil
+	case tunnelprofile.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case tunnelprofile.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSortOrder(v)
+		return nil
+	case tunnelprofile.FieldToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToken(v)
+		return nil
+	case tunnelprofile.FieldLocalEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocalEnabled(v)
+		return nil
+	case tunnelprofile.FieldRemoteManagementEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemoteManagementEnabled(v)
+		return nil
+	case tunnelprofile.FieldAccountID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountID(v)
+		return nil
+	case tunnelprofile.FieldTunnelID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTunnelID(v)
+		return nil
+	case tunnelprofile.FieldAutoStart:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutoStart(v)
+		return nil
+	case tunnelprofile.FieldAutoRestart:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutoRestart(v)
+		return nil
+	case tunnelprofile.FieldCustomTag:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomTag(v)
+		return nil
+	case tunnelprofile.FieldSoftwareName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSoftwareName(v)
+		return nil
+	case tunnelprofile.FieldProtocol:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProtocol(v)
+		return nil
+	case tunnelprofile.FieldGracePeriod:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGracePeriod(v)
+		return nil
+	case tunnelprofile.FieldRegion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRegion(v)
+		return nil
+	case tunnelprofile.FieldRetries:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRetries(v)
+		return nil
+	case tunnelprofile.FieldMetricsEnable:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetricsEnable(v)
+		return nil
+	case tunnelprofile.FieldMetricsPort:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetricsPort(v)
+		return nil
+	case tunnelprofile.FieldLogLevel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLogLevel(v)
+		return nil
+	case tunnelprofile.FieldLogFile:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLogFile(v)
+		return nil
+	case tunnelprofile.FieldLogJSON:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLogJSON(v)
+		return nil
+	case tunnelprofile.FieldEdgeIPVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEdgeIPVersion(v)
+		return nil
+	case tunnelprofile.FieldEdgeBindAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEdgeBindAddress(v)
+		return nil
+	case tunnelprofile.FieldPostQuantum:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostQuantum(v)
+		return nil
+	case tunnelprofile.FieldNoTLSVerify:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNoTLSVerify(v)
+		return nil
+	case tunnelprofile.FieldExtraArgs:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExtraArgs(v)
+		return nil
+	case tunnelprofile.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case tunnelprofile.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TunnelProfile field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TunnelProfileMutation) AddedFields() []string {
+	var fields []string
+	if m.addsort_order != nil {
+		fields = append(fields, tunnelprofile.FieldSortOrder)
+	}
+	if m.addretries != nil {
+		fields = append(fields, tunnelprofile.FieldRetries)
+	}
+	if m.addmetrics_port != nil {
+		fields = append(fields, tunnelprofile.FieldMetricsPort)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TunnelProfileMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case tunnelprofile.FieldSortOrder:
+		return m.AddedSortOrder()
+	case tunnelprofile.FieldRetries:
+		return m.AddedRetries()
+	case tunnelprofile.FieldMetricsPort:
+		return m.AddedMetricsPort()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TunnelProfileMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case tunnelprofile.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSortOrder(v)
+		return nil
+	case tunnelprofile.FieldRetries:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRetries(v)
+		return nil
+	case tunnelprofile.FieldMetricsPort:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMetricsPort(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TunnelProfile numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TunnelProfileMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TunnelProfileMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TunnelProfileMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown TunnelProfile nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TunnelProfileMutation) ResetField(name string) error {
+	switch name {
+	case tunnelprofile.FieldKey:
+		m.ResetKey()
+		return nil
+	case tunnelprofile.FieldName:
+		m.ResetName()
+		return nil
+	case tunnelprofile.FieldSortOrder:
+		m.ResetSortOrder()
+		return nil
+	case tunnelprofile.FieldToken:
+		m.ResetToken()
+		return nil
+	case tunnelprofile.FieldLocalEnabled:
+		m.ResetLocalEnabled()
+		return nil
+	case tunnelprofile.FieldRemoteManagementEnabled:
+		m.ResetRemoteManagementEnabled()
+		return nil
+	case tunnelprofile.FieldAccountID:
+		m.ResetAccountID()
+		return nil
+	case tunnelprofile.FieldTunnelID:
+		m.ResetTunnelID()
+		return nil
+	case tunnelprofile.FieldAutoStart:
+		m.ResetAutoStart()
+		return nil
+	case tunnelprofile.FieldAutoRestart:
+		m.ResetAutoRestart()
+		return nil
+	case tunnelprofile.FieldCustomTag:
+		m.ResetCustomTag()
+		return nil
+	case tunnelprofile.FieldSoftwareName:
+		m.ResetSoftwareName()
+		return nil
+	case tunnelprofile.FieldProtocol:
+		m.ResetProtocol()
+		return nil
+	case tunnelprofile.FieldGracePeriod:
+		m.ResetGracePeriod()
+		return nil
+	case tunnelprofile.FieldRegion:
+		m.ResetRegion()
+		return nil
+	case tunnelprofile.FieldRetries:
+		m.ResetRetries()
+		return nil
+	case tunnelprofile.FieldMetricsEnable:
+		m.ResetMetricsEnable()
+		return nil
+	case tunnelprofile.FieldMetricsPort:
+		m.ResetMetricsPort()
+		return nil
+	case tunnelprofile.FieldLogLevel:
+		m.ResetLogLevel()
+		return nil
+	case tunnelprofile.FieldLogFile:
+		m.ResetLogFile()
+		return nil
+	case tunnelprofile.FieldLogJSON:
+		m.ResetLogJSON()
+		return nil
+	case tunnelprofile.FieldEdgeIPVersion:
+		m.ResetEdgeIPVersion()
+		return nil
+	case tunnelprofile.FieldEdgeBindAddress:
+		m.ResetEdgeBindAddress()
+		return nil
+	case tunnelprofile.FieldPostQuantum:
+		m.ResetPostQuantum()
+		return nil
+	case tunnelprofile.FieldNoTLSVerify:
+		m.ResetNoTLSVerify()
+		return nil
+	case tunnelprofile.FieldExtraArgs:
+		m.ResetExtraArgs()
+		return nil
+	case tunnelprofile.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case tunnelprofile.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown TunnelProfile field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TunnelProfileMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TunnelProfileMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TunnelProfileMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TunnelProfileMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TunnelProfileMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TunnelProfileMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TunnelProfileMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown TunnelProfile unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TunnelProfileMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown TunnelProfile edge %s", name)
 }
 
 // TunnelTokenMutation represents an operation that mutates the TunnelToken nodes in the graph.

@@ -18,6 +18,7 @@ import (
 	"cfui/internal/persist/ent/mcptoken"
 	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
+	"cfui/internal/persist/ent/tunnelprofile"
 	"cfui/internal/persist/ent/tunneltoken"
 
 	"entgo.io/ent"
@@ -44,6 +45,8 @@ type Client struct {
 	S3WebDAVSetting *S3WebDAVSettingClient
 	// TunnelManagement is the client for interacting with the TunnelManagement builders.
 	TunnelManagement *TunnelManagementClient
+	// TunnelProfile is the client for interacting with the TunnelProfile builders.
+	TunnelProfile *TunnelProfileClient
 	// TunnelToken is the client for interacting with the TunnelToken builders.
 	TunnelToken *TunnelTokenClient
 }
@@ -64,6 +67,7 @@ func (c *Client) init() {
 	c.MCPToken = NewMCPTokenClient(c.config)
 	c.S3WebDAVSetting = NewS3WebDAVSettingClient(c.config)
 	c.TunnelManagement = NewTunnelManagementClient(c.config)
+	c.TunnelProfile = NewTunnelProfileClient(c.config)
 	c.TunnelToken = NewTunnelTokenClient(c.config)
 }
 
@@ -164,6 +168,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		MCPToken:         NewMCPTokenClient(cfg),
 		S3WebDAVSetting:  NewS3WebDAVSettingClient(cfg),
 		TunnelManagement: NewTunnelManagementClient(cfg),
+		TunnelProfile:    NewTunnelProfileClient(cfg),
 		TunnelToken:      NewTunnelTokenClient(cfg),
 	}, nil
 }
@@ -191,6 +196,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		MCPToken:         NewMCPTokenClient(cfg),
 		S3WebDAVSetting:  NewS3WebDAVSettingClient(cfg),
 		TunnelManagement: NewTunnelManagementClient(cfg),
+		TunnelProfile:    NewTunnelProfileClient(cfg),
 		TunnelToken:      NewTunnelTokenClient(cfg),
 	}, nil
 }
@@ -222,7 +228,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.AppSetting, c.DDNSIPSource, c.DDNSRecord, c.DDNSSetting, c.MCPToken,
-		c.S3WebDAVSetting, c.TunnelManagement, c.TunnelToken,
+		c.S3WebDAVSetting, c.TunnelManagement, c.TunnelProfile, c.TunnelToken,
 	} {
 		n.Use(hooks...)
 	}
@@ -233,7 +239,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.AppSetting, c.DDNSIPSource, c.DDNSRecord, c.DDNSSetting, c.MCPToken,
-		c.S3WebDAVSetting, c.TunnelManagement, c.TunnelToken,
+		c.S3WebDAVSetting, c.TunnelManagement, c.TunnelProfile, c.TunnelToken,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -256,6 +262,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.S3WebDAVSetting.mutate(ctx, m)
 	case *TunnelManagementMutation:
 		return c.TunnelManagement.mutate(ctx, m)
+	case *TunnelProfileMutation:
+		return c.TunnelProfile.mutate(ctx, m)
 	case *TunnelTokenMutation:
 		return c.TunnelToken.mutate(ctx, m)
 	default:
@@ -1194,6 +1202,139 @@ func (c *TunnelManagementClient) mutate(ctx context.Context, m *TunnelManagement
 	}
 }
 
+// TunnelProfileClient is a client for the TunnelProfile schema.
+type TunnelProfileClient struct {
+	config
+}
+
+// NewTunnelProfileClient returns a client for the TunnelProfile from the given config.
+func NewTunnelProfileClient(c config) *TunnelProfileClient {
+	return &TunnelProfileClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tunnelprofile.Hooks(f(g(h())))`.
+func (c *TunnelProfileClient) Use(hooks ...Hook) {
+	c.hooks.TunnelProfile = append(c.hooks.TunnelProfile, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tunnelprofile.Intercept(f(g(h())))`.
+func (c *TunnelProfileClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TunnelProfile = append(c.inters.TunnelProfile, interceptors...)
+}
+
+// Create returns a builder for creating a TunnelProfile entity.
+func (c *TunnelProfileClient) Create() *TunnelProfileCreate {
+	mutation := newTunnelProfileMutation(c.config, OpCreate)
+	return &TunnelProfileCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TunnelProfile entities.
+func (c *TunnelProfileClient) CreateBulk(builders ...*TunnelProfileCreate) *TunnelProfileCreateBulk {
+	return &TunnelProfileCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TunnelProfileClient) MapCreateBulk(slice any, setFunc func(*TunnelProfileCreate, int)) *TunnelProfileCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TunnelProfileCreateBulk{err: fmt.Errorf("calling to TunnelProfileClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TunnelProfileCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TunnelProfileCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TunnelProfile.
+func (c *TunnelProfileClient) Update() *TunnelProfileUpdate {
+	mutation := newTunnelProfileMutation(c.config, OpUpdate)
+	return &TunnelProfileUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TunnelProfileClient) UpdateOne(_m *TunnelProfile) *TunnelProfileUpdateOne {
+	mutation := newTunnelProfileMutation(c.config, OpUpdateOne, withTunnelProfile(_m))
+	return &TunnelProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TunnelProfileClient) UpdateOneID(id int) *TunnelProfileUpdateOne {
+	mutation := newTunnelProfileMutation(c.config, OpUpdateOne, withTunnelProfileID(id))
+	return &TunnelProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TunnelProfile.
+func (c *TunnelProfileClient) Delete() *TunnelProfileDelete {
+	mutation := newTunnelProfileMutation(c.config, OpDelete)
+	return &TunnelProfileDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TunnelProfileClient) DeleteOne(_m *TunnelProfile) *TunnelProfileDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TunnelProfileClient) DeleteOneID(id int) *TunnelProfileDeleteOne {
+	builder := c.Delete().Where(tunnelprofile.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TunnelProfileDeleteOne{builder}
+}
+
+// Query returns a query builder for TunnelProfile.
+func (c *TunnelProfileClient) Query() *TunnelProfileQuery {
+	return &TunnelProfileQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTunnelProfile},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TunnelProfile entity by its id.
+func (c *TunnelProfileClient) Get(ctx context.Context, id int) (*TunnelProfile, error) {
+	return c.Query().Where(tunnelprofile.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TunnelProfileClient) GetX(ctx context.Context, id int) *TunnelProfile {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TunnelProfileClient) Hooks() []Hook {
+	return c.hooks.TunnelProfile
+}
+
+// Interceptors returns the client interceptors.
+func (c *TunnelProfileClient) Interceptors() []Interceptor {
+	return c.inters.TunnelProfile
+}
+
+func (c *TunnelProfileClient) mutate(ctx context.Context, m *TunnelProfileMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TunnelProfileCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TunnelProfileUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TunnelProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TunnelProfileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TunnelProfile mutation op: %q", m.Op())
+	}
+}
+
 // TunnelTokenClient is a client for the TunnelToken schema.
 type TunnelTokenClient struct {
 	config
@@ -1331,10 +1472,10 @@ func (c *TunnelTokenClient) mutate(ctx context.Context, m *TunnelTokenMutation) 
 type (
 	hooks struct {
 		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, S3WebDAVSetting,
-		TunnelManagement, TunnelToken []ent.Hook
+		TunnelManagement, TunnelProfile, TunnelToken []ent.Hook
 	}
 	inters struct {
 		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, S3WebDAVSetting,
-		TunnelManagement, TunnelToken []ent.Interceptor
+		TunnelManagement, TunnelProfile, TunnelToken []ent.Interceptor
 	}
 )
