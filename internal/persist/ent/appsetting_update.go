@@ -308,6 +308,20 @@ func (_u *AppSettingUpdate) SetNillableExtraArgs(v *string) *AppSettingUpdate {
 	return _u
 }
 
+// SetActiveTunnelKey sets the "active_tunnel_key" field.
+func (_u *AppSettingUpdate) SetActiveTunnelKey(v string) *AppSettingUpdate {
+	_u.mutation.SetActiveTunnelKey(v)
+	return _u
+}
+
+// SetNillableActiveTunnelKey sets the "active_tunnel_key" field if the given value is not nil.
+func (_u *AppSettingUpdate) SetNillableActiveTunnelKey(v *string) *AppSettingUpdate {
+	if v != nil {
+		_u.SetActiveTunnelKey(*v)
+	}
+	return _u
+}
+
 // SetMcpEnabled sets the "mcp_enabled" field.
 func (_u *AppSettingUpdate) SetMcpEnabled(v bool) *AppSettingUpdate {
 	_u.mutation.SetMcpEnabled(v)
@@ -586,6 +600,9 @@ func (_u *AppSettingUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.ExtraArgs(); ok {
 		_spec.SetField(appsetting.FieldExtraArgs, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ActiveTunnelKey(); ok {
+		_spec.SetField(appsetting.FieldActiveTunnelKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
@@ -923,6 +940,20 @@ func (_u *AppSettingUpdateOne) SetNillableExtraArgs(v *string) *AppSettingUpdate
 	return _u
 }
 
+// SetActiveTunnelKey sets the "active_tunnel_key" field.
+func (_u *AppSettingUpdateOne) SetActiveTunnelKey(v string) *AppSettingUpdateOne {
+	_u.mutation.SetActiveTunnelKey(v)
+	return _u
+}
+
+// SetNillableActiveTunnelKey sets the "active_tunnel_key" field if the given value is not nil.
+func (_u *AppSettingUpdateOne) SetNillableActiveTunnelKey(v *string) *AppSettingUpdateOne {
+	if v != nil {
+		_u.SetActiveTunnelKey(*v)
+	}
+	return _u
+}
+
 // SetMcpEnabled sets the "mcp_enabled" field.
 func (_u *AppSettingUpdateOne) SetMcpEnabled(v bool) *AppSettingUpdateOne {
 	_u.mutation.SetMcpEnabled(v)
@@ -1231,6 +1262,9 @@ func (_u *AppSettingUpdateOne) sqlSave(ctx context.Context) (_node *AppSetting, 
 	}
 	if value, ok := _u.mutation.ExtraArgs(); ok {
 		_spec.SetField(appsetting.FieldExtraArgs, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ActiveTunnelKey(); ok {
+		_spec.SetField(appsetting.FieldActiveTunnelKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)

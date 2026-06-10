@@ -27,5 +27,8 @@ type S3WebDAVSetting func(*sql.Selector)
 // TunnelManagement is the predicate function for tunnelmanagement builders.
 type TunnelManagement func(*sql.Selector)
 
+// TunnelProfile is the predicate function for tunnelprofile builders.
+type TunnelProfile func(*sql.Selector)
+
 // TunnelToken is the predicate function for tunneltoken builders.
 type TunnelToken func(*sql.Selector)

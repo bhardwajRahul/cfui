@@ -17,8 +17,13 @@ var initLoggerOnce sync.Once
 
 type fakeCFClient struct {
 	config     cloudflare.TunnelConfigurationResult
+	tunnel     cloudflare.Tunnel
 	updates    []cloudflare.TunnelConfiguration
 	dnsRecords []cloudflare.DNSRecord
+}
+
+func (f *fakeCFClient) GetTunnel(ctx context.Context, rc *cloudflare.ResourceContainer, tunnelID string) (cloudflare.Tunnel, error) {
+	return f.tunnel, nil
 }
 
 func (f *fakeCFClient) GetTunnelConfiguration(ctx context.Context, rc *cloudflare.ResourceContainer, tunnelID string) (cloudflare.TunnelConfigurationResult, error) {
@@ -171,6 +176,284 @@ func TestSaveSettingsDisablingPreservesStoredFields(t *testing.T) {
 	}
 	if saved.AccountID != "account-1" || saved.TunnelID != "tunnel-1" || saved.APIToken != "api-token" || saved.APIEmail != "user@example.com" || saved.APIKey != "api-key" {
 		t.Fatalf("stored fields were not preserved: %#v", saved)
+	}
+}
+
+func TestSaveSettingsForNonActiveTunnelDoesNotSwitchLocalRunner(t *testing.T) {
+	cfgMgr := newConfigManager(t)
+	cfg := cfgMgr.Get()
+	cfg.TunnelManagement.Enabled = true
+	cfg.TunnelManagement.APIToken = "shared-api-token"
+	cfg.ActiveTunnelKey = "home"
+	cfg.Tunnels = []config.TunnelProfileConfig{
+		{
+			Key:                     "home",
+			Name:                    "Home",
+			Token:                   "home-token",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: false,
+			AccountID:               "home-account",
+			TunnelID:                "home-tunnel",
+			AutoRestart:             true,
+			SoftwareName:            "cfui",
+			Protocol:                "auto",
+			GracePeriod:             "30s",
+			Retries:                 5,
+			MetricsPort:             60123,
+			LogLevel:                "info",
+			EdgeIPVersion:           "auto",
+		},
+		{
+			Key:           "office",
+			Name:          "Office",
+			Token:         tunnelToken("office-account-from-token", "office-tunnel-from-token"),
+			LocalEnabled:  true,
+			AutoRestart:   true,
+			SoftwareName:  "cfui",
+			Protocol:      "auto",
+			GracePeriod:   "30s",
+			Retries:       5,
+			MetricsPort:   60123,
+			LogLevel:      "info",
+			EdgeIPVersion: "auto",
+		},
+	}
+	if err := cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	mgr := NewManager(cfgMgr)
+	if err := mgr.SaveSettingsFor("office", SettingsRequest{Enabled: true}); err != nil {
+		t.Fatalf("SaveSettingsFor: %v", err)
+	}
+
+	got := cfgMgr.Get()
+	if got.ActiveTunnelKey != "home" || got.Token != "home-token" {
+		t.Fatalf("remote settings update changed active runner: %#v", got)
+	}
+	home, ok := got.TunnelProfile("home")
+	if !ok {
+		t.Fatal("home profile missing")
+	}
+	if home.RemoteManagementEnabled || home.AccountID != "home-account" || home.TunnelID != "home-tunnel" {
+		t.Fatalf("non-active remote settings update polluted active profile: %#v", home)
+	}
+	office, ok := got.TunnelProfile("office")
+	if !ok {
+		t.Fatal("office profile missing")
+	}
+	if !office.RemoteManagementEnabled || office.AccountID != "office-account-from-token" || office.TunnelID != "office-tunnel-from-token" {
+		t.Fatalf("office remote identity not derived from office token: %#v", office)
+	}
+	effective := got.EffectiveTunnelManagementFor("office")
+	if !effective.Enabled || effective.AccountID != "office-account-from-token" || effective.TunnelID != "office-tunnel-from-token" || effective.APIToken != "shared-api-token" {
+		t.Fatalf("office effective settings not usable for remote management: %#v", effective)
+	}
+}
+
+func TestFetchForUsesSelectedTunnelProfile(t *testing.T) {
+	cfgMgr := newConfigManager(t)
+	cfg := cfgMgr.Get()
+	cfg.TunnelManagement.Enabled = true
+	cfg.TunnelManagement.APIToken = "shared-api-token"
+	cfg.ActiveTunnelKey = "home"
+	cfg.Tunnels = []config.TunnelProfileConfig{
+		{
+			Key:                     "home",
+			Name:                    "Home",
+			Token:                   "home-token",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: true,
+			AccountID:               "home-account",
+			TunnelID:                "home-tunnel",
+			AutoRestart:             true,
+			SoftwareName:            "cfui",
+			Protocol:                "auto",
+			GracePeriod:             "30s",
+			Retries:                 5,
+			MetricsPort:             60123,
+			LogLevel:                "info",
+			EdgeIPVersion:           "auto",
+		},
+		{
+			Key:                     "office",
+			Name:                    "Office",
+			Token:                   "office-token",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: true,
+			AccountID:               "office-account",
+			TunnelID:                "office-tunnel",
+			AutoRestart:             true,
+			SoftwareName:            "cfui",
+			Protocol:                "auto",
+			GracePeriod:             "30s",
+			Retries:                 5,
+			MetricsPort:             60123,
+			LogLevel:                "info",
+			EdgeIPVersion:           "auto",
+		},
+	}
+	if err := cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	var used config.TunnelManagementConfig
+	client := &fakeCFClient{config: cloudflare.TunnelConfigurationResult{TunnelID: "office-tunnel", Version: 3}}
+	mgr := NewManagerWithClient(cfgMgr, func(cfg config.TunnelManagementConfig) (cloudflareClient, error) {
+		used = cfg
+		return client, nil
+	})
+	resp, err := mgr.FetchFor(context.Background(), "office")
+	if err != nil {
+		t.Fatalf("FetchFor: %v", err)
+	}
+	if resp.TunnelID != "office-tunnel" || used.AccountID != "office-account" || used.TunnelID != "office-tunnel" {
+		t.Fatalf("fetch did not use selected profile, resp=%#v used=%#v", resp, used)
+	}
+}
+
+func TestFetchForMissingTunnelProfileDoesNotFallBackToActive(t *testing.T) {
+	cfgMgr := newConfigManager(t)
+	cfg := cfgMgr.Get()
+	cfg.TunnelManagement.Enabled = true
+	cfg.TunnelManagement.APIToken = "shared-api-token"
+	cfg.ActiveTunnelKey = "home"
+	cfg.Tunnels = []config.TunnelProfileConfig{
+		{
+			Key:                     "home",
+			Name:                    "Home",
+			Token:                   "home-token",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: true,
+			AccountID:               "home-account",
+			TunnelID:                "home-tunnel",
+			AutoRestart:             true,
+			SoftwareName:            "cfui",
+			Protocol:                "auto",
+			GracePeriod:             "30s",
+			Retries:                 5,
+			MetricsPort:             60123,
+			LogLevel:                "info",
+			EdgeIPVersion:           "auto",
+		},
+	}
+	if err := cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	client := &fakeCFClient{}
+	mgr := NewManagerWithClient(cfgMgr, func(config.TunnelManagementConfig) (cloudflareClient, error) {
+		return client, nil
+	})
+	_, err := mgr.FetchFor(context.Background(), "missing")
+	if err == nil || !strings.Contains(err.Error(), "not found") {
+		t.Fatalf("expected missing profile error, got %v", err)
+	}
+}
+
+func TestFetchTunnelDetailsUpdatesGeneratedProfileName(t *testing.T) {
+	cfgMgr := newConfigManager(t)
+	cfg := cfgMgr.Get()
+	cfg.TunnelManagement.Enabled = true
+	cfg.TunnelManagement.APIToken = "shared-api-token"
+	cfg.ActiveTunnelKey = "home"
+	cfg.Tunnels = []config.TunnelProfileConfig{
+		{
+			Key:           "home",
+			Name:          "Home",
+			Token:         "home-token",
+			LocalEnabled:  true,
+			AutoRestart:   true,
+			SoftwareName:  "cfui",
+			Protocol:      "auto",
+			GracePeriod:   "30s",
+			Retries:       5,
+			MetricsPort:   60123,
+			LogLevel:      "info",
+			EdgeIPVersion: "auto",
+		},
+		{
+			Key:                     "office",
+			Name:                    "Tunnel 2",
+			Token:                   "office-token",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: true,
+			AccountID:               "office-account",
+			TunnelID:                "office-tunnel",
+			AutoRestart:             true,
+			SoftwareName:            "cfui",
+			Protocol:                "auto",
+			GracePeriod:             "30s",
+			Retries:                 5,
+			MetricsPort:             60123,
+			LogLevel:                "info",
+			EdgeIPVersion:           "auto",
+		},
+	}
+	if err := cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	client := &fakeCFClient{tunnel: cloudflare.Tunnel{ID: "office-tunnel", Name: "Production Tunnel", Status: "healthy"}}
+	mgr := NewManagerWithClient(cfgMgr, func(config.TunnelManagementConfig) (cloudflareClient, error) {
+		return client, nil
+	})
+	resp, err := mgr.FetchTunnelDetailsFor(context.Background(), "office")
+	if err != nil {
+		t.Fatalf("FetchTunnelDetailsFor: %v", err)
+	}
+	if resp.Name != "Production Tunnel" || resp.Status != "healthy" {
+		t.Fatalf("unexpected tunnel details: %#v", resp)
+	}
+	got := cfgMgr.Get()
+	if got.ActiveTunnelKey != "home" || got.Token != "home-token" {
+		t.Fatalf("fetching remote tunnel details changed active runner: %#v", got)
+	}
+	office, ok := got.TunnelProfile("office")
+	if !ok || office.Name != "Production Tunnel" {
+		t.Fatalf("Cloudflare tunnel name was not saved to generated profile name: %#v", got.Tunnels)
+	}
+}
+
+func TestFetchTunnelDetailsDoesNotOverwriteManualProfileName(t *testing.T) {
+	cfgMgr := newConfigManager(t)
+	cfg := cfgMgr.Get()
+	cfg.TunnelManagement.Enabled = true
+	cfg.TunnelManagement.APIToken = "shared-api-token"
+	cfg.ActiveTunnelKey = "office"
+	cfg.Tunnels = []config.TunnelProfileConfig{
+		{
+			Key:                     "office",
+			Name:                    "Office Manual Name",
+			Token:                   "office-token",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: true,
+			AccountID:               "office-account",
+			TunnelID:                "office-tunnel",
+			AutoRestart:             true,
+			SoftwareName:            "cfui",
+			Protocol:                "auto",
+			GracePeriod:             "30s",
+			Retries:                 5,
+			MetricsPort:             60123,
+			LogLevel:                "info",
+			EdgeIPVersion:           "auto",
+		},
+	}
+	if err := cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	client := &fakeCFClient{tunnel: cloudflare.Tunnel{ID: "office-tunnel", Name: "Production Tunnel"}}
+	mgr := NewManagerWithClient(cfgMgr, func(config.TunnelManagementConfig) (cloudflareClient, error) {
+		return client, nil
+	})
+	if _, err := mgr.FetchTunnelDetailsFor(context.Background(), "office"); err != nil {
+		t.Fatalf("FetchTunnelDetailsFor: %v", err)
+	}
+	office, ok := cfgMgr.Get().TunnelProfile("office")
+	if !ok || office.Name != "Office Manual Name" {
+		t.Fatalf("manual profile name should be preserved: %#v", office)
 	}
 }
 

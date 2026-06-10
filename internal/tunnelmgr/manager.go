@@ -18,6 +18,7 @@ var (
 )
 
 type cloudflareClient interface {
+	GetTunnel(ctx context.Context, rc *cloudflare.ResourceContainer, tunnelID string) (cloudflare.Tunnel, error)
 	GetTunnelConfiguration(ctx context.Context, rc *cloudflare.ResourceContainer, tunnelID string) (cloudflare.TunnelConfigurationResult, error)
 	UpdateTunnelConfiguration(ctx context.Context, rc *cloudflare.ResourceContainer, params cloudflare.TunnelConfigurationParams) (cloudflare.TunnelConfigurationResult, error)
 	ListZonesContext(ctx context.Context, opts ...cloudflare.ReqOption) (cloudflare.ZonesResponse, error)
@@ -48,6 +49,7 @@ type SettingsRequest struct {
 }
 
 type SettingsResponse struct {
+	TunnelKey         string   `json:"tunnel_key,omitempty"`
 	Enabled           bool     `json:"enabled"`
 	AccountID         string   `json:"account_id"`
 	TunnelID          string   `json:"tunnel_id"`
@@ -64,9 +66,17 @@ type SettingsResponse struct {
 
 type ConfigurationResponse struct {
 	TunnelID           string        `json:"tunnel_id"`
+	TunnelName         string        `json:"tunnel_name,omitempty"`
 	Version            int           `json:"version"`
 	WarpRoutingEnabled bool          `json:"warp_routing_enabled"`
 	Entries            []IngressRule `json:"entries"`
+}
+
+type TunnelDetailsResponse struct {
+	TunnelKey string `json:"tunnel_key,omitempty"`
+	TunnelID  string `json:"tunnel_id"`
+	Name      string `json:"name"`
+	Status    string `json:"status,omitempty"`
 }
 
 type ZoneResponse struct {
@@ -141,16 +151,39 @@ func NewManagerWithClient(cfgMgr *config.Manager, factory clientFactory) *Manage
 }
 
 func (m *Manager) Settings() SettingsResponse {
+	return m.SettingsFor("")
+}
+
+func (m *Manager) SettingsFor(tunnelKey string) SettingsResponse {
 	cfg := m.cfgMgr.Get()
 	persisted := cfg.TunnelManagement
-	effective, derived, deriveFailed := effectiveWithTokenIdentity(cfg)
-	return settingsResponse(effective, persisted, derived, deriveFailed)
+	effective, derived, deriveFailed := effectiveWithTokenIdentityFor(cfg, tunnelKey)
+	resp := settingsResponse(effective, persisted, derived, deriveFailed)
+	if tunnel, ok := cfg.TunnelProfile(tunnelKey); ok {
+		resp.TunnelKey = tunnel.Key
+	}
+	return resp
 }
 
 func (m *Manager) SaveSettings(req SettingsRequest) error {
+	return m.saveSettingsFor("", req, true)
+}
+
+func (m *Manager) SaveSettingsFor(tunnelKey string, req SettingsRequest) error {
+	return m.saveSettingsFor(tunnelKey, req, false)
+}
+
+func (m *Manager) saveSettingsFor(tunnelKey string, req SettingsRequest, legacyGlobalDisable bool) error {
 	cfg := m.cfgMgr.Get()
 	current := cfg.TunnelManagement
-	current.Enabled = req.Enabled
+	profileRequest := strings.TrimSpace(tunnelKey) != ""
+	selectedTunnel, ok := cfg.TunnelProfile(tunnelKey)
+	if profileRequest && !ok {
+		return fmt.Errorf("tunnel profile %q not found", tunnelKey)
+	}
+	if !profileRequest && (req.Enabled || legacyGlobalDisable) {
+		current.Enabled = req.Enabled
+	}
 
 	accountID := strings.TrimSpace(req.AccountID)
 	tunnelID := strings.TrimSpace(req.TunnelID)
@@ -158,13 +191,33 @@ func (m *Manager) SaveSettings(req SettingsRequest) error {
 	apiToken := strings.TrimSpace(req.APIToken)
 	apiKey := strings.TrimSpace(req.APIKey)
 
-	if req.Enabled || accountID != "" {
+	if !profileRequest && (req.Enabled || accountID != "") {
 		current.AccountID = accountID
 	}
-	if req.Enabled || tunnelID != "" {
+	if !profileRequest && (req.Enabled || tunnelID != "") {
 		current.TunnelID = tunnelID
 	}
-	if current.AccountID == "" || current.TunnelID == "" {
+	if accountID == "" && selectedTunnel.AccountID != "" {
+		accountID = selectedTunnel.AccountID
+	}
+	if tunnelID == "" && selectedTunnel.TunnelID != "" {
+		tunnelID = selectedTunnel.TunnelID
+	}
+	if accountID == "" || tunnelID == "" {
+		token := selectedTunnel.Token
+		if token == "" {
+			token = cfg.Token
+		}
+		if identity, err := parseTunnelToken(token); err == nil {
+			if accountID == "" {
+				accountID = identity.AccountID
+			}
+			if tunnelID == "" {
+				tunnelID = identity.TunnelID
+			}
+		}
+	}
+	if !profileRequest && (current.AccountID == "" || current.TunnelID == "") {
 		if identity, err := parseTunnelToken(cfg.Token); err == nil {
 			if current.AccountID == "" {
 				current.AccountID = identity.AccountID
@@ -184,15 +237,20 @@ func (m *Manager) SaveSettings(req SettingsRequest) error {
 		current.APIKey = apiKey
 	}
 	cfg.TunnelManagement = current
+	cfg = saveProfileTunnelManagementFields(cfg, tunnelKey, req.Enabled, accountID, tunnelID)
 	return m.cfgMgr.Save(cfg)
 }
 
 func (m *Manager) VerifyPermissions(ctx context.Context, req VerifyTokenRequest) VerifyTokenResponse {
+	return m.VerifyPermissionsFor(ctx, "", req)
+}
+
+func (m *Manager) VerifyPermissionsFor(ctx context.Context, tunnelKey string, req VerifyTokenRequest) VerifyTokenResponse {
 	perms := defaultPermissionChecks()
 
 	// Fall back to stored credentials when the request has none.
 	// Frontend never sees saved secrets, so blank fields mean "use what's saved".
-	stored := m.cfgMgr.Get().TunnelManagement
+	stored, _, _ := effectiveWithTokenIdentityFor(m.cfgMgr.Get(), tunnelKey)
 	if strings.TrimSpace(req.APIToken) == "" && strings.TrimSpace(req.APIKey) == "" {
 		if req.AuthMode == "key" {
 			if req.APIEmail == "" {
@@ -322,7 +380,11 @@ func newSDKClientFromRequest(req VerifyTokenRequest) (cloudflareClient, error) {
 }
 
 func (m *Manager) Fetch(ctx context.Context) (ConfigurationResponse, error) {
-	cfg, client, err := m.client()
+	return m.FetchFor(ctx, "")
+}
+
+func (m *Manager) FetchFor(ctx context.Context, tunnelKey string) (ConfigurationResponse, error) {
+	cfg, client, err := m.clientFor(tunnelKey)
 	if err != nil {
 		return ConfigurationResponse{}, err
 	}
@@ -334,11 +396,45 @@ func (m *Manager) Fetch(ctx context.Context) (ConfigurationResponse, error) {
 	if err != nil {
 		return ConfigurationResponse{}, err
 	}
-	return toConfigurationResponse(result), nil
+	resp := toConfigurationResponse(result)
+	resp.TunnelName = m.refreshTunnelProfileName(ctx, tunnelKey, cfg, client)
+	return resp, nil
 }
 
 func (m *Manager) ListZones(ctx context.Context) ([]ZoneResponse, error) {
-	cfg, client, err := m.accountClient()
+	return m.ListZonesFor(ctx, "")
+}
+
+func (m *Manager) FetchTunnelDetailsFor(ctx context.Context, tunnelKey string) (TunnelDetailsResponse, error) {
+	cfg, client, err := m.clientFor(tunnelKey)
+	if err != nil {
+		return TunnelDetailsResponse{}, err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	tunnel, err := client.GetTunnel(ctx, cloudflare.AccountIdentifier(cfg.AccountID), cfg.TunnelID)
+	if err != nil {
+		return TunnelDetailsResponse{}, err
+	}
+	name := strings.TrimSpace(tunnel.Name)
+	if name != "" {
+		m.applyFetchedTunnelName(tunnelKey, cfg.TunnelID, name)
+	}
+	resp := TunnelDetailsResponse{
+		TunnelID: cfg.TunnelID,
+		Name:     name,
+		Status:   strings.TrimSpace(tunnel.Status),
+	}
+	if profile, ok := m.cfgMgr.Get().TunnelProfile(tunnelKey); ok {
+		resp.TunnelKey = profile.Key
+	}
+	return resp, nil
+}
+
+func (m *Manager) ListZonesFor(ctx context.Context, tunnelKey string) ([]ZoneResponse, error) {
+	cfg, client, err := m.accountClientFor(tunnelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -363,7 +459,15 @@ func (m *Manager) ListZones(ctx context.Context) ([]ZoneResponse, error) {
 }
 
 func (m *Manager) AddEntry(ctx context.Context, entry IngressRule) (ConfigurationResponse, error) {
-	resp, err := m.mutate(ctx, func(cfg *cloudflare.TunnelConfiguration) error {
+	return m.AddEntryFor(ctx, "", entry)
+}
+
+func (m *Manager) AddEntryFor(ctx context.Context, tunnelKey string, entry IngressRule) (ConfigurationResponse, error) {
+	tunnelCfg, _, cfgErr := m.clientFor(tunnelKey)
+	if cfgErr != nil {
+		return ConfigurationResponse{}, cfgErr
+	}
+	resp, err := m.mutateFor(ctx, tunnelKey, func(cfg *cloudflare.TunnelConfiguration) error {
 		if strings.TrimSpace(entry.Service) == "" {
 			return fmt.Errorf("service is required")
 		}
@@ -378,15 +482,23 @@ func (m *Manager) AddEntry(ctx context.Context, entry IngressRule) (Configuratio
 		return nil
 	})
 	if err == nil && strings.TrimSpace(entry.Hostname) != "" {
-		if dnsErr := m.syncDNSForHostnameWithComment(ctx, entry.Hostname, entry.Comment); dnsErr != nil {
-			logger.Sugar.Warnf("Tunnel config updated but DNS sync failed for %s: %v. Create a CNAME record manually: %s → %s.cfargotunnel.com", entry.Hostname, dnsErr, entry.Hostname, m.cfgMgr.Get().TunnelManagement.TunnelID)
+		if dnsErr := m.syncDNSForHostnameWithCommentFor(ctx, tunnelKey, entry.Hostname, entry.Comment); dnsErr != nil {
+			logger.Sugar.Warnf("Tunnel config updated but DNS sync failed for %s: %v. Create a CNAME record manually: %s → %s.cfargotunnel.com", entry.Hostname, dnsErr, entry.Hostname, tunnelCfg.TunnelID)
 		}
 	}
 	return resp, err
 }
 
 func (m *Manager) UpdateEntry(ctx context.Context, index int, entry IngressRule) (ConfigurationResponse, error) {
-	resp, err := m.mutate(ctx, func(cfg *cloudflare.TunnelConfiguration) error {
+	return m.UpdateEntryFor(ctx, "", index, entry)
+}
+
+func (m *Manager) UpdateEntryFor(ctx context.Context, tunnelKey string, index int, entry IngressRule) (ConfigurationResponse, error) {
+	tunnelCfg, _, cfgErr := m.clientFor(tunnelKey)
+	if cfgErr != nil {
+		return ConfigurationResponse{}, cfgErr
+	}
+	resp, err := m.mutateFor(ctx, tunnelKey, func(cfg *cloudflare.TunnelConfiguration) error {
 		if index < 0 || index >= len(cfg.Ingress) {
 			return fmt.Errorf("entry index %d is out of range", index)
 		}
@@ -398,15 +510,19 @@ func (m *Manager) UpdateEntry(ctx context.Context, index int, entry IngressRule)
 		return nil
 	})
 	if err == nil && strings.TrimSpace(entry.Hostname) != "" {
-		if dnsErr := m.syncDNSForHostnameWithComment(ctx, entry.Hostname, entry.Comment); dnsErr != nil {
-			logger.Sugar.Warnf("Tunnel config updated but DNS sync failed for %s: %v. Create a CNAME record manually: %s → %s.cfargotunnel.com", entry.Hostname, dnsErr, entry.Hostname, m.cfgMgr.Get().TunnelManagement.TunnelID)
+		if dnsErr := m.syncDNSForHostnameWithCommentFor(ctx, tunnelKey, entry.Hostname, entry.Comment); dnsErr != nil {
+			logger.Sugar.Warnf("Tunnel config updated but DNS sync failed for %s: %v. Create a CNAME record manually: %s → %s.cfargotunnel.com", entry.Hostname, dnsErr, entry.Hostname, tunnelCfg.TunnelID)
 		}
 	}
 	return resp, err
 }
 
 func (m *Manager) DeleteEntry(ctx context.Context, index int) (ConfigurationResponse, error) {
-	return m.mutate(ctx, func(cfg *cloudflare.TunnelConfiguration) error {
+	return m.DeleteEntryFor(ctx, "", index)
+}
+
+func (m *Manager) DeleteEntryFor(ctx context.Context, tunnelKey string, index int) (ConfigurationResponse, error) {
+	return m.mutateFor(ctx, tunnelKey, func(cfg *cloudflare.TunnelConfiguration) error {
 		if index < 0 || index >= len(cfg.Ingress) {
 			return fmt.Errorf("entry index %d is out of range", index)
 		}
@@ -417,6 +533,10 @@ func (m *Manager) DeleteEntry(ctx context.Context, index int) (ConfigurationResp
 }
 
 func (m *Manager) CheckS3WebDAVHostname(ctx context.Context, hostname, service string) S3WebDAVTunnelStatus {
+	return m.CheckS3WebDAVHostnameFor(ctx, "", hostname, service)
+}
+
+func (m *Manager) CheckS3WebDAVHostnameFor(ctx context.Context, tunnelKey, hostname, service string) S3WebDAVTunnelStatus {
 	hostname = normalizeHostname(hostname)
 	service = strings.TrimSpace(service)
 	status := S3WebDAVTunnelStatus{
@@ -429,7 +549,7 @@ func (m *Manager) CheckS3WebDAVHostname(ctx context.Context, hostname, service s
 		return status
 	}
 
-	cfg, client, err := m.client()
+	cfg, client, err := m.clientFor(tunnelKey)
 	if err != nil {
 		status.Status = S3WebDAVTunnelStatusError
 		status.Message = err.Error()
@@ -457,7 +577,7 @@ func (m *Manager) CheckS3WebDAVHostname(ctx context.Context, hostname, service s
 		}
 	}
 
-	hasDNSBinding, err := m.s3WebDAVDNSBindingExists(ctx, hostname)
+	hasDNSBinding, err := m.s3WebDAVDNSBindingExistsFor(ctx, tunnelKey, hostname)
 	if err != nil {
 		status.Status = S3WebDAVTunnelStatusError
 		status.Message = err.Error()
@@ -481,7 +601,11 @@ func (m *Manager) CheckS3WebDAVHostname(ctx context.Context, hostname, service s
 }
 
 func (m *Manager) mutate(ctx context.Context, mutate func(*cloudflare.TunnelConfiguration) error) (ConfigurationResponse, error) {
-	cfg, client, err := m.client()
+	return m.mutateFor(ctx, "", mutate)
+}
+
+func (m *Manager) mutateFor(ctx context.Context, tunnelKey string, mutate func(*cloudflare.TunnelConfiguration) error) (ConfigurationResponse, error) {
+	cfg, client, err := m.clientFor(tunnelKey)
 	if err != nil {
 		return ConfigurationResponse{}, err
 	}
@@ -516,7 +640,11 @@ func (m *Manager) syncDNSForHostname(ctx context.Context, hostname string) error
 }
 
 func (m *Manager) syncDNSForHostnameWithComment(ctx context.Context, hostname, comment string) error {
-	cfg, client, err := m.accountClient()
+	return m.syncDNSForHostnameWithCommentFor(ctx, "", hostname, comment)
+}
+
+func (m *Manager) syncDNSForHostnameWithCommentFor(ctx context.Context, tunnelKey, hostname, comment string) error {
+	cfg, client, err := m.accountClientFor(tunnelKey)
 	if err != nil {
 		return fmt.Errorf("failed to get client for DNS sync: %w", err)
 	}
@@ -573,7 +701,11 @@ func (m *Manager) syncDNSForHostnameWithComment(ctx context.Context, hostname, c
 }
 
 func (m *Manager) s3WebDAVDNSBindingExists(ctx context.Context, hostname string) (bool, error) {
-	cfg, client, err := m.accountClient()
+	return m.s3WebDAVDNSBindingExistsFor(ctx, "", hostname)
+}
+
+func (m *Manager) s3WebDAVDNSBindingExistsFor(ctx context.Context, tunnelKey, hostname string) (bool, error) {
+	cfg, client, err := m.accountClientFor(tunnelKey)
 	if err != nil {
 		return false, err
 	}
@@ -633,7 +765,11 @@ func findZoneForHostname(hostname string, zones []cloudflare.Zone) *cloudflare.Z
 }
 
 func (m *Manager) client() (config.TunnelManagementConfig, cloudflareClient, error) {
-	cfg, client, err := m.accountClient()
+	return m.clientFor("")
+}
+
+func (m *Manager) clientFor(tunnelKey string) (config.TunnelManagementConfig, cloudflareClient, error) {
+	cfg, client, err := m.accountClientFor(tunnelKey)
 	if err != nil {
 		return cfg, nil, err
 	}
@@ -644,8 +780,17 @@ func (m *Manager) client() (config.TunnelManagementConfig, cloudflareClient, err
 }
 
 func (m *Manager) accountClient() (config.TunnelManagementConfig, cloudflareClient, error) {
+	return m.accountClientFor("")
+}
+
+func (m *Manager) accountClientFor(tunnelKey string) (config.TunnelManagementConfig, cloudflareClient, error) {
 	appCfg := m.cfgMgr.Get()
-	cfg, _, _ := effectiveWithTokenIdentity(appCfg)
+	if strings.TrimSpace(tunnelKey) != "" {
+		if _, ok := appCfg.TunnelProfile(tunnelKey); !ok {
+			return config.TunnelManagementConfig{}, nil, fmt.Errorf("tunnel profile %q not found", tunnelKey)
+		}
+	}
+	cfg, _, _ := effectiveWithTokenIdentityFor(appCfg, tunnelKey)
 	if !cfg.Enabled {
 		return cfg, nil, ErrDisabled
 	}
@@ -658,6 +803,63 @@ func (m *Manager) accountClient() (config.TunnelManagementConfig, cloudflareClie
 
 	client, err := m.newClient(cfg)
 	return cfg, client, err
+}
+
+func (m *Manager) refreshTunnelProfileName(ctx context.Context, tunnelKey string, cfg config.TunnelManagementConfig, client cloudflareClient) string {
+	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	defer cancel()
+	tunnel, err := client.GetTunnel(ctx, cloudflare.AccountIdentifier(cfg.AccountID), cfg.TunnelID)
+	if err != nil {
+		if logger.Sugar != nil {
+			logger.Sugar.Debugf("Failed to fetch Cloudflare tunnel name for %s: %v", cfg.TunnelID, err)
+		}
+		return ""
+	}
+	name := strings.TrimSpace(tunnel.Name)
+	if name == "" {
+		return ""
+	}
+	m.applyFetchedTunnelName(tunnelKey, cfg.TunnelID, name)
+	return name
+}
+
+func (m *Manager) applyFetchedTunnelName(tunnelKey, tunnelID, name string) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return
+	}
+	cfg := m.cfgMgr.Get()
+	target := cfg.ActiveTunnelKey
+	if tunnel, ok := cfg.TunnelProfile(tunnelKey); ok {
+		target = tunnel.Key
+	}
+	for i, tunnel := range cfg.Tunnels {
+		if tunnel.Key != target {
+			continue
+		}
+		if tunnel.TunnelID != "" && tunnelID != "" && tunnel.TunnelID != tunnelID {
+			return
+		}
+		if !shouldReplaceTunnelProfileName(tunnel, i) {
+			return
+		}
+		tunnel.Name = name
+		if _, err := m.cfgMgr.SaveTunnelProfile(tunnel.Key, tunnel); err != nil && logger.Sugar != nil {
+			logger.Sugar.Warnf("Failed to save Cloudflare tunnel name for profile %s: %v", tunnel.Key, err)
+		}
+		return
+	}
+}
+
+func shouldReplaceTunnelProfileName(tunnel config.TunnelProfileConfig, index int) bool {
+	name := strings.TrimSpace(tunnel.Name)
+	if name == "" || name == tunnel.Key || name == "Default Tunnel" || name == "Tunnel" {
+		return true
+	}
+	if index > 0 && name == fmt.Sprintf("Tunnel %d", index+1) {
+		return true
+	}
+	return false
 }
 
 func newSDKClient(cfg config.TunnelManagementConfig) (cloudflareClient, error) {
@@ -697,14 +899,22 @@ type tokenIdentity struct {
 }
 
 func effectiveWithTokenIdentity(cfg config.Config) (config.TunnelManagementConfig, bool, bool) {
-	effective := cfg.EffectiveTunnelManagement()
+	return effectiveWithTokenIdentityFor(cfg, "")
+}
+
+func effectiveWithTokenIdentityFor(cfg config.Config, tunnelKey string) (config.TunnelManagementConfig, bool, bool) {
+	effective := cfg.EffectiveTunnelManagementFor(tunnelKey)
 	if effective.AccountID != "" && effective.TunnelID != "" {
 		return effective, false, false
 	}
 
-	identity, err := parseTunnelToken(cfg.Token)
+	token := cfg.Token
+	if tunnel, ok := cfg.TunnelProfile(tunnelKey); ok && strings.TrimSpace(tunnel.Token) != "" {
+		token = tunnel.Token
+	}
+	identity, err := parseTunnelToken(token)
 	if err != nil {
-		return effective, false, cfg.Token != ""
+		return effective, false, token != ""
 	}
 
 	derived := false
@@ -717,6 +927,27 @@ func effectiveWithTokenIdentity(cfg config.Config) (config.TunnelManagementConfi
 		derived = true
 	}
 	return effective, derived, false
+}
+
+func saveProfileTunnelManagementFields(cfg config.Config, tunnelKey string, enabled bool, accountID, tunnelID string) config.Config {
+	target := cfg.ActiveTunnelKey
+	if tunnel, ok := cfg.TunnelProfile(tunnelKey); ok {
+		target = tunnel.Key
+	}
+	for i := range cfg.Tunnels {
+		if cfg.Tunnels[i].Key != target {
+			continue
+		}
+		cfg.Tunnels[i].RemoteManagementEnabled = enabled
+		if strings.TrimSpace(accountID) != "" {
+			cfg.Tunnels[i].AccountID = strings.TrimSpace(accountID)
+		}
+		if strings.TrimSpace(tunnelID) != "" {
+			cfg.Tunnels[i].TunnelID = strings.TrimSpace(tunnelID)
+		}
+		break
+	}
+	return cfg
 }
 
 func parseTunnelToken(token string) (tokenIdentity, error) {

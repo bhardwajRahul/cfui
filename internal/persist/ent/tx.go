@@ -26,6 +26,8 @@ type Tx struct {
 	S3WebDAVSetting *S3WebDAVSettingClient
 	// TunnelManagement is the client for interacting with the TunnelManagement builders.
 	TunnelManagement *TunnelManagementClient
+	// TunnelProfile is the client for interacting with the TunnelProfile builders.
+	TunnelProfile *TunnelProfileClient
 	// TunnelToken is the client for interacting with the TunnelToken builders.
 	TunnelToken *TunnelTokenClient
 
@@ -166,6 +168,7 @@ func (tx *Tx) init() {
 	tx.MCPToken = NewMCPTokenClient(tx.config)
 	tx.S3WebDAVSetting = NewS3WebDAVSettingClient(tx.config)
 	tx.TunnelManagement = NewTunnelManagementClient(tx.config)
+	tx.TunnelProfile = NewTunnelProfileClient(tx.config)
 	tx.TunnelToken = NewTunnelTokenClient(tx.config)
 }
 

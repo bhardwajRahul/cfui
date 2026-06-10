@@ -13,11 +13,44 @@ other = "エラー"
 [app_title]
 other = "CloudFlared UI"
 
+[skip_to_content]
+other = "メインコンテンツへスキップ"
+
 [tunnel_config]
 other = "トンネル設定"
 
 [tunnel_config_subtitle]
 other = "Cloudflare Tunnel 接続を管理します"
+
+[tunnel_profile_editing]
+other = "編集中のトンネル"
+
+[tunnel_profiles_label]
+other = "トンネル設定"
+
+[tunnel_profiles_help]
+other = "編集するトンネルを選択し、行内ボタンでローカルランナーを切り替えます。"
+
+[editing_tunnel_profile]
+other = "編集中"
+
+[active_local_tunnel]
+other = "ローカルランナー"
+
+[other_tunnel_profiles]
+other = "その他のトンネル"
+
+[use_for_local_runner]
+other = "ローカルランナーに設定"
+
+[add_tunnel_profile]
+other = "トンネルを追加"
+
+[delete_tunnel_profile]
+other = "トンネルを削除"
+
+[tunnel_profile_name]
+other = "トンネル名"
 
 [tunnel_token]
 other = "トンネル Token"
@@ -184,6 +217,18 @@ other = "リモートトンネル管理"
 [remote_tunnel_manager_subtitle]
 other = "ローカルランナーとは独立して Cloudflare 管理の ingress ルールを管理します。"
 
+[remote_manager_tunnel_profile]
+other = "トンネル設定"
+
+[remote_manager_tunnel_help]
+other = "ローカルランナーを切り替えずに、任意のトンネル設定をリモート管理できます。"
+
+[remote_manager_profile_summary_active]
+other = "{name} を編集中です。この設定は現在のローカルランナーでもあります。"
+
+[remote_manager_profile_summary_inactive]
+other = "{name} を編集中です。現在のローカルランナーは {active} のままです。"
+
 [manager_enable]
 other = "リモート管理を有効化"
 
@@ -271,6 +316,12 @@ other = "準備完了"
 [manager_status_disabled]
 other = "無効"
 
+[manager_status_ready_for_tunnel]
+other = "準備完了: {name}"
+
+[manager_status_disabled_for_tunnel]
+other = "無効: {name}"
+
 [manager_status_loading]
 other = "リモート設定を読み込み中..."
 
@@ -330,6 +381,24 @@ other = "トンネルルールを更新しました"
 
 [tunnel_rule_deleted]
 other = "トンネルルールを削除しました"
+
+[activate_tunnel_first]
+other = "開始または停止する前に、この設定をローカルランナーにしてください。"
+
+[cannot_delete_active_tunnel]
+other = "現在のローカルランナー設定は削除できません。"
+
+[local_runner_updated]
+other = "ローカルランナーのトンネルを更新しました"
+
+[tunnel_profile_added]
+other = "トンネル設定を追加しました"
+
+[delete_tunnel_profile_message]
+other = "トンネル設定 {name} を削除しますか？現在のローカルランナーには影響しません。"
+
+[tunnel_profile_deleted]
+other = "トンネル設定を削除しました"
 
 [public_hostname_section]
 other = "パブリックホスト名"
@@ -1163,6 +1232,9 @@ other = "先に機能設定で Remote Tunnel Manager を有効にしてくださ
 
 [s3_tunnel_manager_required]
 other = "先に Remote Tunnel Manager のアカウント、Tunnel、API 認証情報を設定してください。"
+
+[s3_tunnel_uses_active_runner]
+other = "Cloudflare Tunnel 公開は現在のローカルランナーのトンネルを使用します: {name}。"
 
 [s3_tunnel_permission_required]
 other = "現在の Cloudflare API 認証情報に必要な権限がありません。Remote Tunnel Manager で権限を確認してください。"

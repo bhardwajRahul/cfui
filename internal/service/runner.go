@@ -208,6 +208,11 @@ func (r *Runner) Start() (err error) {
 	}
 
 	cfg := r.cfgMgr.Get()
+	tunnelCfg := cfg.ActiveTunnelProfile()
+	if !tunnelCfg.LocalEnabled {
+		logger.Sugar.Error("Cannot start tunnel: active tunnel profile is not enabled for local running")
+		return fmt.Errorf("active tunnel profile is not enabled for local running")
+	}
 	if cfg.Token == "" {
 		logger.Sugar.Error("Cannot start tunnel: token is missing")
 		return fmt.Errorf("token is required")
@@ -762,7 +767,8 @@ func isRetryableError(err error) bool {
 // Initialize checks if we should auto-start
 func (r *Runner) Initialize() {
 	cfg := r.cfgMgr.Get()
-	if cfg.AutoStart && cfg.Token != "" {
+	tunnelCfg := cfg.ActiveTunnelProfile()
+	if tunnelCfg.LocalEnabled && cfg.AutoStart && cfg.Token != "" {
 		logger.Sugar.Info("Auto-starting tunnel...")
 		if err := r.Start(); err != nil {
 			logger.Sugar.Errorf("Failed to auto-start tunnel: %v", err)

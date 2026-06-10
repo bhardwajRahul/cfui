@@ -13,15 +13,19 @@ Web UI 已内置在二进制文件中。配置保存在数据目录下的本地 
 ## 功能
 
 - **本地 Cloudflare Tunnel 运行管理**
-  - 在浏览器里粘贴 Cloudflare Tunnel token，启动或停止本地隧道。
+  - 在浏览器里管理多个 Cloudflare Tunnel 配置。
+  - 粘贴 Cloudflare Tunnel token，并编辑非当前配置，不影响正在用于本地运行器的 tunnel。
+  - 只能启动或停止当前本地运行器配置。隧道运行中不允许切换本地运行器。
   - 支持自动启动、异常自动重启、协议、区域、重试次数、优雅关闭时间、metrics、后量子模式、边缘 IP 版本、边缘绑定地址、TLS 校验和额外 cloudflared 参数。
   - 显示隧道状态、当前协议、最近错误和版本构建信息。
 
 - **远程 Tunnel 管理**
   - 可选功能，用于管理 Cloudflare 上托管的 Tunnel ingress 配置。
-  - 通过 Account ID 和 Tunnel ID 加载已有 Tunnel。
+  - 可以选择任意已保存的 tunnel 配置进行远程管理，不需要切换当前本地运行器。
+  - 通过 Account ID 和 Tunnel ID 加载已有 Tunnel。API 凭据共用，Account ID 和 Tunnel ID 可以按 tunnel 配置分别保存。
+  - 可以通过 Cloudflare API 读取 Tunnel 名称，并在本地配置仍是自动生成名称时自动写回。
   - 添加、编辑和删除 public hostname 规则，支持 hostname、path、服务类型、服务地址、Host Header、Origin Server Name 和 TLS 校验选项。
-  - 能在可解析时从本地 Tunnel token 自动带出 Account ID 和 Tunnel ID。
+  - 能在可解析时从所选 Tunnel token 自动带出 Account ID 和 Tunnel ID。
   - 在执行 Cloudflare 管理操作前，可以校验 API 权限。
 
 - **DDNS**
@@ -37,7 +41,7 @@ Web UI 已内置在二进制文件中。配置保存在数据目录下的本地 
   - 支持 S3 连接测试和 WebDAV 连接测试。
   - 内置文件面板，可以列表、上传、下载、删除、重命名和创建目录。
   - WebDAV 可以走主 HTTP 服务，也可以走独立 HTTP 端口；两种模式互斥。
-  - 独立 WebDAV 模式支持手动启动/停止、可选自动启动、直连端口、自定义公开 URL，以及跳转到 Cloudflare Tunnel 规则创建。
+  - 独立 WebDAV 模式支持手动启动/停止、可选自动启动、直连端口、自定义公开 URL，以及通过当前本地运行器配置跳转到 Cloudflare Tunnel 规则创建。
   - 浏览器对 WebDAV 路径发起 `GET` 时，会显示只读文件列表或下载文件；`PROPFIND`、`PUT`、`DELETE`、`MKCOL`、`MOVE`、`COPY`、`LOCK`、`UNLOCK` 等方法保持 WebDAV 行为。
 
 - **MCP 访问**
@@ -143,13 +147,23 @@ http://localhost:14333
 
 ## 首次配置
 
-1. 在 Cloudflare Zero Trust 中创建或选择一个 Cloudflare Tunnel。
+1. 在 Cloudflare Zero Trust 中创建或选择一个或多个 Cloudflare Tunnel。
 2. 从隧道安装命令里复制 tunnel token。
-3. 在 Tunnel Configuration 页面粘贴 token。
+3. 在 Tunnel Configuration 页面把 token 粘贴到一个 tunnel 配置里。
 4. 保存配置。
-5. 从 UI 启动隧道。
+5. 将其中一个配置设为本地运行器，然后从 UI 启动隧道。
 
 本地隧道运行不需要 Cloudflare API 凭据。只有远程 Tunnel 管理、DDNS 和可选的 R2 bucket 管理需要 API 凭据。
+
+## Tunnel 配置
+
+cfui 可以保存多个 tunnel 配置。每个配置包含一个本地运行 token，以及对应 Cloudflare Tunnel 的远程管理身份信息。
+
+- 同一时间只能有一个配置作为本地运行器。
+- 非当前配置仍然可以编辑，也可以在远程 Tunnel 管理里选择使用。
+- 远程 Tunnel 管理不会切换本地运行器。它会使用所选配置的 Account ID 和 Tunnel ID，并复用共享的 Cloudflare API 凭据。
+- 如果某个配置没有填写 Account ID 或 Tunnel ID，cfui 会尝试从该配置的 tunnel token 中解码。
+- S3 WebDAV 的 Cloudflare Tunnel 发布始终使用当前本地运行器配置。
 
 ## Cloudflare API 权限
 
@@ -274,6 +288,8 @@ ${LOG_DIR}
 
 旧版 `config.json` 和旧 `app_configs` 表会自动迁移到结构化 SQLite 表。迁移后的 `config.json` 会被重命名为 `config.json.migrated`。
 
+旧版单 tunnel 配置会迁移为默认 tunnel 配置。Tunnel 配置保存在 `tunnel_profiles` 表中，当前本地运行器配置 key 保存在 app settings 中。
+
 ## API 概览
 
 主要接口：
@@ -282,6 +298,12 @@ ${LOG_DIR}
 - `POST /api/control`
 - `GET /api/config`
 - `POST /api/config`
+- `GET /api/tunnels`
+- `POST /api/tunnels`
+- `GET /api/tunnels/{key}`
+- `PUT /api/tunnels/{key}`
+- `DELETE /api/tunnels/{key}`
+- `POST /api/tunnels/{key}/activate-local`
 - `GET /api/logs/recent`
 - `GET /api/logs/stream`
 - `GET /api/features`
@@ -296,6 +318,8 @@ ${LOG_DIR}
 - `/api/s3/*`
 - `/mcp`
 - `/webdav/*`
+
+远程 Tunnel 管理接口支持可选的 `tunnel_key` 查询参数，例如 `/api/tunnel-manager/config?tunnel_key=office`，因此可以管理非当前本地运行器配置的远程 ingress 规则。`GET /api/tunnel-manager/tunnel?tunnel_key=office` 可读取 Cloudflare Tunnel 元数据，例如 tunnel 名称。
 
 ## 开发
 
@@ -374,9 +398,10 @@ cfui/
 
 ### 远程 Tunnel 管理无法加载配置
 
-- 检查 Account ID 和 Tunnel ID。
+- 检查是否选择了正确的 tunnel 配置。
+- 检查该配置的 Account ID 和 Tunnel ID。
 - 在远程 Tunnel 管理页面校验 API token 权限。
-- 如果 Account ID 或 Tunnel ID 为空，确认是否能从本地 tunnel token 自动解码。
+- 如果 Account ID 或 Tunnel ID 为空，确认是否能从所选 tunnel token 自动解码。
 
 ### DDNS 没有更新记录
 

@@ -18,6 +18,7 @@
 
     function fieldsChangedWhileRunning() {
         if (!state.isRunning || !state.runningSig) return false;
+        if (selectedTunnelKey() !== activeTunnelKey()) return false;
         const cur = configSignature(readConfigFromForm());
         return cur !== state.runningSig;
     }
@@ -28,8 +29,15 @@
     }
 
     function readConfigFromForm() {
+        const selected = selectedTunnelProfile();
         return {
             token: $('token-input').value.trim(),
+            name: $('tunnel-name-input')?.value.trim() || selected?.name || 'Tunnel',
+            key: selected?.key || state.selectedTunnelKey || state.config.active_tunnel_key || 'default',
+            local_enabled: selected?.local_enabled !== false,
+            remote_management_enabled: !!selected?.remote_management_enabled,
+            account_id: selected?.account_id || '',
+            tunnel_id: selected?.tunnel_id || '',
             custom_tag: $('custom-version-input').value.trim(),
             software_name: $('software-name-input').value.trim() || 'cfui',
             auto_start: $('autostart-toggle').checked,
@@ -42,29 +50,32 @@
             metrics_port: parseInt($('metrics-port-input').value, 10) || 60123,
             edge_bind_address: $('edge-bind-address-input').value.trim(),
             no_tls_verify: $('no-tls-verify-toggle').checked,
-            tunnel_management: state.config.tunnel_management || {},
         };
     }
 
     function writeConfigToForm(cfg) {
-        $('token-input').value = cfg.token || '';
-        $('custom-version-input').value = cfg.custom_tag || '';
-        $('software-name-input').value = cfg.software_name || 'cfui';
-        $('autostart-toggle').checked = !!cfg.auto_start;
-        $('autorestart-toggle').checked = cfg.auto_restart !== false;
-        $('protocol-select').value = cfg.protocol || 'auto';
-        $('grace-period-input').value = cfg.grace_period || '30s';
-        $('region-select').value = cfg.region || '';
-        $('retries-input').value = cfg.retries ?? 5;
-        $('metrics-enable-toggle').checked = !!cfg.metrics_enable;
-        $('metrics-port-input').value = cfg.metrics_port || 60123;
-        $('edge-bind-address-input').value = cfg.edge_bind_address || '';
-        $('no-tls-verify-toggle').checked = !!cfg.no_tls_verify;
+        const profile = selectedTunnelProfile(cfg) || activeTunnelProfile(cfg) || cfg || {};
+        if ($('tunnel-name-input')) $('tunnel-name-input').value = profile.name || '';
+        $('token-input').value = profile.token || cfg.token || '';
+        $('custom-version-input').value = profile.custom_tag || '';
+        $('software-name-input').value = profile.software_name || 'cfui';
+        $('autostart-toggle').checked = !!profile.auto_start;
+        $('autorestart-toggle').checked = profile.auto_restart !== false;
+        $('protocol-select').value = profile.protocol || 'auto';
+        $('grace-period-input').value = profile.grace_period || '30s';
+        $('region-select').value = profile.region || '';
+        $('retries-input').value = profile.retries ?? 5;
+        $('metrics-enable-toggle').checked = !!profile.metrics_enable;
+        $('metrics-port-input').value = profile.metrics_port || 60123;
+        $('edge-bind-address-input').value = profile.edge_bind_address || '';
+        $('no-tls-verify-toggle').checked = !!profile.no_tls_verify;
         updateMetricsVisibility();
+        updateTunnelProfileUI();
     }
 
     function comparableLocalConfig(cfg = {}) {
         return {
+            name: cfg.name || '',
             token: cfg.token || '',
             custom_tag: cfg.custom_tag || '',
             software_name: cfg.software_name || 'cfui',
@@ -102,8 +113,12 @@
         try {
             const data = await apiGet('/config');
             state.config = data;
+            state.selectedTunnelKey = selectExistingTunnelKey(state.selectedTunnelKey || data.active_tunnel_key, data);
+            if (!state.tunnelManager.selectedTunnelKey) state.tunnelManager.selectedTunnelKey = state.selectedTunnelKey;
+            renderTunnelProfileSelector();
+            window.cfui.renderTunnelManagerProfileSelector?.();
             writeConfigToForm(data);
-            state.localConfigSignature = localConfigSignature(data);
+            state.localConfigSignature = localConfigSignature(readConfigFromForm());
         } catch (err) {
             window.cfui.addLog({ key: 'config_load_failed', params: { err: err.message } }, 'error');
         }
@@ -128,11 +143,12 @@
             try { await prev; } catch { /* ignore */ }
             if (seq !== saveSeq) return;
             try {
-                const data = await apiSend('/config', 'POST', cfg);
-                state.config = data;
-                state.localConfigSignature = localConfigSignature(data);
+                const key = encodeURIComponent(cfg.key || state.selectedTunnelKey || state.config.active_tunnel_key || 'default');
+                await apiSend(`/tunnels/${key}`, 'PUT', cfg);
+                await fetchConfig();
+                state.localConfigSignature = localConfigSignature(readConfigFromForm());
                 if (showFeedback) {
-                    ['token-input','custom-version-input','software-name-input',
+                    ['tunnel-name-input','token-input','custom-version-input','software-name-input',
                      'autostart-toggle','autorestart-toggle','protocol-select',
                      'grace-period-input','region-select','retries-input',
                      'metrics-enable-toggle','metrics-port-input','edge-bind-address-input',
@@ -252,21 +268,29 @@
         /* Action button */
         const btn = $('action-btn');
         if (btn) {
+            const selectedIsActive = selectedTunnelKey() === activeTunnelKey();
             btn.setAttribute('data-action', state.isRunning ? 'stop' : 'start');
             btn.classList.toggle('btn--danger', state.isRunning);
             btn.classList.toggle('btn--primary', !state.isRunning);
             btn.querySelector('.text').textContent = t(state.isRunning ? 'stop_tunnel' : 'start_tunnel');
+            btn.disabled = !selectedIsActive;
+            btn.title = selectedIsActive ? (btn.getAttribute('data-default-title') || '') : t('activate_tunnel_first');
         }
 
         /* Record running signature for restart-hint detection */
         if (state.isRunning) state.runningSig = configSignature(readConfigFromForm());
         updateRestartHint();
+        updateTunnelProfileUI();
     }
 
     /* ---- Start / Stop ---- */
 
     async function onActionClick() {
         const btn = $('action-btn');
+        if (selectedTunnelKey() !== activeTunnelKey()) {
+            toast.warn(t('activate_tunnel_first'));
+            return;
+        }
         const action = btn.getAttribute('data-action');
         if (action === 'start') {
             if (!$('token-input').value.trim()) {
@@ -297,6 +321,282 @@
             }
         } finally {
             setBusy(btn, false);
+        }
+    }
+
+    function tunnelProfiles(cfg = state.config) {
+        return Array.isArray(cfg?.tunnels) ? cfg.tunnels : [];
+    }
+
+    function activeTunnelKey(cfg = state.config) {
+        return cfg?.active_tunnel_key || tunnelProfiles(cfg)[0]?.key || 'default';
+    }
+
+    function selectedTunnelKey(cfg = state.config) {
+        return selectExistingTunnelKey(state.selectedTunnelKey || activeTunnelKey(cfg), cfg);
+    }
+
+    function selectExistingTunnelKey(key, cfg = state.config) {
+        const profiles = tunnelProfiles(cfg);
+        if (profiles.some((p) => p.key === key)) return key;
+        return activeTunnelKey(cfg);
+    }
+
+    function selectedTunnelProfile(cfg = state.config) {
+        const key = selectedTunnelKey(cfg);
+        return tunnelProfiles(cfg).find((p) => p.key === key) || null;
+    }
+
+    function activeTunnelProfile(cfg = state.config) {
+        const key = activeTunnelKey(cfg);
+        return tunnelProfiles(cfg).find((p) => p.key === key) || null;
+    }
+
+    function tunnelDisplayName(profile) {
+        if (!profile) return activeTunnelKey();
+        return profile.name || profile.key;
+    }
+
+    function appendTunnelProfileOptionGroups(select, profiles, activeKey) {
+        select.innerHTML = '';
+        const appendGroup = (label, items) => {
+            if (!items.length) return;
+            const group = document.createElement('optgroup');
+            group.label = label;
+            for (const profile of items) {
+                const opt = document.createElement('option');
+                opt.value = profile.key;
+                opt.textContent = profile.name || profile.key;
+                group.appendChild(opt);
+            }
+            select.appendChild(group);
+        };
+        appendGroup(t('active_local_tunnel'), profiles.filter((profile) => profile.key === activeKey));
+        appendGroup(t('other_tunnel_profiles'), profiles.filter((profile) => profile.key !== activeKey));
+    }
+
+    function renderTunnelProfileSelector() {
+        const select = $('tunnel-profile-select');
+        const profiles = tunnelProfiles();
+        const current = selectedTunnelKey();
+        if (select) {
+            appendTunnelProfileOptionGroups(select, profiles, activeTunnelKey());
+            select.value = current;
+        }
+        renderTunnelProfileList(profiles);
+        updateTunnelProfileUI();
+    }
+
+    function renderTunnelProfileList(profiles = tunnelProfiles()) {
+        const list = $('tunnel-profile-list');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!profiles.length) return;
+        for (const profile of profiles) {
+            list.appendChild(tunnelProfileItem(profile));
+        }
+    }
+
+    function tunnelProfileItem(profile) {
+        const item = document.createElement('article');
+        item.className = 'tunnel-profile-item';
+        item.dataset.key = profile.key;
+        item.setAttribute('role', 'listitem');
+
+        const summary = document.createElement('button');
+        summary.type = 'button';
+        summary.className = 'tunnel-profile-item__summary';
+        summary.addEventListener('click', () => selectTunnelProfile(profile.key));
+
+        const copy = document.createElement('span');
+        copy.className = 'tunnel-profile-item__copy';
+        const name = document.createElement('span');
+        name.className = 'tunnel-profile-item__name';
+        name.textContent = tunnelDisplayName(profile);
+        const meta = document.createElement('span');
+        meta.className = 'tunnel-profile-item__meta';
+        meta.textContent = profile.key || '';
+        copy.append(name, meta);
+
+        const badges = document.createElement('span');
+        badges.className = 'tunnel-profile-badges';
+        badges.append(
+            tunnelProfileBadge('runner', t('active_local_tunnel')),
+            tunnelProfileBadge('editing', t('editing_tunnel_profile'))
+        );
+        summary.append(copy, badges);
+
+        const actions = document.createElement('div');
+        actions.className = 'tunnel-profile-item__actions';
+        const activate = document.createElement('button');
+        activate.type = 'button';
+        activate.className = 'btn btn--sm tunnel-profile-runner-btn';
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner';
+        spinner.setAttribute('aria-hidden', 'true');
+        const text = document.createElement('span');
+        text.className = 'text';
+        text.textContent = t('use_for_local_runner');
+        activate.append(spinner, text);
+        activate.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activateSelectedTunnel(e.currentTarget, profile.key);
+        });
+        actions.appendChild(activate);
+
+        item.append(summary, actions);
+        return item;
+    }
+
+    function tunnelProfileBadge(role, text) {
+        const badge = document.createElement('span');
+        badge.className = 'tunnel-profile-badge';
+        badge.dataset.role = role;
+        badge.textContent = text;
+        return badge;
+    }
+
+    function updateTunnelProfileUI() {
+        const active = activeTunnelProfile();
+        const selected = selectedTunnelProfile();
+        const isActive = !!selected && selected.key === active?.key;
+        const pill = $('active-tunnel-pill');
+        if (pill) {
+            pill.setAttribute('data-state', state.isRunning ? 'ok' : 'neutral');
+            const text = pill.querySelector('.text');
+            if (text) text.textContent = `${t('active_local_tunnel')}: ${active?.name || active?.key || 'default'}`;
+        }
+        const activate = $('activate-tunnel-profile');
+        if (activate) {
+            activate.hidden = isActive;
+            activate.disabled = !selected || isActive;
+        }
+        const del = $('delete-tunnel-profile');
+        if (del) {
+            del.disabled = isActive || tunnelProfiles().length <= 1;
+            del.title = isActive ? t('cannot_delete_active_tunnel') : '';
+        }
+        const action = $('action-btn');
+        if (action && selected) {
+            action.disabled = !isActive;
+            action.title = isActive ? (action.getAttribute('data-default-title') || '') : t('activate_tunnel_first');
+        }
+        syncTunnelProfileListState(active, selected);
+    }
+
+    function syncTunnelProfileListState(active = activeTunnelProfile(), selected = selectedTunnelProfile()) {
+        const activeKey = active?.key || activeTunnelKey();
+        const selectedKey = selected?.key || selectedTunnelKey();
+        document.querySelectorAll('.tunnel-profile-item').forEach((item) => {
+            const key = item.dataset.key;
+            const isRunner = key === activeKey;
+            const isSelected = key === selectedKey;
+            item.dataset.activeRunner = String(isRunner);
+            item.dataset.selected = String(isSelected);
+
+            const summary = item.querySelector('.tunnel-profile-item__summary');
+            if (summary) summary.setAttribute('aria-pressed', String(isSelected));
+
+            const runner = item.querySelector('.tunnel-profile-badge[data-role="runner"]');
+            if (runner) {
+                runner.hidden = !isRunner;
+                runner.dataset.state = state.isRunning ? 'ok' : 'info';
+            }
+
+            const editing = item.querySelector('.tunnel-profile-badge[data-role="editing"]');
+            if (editing) {
+                editing.hidden = !isSelected;
+                editing.dataset.state = 'neutral';
+            }
+
+            const activate = item.querySelector('.tunnel-profile-runner-btn');
+            if (activate) {
+                activate.hidden = isRunner;
+                activate.disabled = isRunner;
+            }
+        });
+    }
+
+    async function onTunnelProfileChange(keyOverride) {
+        const nextKey = typeof keyOverride === 'string' ? keyOverride : $('tunnel-profile-select')?.value;
+        state.selectedTunnelKey = nextKey || activeTunnelKey();
+        writeConfigToForm(state.config);
+        state.localConfigSignature = localConfigSignature(readConfigFromForm());
+        updateRestartHint();
+    }
+
+    function selectTunnelProfile(key) {
+        const select = $('tunnel-profile-select');
+        if (select) select.value = key;
+        onTunnelProfileChange(key);
+    }
+
+    async function activateSelectedTunnel(control, keyOverride = '') {
+        const key = selectExistingTunnelKey(keyOverride || selectedTunnelKey());
+        if (!key || key === activeTunnelKey()) return;
+        state.selectedTunnelKey = key;
+        setBusy(control, true, t('saving'));
+        try {
+            await apiSend(`/tunnels/${encodeURIComponent(key)}/activate-local`, 'POST', {});
+            await fetchConfig();
+            toast.ok(t('local_runner_updated'));
+        } catch (err) {
+            toast.err(err.message);
+        } finally {
+            setBusy(control, false);
+        }
+    }
+
+    async function addTunnelProfile() {
+        const profiles = tunnelProfiles();
+        let index = profiles.length + 1;
+        let key = `tunnel-${index}`;
+        const keys = new Set(profiles.map((p) => p.key));
+        while (keys.has(key)) {
+            index++;
+            key = `tunnel-${index}`;
+        }
+        const profile = {
+            key,
+            name: `Tunnel ${index}`,
+            local_enabled: true,
+            remote_management_enabled: false,
+            auto_restart: true,
+            software_name: 'cfui',
+            protocol: 'auto',
+            grace_period: '30s',
+            retries: 5,
+            metrics_port: 60123,
+            log_level: 'info',
+            edge_ip_version: 'auto',
+        };
+        try {
+            await apiSend('/tunnels', 'POST', profile);
+            state.selectedTunnelKey = key;
+            await fetchConfig();
+            toast.ok(t('tunnel_profile_added'));
+            $('tunnel-name-input')?.focus();
+        } catch (err) {
+            toast.err(err.message);
+        }
+    }
+
+    async function deleteSelectedTunnel() {
+        const selected = selectedTunnelProfile();
+        if (!selected || selected.key === activeTunnelKey()) return;
+        const ok = await window.cfui.confirm({
+            title: t('delete_tunnel_profile'),
+            message: t('delete_tunnel_profile_message', { name: selected.name || selected.key }),
+            okText: t('delete'),
+        });
+        if (!ok) return;
+        try {
+            await apiSend(`/tunnels/${encodeURIComponent(selected.key)}`, 'DELETE');
+            state.selectedTunnelKey = activeTunnelKey();
+            await fetchConfig();
+            toast.ok(t('tunnel_profile_deleted'));
+        } catch (err) {
+            toast.err(err.message);
         }
     }
 
@@ -358,6 +658,10 @@
 
     function wireTunnel() {
         $('action-btn')?.addEventListener('click', onActionClick);
+        $('tunnel-profile-select')?.addEventListener('change', onTunnelProfileChange);
+        $('activate-tunnel-profile')?.addEventListener('click', (e) => activateSelectedTunnel(e.currentTarget));
+        $('add-tunnel-profile')?.addEventListener('click', addTunnelProfile);
+        $('delete-tunnel-profile')?.addEventListener('click', deleteSelectedTunnel);
         $('toggle-token')?.addEventListener('mousedown', (e) => e.preventDefault());
         $('toggle-token')?.addEventListener('click', toggleTokenVisibility);
         $('tunnel-alert-logs')?.addEventListener('click', () => {
@@ -372,6 +676,7 @@
 
         /* Config auto-save bindings */
         const sav = (source) => () => saveConfig({ source });
+        $('tunnel-name-input')?.addEventListener('change', sav('input'));
         $('token-input')?.addEventListener('blur', sav('input'));
         $('custom-version-input')?.addEventListener('change', sav('input'));
         $('software-name-input')?.addEventListener('change', sav('input'));
@@ -390,6 +695,11 @@
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); onActionClick(); }
         });
+
+        document.addEventListener('localechange', () => {
+            renderTunnelProfileSelector();
+            updateTunnelProfileUI();
+        });
     }
 
     /* ---- Export ---- */
@@ -401,5 +711,7 @@
     ns.fetchStatus = fetchStatus;
     ns.fetchVersion = fetchVersion;
     ns.updateMetricsVisibility = updateMetricsVisibility;
+    ns.renderTunnelProfileSelector = renderTunnelProfileSelector;
+    ns.updateTunnelProfileUI = updateTunnelProfileUI;
     ns.wireTunnel = wireTunnel;
 })();

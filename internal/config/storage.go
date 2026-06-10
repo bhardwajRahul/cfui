@@ -17,6 +17,7 @@ import (
 	"cfui/internal/persist/ent/ddnssetting"
 	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
+	"cfui/internal/persist/ent/tunnelprofile"
 	"cfui/internal/persist/ent/tunneltoken"
 )
 
@@ -60,6 +61,12 @@ func (m *Manager) loadConfig(ctx context.Context) (Config, error) {
 }
 
 func (m *Manager) saveConfig(ctx context.Context, cfg Config) error {
+	if len(cfg.Tunnels) == 0 {
+		cfg = syncActiveTunnelFromTopLevel(cfg)
+	} else {
+		cfg = applyActiveTunnelToTopLevel(cfg)
+	}
+
 	tx, err := m.client.Tx(ctx)
 	if err != nil {
 		return err
@@ -77,6 +84,9 @@ func (m *Manager) saveConfig(ctx context.Context, cfg Config) error {
 		return err
 	}
 	if err = saveTunnelManagement(ctx, tx, cfg.TunnelManagement); err != nil {
+		return err
+	}
+	if err = saveTunnelProfiles(ctx, tx, cfg); err != nil {
 		return err
 	}
 	if err = saveDDNSSetting(ctx, tx, cfg.DDNS); err != nil {
@@ -128,6 +138,7 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 	cfg.PostQuantum = settingsRow.PostQuantum
 	cfg.NoTLSVerify = settingsRow.NoTLSVerify
 	cfg.ExtraArgs = settingsRow.ExtraArgs
+	cfg.ActiveTunnelKey = settingsRow.ActiveTunnelKey
 	cfg.MCPEnabled = settingsRow.McpEnabled
 	cfg.S3WebDAV.Enabled = settingsRow.S3WebdavEnabled
 	cfg.S3WebDAV.ActiveKey = settingsRow.S3WebdavActiveKey
@@ -156,6 +167,48 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 		}
 	} else if !ent.IsNotFound(err) {
 		return Config{}, false, err
+	}
+
+	tunnelRows, err := m.client.TunnelProfile.Query().
+		Order(tunnelprofile.BySortOrder(), tunnelprofile.ByID()).
+		All(ctx)
+	if err != nil {
+		return Config{}, false, err
+	}
+	cfg.Tunnels = cfg.Tunnels[:0]
+	for _, row := range tunnelRows {
+		cfg.Tunnels = append(cfg.Tunnels, TunnelProfileConfig{
+			Key:                     row.Key,
+			Name:                    row.Name,
+			Token:                   row.Token,
+			LocalEnabled:            row.LocalEnabled,
+			RemoteManagementEnabled: row.RemoteManagementEnabled,
+			AccountID:               row.AccountID,
+			TunnelID:                row.TunnelID,
+			AutoStart:               row.AutoStart,
+			AutoRestart:             row.AutoRestart,
+			CustomTag:               row.CustomTag,
+			SoftwareName:            row.SoftwareName,
+			Protocol:                row.Protocol,
+			GracePeriod:             row.GracePeriod,
+			Region:                  row.Region,
+			Retries:                 row.Retries,
+			MetricsEnable:           row.MetricsEnable,
+			MetricsPort:             row.MetricsPort,
+			LogLevel:                row.LogLevel,
+			LogFile:                 row.LogFile,
+			LogJSON:                 row.LogJSON,
+			EdgeIPVersion:           row.EdgeIPVersion,
+			EdgeBindAddress:         row.EdgeBindAddress,
+			PostQuantum:             row.PostQuantum,
+			NoTLSVerify:             row.NoTLSVerify,
+			ExtraArgs:               row.ExtraArgs,
+		})
+	}
+	if len(cfg.Tunnels) == 0 {
+		cfg = syncActiveTunnelFromTopLevel(cfg)
+	} else {
+		cfg = applyActiveTunnelToTopLevel(cfg)
 	}
 
 	if ddnsRow, err := m.client.DDNSSetting.Query().Where(ddnssetting.Key(defaultConfigKey)).Only(ctx); err == nil {
@@ -259,6 +312,7 @@ func saveAppSetting(ctx context.Context, tx *ent.Tx, cfg Config) error {
 			SetPostQuantum(cfg.PostQuantum).
 			SetNoTLSVerify(cfg.NoTLSVerify).
 			SetExtraArgs(cfg.ExtraArgs).
+			SetActiveTunnelKey(cfg.ActiveTunnelKey).
 			SetMcpEnabled(cfg.MCPEnabled).
 			SetS3WebdavEnabled(s3Cfg.Enabled).
 			SetS3WebdavActiveKey(s3Cfg.ActiveKey).
@@ -295,6 +349,7 @@ func saveAppSetting(ctx context.Context, tx *ent.Tx, cfg Config) error {
 		SetPostQuantum(cfg.PostQuantum).
 		SetNoTLSVerify(cfg.NoTLSVerify).
 		SetExtraArgs(cfg.ExtraArgs).
+		SetActiveTunnelKey(cfg.ActiveTunnelKey).
 		SetMcpEnabled(cfg.MCPEnabled).
 		SetS3WebdavEnabled(s3Cfg.Enabled).
 		SetS3WebdavActiveKey(s3Cfg.ActiveKey).
@@ -355,6 +410,47 @@ func saveTunnelManagement(ctx context.Context, tx *ent.Tx, cfg TunnelManagementC
 		SetAPIKey(cfg.APIKey).
 		Save(ctx)
 	return err
+}
+
+func saveTunnelProfiles(ctx context.Context, tx *ent.Tx, cfg Config) error {
+	cfg = normalizeTunnelProfiles(cfg)
+	if _, err := tx.TunnelProfile.Delete().Exec(ctx); err != nil {
+		return err
+	}
+	builders := make([]*ent.TunnelProfileCreate, 0, len(cfg.Tunnels))
+	for i, tunnel := range cfg.Tunnels {
+		builders = append(builders, tx.TunnelProfile.Create().
+			SetKey(tunnel.Key).
+			SetName(tunnel.Name).
+			SetSortOrder(i).
+			SetToken(tunnel.Token).
+			SetLocalEnabled(tunnel.LocalEnabled).
+			SetRemoteManagementEnabled(tunnel.RemoteManagementEnabled).
+			SetAccountID(tunnel.AccountID).
+			SetTunnelID(tunnel.TunnelID).
+			SetAutoStart(tunnel.AutoStart).
+			SetAutoRestart(tunnel.AutoRestart).
+			SetCustomTag(tunnel.CustomTag).
+			SetSoftwareName(tunnel.SoftwareName).
+			SetProtocol(tunnel.Protocol).
+			SetGracePeriod(tunnel.GracePeriod).
+			SetRegion(tunnel.Region).
+			SetRetries(tunnel.Retries).
+			SetMetricsEnable(tunnel.MetricsEnable).
+			SetMetricsPort(tunnel.MetricsPort).
+			SetLogLevel(tunnel.LogLevel).
+			SetLogFile(tunnel.LogFile).
+			SetLogJSON(tunnel.LogJSON).
+			SetEdgeIPVersion(tunnel.EdgeIPVersion).
+			SetEdgeBindAddress(tunnel.EdgeBindAddress).
+			SetPostQuantum(tunnel.PostQuantum).
+			SetNoTLSVerify(tunnel.NoTLSVerify).
+			SetExtraArgs(tunnel.ExtraArgs))
+	}
+	if len(builders) == 0 {
+		return nil
+	}
+	return tx.TunnelProfile.CreateBulk(builders...).Exec(ctx)
 }
 
 func saveDDNSSetting(ctx context.Context, tx *ent.Tx, cfg DDNSConfig) error {
@@ -435,8 +531,8 @@ func normalizeS3WebDAVConfig(cfg S3WebDAVConfig) S3WebDAVConfig {
 			base = "default"
 		}
 		key := base
-		for n := seen[key]; n > 0; n = seen[key] {
-			key = base + "-" + strconv.Itoa(n+1)
+		for n := 2; seen[key] > 0; n++ {
+			key = base + "-" + strconv.Itoa(n)
 		}
 		seen[key]++
 		mount.Key = key
@@ -638,6 +734,13 @@ func decodeConfig(payload []byte) (Config, error) {
 	cfg := DefaultConfig()
 	if err := json.Unmarshal(payload, &cfg); err != nil {
 		return Config{}, err
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(payload, &raw); err == nil {
+		if _, ok := raw["tunnels"]; !ok {
+			cfg.Tunnels = nil
+			cfg.ActiveTunnelKey = ""
+		}
 	}
 	return cfg, nil
 }

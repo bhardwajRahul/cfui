@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"cfui/internal/persist"
@@ -32,6 +33,55 @@ func TestEffectiveTunnelManagementEnvironmentOverrides(t *testing.T) {
 	}
 	if effective.AccountID != "env-account" || effective.TunnelID != "env-tunnel" || effective.APIToken != "env-token" {
 		t.Fatalf("unexpected effective config: %#v", effective)
+	}
+}
+
+func TestEffectiveTunnelManagementForUsesSelectedProfileState(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.ActiveTunnelKey = "home"
+	cfg.TunnelManagement = TunnelManagementConfig{
+		Enabled:  false,
+		APIToken: "shared-token",
+	}
+	cfg.Tunnels = []TunnelProfileConfig{
+		{
+			Key:           "home",
+			Name:          "Home",
+			LocalEnabled:  true,
+			AutoRestart:   true,
+			SoftwareName:  "cfui",
+			Protocol:      "auto",
+			GracePeriod:   "30s",
+			Retries:       5,
+			MetricsPort:   60123,
+			LogLevel:      "info",
+			EdgeIPVersion: "auto",
+		},
+		{
+			Key:                     "office",
+			Name:                    "Office",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: true,
+			AccountID:               "office-account",
+			TunnelID:                "office-tunnel",
+			AutoRestart:             true,
+			SoftwareName:            "cfui",
+			Protocol:                "auto",
+			GracePeriod:             "30s",
+			Retries:                 5,
+			MetricsPort:             60123,
+			LogLevel:                "info",
+			EdgeIPVersion:           "auto",
+		},
+	}
+
+	office := cfg.EffectiveTunnelManagementFor("office")
+	if !office.Enabled || office.AccountID != "office-account" || office.TunnelID != "office-tunnel" || office.APIToken != "shared-token" {
+		t.Fatalf("expected selected non-active profile to be manageable, got %#v", office)
+	}
+	home := cfg.EffectiveTunnelManagementFor("home")
+	if home.Enabled {
+		t.Fatalf("expected active profile remote management to remain disabled, got %#v", home)
 	}
 }
 
@@ -207,6 +257,8 @@ func TestNewManagerMigratesLegacyConfigJSON(t *testing.T) {
 	legacyCfg.MCPEnabled = true
 	legacyCfg.DDNS.Enabled = true
 	legacyCfg.DDNS.IntervalMins = 9
+	legacyCfg.ActiveTunnelKey = ""
+	legacyCfg.Tunnels = nil
 	legacyCfg.S3WebDAV = S3WebDAVConfig{
 		Enabled:   true,
 		ActiveKey: "legacy",
@@ -298,6 +350,8 @@ func TestNewManagerMigratesLegacyAppConfigsTable(t *testing.T) {
 	legacyCfg := DefaultConfig()
 	legacyCfg.Token = "db-legacy-token"
 	legacyCfg.TunnelManagement.APIToken = "api-token-from-db"
+	legacyCfg.ActiveTunnelKey = ""
+	legacyCfg.Tunnels = nil
 	legacyCfg.DDNS.Enabled = true
 	legacyCfg.DDNS.IPSources = []IPSource{{URL: "https://example.com/ip", IPType: "ipv4"}}
 	legacyCfg.DDNS.Records = []DDNSRecord{{
@@ -337,5 +391,196 @@ func TestNewManagerMigratesLegacyAppConfigsTable(t *testing.T) {
 	}
 	if count != 0 {
 		t.Fatal("expected app_configs table to be dropped after migration")
+	}
+}
+
+func TestTunnelProfilesPersistAndActiveProfileMirrorsLegacyFields(t *testing.T) {
+	dir := t.TempDir()
+	mgr, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	cfg := mgr.Get()
+	cfg.ActiveTunnelKey = "office"
+	cfg.Tunnels = []TunnelProfileConfig{
+		{
+			Key:                     "home",
+			Name:                    "Home",
+			Token:                   "home-token",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: true,
+			AccountID:               "home-account",
+			TunnelID:                "home-tunnel",
+			AutoRestart:             true,
+			SoftwareName:            "cfui",
+			Protocol:                "quic",
+			GracePeriod:             "30s",
+			Retries:                 5,
+			MetricsPort:             60123,
+			LogLevel:                "info",
+			EdgeIPVersion:           "auto",
+		},
+		{
+			Key:                     "office",
+			Name:                    "Office",
+			Token:                   "office-token",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: true,
+			AccountID:               "office-account",
+			TunnelID:                "office-tunnel",
+			AutoStart:               true,
+			AutoRestart:             true,
+			SoftwareName:            "cfui-office",
+			Protocol:                "http2",
+			GracePeriod:             "45s",
+			Retries:                 7,
+			MetricsEnable:           true,
+			MetricsPort:             61111,
+			LogLevel:                "debug",
+			EdgeIPVersion:           "4",
+		},
+	}
+	cfg = applyActiveTunnelToTopLevel(cfg)
+	if err := mgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	reloaded, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager reload: %v", err)
+	}
+	got := reloaded.Get()
+	if got.ActiveTunnelKey != "office" || got.Token != "office-token" || got.Protocol != "http2" || got.TunnelManagement.AccountID != "office-account" || got.TunnelManagement.TunnelID != "office-tunnel" {
+		t.Fatalf("active tunnel did not mirror top-level fields: %#v", got)
+	}
+	if len(got.Tunnels) != 2 || got.Tunnels[0].Key != "home" || got.Tunnels[1].Key != "office" {
+		t.Fatalf("expected two persisted tunnel profiles, got %#v", got.Tunnels)
+	}
+}
+
+func TestActivateTunnelProfileUpdatesLegacyConfigSurface(t *testing.T) {
+	dir := t.TempDir()
+	mgr, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	cfg := mgr.Get()
+	cfg.Tunnels = []TunnelProfileConfig{
+		tunnelProfileFromTopLevel(cfg, TunnelProfileConfig{
+			Key:          "home",
+			Name:         "Home",
+			LocalEnabled: true,
+		}, 0),
+		{
+			Key:                     "office",
+			Name:                    "Office",
+			Token:                   "office-token",
+			LocalEnabled:            true,
+			RemoteManagementEnabled: true,
+			AccountID:               "office-account",
+			TunnelID:                "office-tunnel",
+			AutoRestart:             true,
+			SoftwareName:            "cfui",
+			Protocol:                "http2",
+			GracePeriod:             "30s",
+			Retries:                 5,
+			MetricsPort:             60123,
+			LogLevel:                "info",
+			EdgeIPVersion:           "auto",
+		},
+	}
+	cfg.ActiveTunnelKey = "home"
+	cfg = applyActiveTunnelToTopLevel(cfg)
+	if err := mgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	got, err := mgr.ActivateTunnelProfile("office")
+	if err != nil {
+		t.Fatalf("ActivateTunnelProfile: %v", err)
+	}
+	if got.ActiveTunnelKey != "office" || got.Token != "office-token" || got.TunnelManagement.AccountID != "office-account" {
+		t.Fatalf("expected active profile to update legacy fields, got %#v", got)
+	}
+}
+
+func TestDeleteActiveTunnelProfileRejected(t *testing.T) {
+	dir := t.TempDir()
+	mgr, err := NewManager(dir)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	cfg := mgr.Get()
+	cfg.ActiveTunnelKey = "home"
+	cfg.Tunnels = []TunnelProfileConfig{
+		{
+			Key:           "home",
+			Name:          "Home",
+			Token:         "home-token",
+			LocalEnabled:  true,
+			AutoRestart:   true,
+			SoftwareName:  "cfui",
+			Protocol:      "auto",
+			GracePeriod:   "30s",
+			Retries:       5,
+			MetricsPort:   60123,
+			LogLevel:      "info",
+			EdgeIPVersion: "auto",
+		},
+		{
+			Key:           "office",
+			Name:          "Office",
+			Token:         "office-token",
+			LocalEnabled:  true,
+			AutoRestart:   true,
+			SoftwareName:  "cfui",
+			Protocol:      "auto",
+			GracePeriod:   "30s",
+			Retries:       5,
+			MetricsPort:   60123,
+			LogLevel:      "info",
+			EdgeIPVersion: "auto",
+		},
+	}
+	if err := mgr.Save(cfg); err != nil {
+		t.Fatalf("Save config: %v", err)
+	}
+
+	_, err = mgr.DeleteTunnelProfile("home")
+	if err == nil || !strings.Contains(err.Error(), "active tunnel profile") {
+		t.Fatalf("expected active profile delete to be rejected, got %v", err)
+	}
+	got := mgr.Get()
+	if got.ActiveTunnelKey != "home" || len(got.Tunnels) != 2 {
+		t.Fatalf("active profile delete mutated config: %#v", got)
+	}
+}
+
+func TestNormalizeDuplicateTunnelAndS3Keys(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.ActiveTunnelKey = "office"
+	cfg.Tunnels = []TunnelProfileConfig{
+		{Key: "office"},
+		{Key: "office"},
+		{Key: "office"},
+	}
+	got := normalizeTunnelProfiles(cfg)
+	if len(got.Tunnels) != 3 || got.Tunnels[0].Key != "office" || got.Tunnels[1].Key != "office-2" || got.Tunnels[2].Key != "office-3" {
+		t.Fatalf("unexpected tunnel keys after normalization: %#v", got.Tunnels)
+	}
+
+	s3 := normalizeS3WebDAVConfig(S3WebDAVConfig{
+		ActiveKey: "docs",
+		Mounts: []S3WebDAVMountConfig{
+			{Key: "docs"},
+			{Key: "docs"},
+			{Key: "docs"},
+		},
+	})
+	if len(s3.Mounts) != 3 || s3.Mounts[0].Key != "docs" || s3.Mounts[1].Key != "docs-2" || s3.Mounts[2].Key != "docs-3" {
+		t.Fatalf("unexpected S3 mount keys after normalization: %#v", s3.Mounts)
 	}
 }

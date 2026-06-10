@@ -149,6 +149,11 @@ func ExtraArgs(v string) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldExtraArgs, v))
 }
 
+// ActiveTunnelKey applies equality check predicate on the "active_tunnel_key" field. It's identical to ActiveTunnelKeyEQ.
+func ActiveTunnelKey(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldActiveTunnelKey, v))
+}
+
 // McpEnabled applies equality check predicate on the "mcp_enabled" field. It's identical to McpEnabledEQ.
 func McpEnabled(v bool) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldMcpEnabled, v))
@@ -1062,6 +1067,71 @@ func ExtraArgsEqualFold(v string) predicate.AppSetting {
 // ExtraArgsContainsFold applies the ContainsFold predicate on the "extra_args" field.
 func ExtraArgsContainsFold(v string) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldContainsFold(FieldExtraArgs, v))
+}
+
+// ActiveTunnelKeyEQ applies the EQ predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyNEQ applies the NEQ predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyNEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNEQ(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyIn applies the In predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldIn(FieldActiveTunnelKey, vs...))
+}
+
+// ActiveTunnelKeyNotIn applies the NotIn predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyNotIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNotIn(FieldActiveTunnelKey, vs...))
+}
+
+// ActiveTunnelKeyGT applies the GT predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyGT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGT(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyGTE applies the GTE predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyGTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGTE(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyLT applies the LT predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyLT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLT(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyLTE applies the LTE predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyLTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLTE(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyContains applies the Contains predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyContains(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContains(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyHasPrefix applies the HasPrefix predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyHasPrefix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasPrefix(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyHasSuffix applies the HasSuffix predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyHasSuffix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasSuffix(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyEqualFold applies the EqualFold predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyEqualFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEqualFold(FieldActiveTunnelKey, v))
+}
+
+// ActiveTunnelKeyContainsFold applies the ContainsFold predicate on the "active_tunnel_key" field.
+func ActiveTunnelKeyContainsFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContainsFold(FieldActiveTunnelKey, v))
 }
 
 // McpEnabledEQ applies the EQ predicate on the "mcp_enabled" field.

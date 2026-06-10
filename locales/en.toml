@@ -13,11 +13,44 @@ other = "Error"
 [app_title]
 other = "CloudFlared UI"
 
+[skip_to_content]
+other = "Skip to content"
+
 [tunnel_config]
 other = "Tunnel Configuration"
 
 [tunnel_config_subtitle]
 other = "Manage your Cloudflare Tunnel connection"
+
+[tunnel_profile_editing]
+other = "Editing tunnel"
+
+[tunnel_profiles_label]
+other = "Tunnel profiles"
+
+[tunnel_profiles_help]
+other = "Select a tunnel to edit. Use the row action to choose the local runner."
+
+[editing_tunnel_profile]
+other = "Editing"
+
+[active_local_tunnel]
+other = "Local runner"
+
+[other_tunnel_profiles]
+other = "Other tunnels"
+
+[use_for_local_runner]
+other = "Use for local runner"
+
+[add_tunnel_profile]
+other = "Add tunnel"
+
+[delete_tunnel_profile]
+other = "Delete tunnel"
+
+[tunnel_profile_name]
+other = "Tunnel name"
 
 [tunnel_token]
 other = "Tunnel Token"
@@ -184,6 +217,18 @@ other = "Remote Tunnel Manager"
 [remote_tunnel_manager_subtitle]
 other = "Manage Cloudflare-hosted ingress rules independently from the local runner."
 
+[remote_manager_tunnel_profile]
+other = "Tunnel profile"
+
+[remote_manager_tunnel_help]
+other = "Remote management can edit any tunnel profile without switching the local runner."
+
+[remote_manager_profile_summary_active]
+other = "Editing {name}. This profile is also the active local runner."
+
+[remote_manager_profile_summary_inactive]
+other = "Editing {name}. The active local runner remains {active}."
+
 [manager_enable]
 other = "Enable remote management"
 
@@ -271,6 +316,12 @@ other = "Ready"
 [manager_status_disabled]
 other = "Disabled"
 
+[manager_status_ready_for_tunnel]
+other = "Ready: {name}"
+
+[manager_status_disabled_for_tunnel]
+other = "Disabled: {name}"
+
 [manager_status_loading]
 other = "Loading remote config..."
 
@@ -330,6 +381,24 @@ other = "Tunnel rule updated"
 
 [tunnel_rule_deleted]
 other = "Tunnel rule deleted"
+
+[activate_tunnel_first]
+other = "Use this profile for the local runner before starting or stopping it."
+
+[cannot_delete_active_tunnel]
+other = "The active local runner profile cannot be deleted."
+
+[local_runner_updated]
+other = "Local runner tunnel updated"
+
+[tunnel_profile_added]
+other = "Tunnel profile added"
+
+[delete_tunnel_profile_message]
+other = "Delete tunnel profile {name}? The active local runner is not affected."
+
+[tunnel_profile_deleted]
+other = "Tunnel profile deleted"
 
 [public_hostname_section]
 other = "Public hostname"
@@ -1163,6 +1232,9 @@ other = "Enable Remote Tunnel Manager in Features first."
 
 [s3_tunnel_manager_required]
 other = "Complete Remote Tunnel Manager account, tunnel, and API credential settings first."
+
+[s3_tunnel_uses_active_runner]
+other = "Cloudflare Tunnel publishing uses the active local runner tunnel: {name}."
 
 [s3_tunnel_permission_required]
 other = "The current Cloudflare API credentials do not have the required permissions. Check permissions in Remote Tunnel Manager first."
