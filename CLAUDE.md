@@ -81,21 +81,27 @@ make version
 - Handles all cloudflared parameters (protocol, region, metrics, etc.)
 - Provides default values and atomic read/write operations via mutex
 
-**service/** (service/runner.go): Cloudflared tunnel lifecycle management.
-- Wraps official `github.com/cloudflare/cloudflared` library
-- Handles start/stop/status operations with graceful shutdown
-- Implements auto-restart logic with exponential backoff (5s → 60s max)
-- Creates temporary YAML config files for custom tags
-- Intercepts CLI exit behavior to prevent process termination
-- Distinguishes between retryable (network) and non-retryable (auth) errors
+**internal/cloudflared/**: Owns every interaction with the embedded cloudflared library.
+- `EnsureInit` performs process-wide one-time setup (`tunnel.Init`, CLI exit interception, shared Prometheus registry with duplicate-tolerant registerer)
+- `Instance` manages one tunnel lifecycle: start/stop, protocol fallback (quic ⇄ http2), auto-restart with exponential backoff, temp config files
+- Multiple `Instance`s can run in parallel (one per tunnel profile)
+- Per-instance stop uses context cancellation only; the shared graceful-shutdown channel is reserved for process exit (`ShutdownProcess`) because cloudflared closes the same channel on SIGTERM
 
-**server/** (server/server.go, server/middleware.go): HTTP server and API handlers.
+**internal/service/** (runner.go): Multi-instance tunnel manager bridging config to cloudflared.
+- Holds one `cloudflared.Instance` per tunnel profile (`StartProfile`/`StopProfile`/`ProfileStatus`)
+- Legacy `Start`/`Stop`/`Status` operate on the active profile for API compatibility
+- Options are re-read from config on every (re)start, so config edits apply on restart and deleted profiles stop auto-restarting
+- Refuses to start a profile whose metrics port collides with a running instance
+
+**internal/server/** (server.go, middleware.go): HTTP server and API handlers.
 - Serves embedded static web UI from `web/dist/`
 - Provides REST API endpoints for config, status, and control
+- `/api/tunnels` GET returns all profiles plus a `statuses` map (key → running/status/protocol/error)
 - Serves i18n translations from embedded TOML files
-- Middleware for panic recovery and request logging
+- Middleware for panic recovery and request logging (polling endpoints log at debug level)
+- `PrepareShutdown` closes long-lived SSE log streams so HTTP shutdown doesn't stall
 
-**logger/** (logger/logger.go): Structured logging with rotation.
+**internal/logger/** (logger.go): Structured logging with rotation.
 - Uses `go.uber.org/zap` for structured logging
 - Implements file rotation via `lumberjack`
 - Logs to both file (`~/.cloudflared-web/logs/cfui.log`) and console
@@ -106,17 +112,23 @@ make version
 ### Critical Architecture Details
 
 **Cloudflared Integration**: The app uses the official cloudflared library as a dependency (not spawning external process). This means:
-- `tunnel.Init()` must be called exactly once via `sync.Once`
-- CLI framework is intercepted to prevent `os.Exit()` calls
-- Metrics registration errors require full process restart (not just tunnel restart)
+- `tunnel.Init()` must be called exactly once via `cloudflared.EnsureInit` (the software name shown in the Cloudflare dashboard is fixed by the first call)
+- CLI framework is intercepted to prevent `os.Exit()` calls (set once at init)
+- All tunnel instances share one Prometheus registry; duplicate registrations are absorbed by a safe registerer
 - Custom tags require temporary YAML config files (cleaned up on shutdown)
+- Multiple tunnel profiles can run concurrently, each as its own `cloudflared.Instance`
+
+**Multi-Tunnel Instances**:
+- Each tunnel profile (`Config.Tunnels[]`) can be started/stopped independently via `/api/tunnels/{key}/control`
+- The "active" profile only determines what the legacy `/api/status` + `/api/control` endpoints and top-level config fields mirror
+- Deleting a profile stops its instance asynchronously; the active profile cannot be deleted
 
 **Auto-Restart Logic**:
-- Enabled by default via `Config.AutoRestart`
+- Enabled per tunnel profile via `auto_restart`
 - Exponential backoff: 5s, 10s, 20s, 40s (max 60s)
-- Max 10 restart attempts
-- Restart counter resets after 5 minutes of uptime
-- Non-retryable errors (auth, config) skip auto-restart
+- Max 10 restart attempts; counter resets after 5 minutes of uptime
+- Non-retryable errors (auth, config, invalid token) skip auto-restart
+- Options (including the auto-restart flag) are re-read from config before each restart attempt
 
 **Graceful Shutdown**:
 - 30-second timeout for tunnel shutdown
@@ -140,8 +152,14 @@ make version
 
 - `GET /api/config` - Get current configuration
 - `POST /api/config` - Update configuration
-- `GET /api/status` - Get tunnel running status and last error
-- `POST /api/control` - Control tunnel (action: "start" | "stop")
+- `GET /api/status` - Get active tunnel running status and last error (legacy)
+- `POST /api/control` - Control active tunnel (action: "start" | "stop") (legacy)
+- `GET /api/tunnels` - List tunnel profiles + per-profile live `statuses` map
+- `POST /api/tunnels` - Create tunnel profile
+- `GET|PUT|DELETE /api/tunnels/{key}` - Manage one tunnel profile (DELETE stops its instance)
+- `POST /api/tunnels/{key}/activate-local` - Make profile the active (legacy/mirror) profile
+- `GET /api/tunnels/{key}/status` - Per-tunnel live status
+- `POST /api/tunnels/{key}/control` - Start/stop one tunnel instance
 - `GET /api/i18n/{lang}` - Get translations (en, zh, ja)
 
 ## Configuration File Structure
@@ -216,10 +234,11 @@ Located at `{DATA_DIR}/config.json`:
 
 ## Development Notes
 
-**When modifying runner.go**:
-- Never call `tunnel.Init()` more than once (uses `sync.Once`)
+**When modifying internal/cloudflared**:
+- Never call `tunnel.Init()` outside `EnsureInit` (process-wide once)
+- Per-instance Stop must rely on context cancellation only — never send on the shared graceful-shutdown channel (cloudflared closes it on SIGTERM; sending would panic)
+- Process signals (SIGTERM/SIGINT) must be subscribed only via `cloudflared.OwnProcessSignals`: every tunnel run installs an upstream signal watcher that closes the shared shutdown channel, so with >1 run per process lifetime one OS signal double-closes it and crashes the process. Reclaim pulses `signal.Reset` all subscribers after each run launch — a direct `signal.Notify` anywhere else gets silently dropped
 - Always clean up temporary config files in defer blocks
-- Consider auto-restart implications for error handling
 - Be aware that panics are recovered and may trigger auto-restart
 
 **When modifying config.go**:

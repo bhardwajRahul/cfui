@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cfui/internal/cloudflared"
 	"cfui/internal/config"
 	"cfui/internal/ddns"
 	"cfui/internal/logger"
@@ -105,6 +106,11 @@ type Server struct {
 	s3WebDAV  *s3DedicatedServer
 	assets    embed.FS
 	locales   embed.FS
+
+	// shutdownC is closed by PrepareShutdown so long-lived connections
+	// (SSE log streams) exit promptly instead of stalling http.Server.Shutdown
+	// until its timeout.
+	shutdownC chan struct{}
 }
 
 func NewServer(cfgMgr *config.Manager, runner *service.Runner, assets embed.FS, locales embed.FS) *Server {
@@ -122,6 +128,18 @@ func NewServer(cfgMgr *config.Manager, runner *service.Runner, assets embed.FS, 
 		s3WebDAV:  newS3DedicatedServer(),
 		assets:    assets,
 		locales:   locales,
+		shutdownC: make(chan struct{}),
+	}
+}
+
+// PrepareShutdown asks long-lived connections (log streams) to close so the
+// HTTP server can shut down promptly. Call before http.Server.Shutdown.
+func (s *Server) PrepareShutdown() {
+	select {
+	case <-s.shutdownC:
+		// already closed
+	default:
+		close(s.shutdownC)
 	}
 }
 
@@ -829,12 +847,6 @@ func writeJSON(w http.ResponseWriter, v any) {
 	}
 }
 
-func (s *Server) Run(addr string) error {
-	handler := s.GetHandler()
-	logger.Sugar.Infof("Server listening on %s", addr)
-	return http.ListenAndServe(addr, handler)
-}
-
 // StartDDNS starts the DDNS background service if configured.
 func (s *Server) StartDDNS() {
 	s.ddnsSvc.Start()
@@ -880,13 +892,43 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 type TunnelsResponse struct {
 	ActiveTunnelKey string                       `json:"active_tunnel_key"`
 	Tunnels         []config.TunnelProfileConfig `json:"tunnels"`
+	// Statuses maps profile key -> live runner status so the UI can show
+	// every tunnel's state in one round trip.
+	Statuses map[string]StatusResponse `json:"statuses,omitempty"`
+}
+
+func (s *Server) tunnelsResponse(cfg config.Config) TunnelsResponse {
+	resp := TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels}
+	if s.runner == nil {
+		return resp
+	}
+	statuses := make(map[string]StatusResponse, len(cfg.Tunnels))
+	for _, profile := range cfg.Tunnels {
+		st, _ := s.runner.ProfileStatus(profile.Key)
+		statuses[profile.Key] = statusResponseFrom(st)
+	}
+	resp.Statuses = statuses
+	return resp
+}
+
+func statusResponseFrom(st cloudflared.Status) StatusResponse {
+	resp := StatusResponse{Running: st.Running, Protocol: st.Protocol}
+	if st.Running {
+		resp.Status = "running"
+	} else {
+		resp.Status = "stopped"
+	}
+	if st.LastError != nil {
+		resp.Error = st.LastError.Error()
+		resp.Status = "error"
+	}
+	return resp
 }
 
 func (s *Server) handleTunnels(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		cfg := s.cfgMgr.Get()
-		writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+		writeJSON(w, s.tunnelsResponse(s.cfgMgr.Get()))
 	case http.MethodPost:
 		var req config.TunnelProfileConfig
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -898,7 +940,7 @@ func (s *Server) handleTunnels(w http.ResponseWriter, r *http.Request) {
 			writeAPIError(w, http.StatusBadRequest, err)
 			return
 		}
-		writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+		writeJSON(w, s.tunnelsResponse(cfg))
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -951,14 +993,23 @@ func (s *Server) handleTunnelProfile(w http.ResponseWriter, r *http.Request, key
 			writeAPIError(w, http.StatusBadRequest, err)
 			return
 		}
-		writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+		writeJSON(w, s.tunnelsResponse(cfg))
 	case http.MethodDelete:
 		cfg, err := s.cfgMgr.DeleteTunnelProfile(key)
 		if err != nil {
 			writeAPIError(w, http.StatusBadRequest, err)
 			return
 		}
-		writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+		// Stop the deleted profile's tunnel asynchronously: the instance may
+		// take up to its stop timeout, and the profile is already gone.
+		if s.runner != nil {
+			go func() {
+				if err := s.runner.RemoveProfile(key); err != nil {
+					logger.Sugar.Warnf("Error stopping tunnel for deleted profile %q: %v", key, err)
+				}
+			}()
+		}
+		writeJSON(w, s.tunnelsResponse(cfg))
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -969,23 +1020,15 @@ func (s *Server) handleTunnelActivateLocal(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	cfg := s.cfgMgr.Get()
-	if cfg.ActiveTunnelKey != key {
-		running := false
-		if s.runner != nil {
-			running, _, _ = s.runner.Status()
-		}
-		if running {
-			writeAPIError(w, http.StatusConflict, fmt.Errorf("stop the current tunnel before switching the local runner"))
-			return
-		}
-	}
+	// Tunnels run independently per profile, so switching the active profile
+	// (which legacy endpoints and the top-level config mirror) no longer
+	// requires stopping anything.
 	cfg, err := s.cfgMgr.ActivateTunnelProfile(key)
 	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
-	writeJSON(w, TunnelsResponse{ActiveTunnelKey: cfg.ActiveTunnelKey, Tunnels: cfg.Tunnels})
+	writeJSON(w, s.tunnelsResponse(cfg))
 }
 
 func (s *Server) handleTunnelStatus(w http.ResponseWriter, r *http.Request, key string) {
@@ -998,11 +1041,12 @@ func (s *Server) handleTunnelStatus(w http.ResponseWriter, r *http.Request, key 
 		writeAPIError(w, http.StatusNotFound, fmt.Errorf("tunnel profile %q not found", key))
 		return
 	}
-	if cfg.ActiveTunnelKey != key {
-		writeJSON(w, StatusResponse{Running: false, Status: "inactive", Protocol: ""})
+	if s.runner == nil {
+		writeJSON(w, StatusResponse{Running: false, Status: "unavailable"})
 		return
 	}
-	s.writeRunnerStatus(w)
+	st, _ := s.runner.ProfileStatus(key)
+	writeJSON(w, statusResponseFrom(st))
 }
 
 func (s *Server) handleTunnelControl(w http.ResponseWriter, r *http.Request, key string) {
@@ -1015,14 +1059,14 @@ func (s *Server) handleTunnelControl(w http.ResponseWriter, r *http.Request, key
 		writeAPIError(w, http.StatusNotFound, fmt.Errorf("tunnel profile %q not found", key))
 		return
 	}
-	if cfg.ActiveTunnelKey != key {
-		writeAPIError(w, http.StatusConflict, fmt.Errorf("activate this tunnel as the local runner before controlling it"))
-		return
-	}
-	s.handleControl(w, r)
+	s.handleControlFor(w, r, key)
 }
 
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	s.writeRunnerStatus(w)
 }
 
@@ -1060,7 +1104,12 @@ func (s *Server) handleControl(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	// Legacy endpoint: controls the active profile.
+	s.handleControlFor(w, r, "")
+}
 
+// handleControlFor starts or stops the tunnel of one profile (""= active).
+func (s *Server) handleControlFor(w http.ResponseWriter, r *http.Request, key string) {
 	var req struct {
 		Action string `json:"action"`
 	}
@@ -1070,19 +1119,22 @@ func (s *Server) handleControl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var err error
+	label := key
+	if label == "" {
+		label = "active"
+	}
+
 	switch req.Action {
 	case "start":
-		logger.Sugar.Infof("Starting tunnel (requested by %s)", r.RemoteAddr)
-		err = s.runner.Start()
-		if err != nil {
-			logger.Sugar.Errorf("Failed to start tunnel: %v", err)
+		logger.Sugar.Infof("Starting tunnel %q (requested by %s)", label, r.RemoteAddr)
+		if err := s.runner.StartProfile(key); err != nil {
+			logger.Sugar.Errorf("Failed to start tunnel %q: %v", label, err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		logger.Sugar.Info("Tunnel started successfully")
+		logger.Sugar.Infof("Tunnel %q started successfully", label)
 	case "stop":
-		logger.Sugar.Infof("Stopping tunnel (requested by %s)", r.RemoteAddr)
+		logger.Sugar.Infof("Stopping tunnel %q (requested by %s)", label, r.RemoteAddr)
 		// For stop action, respond immediately and stop asynchronously
 		// This prevents the client from getting "Failed to fetch" when the tunnel shuts down
 		resp := controlResponsePool.Get()
@@ -1099,10 +1151,10 @@ func (s *Server) handleControl(w http.ResponseWriter, r *http.Request) {
 			logger.Sugar.Errorf("Failed to encode stop response: %v", encodeErr)
 		}
 		go func() {
-			if stopErr := s.runner.Stop(); stopErr != nil {
-				logger.Sugar.Errorf("Error stopping tunnel: %v", stopErr)
+			if stopErr := s.runner.StopProfile(key); stopErr != nil {
+				logger.Sugar.Errorf("Error stopping tunnel %q: %v", label, stopErr)
 			} else {
-				logger.Sugar.Info("Tunnel stopped successfully")
+				logger.Sugar.Infof("Tunnel %q stopped successfully", label)
 			}
 		}()
 		return
@@ -1131,6 +1183,10 @@ func (s *Server) handleI18n(w http.ResponseWriter, r *http.Request) {
 	lang := r.URL.Path[len("/api/i18n/"):]
 	if lang == "" {
 		lang = "en"
+	}
+	if !isValidLangCode(lang) {
+		http.Error(w, "Language not found", http.StatusNotFound)
+		return
 	}
 
 	// Read the corresponding TOML file
@@ -1163,6 +1219,21 @@ func (s *Server) handleI18n(w http.ResponseWriter, r *http.Request) {
 		logger.Sugar.Errorf("Failed to encode i18n response for %s: %v", lang, encodeErr)
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
+}
+
+// isValidLangCode accepts short locale codes like "en", "zh", "zh-cn".
+func isValidLangCode(lang string) bool {
+	if len(lang) == 0 || len(lang) > 16 {
+		return false
+	}
+	for _, r := range lang {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r == '-', r == '_':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 // handleLogStream streams logs to client using Server-Sent Events (SSE)
@@ -1215,6 +1286,11 @@ func (s *Server) handleLogStream(w http.ResponseWriter, r *http.Request) {
 		case <-ctx.Done():
 			logger.Sugar.Infof("Log stream client disconnected: %s", r.RemoteAddr)
 			return
+		case <-s.shutdownC:
+			// Server is shutting down; close the stream so http.Server.Shutdown
+			// does not wait for its full timeout.
+			logger.Sugar.Infof("Log stream closed for shutdown: %s", r.RemoteAddr)
+			return
 		case <-heartbeatTicker.C:
 			// Send SSE comment as heartbeat to detect dead connections
 			_, err := w.Write([]byte(": heartbeat\n\n"))
@@ -1244,6 +1320,10 @@ func (s *Server) handleLogStream(w http.ResponseWriter, r *http.Request) {
 
 // handleRecentLogs returns recent logs from the circular buffer
 func (s *Server) handleRecentLogs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	broadcaster := logger.GetBroadcaster()
 	if broadcaster == nil {
 		logger.Sugar.Error("Log broadcaster not initialized")
@@ -1268,6 +1348,10 @@ func (s *Server) handleRecentLogs(w http.ResponseWriter, r *http.Request) {
 
 // handleVersion returns version information
 func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	resp := versionResponsePool.Get()
 	defer versionResponsePool.Put(resp)
 

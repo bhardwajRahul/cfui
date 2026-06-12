@@ -825,6 +825,11 @@ input, select, textarea {
     background: var(--state-info-soft);
 }
 
+.tunnel-profile-badge[data-state="error"] {
+    color: var(--state-error);
+    background: var(--state-error-soft);
+}
+
 .tunnel-profile-badge[hidden],
 .tunnel-profile-runner-btn[hidden] {
     display: none;
@@ -833,8 +838,13 @@ input, select, textarea {
 .tunnel-profile-item__actions {
     display: flex;
     align-items: center;
+    gap: var(--gap-2);
     padding: var(--gap-2);
     border-left: 1px solid var(--border);
+}
+
+.tunnel-profile-power-btn {
+    min-width: 88px;
 }
 
 .tunnel-profile-runner-btn {
@@ -859,12 +869,14 @@ input, select, textarea {
 
     .tunnel-profile-item__actions {
         justify-content: flex-start;
+        flex-wrap: wrap;
         border-top: 1px solid var(--border);
         border-left: 0;
     }
 
+    .tunnel-profile-power-btn,
     .tunnel-profile-runner-btn {
-        width: 100%;
+        flex: 1 1 120px;
     }
 
     .tunnel-profile-bar .btn-row .btn {

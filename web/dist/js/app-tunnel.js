@@ -17,10 +17,11 @@
     }
 
     function fieldsChangedWhileRunning() {
-        if (!state.isRunning || !state.runningSig) return false;
-        if (selectedTunnelKey() !== activeTunnelKey()) return false;
+        const key = selectedTunnelKey();
+        const sig = state.runningSigs[key];
+        if (!state.isRunning || !sig) return false;
         const cur = configSignature(readConfigFromForm());
-        return cur !== state.runningSig;
+        return cur !== sig;
     }
 
     function numberOr(value, fallback) {
@@ -180,7 +181,11 @@
         const pill = $('status-pill');
         if (!pill) return;
         pill.setAttribute('data-state', pillState);
-        pill.querySelector('.text').textContent = text;
+        const textEl = pill.querySelector('.text');
+        /* Drop the static i18n binding so a locale switch doesn't reset the
+           live text to "Checking..." until the next poll. */
+        textEl.removeAttribute('data-i18n');
+        textEl.textContent = text;
     }
 
     /* ---- Tunnel error alert ---- */
@@ -209,19 +214,21 @@
 
     async function restartTunnel() {
         const btn = $('restart-now');
+        const key = encodeURIComponent(selectedTunnelKey());
         setBusy(btn, true, t('stopping'));
         try {
-            await apiSend('/control', 'POST', { action: 'stop' });
+            await apiSend(`/tunnels/${key}/control`, 'POST', { action: 'stop' });
             await sleep(1200);
             setBusy(btn, true, t('starting'));
             /* Re-save current config before restart */
             await saveConfig({ showFeedback: false, source: 'button' });
-            await apiSend('/control', 'POST', { action: 'start' });
+            await apiSend(`/tunnels/${key}/control`, 'POST', { action: 'start' });
             toast.ok(t('tunnel_restarted'));
         } catch (err) {
             toast.err(err.message);
         } finally {
             setBusy(btn, false);
+            delete state.runningSigs[selectedTunnelKey()];
             $('restart-hint').hidden = true;
             setTimeout(fetchStatus, 800);
         }
@@ -231,15 +238,20 @@
 
     async function fetchStatus() {
         try {
-            const data = await apiGet('/status');
+            const data = await apiGet('/tunnels');
             state.statusFailCount = 0;
+            state.tunnelStatuses = data.statuses || {};
+            if (data.active_tunnel_key && state.config) {
+                state.config.active_tunnel_key = data.active_tunnel_key;
+            }
+            const sel = state.tunnelStatuses[selectedTunnelKey()] || {};
             const prev = state.status;
-            state.status = data.status;
-            state.isRunning = data.running;
-            state.tunnelProtocol = data.protocol || '';
-            state.lastError = data.error || '';
+            state.status = sel.status || 'stopped';
+            state.isRunning = !!sel.running;
+            state.tunnelProtocol = sel.protocol || '';
+            state.lastError = sel.error || '';
             if (prev !== state.status && prev !== 'unknown') {
-                window.cfui.addLog({ key: 'status_changed', params: { status: data.status } }, 'system');
+                window.cfui.addLog({ key: 'status_changed', params: { status: state.status } }, 'system');
             }
             updateStatusUI();
         } catch {
@@ -248,69 +260,86 @@
         }
     }
 
+    function runningTunnelCount() {
+        return Object.values(state.tunnelStatuses || {}).filter((s) => s && s.running).length;
+    }
+
     function updateStatusUI() {
         const protoText = state.tunnelProtocol && state.tunnelProtocol !== 'auto'
             ? ` · ${state.tunnelProtocol.toUpperCase()}`
             : '';
 
+        /* The alert banner reflects the selected tunnel. */
+        if (state.isRunning) {
+            hideTunnelAlert();
+        } else if (state.status === 'error' && state.lastError) {
+            showTunnelAlert(state.lastError);
+        }
+
+        /* Header pill: selected tunnel state, or an aggregate when several
+           local tunnels exist. */
+        const localProfiles = tunnelProfiles().filter((p) => p.local_enabled !== false);
+        const running = runningTunnelCount();
+        const anyError = Object.values(state.tunnelStatuses || {}).some((s) => s && s.status === 'error');
         if (state.statusFailCount >= 3) {
             setStatusPill('offline', t('status_offline'));
+        } else if (localProfiles.length > 1) {
+            const pillState = running > 0 ? 'ok' : (anyError ? 'error' : 'warn');
+            setStatusPill(pillState, t('tunnels_running_ratio', { n: running, m: localProfiles.length }));
         } else if (state.isRunning) {
             setStatusPill('ok', t('status_running') + protoText);
-            hideTunnelAlert();
         } else if (state.status === 'error') {
             setStatusPill('error', t('status_error'));
-            if (state.lastError) showTunnelAlert(state.lastError);
         } else {
             setStatusPill('warn', t('status_stopped'));
         }
 
-        /* Action button */
+        /* Action button controls the selected tunnel */
         const btn = $('action-btn');
         if (btn) {
-            const selectedIsActive = selectedTunnelKey() === activeTunnelKey();
             btn.setAttribute('data-action', state.isRunning ? 'stop' : 'start');
             btn.classList.toggle('btn--danger', state.isRunning);
             btn.classList.toggle('btn--primary', !state.isRunning);
             btn.querySelector('.text').textContent = t(state.isRunning ? 'stop_tunnel' : 'start_tunnel');
-            btn.disabled = !selectedIsActive;
-            btn.title = selectedIsActive ? (btn.getAttribute('data-default-title') || '') : t('activate_tunnel_first');
         }
 
-        /* Record running signature for restart-hint detection */
-        if (state.isRunning) state.runningSig = configSignature(readConfigFromForm());
+        /* Capture the running config signature once per run so the
+           restart-required hint compares against start-time values. */
+        const selKey = selectedTunnelKey();
+        if (state.isRunning) {
+            if (!state.runningSigs[selKey]) state.runningSigs[selKey] = configSignature(readConfigFromForm());
+        } else {
+            delete state.runningSigs[selKey];
+        }
         updateRestartHint();
         updateTunnelProfileUI();
     }
 
     /* ---- Start / Stop ---- */
 
-    async function onActionClick() {
-        const btn = $('action-btn');
-        if (selectedTunnelKey() !== activeTunnelKey()) {
-            toast.warn(t('activate_tunnel_first'));
-            return;
-        }
-        const action = btn.getAttribute('data-action');
+    async function controlTunnel(btn, key, action) {
         if (action === 'start') {
-            if (!$('token-input').value.trim()) {
+            const editingThis = key === selectedTunnelKey();
+            const profile = tunnelProfiles().find((p) => p.key === key);
+            const token = editingThis ? $('token-input').value.trim() : (profile?.token || '');
+            if (!token) {
                 toast.err(t('error_token_required'));
+                if (!editingThis) selectTunnelProfile(key);
                 $('token-input').focus();
                 return;
             }
-            const cfg = readConfigFromForm();
-            const needsSave = isLocalConfigDirty(cfg);
-            if (needsSave || state.pendingConfigSave) {
+            if (editingThis && (isLocalConfigDirty() || state.pendingConfigSave)) {
                 setBusy(btn, true, t('saving'));
-                try { await (needsSave ? saveConfig({ showFeedback: false, source: 'button' }) : state.pendingConfigSave); } catch { /* */ }
+                try { await saveConfig({ showFeedback: false, source: 'button' }); } catch { /* */ }
                 setBusy(btn, false);
             }
         }
         setBusy(btn, true, t(action === 'start' ? 'starting' : 'stopping'));
         try {
-            await apiSend('/control', 'POST', { action });
+            await apiSend(`/tunnels/${encodeURIComponent(key)}/control`, 'POST', { action });
             toast.ok(t(action === 'start' ? 'tunnel_start_requested' : 'tunnel_stop_requested'));
-            if (action === 'start') hideTunnelAlert();
+            if (action === 'start' && key === selectedTunnelKey()) hideTunnelAlert();
+            if (action === 'start') delete state.runningSigs[key];
             setTimeout(fetchStatus, 500);
         } catch (err) {
             if (action === 'stop') {
@@ -322,6 +351,11 @@
         } finally {
             setBusy(btn, false);
         }
+    }
+
+    async function onActionClick() {
+        const btn = $('action-btn');
+        await controlTunnel(btn, selectedTunnelKey(), btn.getAttribute('data-action'));
     }
 
     function tunnelProfiles(cfg = state.config) {
@@ -421,6 +455,7 @@
         const badges = document.createElement('span');
         badges.className = 'tunnel-profile-badges';
         badges.append(
+            tunnelProfileBadge('status', t('status_stopped')),
             tunnelProfileBadge('runner', t('active_local_tunnel')),
             tunnelProfileBadge('editing', t('editing_tunnel_profile'))
         );
@@ -428,6 +463,25 @@
 
         const actions = document.createElement('div');
         actions.className = 'tunnel-profile-item__actions';
+
+        const power = document.createElement('button');
+        power.type = 'button';
+        power.className = 'btn btn--sm tunnel-profile-power-btn';
+        power.dataset.action = 'start';
+        const powerSpinner = document.createElement('span');
+        powerSpinner.className = 'spinner';
+        powerSpinner.setAttribute('aria-hidden', 'true');
+        const powerText = document.createElement('span');
+        powerText.className = 'text';
+        powerText.textContent = t('start_tunnel');
+        power.append(powerSpinner, powerText);
+        power.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const btn = e.currentTarget;
+            controlTunnel(btn, profile.key, btn.dataset.action);
+        });
+        actions.appendChild(power);
+
         const activate = document.createElement('button');
         activate.type = 'button';
         activate.className = 'btn btn--sm tunnel-profile-runner-btn';
@@ -460,12 +514,6 @@
         const active = activeTunnelProfile();
         const selected = selectedTunnelProfile();
         const isActive = !!selected && selected.key === active?.key;
-        const pill = $('active-tunnel-pill');
-        if (pill) {
-            pill.setAttribute('data-state', state.isRunning ? 'ok' : 'neutral');
-            const text = pill.querySelector('.text');
-            if (text) text.textContent = `${t('active_local_tunnel')}: ${active?.name || active?.key || 'default'}`;
-        }
         const activate = $('activate-tunnel-profile');
         if (activate) {
             activate.hidden = isActive;
@@ -475,11 +523,6 @@
         if (del) {
             del.disabled = isActive || tunnelProfiles().length <= 1;
             del.title = isActive ? t('cannot_delete_active_tunnel') : '';
-        }
-        const action = $('action-btn');
-        if (action && selected) {
-            action.disabled = !isActive;
-            action.title = isActive ? (action.getAttribute('data-default-title') || '') : t('activate_tunnel_first');
         }
         syncTunnelProfileListState(active, selected);
     }
@@ -491,22 +534,50 @@
             const key = item.dataset.key;
             const isRunner = key === activeKey;
             const isSelected = key === selectedKey;
+            const st = (state.tunnelStatuses || {})[key] || {};
             item.dataset.activeRunner = String(isRunner);
             item.dataset.selected = String(isSelected);
 
             const summary = item.querySelector('.tunnel-profile-item__summary');
             if (summary) summary.setAttribute('aria-pressed', String(isSelected));
 
+            const statusBadge = item.querySelector('.tunnel-profile-badge[data-role="status"]');
+            if (statusBadge) {
+                if (st.running) {
+                    const proto = st.protocol && st.protocol !== 'auto' ? ` · ${st.protocol.toUpperCase()}` : '';
+                    statusBadge.textContent = t('status_running') + proto;
+                    statusBadge.dataset.state = 'ok';
+                    statusBadge.title = '';
+                } else if (st.status === 'error') {
+                    statusBadge.textContent = t('status_error');
+                    statusBadge.dataset.state = 'error';
+                    statusBadge.title = st.error || '';
+                } else {
+                    statusBadge.textContent = t('status_stopped');
+                    statusBadge.dataset.state = 'neutral';
+                    statusBadge.title = '';
+                }
+            }
+
             const runner = item.querySelector('.tunnel-profile-badge[data-role="runner"]');
             if (runner) {
                 runner.hidden = !isRunner;
-                runner.dataset.state = state.isRunning ? 'ok' : 'info';
+                runner.dataset.state = 'info';
             }
 
             const editing = item.querySelector('.tunnel-profile-badge[data-role="editing"]');
             if (editing) {
                 editing.hidden = !isSelected;
                 editing.dataset.state = 'neutral';
+            }
+
+            const power = item.querySelector('.tunnel-profile-power-btn');
+            if (power && power.getAttribute('aria-busy') !== 'true') {
+                const action = st.running ? 'stop' : 'start';
+                power.dataset.action = action;
+                power.classList.toggle('btn--danger', st.running);
+                const powerText = power.querySelector('.text');
+                if (powerText) powerText.textContent = t(st.running ? 'stop_tunnel' : 'start_tunnel');
             }
 
             const activate = item.querySelector('.tunnel-profile-runner-btn');
@@ -522,7 +593,20 @@
         state.selectedTunnelKey = nextKey || activeTunnelKey();
         writeConfigToForm(state.config);
         state.localConfigSignature = localConfigSignature(readConfigFromForm());
+        applySelectedStatus();
         updateRestartHint();
+    }
+
+    /* applySelectedStatus refreshes the header pill and action button from the
+       cached per-tunnel statuses when the selection changes. */
+    function applySelectedStatus() {
+        const sel = (state.tunnelStatuses || {})[selectedTunnelKey()] || {};
+        state.status = sel.status || 'stopped';
+        state.isRunning = !!sel.running;
+        state.tunnelProtocol = sel.protocol || '';
+        state.lastError = sel.error || '';
+        hideTunnelAlert();
+        updateStatusUI();
     }
 
     function selectTunnelProfile(key) {
@@ -584,9 +668,12 @@
     async function deleteSelectedTunnel() {
         const selected = selectedTunnelProfile();
         if (!selected || selected.key === activeTunnelKey()) return;
+        const st = (state.tunnelStatuses || {})[selected.key] || {};
+        let message = t('delete_tunnel_profile_message', { name: selected.name || selected.key });
+        if (st.running) message += ' ' + t('delete_tunnel_running_note');
         const ok = await window.cfui.confirm({
             title: t('delete_tunnel_profile'),
-            message: t('delete_tunnel_profile_message', { name: selected.name || selected.key }),
+            message,
             okText: t('delete'),
         });
         if (!ok) return;

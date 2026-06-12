@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cfui/internal/cloudflared"
 	"cfui/internal/config"
 	"cfui/internal/logger"
 	"cfui/internal/server"
@@ -12,7 +13,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"syscall"
 	"time"
@@ -86,6 +86,15 @@ func main() {
 	logger.Sugar.Info("Configuration manager initialized")
 
 	runner := service.NewRunner(cfgMgr)
+
+	// Claim SIGTERM/SIGINT before any tunnel can start: the embedded
+	// cloudflared installs its own signal handlers per tunnel run, and with
+	// several runs they crash the process on shutdown (double close of the
+	// shared shutdown channel). cfui owns process signals exclusively;
+	// internal/cloudflared keeps re-asserting this registration.
+	shutdown := make(chan os.Signal, 1)
+	cloudflared.OwnProcessSignals(shutdown, os.Interrupt, syscall.SIGTERM)
+
 	runner.Initialize()
 	logger.Sugar.Info("Tunnel runner initialized")
 
@@ -111,15 +120,19 @@ func main() {
 	serveAddr := fmt.Sprintf("%s:%s", bindHost, port)
 
 	fmt.Printf("Cloudflared Web Controller %s\n", version.GetFullVersion())
-	fmt.Printf("Server listening on %s", serveAddr)
+	fmt.Printf("Server listening on %s\n", serveAddr)
 	fmt.Printf("Local access: http://localhost:%s\n", port)
 	fmt.Printf("Network access: http://<your-ip>:%s\n", port)
 	logger.Sugar.Infof("Server starting on %s", serveAddr)
 
-	// Create HTTP server with explicit configuration
+	// Create HTTP server with explicit configuration.
+	// WriteTimeout stays unset because /api/logs/stream keeps an SSE
+	// response open indefinitely.
 	httpServer := &http.Server{
-		Addr:    serveAddr,
-		Handler: srv.GetHandler(),
+		Addr:              serveAddr,
+		Handler:           srv.GetHandler(),
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       2 * time.Minute,
 	}
 
 	// Channel to signal when server has shut down
@@ -130,10 +143,6 @@ func main() {
 		serverErrors <- httpServer.ListenAndServe()
 	}()
 
-	// Setup signal handler for graceful shutdown
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
-
 	// Block until we receive a signal or server error
 	select {
 	case sig := <-shutdown:
@@ -143,8 +152,10 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Shutdown HTTP server gracefully
+		// Shutdown HTTP server gracefully. Close long-lived SSE streams
+		// first so Shutdown doesn't stall until its timeout.
 		logger.Sugar.Info("Shutting down HTTP server...")
+		srv.PrepareShutdown()
 		if err := httpServer.Shutdown(ctx); err != nil {
 			logger.Sugar.Errorf("HTTP server shutdown error: %v", err)
 			httpServer.Close()

@@ -29,7 +29,7 @@ other = "Editing tunnel"
 other = "Tunnel profiles"
 
 [tunnel_profiles_help]
-other = "Select a tunnel to edit. Use the row action to choose the local runner."
+other = "Select a tunnel to edit. Each tunnel can be started and stopped independently and may run at the same time."
 
 [editing_tunnel_profile]
 other = "Editing"
@@ -1901,3 +1901,10 @@ other = "Back"
 
 [next]
 other = "Next"
+
+
+[delete_tunnel_running_note]
+other = "This tunnel is currently running and will be stopped."
+
+[tunnels_running_ratio]
+other = "{n}/{m} running"

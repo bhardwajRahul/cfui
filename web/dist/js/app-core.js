@@ -44,7 +44,10 @@
         tunnelProtocol: '',
         lastError: '',
         tunnelAlertDismissed: null,
-        runningSig: null,
+        /** @type {Record<string,{running:boolean,status:string,protocol:string,error?:string}>} */
+        tunnelStatuses: {},
+        /** Per-tunnel config signature captured while running (restart hint). */
+        runningSigs: {},
     };
 
     /* ---- i18n ---- */

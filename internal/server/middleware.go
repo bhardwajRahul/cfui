@@ -4,6 +4,7 @@ import (
 	"cfui/internal/logger"
 	"net/http"
 	"runtime/debug"
+	"strings"
 )
 
 // PanicRecoveryMiddleware recovers from panics in HTTP handlers
@@ -24,12 +25,26 @@ func PanicRecoveryMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// LoggingMiddleware logs all HTTP requests
+// LoggingMiddleware logs all HTTP requests. High-frequency polling endpoints
+// are logged at debug level so they don't flood the log file (and the UI's
+// live log panel, which would otherwise echo its own polling forever).
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Sugar.Infof("%s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+		if r.Method == http.MethodGet && isPollingPath(r.URL.Path) {
+			logger.Sugar.Debugf("%s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+		} else {
+			logger.Sugar.Infof("%s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func isPollingPath(path string) bool {
+	switch path {
+	case "/api/status", "/api/ddns/status", "/api/logs/recent", "/api/s3/files/sync":
+		return true
+	}
+	return strings.HasPrefix(path, "/api/tunnels/") && strings.HasSuffix(path, "/status")
 }
 
 // ChainMiddleware chains multiple middleware together
