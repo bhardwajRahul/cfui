@@ -300,15 +300,6 @@
             setStatusPill('warn', t('status_stopped'));
         }
 
-        /* Action button controls the selected tunnel */
-        const btn = $('action-btn');
-        if (btn) {
-            btn.setAttribute('data-action', state.isRunning ? 'stop' : 'start');
-            btn.classList.toggle('btn--danger', state.isRunning);
-            btn.classList.toggle('btn--primary', !state.isRunning);
-            btn.querySelector('.text').textContent = t(state.isRunning ? 'stop_tunnel' : 'start_tunnel');
-        }
-
         /* Capture the running config signature once per run so the
            restart-required hint compares against start-time values. */
         const selKey = selectedTunnelKey();
@@ -357,11 +348,6 @@
         } finally {
             setBusy(btn, false);
         }
-    }
-
-    async function onActionClick() {
-        const btn = $('action-btn');
-        await controlTunnel(btn, selectedTunnelKey(), btn.getAttribute('data-action'));
     }
 
     function tunnelProfiles(cfg = state.config) {
@@ -687,7 +673,6 @@
     /* ---- Wire ---- */
 
     function wireTunnel() {
-        $('action-btn')?.addEventListener('click', onActionClick);
         $('tunnel-profile-select')?.addEventListener('change', onTunnelProfileChange);
         $('add-tunnel-profile')?.addEventListener('click', addTunnelProfile);
         $('delete-tunnel-profile')?.addEventListener('click', deleteSelectedTunnel);
@@ -719,11 +704,6 @@
         $('autostart-toggle')?.addEventListener('change', sav('toggle'));
         $('autorestart-toggle')?.addEventListener('change', sav('toggle'));
         $('no-tls-verify-toggle')?.addEventListener('change', async () => { await maybeConfirmTLS(); saveConfig({ source: 'toggle' }); });
-
-        /* Keyboard shortcut */
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); onActionClick(); }
-        });
 
         document.addEventListener('localechange', () => {
             renderTunnelProfileSelector();

@@ -127,12 +127,6 @@ other = "起動時に自動開始"
 [autorestart]
 other = "障害時に自動再起動"
 
-[start_tunnel]
-other = "現在のトンネルを開始"
-
-[stop_tunnel]
-other = "現在のトンネルを停止"
-
 [start_this_tunnel]
 other = "このトンネルを開始"
 
@@ -1091,9 +1085,6 @@ other = "ダウンロード"
 
 [log_new_entries]
 other = "新しいログ"
-
-[action_shortcut_hint]
-other = "Ctrl/⌘ + Enter"
 
 [apply]
 other = "適用"

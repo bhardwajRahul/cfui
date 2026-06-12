@@ -127,12 +127,6 @@ other = "Auto-start on launch"
 [autorestart]
 other = "Auto-restart on failure"
 
-[start_tunnel]
-other = "Start Current Tunnel"
-
-[stop_tunnel]
-other = "Stop Current Tunnel"
-
 [start_this_tunnel]
 other = "Start This Tunnel"
 
@@ -1091,9 +1085,6 @@ other = "Download"
 
 [log_new_entries]
 other = "New logs"
-
-[action_shortcut_hint]
-other = "Ctrl/⌘ + Enter"
 
 [apply]
 other = "Apply"

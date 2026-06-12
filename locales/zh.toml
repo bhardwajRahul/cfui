@@ -127,12 +127,6 @@ other = "启动时自动运行"
 [autorestart]
 other = "失败时自动重启"
 
-[start_tunnel]
-other = "启动当前隧道"
-
-[stop_tunnel]
-other = "停止当前隧道"
-
 [start_this_tunnel]
 other = "启动此隧道"
 
@@ -1091,9 +1085,6 @@ other = "下载"
 
 [log_new_entries]
 other = "新日志"
-
-[action_shortcut_hint]
-other = "Ctrl/⌘ + Enter"
 
 [apply]
 other = "应用"
