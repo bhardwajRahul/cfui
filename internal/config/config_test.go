@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"cfui/internal/persist"
@@ -506,7 +505,7 @@ func TestActivateTunnelProfileUpdatesLegacyConfigSurface(t *testing.T) {
 	}
 }
 
-func TestDeleteActiveTunnelProfileRejected(t *testing.T) {
+func TestDeleteActiveTunnelProfileSelectsNextDefault(t *testing.T) {
 	dir := t.TempDir()
 	mgr, err := NewManager(dir)
 	if err != nil {
@@ -549,13 +548,15 @@ func TestDeleteActiveTunnelProfileRejected(t *testing.T) {
 		t.Fatalf("Save config: %v", err)
 	}
 
-	_, err = mgr.DeleteTunnelProfile("home")
-	if err == nil || !strings.Contains(err.Error(), "active tunnel profile") {
-		t.Fatalf("expected active profile delete to be rejected, got %v", err)
+	got, err := mgr.DeleteTunnelProfile("home")
+	if err != nil {
+		t.Fatalf("DeleteTunnelProfile: %v", err)
 	}
-	got := mgr.Get()
-	if got.ActiveTunnelKey != "home" || len(got.Tunnels) != 2 {
-		t.Fatalf("active profile delete mutated config: %#v", got)
+	if got.ActiveTunnelKey != "office" || len(got.Tunnels) != 1 {
+		t.Fatalf("active profile delete did not choose next default: %#v", got)
+	}
+	if got.Token != "office-token" {
+		t.Fatalf("legacy tunnel fields did not mirror next default: %#v", got)
 	}
 }
 

@@ -14,14 +14,14 @@ The web UI is built into the binary. Configuration is stored in a local SQLite d
 
 - **Local Cloudflare Tunnel runner**
   - Manage multiple Cloudflare Tunnel profiles from the browser.
-  - Paste Cloudflare Tunnel tokens and edit non-active profiles without affecting the tunnel currently used by the local runner.
-  - Start or stop only the active local runner profile. Switching the active local runner is blocked while a tunnel is running.
+  - Paste Cloudflare Tunnel tokens and edit each saved profile independently.
+  - Start or stop each tunnel profile independently; multiple profiles can run at the same time.
   - Configure auto-start, auto-restart, protocol, region, retries, graceful shutdown, metrics, post-quantum mode, edge IP version, edge bind address, TLS verification, and extra cloudflared arguments.
   - Show tunnel status, active protocol, last error, and version/build information.
 
 - **Remote Tunnel Manager**
   - Optional feature for managing Cloudflare-hosted tunnel ingress configuration.
-  - Select any saved tunnel profile for remote management without switching the active local runner.
+  - Select any saved tunnel profile for remote management.
   - Load an existing tunnel by Account ID and Tunnel ID. API credentials are shared, while Account ID and Tunnel ID can be stored per tunnel profile.
   - Read the Cloudflare Tunnel name through the Cloudflare API and apply it to a profile when the local profile is still using an auto-generated name.
   - Add, edit, and delete public hostname rules with hostname, path, service type, service URL, host header, origin server name, and TLS verification options.
@@ -41,7 +41,7 @@ The web UI is built into the binary. Configuration is stored in a local SQLite d
   - Includes S3 connection testing and WebDAV connection testing.
   - Includes a browser file panel for listing, uploading, downloading, deleting, renaming, and creating folders.
   - WebDAV can be served from the main HTTP service or from a dedicated HTTP port. These modes are mutually exclusive.
-  - Dedicated WebDAV mode supports manual start/stop, optional auto-start, direct-port endpoints, custom public URLs, and Cloudflare Tunnel rule handoff through the active local runner profile.
+  - Dedicated WebDAV mode supports manual start/stop, optional auto-start, direct-port endpoints, custom public URLs, and Cloudflare Tunnel rule handoff through the default tunnel profile.
   - Browser `GET` requests on a WebDAV path show a read-only file listing or file download. WebDAV methods such as `PROPFIND`, `PUT`, `DELETE`, `MKCOL`, `MOVE`, `COPY`, `LOCK`, and `UNLOCK` keep WebDAV behavior.
 
 - **MCP access**
@@ -151,19 +151,19 @@ http://localhost:14333
 2. Copy the tunnel token from the tunnel install command.
 3. Paste the token into a tunnel profile on the Tunnel Configuration page.
 4. Save the configuration.
-5. Use one profile as the local runner, then start the tunnel from the UI.
+5. Start the tunnel profile from the UI. Repeat for any other profiles you want to run.
 
 The local tunnel runner does not require Cloudflare API credentials. API credentials are only needed for Remote Tunnel Manager, DDNS, and optional R2 bucket management.
 
 ## Tunnel Profiles
 
-cfui can store multiple tunnel profiles. A tunnel profile contains the local runner token and the remote-management identity for one Cloudflare Tunnel.
+cfui can store multiple tunnel profiles. A tunnel profile contains the local cloudflared token and the remote-management identity for one Cloudflare Tunnel.
 
-- Only one profile can be the active local runner at a time.
-- Non-active profiles remain editable and can be selected in Remote Tunnel Manager.
-- Remote Tunnel Manager does not switch the local runner. It uses the selected profile's Account ID and Tunnel ID with the shared Cloudflare API credentials.
+- Each profile can be edited, started, stopped, and restarted independently.
+- Several local tunnel profiles can run at the same time when their settings do not conflict.
+- Remote Tunnel Manager uses the selected profile's Account ID and Tunnel ID with the shared Cloudflare API credentials.
 - If a profile's Account ID or Tunnel ID is blank, cfui tries to decode them from that profile's tunnel token.
-- S3 WebDAV Cloudflare Tunnel publishing always uses the active local runner profile.
+- S3 WebDAV Cloudflare Tunnel publishing uses the default tunnel profile retained for legacy/default integrations.
 
 ## Cloudflare API Permissions
 
@@ -288,7 +288,7 @@ ${LOG_DIR}
 
 Old `config.json` and legacy `app_configs` database data are migrated into structured SQLite tables automatically. A migrated `config.json` is renamed to `config.json.migrated`.
 
-Legacy single-tunnel settings are migrated into the default tunnel profile. Tunnel profiles are stored in the `tunnel_profiles` table, and the active local runner profile key is stored in app settings.
+Legacy single-tunnel settings are migrated into the default tunnel profile. Tunnel profiles are stored in the `tunnel_profiles` table, and the default profile key is stored in app settings for old single-tunnel endpoints and default integrations.
 
 ## API Overview
 
@@ -319,7 +319,7 @@ Optional module endpoints:
 - `/mcp`
 - `/webdav/*`
 
-Remote Tunnel Manager endpoints accept an optional `tunnel_key` query parameter, for example `/api/tunnel-manager/config?tunnel_key=office`, so remote ingress rules can be managed for a non-active profile. `GET /api/tunnel-manager/tunnel?tunnel_key=office` reads Cloudflare Tunnel metadata such as the tunnel name.
+Remote Tunnel Manager endpoints accept an optional `tunnel_key` query parameter, for example `/api/tunnel-manager/config?tunnel_key=office`, so remote ingress rules can be managed for any saved profile. `GET /api/tunnel-manager/tunnel?tunnel_key=office` reads Cloudflare Tunnel metadata such as the tunnel name.
 
 ## Development
 

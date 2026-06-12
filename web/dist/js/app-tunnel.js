@@ -265,6 +265,12 @@
     }
 
     function updateStatusUI() {
+        const selectedStatus = (state.tunnelStatuses || {})[selectedTunnelKey()] || {};
+        state.status = selectedStatus.status || 'stopped';
+        state.isRunning = !!selectedStatus.running;
+        state.tunnelProtocol = selectedStatus.protocol || '';
+        state.lastError = selectedStatus.error || '';
+
         const protoText = state.tunnelProtocol && state.tunnelProtocol !== 'auto'
             ? ` · ${state.tunnelProtocol.toUpperCase()}`
             : '';
@@ -391,22 +397,14 @@
         return profile.name || profile.key;
     }
 
-    function appendTunnelProfileOptionGroups(select, profiles, activeKey) {
+    function appendTunnelProfileOptions(select, profiles) {
         select.innerHTML = '';
-        const appendGroup = (label, items) => {
-            if (!items.length) return;
-            const group = document.createElement('optgroup');
-            group.label = label;
-            for (const profile of items) {
-                const opt = document.createElement('option');
-                opt.value = profile.key;
-                opt.textContent = profile.name || profile.key;
-                group.appendChild(opt);
-            }
-            select.appendChild(group);
-        };
-        appendGroup(t('active_local_tunnel'), profiles.filter((profile) => profile.key === activeKey));
-        appendGroup(t('other_tunnel_profiles'), profiles.filter((profile) => profile.key !== activeKey));
+        for (const profile of profiles) {
+            const opt = document.createElement('option');
+            opt.value = profile.key;
+            opt.textContent = profile.name || profile.key;
+            select.appendChild(opt);
+        }
     }
 
     function renderTunnelProfileSelector() {
@@ -414,7 +412,7 @@
         const profiles = tunnelProfiles();
         const current = selectedTunnelKey();
         if (select) {
-            appendTunnelProfileOptionGroups(select, profiles, activeTunnelKey());
+            appendTunnelProfileOptions(select, profiles);
             select.value = current;
         }
         renderTunnelProfileList(profiles);
@@ -456,7 +454,6 @@
         badges.className = 'tunnel-profile-badges';
         badges.append(
             tunnelProfileBadge('status', t('status_stopped')),
-            tunnelProfileBadge('runner', t('active_local_tunnel')),
             tunnelProfileBadge('editing', t('editing_tunnel_profile'))
         );
         summary.append(copy, badges);
@@ -473,7 +470,7 @@
         powerSpinner.setAttribute('aria-hidden', 'true');
         const powerText = document.createElement('span');
         powerText.className = 'text';
-        powerText.textContent = t('start_tunnel');
+        powerText.textContent = t('start_this_tunnel');
         power.append(powerSpinner, powerText);
         power.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -481,22 +478,6 @@
             controlTunnel(btn, profile.key, btn.dataset.action);
         });
         actions.appendChild(power);
-
-        const activate = document.createElement('button');
-        activate.type = 'button';
-        activate.className = 'btn btn--sm tunnel-profile-runner-btn';
-        const spinner = document.createElement('span');
-        spinner.className = 'spinner';
-        spinner.setAttribute('aria-hidden', 'true');
-        const text = document.createElement('span');
-        text.className = 'text';
-        text.textContent = t('use_for_local_runner');
-        activate.append(spinner, text);
-        activate.addEventListener('click', (e) => {
-            e.stopPropagation();
-            activateSelectedTunnel(e.currentTarget, profile.key);
-        });
-        actions.appendChild(activate);
 
         item.append(summary, actions);
         return item;
@@ -511,31 +492,22 @@
     }
 
     function updateTunnelProfileUI() {
-        const active = activeTunnelProfile();
         const selected = selectedTunnelProfile();
-        const isActive = !!selected && selected.key === active?.key;
-        const activate = $('activate-tunnel-profile');
-        if (activate) {
-            activate.hidden = isActive;
-            activate.disabled = !selected || isActive;
-        }
         const del = $('delete-tunnel-profile');
         if (del) {
-            del.disabled = isActive || tunnelProfiles().length <= 1;
-            del.title = isActive ? t('cannot_delete_active_tunnel') : '';
+            const onlyOne = tunnelProfiles().length <= 1;
+            del.disabled = onlyOne;
+            del.title = onlyOne ? t('cannot_delete_only_tunnel') : '';
         }
-        syncTunnelProfileListState(active, selected);
+        syncTunnelProfileListState(selected);
     }
 
-    function syncTunnelProfileListState(active = activeTunnelProfile(), selected = selectedTunnelProfile()) {
-        const activeKey = active?.key || activeTunnelKey();
+    function syncTunnelProfileListState(selected = selectedTunnelProfile()) {
         const selectedKey = selected?.key || selectedTunnelKey();
         document.querySelectorAll('.tunnel-profile-item').forEach((item) => {
             const key = item.dataset.key;
-            const isRunner = key === activeKey;
             const isSelected = key === selectedKey;
             const st = (state.tunnelStatuses || {})[key] || {};
-            item.dataset.activeRunner = String(isRunner);
             item.dataset.selected = String(isSelected);
 
             const summary = item.querySelector('.tunnel-profile-item__summary');
@@ -559,12 +531,6 @@
                 }
             }
 
-            const runner = item.querySelector('.tunnel-profile-badge[data-role="runner"]');
-            if (runner) {
-                runner.hidden = !isRunner;
-                runner.dataset.state = 'info';
-            }
-
             const editing = item.querySelector('.tunnel-profile-badge[data-role="editing"]');
             if (editing) {
                 editing.hidden = !isSelected;
@@ -577,13 +543,7 @@
                 power.dataset.action = action;
                 power.classList.toggle('btn--danger', st.running);
                 const powerText = power.querySelector('.text');
-                if (powerText) powerText.textContent = t(st.running ? 'stop_tunnel' : 'start_tunnel');
-            }
-
-            const activate = item.querySelector('.tunnel-profile-runner-btn');
-            if (activate) {
-                activate.hidden = isRunner;
-                activate.disabled = isRunner;
+                if (powerText) powerText.textContent = t(st.running ? 'stop_this_tunnel' : 'start_this_tunnel');
             }
         });
     }
@@ -613,22 +573,6 @@
         const select = $('tunnel-profile-select');
         if (select) select.value = key;
         onTunnelProfileChange(key);
-    }
-
-    async function activateSelectedTunnel(control, keyOverride = '') {
-        const key = selectExistingTunnelKey(keyOverride || selectedTunnelKey());
-        if (!key || key === activeTunnelKey()) return;
-        state.selectedTunnelKey = key;
-        setBusy(control, true, t('saving'));
-        try {
-            await apiSend(`/tunnels/${encodeURIComponent(key)}/activate-local`, 'POST', {});
-            await fetchConfig();
-            toast.ok(t('local_runner_updated'));
-        } catch (err) {
-            toast.err(err.message);
-        } finally {
-            setBusy(control, false);
-        }
     }
 
     async function addTunnelProfile() {
@@ -667,7 +611,7 @@
 
     async function deleteSelectedTunnel() {
         const selected = selectedTunnelProfile();
-        if (!selected || selected.key === activeTunnelKey()) return;
+        if (!selected) return;
         const st = (state.tunnelStatuses || {})[selected.key] || {};
         let message = t('delete_tunnel_profile_message', { name: selected.name || selected.key });
         if (st.running) message += ' ' + t('delete_tunnel_running_note');
@@ -679,7 +623,6 @@
         if (!ok) return;
         try {
             await apiSend(`/tunnels/${encodeURIComponent(selected.key)}`, 'DELETE');
-            state.selectedTunnelKey = activeTunnelKey();
             await fetchConfig();
             toast.ok(t('tunnel_profile_deleted'));
         } catch (err) {
@@ -746,7 +689,6 @@
     function wireTunnel() {
         $('action-btn')?.addEventListener('click', onActionClick);
         $('tunnel-profile-select')?.addEventListener('change', onTunnelProfileChange);
-        $('activate-tunnel-profile')?.addEventListener('click', (e) => activateSelectedTunnel(e.currentTarget));
         $('add-tunnel-profile')?.addEventListener('click', addTunnelProfile);
         $('delete-tunnel-profile')?.addEventListener('click', deleteSelectedTunnel);
         $('toggle-token')?.addEventListener('mousedown', (e) => e.preventDefault());

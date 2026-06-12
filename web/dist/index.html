@@ -127,7 +127,7 @@
                             <div class="tunnel-profile-head">
                                 <div class="tunnel-profile-title">
                                     <div id="tunnel-profile-heading" class="tunnel-profile-label" data-i18n="tunnel_profiles_label">Tunnel profiles</div>
-                                    <p class="help-text" data-i18n="tunnel_profiles_help">Select a tunnel to edit. Use the row action to choose the local runner.</p>
+                                    <p class="help-text" data-i18n="tunnel_profiles_help">Select a tunnel to edit. Each tunnel can be started and stopped independently and may run at the same time.</p>
                                 </div>
                                 <div class="btn-row">
                                     <button id="add-tunnel-profile" type="button" class="btn btn--sm" data-i18n="add_tunnel_profile">Add tunnel</button>
@@ -327,7 +327,7 @@
                     <div class="card-header">
                         <div class="card-header-text">
                             <h2 class="card-title" data-i18n="remote_tunnel_manager">Remote Tunnel Manager</h2>
-                            <p class="card-subtitle" data-i18n="remote_tunnel_manager_subtitle">Manage Cloudflare-hosted ingress rules independently from the local runner.</p>
+                            <p class="card-subtitle" data-i18n="remote_tunnel_manager_subtitle">Manage Cloudflare-hosted ingress rules for any saved tunnel profile.</p>
                         </div>
                         <span id="manager-status" class="pill" data-state="disabled">
                             <span class="dot"></span>
@@ -341,7 +341,7 @@
                                 <div class="form-field">
                                     <label for="manager-tunnel-select" data-i18n="remote_manager_tunnel_profile">Tunnel profile</label>
                                     <select id="manager-tunnel-select" class="form-select" aria-describedby="manager-tunnel-help-text manager-tunnel-summary"></select>
-                                    <p id="manager-tunnel-help-text" class="help-text" data-i18n="remote_manager_tunnel_help">Remote management can edit any tunnel profile without switching the local runner.</p>
+                                    <p id="manager-tunnel-help-text" class="help-text" data-i18n="remote_manager_tunnel_help">Choose which tunnel profile Remote Tunnel Manager edits.</p>
                                     <p id="manager-tunnel-summary" class="profile-summary" aria-live="polite"></p>
                                 </div>
                                 <label class="toggle" style="margin-bottom: 16px">
@@ -759,7 +759,7 @@
                                             <button id="s3-domain-apply" type="button" class="btn btn--sm" data-i18n="apply">Apply</button>
                                         </div>
                                         <div id="s3-domain-tunnel-panel" class="s3-domain-panel" hidden>
-                                            <p id="s3-dedicated-tunnel-profile-help" class="help-text" data-i18n="s3_tunnel_uses_active_runner">Cloudflare Tunnel publishing uses the active local runner tunnel.</p>
+                                            <p id="s3-dedicated-tunnel-profile-help" class="help-text" data-i18n="s3_tunnel_uses_active_runner">Cloudflare Tunnel publishing uses the default tunnel profile.</p>
                                             <div class="form-field">
                                                 <label for="s3-dedicated-tunnel-subdomain" data-i18n="subdomain">Subdomain</label>
                                                 <input type="text" id="s3-dedicated-tunnel-subdomain" class="input" placeholder="webdav" spellcheck="false" autocomplete="off">

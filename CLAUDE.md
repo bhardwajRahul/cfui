@@ -157,7 +157,7 @@ make version
 - `GET /api/tunnels` - List tunnel profiles + per-profile live `statuses` map
 - `POST /api/tunnels` - Create tunnel profile
 - `GET|PUT|DELETE /api/tunnels/{key}` - Manage one tunnel profile (DELETE stops its instance)
-- `POST /api/tunnels/{key}/activate-local` - Make profile the active (legacy/mirror) profile
+- `POST /api/tunnels/{key}/activate-local` - Make profile the default legacy/mirror profile
 - `GET /api/tunnels/{key}/status` - Per-tunnel live status
 - `POST /api/tunnels/{key}/control` - Start/stop one tunnel instance
 - `GET /api/i18n/{lang}` - Get translations (en, zh, ja)

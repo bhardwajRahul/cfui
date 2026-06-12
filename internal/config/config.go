@@ -65,7 +65,8 @@ type Config struct {
 	// Custom extra arguments (space-separated: "--key1 val1 --key2 val2")
 	ExtraArgs string `json:"extra_args"`
 
-	// ActiveTunnelKey points at the tunnel profile used by the local runner.
+	// ActiveTunnelKey is the legacy/default profile used by old single-tunnel
+	// endpoints and features that still need an implicit tunnel profile.
 	ActiveTunnelKey string `json:"active_tunnel_key"`
 
 	// Tunnels stores all configured Cloudflare Tunnel profiles. Top-level
@@ -579,9 +580,6 @@ func (m *Manager) DeleteTunnelProfile(key string) (Config, error) {
 	if len(cfg.Tunnels) <= 1 {
 		return Config{}, errors.New("cannot delete the only tunnel profile")
 	}
-	if cfg.ActiveTunnelKey == key {
-		return Config{}, errors.New("cannot delete the active tunnel profile")
-	}
 	next := cfg.Tunnels[:0]
 	deleted := false
 	for _, tunnel := range cfg.Tunnels {
@@ -595,6 +593,9 @@ func (m *Manager) DeleteTunnelProfile(key string) (Config, error) {
 		return Config{}, fmt.Errorf("tunnel profile %q not found", key)
 	}
 	cfg.Tunnels = next
+	if cfg.ActiveTunnelKey == key {
+		cfg.ActiveTunnelKey = cfg.Tunnels[0].Key
+	}
 	cfg = applyActiveTunnelToTopLevel(cfg)
 	if err := m.Save(cfg); err != nil {
 		return Config{}, err
