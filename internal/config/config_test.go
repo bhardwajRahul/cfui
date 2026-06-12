@@ -95,6 +95,9 @@ func TestNewManagerAutoCreatesDatabase(t *testing.T) {
 	if got := mgr.Get().SoftwareName; got != "cfui" {
 		t.Fatalf("default config not loaded, software_name = %q", got)
 	}
+	if got := mgr.Get().Tunnels[0].Name; got != "Tunnel 1" {
+		t.Fatalf("default tunnel profile should use neutral display name, got %q", got)
+	}
 
 	if _, err := os.Stat(persist.DBPath(dir)); err != nil {
 		t.Fatalf("expected database file to exist: %v", err)

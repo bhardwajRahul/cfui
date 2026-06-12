@@ -185,7 +185,7 @@ var (
 	TunnelProfilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "key", Type: field.TypeString, Unique: true},
-		{Name: "name", Type: field.TypeString, Default: "Default Tunnel"},
+		{Name: "name", Type: field.TypeString, Default: "Tunnel 1"},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "token", Type: field.TypeString, Default: ""},
 		{Name: "local_enabled", Type: field.TypeBool, Default: true},

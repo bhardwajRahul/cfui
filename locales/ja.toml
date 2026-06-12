@@ -29,13 +29,13 @@ other = "トンネル設定"
 other = "編集するトンネルを選択します。各トンネルは個別に起動・停止でき、同時に実行できます。"
 
 [active_local_tunnel]
-other = "デフォルトトンネル"
+other = "現在のトンネル"
 
 [other_tunnel_profiles]
 other = "その他のトンネル"
 
 [use_for_local_runner]
-other = "デフォルトトンネルに設定"
+other = "現在のトンネルに設定"
 
 [add_tunnel_profile]
 other = "トンネルを追加"
@@ -218,10 +218,10 @@ other = "トンネル設定"
 other = "Remote Tunnel Manager が編集するトンネル設定を選択します。"
 
 [remote_manager_profile_summary_active]
-other = "{name} を編集中です。これはデフォルトのトンネル設定です。"
+other = "{name} を編集中です。これは現在のトンネル設定です。"
 
 [remote_manager_profile_summary_inactive]
-other = "{name} を編集中です。デフォルトのトンネル設定は {active} です。"
+other = "{name} を編集中です。現在のトンネル設定は {active} です。"
 
 [manager_enable]
 other = "リモート管理を有効化"
@@ -380,13 +380,13 @@ other = "トンネルルールを削除しました"
 other = "開始または停止する前に、この設定を選択してください。"
 
 [cannot_delete_active_tunnel]
-other = "デフォルトのトンネル設定は削除できません。"
+other = "現在のトンネル設定は削除できません。"
 
 [cannot_delete_only_tunnel]
 other = "唯一のトンネル設定は削除できません。"
 
 [local_runner_updated]
-other = "デフォルトトンネルを更新しました"
+other = "現在のトンネルを更新しました"
 
 [tunnel_profile_added]
 other = "トンネル設定を追加しました"
@@ -1228,7 +1228,7 @@ other = "先に機能設定で Remote Tunnel Manager を有効にしてくださ
 other = "先に Remote Tunnel Manager のアカウント、Tunnel、API 認証情報を設定してください。"
 
 [s3_tunnel_uses_active_runner]
-other = "Cloudflare Tunnel 公開はデフォルトのトンネル設定を使用します: {name}。"
+other = "Cloudflare Tunnel 公開は現在のトンネル設定を使用します: {name}。"
 
 [s3_tunnel_permission_required]
 other = "現在の Cloudflare API 認証情報に必要な権限がありません。Remote Tunnel Manager で権限を確認してください。"

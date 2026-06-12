@@ -23,3 +23,18 @@ func TestAppInitStartsStatusPollingBeforeOptionalRemoteFeatures(t *testing.T) {
 		t.Fatalf("tunnel status polling must start before optional Tunnel Manager remote initialization")
 	}
 }
+
+func TestAppTunnelDoesNotFallbackProfileTokenToLegacyConfig(t *testing.T) {
+	js, err := os.ReadFile("web/dist/js/app-tunnel.js")
+	if err != nil {
+		t.Fatalf("read app-tunnel.js: %v", err)
+	}
+	src := string(js)
+
+	if strings.Contains(src, "profile.token || cfg.token") {
+		t.Fatalf("new or empty tunnel profiles must not inherit the legacy top-level token in the form")
+	}
+	if !strings.Contains(src, "$('token-input').value = profile ? (profile.token || '') : (cfg?.token || '');") {
+		t.Fatalf("app-tunnel.js is missing the profile-safe token form binding")
+	}
+}

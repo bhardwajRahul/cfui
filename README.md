@@ -41,7 +41,7 @@ The web UI is built into the binary. Configuration is stored in a local SQLite d
   - Includes S3 connection testing and WebDAV connection testing.
   - Includes a browser file panel for listing, uploading, downloading, deleting, renaming, and creating folders.
   - WebDAV can be served from the main HTTP service or from a dedicated HTTP port. These modes are mutually exclusive.
-  - Dedicated WebDAV mode supports manual start/stop, optional auto-start, direct-port endpoints, custom public URLs, and Cloudflare Tunnel rule handoff through the default tunnel profile.
+  - Dedicated WebDAV mode supports manual start/stop, optional auto-start, direct-port endpoints, custom public URLs, and Cloudflare Tunnel rule handoff through the current tunnel profile.
   - Browser `GET` requests on a WebDAV path show a read-only file listing or file download. WebDAV methods such as `PROPFIND`, `PUT`, `DELETE`, `MKCOL`, `MOVE`, `COPY`, `LOCK`, and `UNLOCK` keep WebDAV behavior.
 
 - **MCP access**
@@ -163,7 +163,7 @@ cfui can store multiple tunnel profiles. A tunnel profile contains the local clo
 - Several local tunnel profiles can run at the same time when their settings do not conflict.
 - Remote Tunnel Manager uses the selected profile's Account ID and Tunnel ID with the shared Cloudflare API credentials.
 - If a profile's Account ID or Tunnel ID is blank, cfui tries to decode them from that profile's tunnel token.
-- S3 WebDAV Cloudflare Tunnel publishing uses the default tunnel profile retained for legacy/default integrations.
+- S3 WebDAV Cloudflare Tunnel publishing uses the current tunnel profile retained for legacy integrations.
 
 ## Cloudflare API Permissions
 
@@ -288,7 +288,7 @@ ${LOG_DIR}
 
 Old `config.json` and legacy `app_configs` database data are migrated into structured SQLite tables automatically. A migrated `config.json` is renamed to `config.json.migrated`.
 
-Legacy single-tunnel settings are migrated into the default tunnel profile. Tunnel profiles are stored in the `tunnel_profiles` table, and the default profile key is stored in app settings for old single-tunnel endpoints and default integrations.
+Legacy single-tunnel settings are migrated into the first tunnel profile. Tunnel profiles are stored in the `tunnel_profiles` table, and the internal `default` profile key is retained for old single-tunnel endpoints and legacy integrations.
 
 ## API Overview
 

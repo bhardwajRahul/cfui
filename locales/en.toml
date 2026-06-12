@@ -29,13 +29,13 @@ other = "Tunnel profiles"
 other = "Select a tunnel to edit. Each tunnel can be started and stopped independently and may run at the same time."
 
 [active_local_tunnel]
-other = "Default tunnel"
+other = "Current tunnel"
 
 [other_tunnel_profiles]
 other = "Other tunnels"
 
 [use_for_local_runner]
-other = "Make default tunnel"
+other = "Make current tunnel"
 
 [add_tunnel_profile]
 other = "Add tunnel"
@@ -218,10 +218,10 @@ other = "Tunnel profile"
 other = "Choose which tunnel profile Remote Tunnel Manager edits."
 
 [remote_manager_profile_summary_active]
-other = "Editing {name}. This is the default tunnel profile."
+other = "Editing {name}. This is the current tunnel profile."
 
 [remote_manager_profile_summary_inactive]
-other = "Editing {name}. Default tunnel profile: {active}."
+other = "Editing {name}. Current tunnel profile: {active}."
 
 [manager_enable]
 other = "Enable remote management"
@@ -380,13 +380,13 @@ other = "Tunnel rule deleted"
 other = "Select this profile before starting or stopping it."
 
 [cannot_delete_active_tunnel]
-other = "The default tunnel profile cannot be deleted."
+other = "The current tunnel profile cannot be deleted."
 
 [cannot_delete_only_tunnel]
 other = "The only tunnel profile cannot be deleted."
 
 [local_runner_updated]
-other = "Default tunnel updated"
+other = "Current tunnel updated"
 
 [tunnel_profile_added]
 other = "Tunnel profile added"
@@ -1228,7 +1228,7 @@ other = "Enable Remote Tunnel Manager in Features first."
 other = "Complete Remote Tunnel Manager account, tunnel, and API credential settings first."
 
 [s3_tunnel_uses_active_runner]
-other = "Cloudflare Tunnel publishing uses the default tunnel profile: {name}."
+other = "Cloudflare Tunnel publishing uses the current tunnel profile: {name}."
 
 [s3_tunnel_permission_required]
 other = "The current Cloudflare API credentials do not have the required permissions. Check permissions in Remote Tunnel Manager first."

@@ -856,7 +856,7 @@ func shouldReplaceTunnelProfileName(tunnel config.TunnelProfileConfig, index int
 	if name == "" || name == tunnel.Key || name == "Default Tunnel" || name == "Tunnel" {
 		return true
 	}
-	if index > 0 && name == fmt.Sprintf("Tunnel %d", index+1) {
+	if name == fmt.Sprintf("Tunnel %d", index+1) {
 		return true
 	}
 	return false

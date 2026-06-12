@@ -55,21 +55,22 @@
     }
 
     function writeConfigToForm(cfg) {
-        const profile = selectedTunnelProfile(cfg) || activeTunnelProfile(cfg) || cfg || {};
-        if ($('tunnel-name-input')) $('tunnel-name-input').value = profile.name || '';
-        $('token-input').value = profile.token || cfg.token || '';
-        $('custom-version-input').value = profile.custom_tag || '';
-        $('software-name-input').value = profile.software_name || 'cfui';
-        $('autostart-toggle').checked = !!profile.auto_start;
-        $('autorestart-toggle').checked = profile.auto_restart !== false;
-        $('protocol-select').value = profile.protocol || 'auto';
-        $('grace-period-input').value = profile.grace_period || '30s';
-        $('region-select').value = profile.region || '';
-        $('retries-input').value = profile.retries ?? 5;
-        $('metrics-enable-toggle').checked = !!profile.metrics_enable;
-        $('metrics-port-input').value = profile.metrics_port || 60123;
-        $('edge-bind-address-input').value = profile.edge_bind_address || '';
-        $('no-tls-verify-toggle').checked = !!profile.no_tls_verify;
+        const profile = selectedTunnelProfile(cfg) || activeTunnelProfile(cfg);
+        const source = profile || cfg || {};
+        if ($('tunnel-name-input')) $('tunnel-name-input').value = source.name || '';
+        $('token-input').value = profile ? (profile.token || '') : (cfg?.token || '');
+        $('custom-version-input').value = source.custom_tag || '';
+        $('software-name-input').value = source.software_name || 'cfui';
+        $('autostart-toggle').checked = !!source.auto_start;
+        $('autorestart-toggle').checked = source.auto_restart !== false;
+        $('protocol-select').value = source.protocol || 'auto';
+        $('grace-period-input').value = source.grace_period || '30s';
+        $('region-select').value = source.region || '';
+        $('retries-input').value = source.retries ?? 5;
+        $('metrics-enable-toggle').checked = !!source.metrics_enable;
+        $('metrics-port-input').value = source.metrics_port || 60123;
+        $('edge-bind-address-input').value = source.edge_bind_address || '';
+        $('no-tls-verify-toggle').checked = !!source.no_tls_verify;
         updateMetricsVisibility();
         updateTunnelProfileUI();
     }
@@ -563,7 +564,11 @@
         try {
             await apiSend('/tunnels', 'POST', profile);
             state.selectedTunnelKey = key;
+            state.tunnelManager.selectedTunnelKey = key;
             await fetchConfig();
+            if (state.features?.tunnel_manager && document.querySelector('.tab[aria-selected="true"]')?.dataset.tab === 'manager') {
+                await window.cfui.fetchTunnelManagerSettings?.();
+            }
             toast.ok(t('tunnel_profile_added'));
             $('tunnel-name-input')?.focus();
         } catch (err) {

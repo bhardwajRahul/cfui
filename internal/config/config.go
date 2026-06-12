@@ -271,7 +271,7 @@ func DefaultConfig() Config {
 func DefaultTunnelProfileConfig() TunnelProfileConfig {
 	return TunnelProfileConfig{
 		Key:                     DefaultTunnelProfileKey,
-		Name:                    "Default Tunnel",
+		Name:                    "Tunnel 1",
 		LocalEnabled:            true,
 		RemoteManagementEnabled: false,
 		AutoRestart:             true,
@@ -701,11 +701,7 @@ func normalizeTunnelProfile(tunnel TunnelProfileConfig, index int) TunnelProfile
 	}
 	tunnel.Name = strings.TrimSpace(tunnel.Name)
 	if tunnel.Name == "" {
-		if index == 0 {
-			tunnel.Name = "Default Tunnel"
-		} else {
-			tunnel.Name = "Tunnel " + strconv.Itoa(index+1)
-		}
+		tunnel.Name = "Tunnel " + strconv.Itoa(index+1)
 	}
 	tunnel.Token = strings.TrimSpace(tunnel.Token)
 	tunnel.AccountID = strings.TrimSpace(tunnel.AccountID)

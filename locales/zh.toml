@@ -29,13 +29,13 @@ other = "隧道配置"
 other = "选择要编辑的隧道。每条隧道都可以独立启动和停止，可同时运行多条隧道。"
 
 [active_local_tunnel]
-other = "默认隧道"
+other = "当前隧道"
 
 [other_tunnel_profiles]
 other = "其他隧道"
 
 [use_for_local_runner]
-other = "设为默认隧道"
+other = "设为当前隧道"
 
 [add_tunnel_profile]
 other = "添加隧道"
@@ -218,10 +218,10 @@ other = "隧道配置"
 other = "选择远程隧道管理要编辑的隧道配置。"
 
 [remote_manager_profile_summary_active]
-other = "正在编辑 {name}。这是默认隧道配置。"
+other = "正在编辑 {name}。这是当前隧道配置。"
 
 [remote_manager_profile_summary_inactive]
-other = "正在编辑 {name}。默认隧道配置为 {active}。"
+other = "正在编辑 {name}。当前隧道配置为 {active}。"
 
 [manager_enable]
 other = "启用远程管理"
@@ -380,13 +380,13 @@ other = "隧道规则已删除"
 other = "请先选择此配置，再启动或停止隧道。"
 
 [cannot_delete_active_tunnel]
-other = "不能删除默认隧道配置。"
+other = "不能删除当前隧道配置。"
 
 [cannot_delete_only_tunnel]
 other = "不能删除唯一的隧道配置。"
 
 [local_runner_updated]
-other = "默认隧道已更新"
+other = "当前隧道已更新"
 
 [tunnel_profile_added]
 other = "隧道配置已添加"
@@ -1228,7 +1228,7 @@ other = "请先在功能开关启用远程隧道管理。"
 other = "请先完成远程隧道管理的账户、隧道和 API 凭证配置。"
 
 [s3_tunnel_uses_active_runner]
-other = "Cloudflare Tunnel 发布使用默认隧道配置：{name}。"
+other = "Cloudflare Tunnel 发布使用当前隧道配置：{name}。"
 
 [s3_tunnel_permission_required]
 other = "当前 Cloudflare API 凭证权限不足，请先在远程隧道管理里检查权限。"

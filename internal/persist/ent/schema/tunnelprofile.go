@@ -25,7 +25,7 @@ func (TunnelProfile) Annotations() []schema.Annotation {
 func (TunnelProfile) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("key").NotEmpty().Unique(),
-		field.String("name").Default("Default Tunnel"),
+		field.String("name").Default("Tunnel 1"),
 		field.Int("sort_order").Default(0),
 		field.String("token").Default("").Sensitive(),
 		field.Bool("local_enabled").Default(true),
