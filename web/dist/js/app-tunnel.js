@@ -427,6 +427,10 @@
         summary.className = 'tunnel-profile-item__summary';
         summary.addEventListener('click', () => selectTunnelProfile(profile.key));
 
+        const led = document.createElement('span');
+        led.className = 'tunnel-profile-item__led';
+        led.setAttribute('aria-hidden', 'true');
+
         const copy = document.createElement('span');
         copy.className = 'tunnel-profile-item__copy';
         const name = document.createElement('span');
@@ -437,7 +441,7 @@
         const protocol = document.createElement('span');
         protocol.className = 'tunnel-profile-item__protocol';
         protocol.hidden = true;
-        summary.append(copy, protocol);
+        summary.append(led, copy, protocol);
 
         item.append(summary);
         return item;
@@ -465,10 +469,10 @@
 
             const summary = item.querySelector('.tunnel-profile-item__summary');
             if (summary) summary.setAttribute('aria-pressed', String(isSelected));
-            let stateName = 'neutral';
+            let stateName = 'stopped';
             let statusText = t('status_stopped');
             if (st.running) {
-                stateName = 'ok';
+                stateName = 'running';
                 statusText = t('status_running');
             } else if (st.status === 'error') {
                 stateName = 'error';
