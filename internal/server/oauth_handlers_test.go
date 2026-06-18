@@ -42,6 +42,7 @@ func TestOAuthCloudflareResourceHandlersRequireLogin(t *testing.T) {
 		{name: "dns delete", method: http.MethodDelete, target: "/api/cf/dns/record-1?zone_id=zone-1", handler: s.handleCFDNSRecord},
 		{name: "tunnels", method: http.MethodGet, target: "/api/cf/tunnels?account_id=account-1", handler: s.handleCFTunnels},
 		{name: "tunnel create", method: http.MethodPost, target: "/api/cf/tunnels?account_id=account-1", body: strings.NewReader(`{"name":"edge","save_local_profile":true}`), handler: s.handleCFTunnels},
+		{name: "tunnel delete", method: http.MethodDelete, target: "/api/cf/tunnels/tunnel-1?account_id=account-1", handler: s.handleCFTunnel},
 		{name: "workers", method: http.MethodGet, target: "/api/cf/workers?account_id=account-1", handler: s.handleCFWorkers},
 		{name: "worker detail", method: http.MethodGet, target: "/api/cf/workers/script-one?account_id=account-1", handler: s.handleCFWorker},
 		{name: "worker metrics", method: http.MethodGet, target: "/api/cf/workers/script-one/metrics?account_id=account-1&range=24h", handler: s.handleCFWorker},
@@ -419,6 +420,141 @@ func TestCFTunnelsIncludesLocalProfileSummaryWithoutToken(t *testing.T) {
 	}
 }
 
+func TestCFTunnelDeleteCanRemoveLinkedLocalProfile(t *testing.T) {
+	api := newFakeOAuthCloudflareServer(t)
+	defer api.Close()
+
+	s := newServerTestServer(t)
+	store := cfoauth.NewStore(s.cfgMgr.Dir())
+	if err := store.SaveSession(context.Background(), cfoauth.Session{
+		ID:          "session-1",
+		Label:       "me@example.com",
+		AccessToken: "access-token",
+		ExpiresAt:   time.Now().UTC().Add(time.Hour),
+		Scope:       "cloudflare-tunnel.read cloudflare-tunnel.write",
+		Current:     true,
+	}); err != nil {
+		t.Fatalf("SaveSession: %v", err)
+	}
+	oauthSvc := cfoauth.NewService(cfoauth.Config{Configured: true}, store)
+	s.oauthSvc = oauthSvc
+	s.cfSvc = cfaccount.NewServiceWithEndpoints(oauthSvc, cfaccount.EndpointOverrides{
+		REST: api.URL + "/client/v4",
+	})
+	cfg, err := s.cfgMgr.SaveTunnelProfile("", config.TunnelProfileConfig{
+		Name:                    "edge local",
+		Token:                   "connector-token",
+		AccountID:               "account-1",
+		TunnelID:                "tunnel-1",
+		LocalEnabled:            true,
+		RemoteManagementEnabled: true,
+	})
+	if err != nil {
+		t.Fatalf("SaveTunnelProfile: %v", err)
+	}
+	if len(cfg.Tunnels) < 2 {
+		t.Fatalf("expected fixture to have default and linked tunnel profiles: %#v", cfg.Tunnels)
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/cf/tunnels/tunnel-1?account_id=account-1&delete_local_profile=true", nil)
+	rec := httptest.NewRecorder()
+	s.handleCFTunnel(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("delete tunnel status %d: %s", rec.Code, rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), "connector-token") {
+		t.Fatalf("connector token leaked in response: %s", rec.Body.String())
+	}
+	var resp struct {
+		Success             bool `json:"success"`
+		LocalProfileRemoved bool `json:"local_profile_removed"`
+		LocalProfile        *struct {
+			Key      string `json:"key"`
+			TunnelID string `json:"tunnel_id"`
+		} `json:"local_profile"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode delete response: %v", err)
+	}
+	if !resp.Success || !resp.LocalProfileRemoved || resp.LocalProfile == nil || resp.LocalProfile.TunnelID != "tunnel-1" {
+		t.Fatalf("unexpected delete response: %#v", resp)
+	}
+	for _, profile := range s.cfgMgr.Get().Tunnels {
+		if profile.TunnelID == "tunnel-1" || profile.Token == "connector-token" {
+			t.Fatalf("linked local profile was not removed: %#v", s.cfgMgr.Get().Tunnels)
+		}
+	}
+}
+
+func TestCFTunnelDeleteClearsOnlyLinkedLocalProfile(t *testing.T) {
+	api := newFakeOAuthCloudflareServer(t)
+	defer api.Close()
+
+	s := newServerTestServer(t)
+	store := cfoauth.NewStore(s.cfgMgr.Dir())
+	if err := store.SaveSession(context.Background(), cfoauth.Session{
+		ID:          "session-1",
+		Label:       "me@example.com",
+		AccessToken: "access-token",
+		ExpiresAt:   time.Now().UTC().Add(time.Hour),
+		Scope:       "cloudflare-tunnel.read cloudflare-tunnel.write",
+		Current:     true,
+	}); err != nil {
+		t.Fatalf("SaveSession: %v", err)
+	}
+	oauthSvc := cfoauth.NewService(cfoauth.Config{Configured: true}, store)
+	s.oauthSvc = oauthSvc
+	s.cfSvc = cfaccount.NewServiceWithEndpoints(oauthSvc, cfaccount.EndpointOverrides{
+		REST: api.URL + "/client/v4",
+	})
+	cfg, err := s.cfgMgr.SaveTunnelProfile(config.DefaultTunnelProfileKey, config.TunnelProfileConfig{
+		Name:                    "only linked",
+		Token:                   "connector-token",
+		AccountID:               "account-1",
+		TunnelID:                "tunnel-1",
+		LocalEnabled:            true,
+		RemoteManagementEnabled: true,
+	})
+	if err != nil {
+		t.Fatalf("SaveTunnelProfile: %v", err)
+	}
+	if len(cfg.Tunnels) != 1 {
+		t.Fatalf("expected one tunnel profile, got %#v", cfg.Tunnels)
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/cf/tunnels/tunnel-1?account_id=account-1&delete_local_profile=true", nil)
+	rec := httptest.NewRecorder()
+	s.handleCFTunnel(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("delete tunnel status %d: %s", rec.Code, rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), "connector-token") {
+		t.Fatalf("connector token leaked in response: %s", rec.Body.String())
+	}
+	var resp struct {
+		Success             bool `json:"success"`
+		LocalProfileRemoved bool `json:"local_profile_removed"`
+		LocalProfile        *struct {
+			Key      string `json:"key"`
+			TunnelID string `json:"tunnel_id"`
+		} `json:"local_profile"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode delete response: %v", err)
+	}
+	if !resp.Success || resp.LocalProfileRemoved || resp.LocalProfile == nil || resp.LocalProfile.TunnelID != "" {
+		t.Fatalf("unexpected delete response: %#v", resp)
+	}
+	next := s.cfgMgr.Get()
+	if len(next.Tunnels) != 1 {
+		t.Fatalf("expected only profile to be preserved, got %#v", next.Tunnels)
+	}
+	profile := next.Tunnels[0]
+	if profile.Token != "" || profile.AccountID != "" || profile.TunnelID != "" || profile.RemoteManagementEnabled {
+		t.Fatalf("linked fields were not cleared: %#v", profile)
+	}
+}
+
 func TestOAuthSessionSwitchRequiresValidSession(t *testing.T) {
 	s := newServerTestServer(t)
 	req := httptest.NewRequest(http.MethodPost, "/api/oauth/session", strings.NewReader(`{"session_id":"missing"}`))
@@ -646,6 +782,13 @@ func newFakeOAuthCloudflareServer(t *testing.T) *fakeOAuthCloudflareServer {
 			t.Fatalf("tunnel token method = %s", r.Method)
 		}
 		writeServerCFEnvelope(w, `"connector-token"`, nil)
+	})
+	mux.HandleFunc("/client/v4/accounts/account-1/cfd_tunnel/tunnel-1", func(w http.ResponseWriter, r *http.Request) {
+		assertFakeBearer(t, api, r)
+		if r.Method != http.MethodDelete {
+			t.Fatalf("delete tunnel method = %s", r.Method)
+		}
+		writeServerCFEnvelope(w, `{"id":"tunnel-1","name":"edge local"}`, nil)
 	})
 	mux.HandleFunc("/client/v4/accounts/account-1/workers/scripts", func(w http.ResponseWriter, r *http.Request) {
 		assertFakeBearer(t, api, r)

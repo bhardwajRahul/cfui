@@ -280,6 +280,12 @@ type TunnelCreateResult struct {
 	Capabilities cfoauth.CapabilityMatrix `json:"capabilities"`
 }
 
+type TunnelDeleteResult struct {
+	TunnelID     string                   `json:"tunnel_id"`
+	Session      cfoauth.SessionSummary   `json:"session"`
+	Capabilities cfoauth.CapabilityMatrix `json:"capabilities"`
+}
+
 type TunnelConnection struct {
 	ID                 string `json:"id,omitempty"`
 	ColoName           string `json:"colo_name,omitempty"`
@@ -1652,6 +1658,32 @@ func (s *Service) CreateTunnel(ctx context.Context, accountID string, req Tunnel
 	return TunnelCreateResult{
 		Tunnel:       mapTunnel(tunnel),
 		Token:        token,
+		Session:      session,
+		Capabilities: session.Capabilities,
+	}, nil
+}
+
+func (s *Service) DeleteTunnel(ctx context.Context, accountID, tunnelID string) (TunnelDeleteResult, error) {
+	client, session, err := s.currentClient(ctx)
+	if err != nil {
+		return TunnelDeleteResult{}, err
+	}
+	if !session.Capabilities["tunnels"].Write {
+		return TunnelDeleteResult{}, validationError("cloudflare tunnel write scope is required")
+	}
+	accountID = strings.TrimSpace(accountID)
+	tunnelID = strings.TrimSpace(tunnelID)
+	if accountID == "" {
+		return TunnelDeleteResult{}, validationError("account_id is required")
+	}
+	if tunnelID == "" {
+		return TunnelDeleteResult{}, validationError("tunnel_id is required")
+	}
+	if err := client.DeleteTunnel(ctx, cloudflare.AccountIdentifier(accountID), tunnelID); err != nil {
+		return TunnelDeleteResult{}, err
+	}
+	return TunnelDeleteResult{
+		TunnelID:     tunnelID,
 		Session:      session,
 		Capabilities: session.Capabilities,
 	}, nil

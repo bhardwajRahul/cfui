@@ -432,6 +432,51 @@ func TestCreateTunnelRequiresWriteScope(t *testing.T) {
 	}
 }
 
+func TestDeleteTunnelDeletesRemoteTunnel(t *testing.T) {
+	ctx := context.Background()
+	deleteSeen := false
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/accounts/account-1/cfd_tunnel/tunnel-1", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		if r.Method != http.MethodDelete {
+			t.Fatalf("delete tunnel method = %s", r.Method)
+		}
+		deleteSeen = true
+		writeCFEnvelope(w, `{"id":"tunnel-1","name":"edge-prod"}`, nil)
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewServiceWithEndpoints(testOAuthServiceWithScopes(t, "cloudflare-tunnel.read cloudflare-tunnel.write"), EndpointOverrides{
+		REST: server.URL + "/client/v4",
+	})
+	resp, err := svc.DeleteTunnel(ctx, "account-1", " tunnel-1 ")
+	if err != nil {
+		t.Fatalf("DeleteTunnel: %v", err)
+	}
+	if !deleteSeen {
+		t.Fatal("expected delete request")
+	}
+	if resp.TunnelID != "tunnel-1" {
+		t.Fatalf("tunnel id = %q, want tunnel-1", resp.TunnelID)
+	}
+	if !resp.Capabilities["tunnels"].Write {
+		t.Fatalf("expected tunnel write capability: %#v", resp.Capabilities["tunnels"])
+	}
+}
+
+func TestDeleteTunnelRequiresWriteScope(t *testing.T) {
+	svc := NewService(testOAuthServiceWithScopes(t, "cloudflare-tunnel.read"))
+	_, err := svc.DeleteTunnel(context.Background(), "account-1", "tunnel-1")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	var validationErr ValidationError
+	if !errors.As(err, &validationErr) {
+		t.Fatalf("expected ValidationError, got %T", err)
+	}
+}
+
 func TestOverviewAggregatesCloudflareAccountResources(t *testing.T) {
 	ctx := context.Background()
 	mux := http.NewServeMux()

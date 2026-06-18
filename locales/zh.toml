@@ -2194,6 +2194,21 @@ other = "创建时间"
 [oauth_tunnel_deleted]
 other = "删除时间"
 
+[oauth_tunnel_delete_title]
+other = "删除 Tunnel？"
+
+[oauth_tunnel_delete_message]
+other = "删除 Cloudflare Tunnel {name}？本地隧道配置不会被删除。"
+
+[oauth_tunnel_delete_message_with_profile]
+other = "删除 Cloudflare Tunnel {name} 并清理关联的本地配置 {profile}？"
+
+[oauth_tunnel_delete_success]
+other = "Tunnel {name} 已删除。"
+
+[oauth_tunnel_delete_success_with_profile]
+other = "Tunnel {name} 已删除，并已清理关联本地配置。"
+
 [oauth_tunnel_connections_active_at]
 other = "连接活跃时间"
 

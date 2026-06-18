@@ -364,6 +364,59 @@ func (s *Server) handleCFTunnels(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handleCFTunnel(w http.ResponseWriter, r *http.Request) {
+	tunnelID, err := cfTunnelIDFromPath(r.URL.Path)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	switch r.Method {
+	case http.MethodDelete:
+		accountID := r.URL.Query().Get("account_id")
+		result, err := s.ensureCFService().DeleteTunnel(r.Context(), accountID, tunnelID)
+		if err != nil {
+			writeCFResponse(w, nil, err)
+			return
+		}
+		var localProfile *cfLocalTunnelProfileSummary
+		localProfileRemoved := false
+		if parseBoolQuery(r.URL.Query().Get("delete_local_profile")) {
+			localProfile, localProfileRemoved, err = s.cleanupOAuthTunnelLocalProfile(tunnelID)
+			if err != nil {
+				writeAPIError(w, http.StatusBadRequest, err)
+				return
+			}
+		}
+		writeJSON(w, cfTunnelDeleteResponse{
+			Success:             true,
+			TunnelID:            result.TunnelID,
+			LocalProfile:        localProfile,
+			LocalProfileRemoved: localProfileRemoved,
+			Session:             result.Session,
+			Capabilities:        result.Capabilities,
+		})
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func cfTunnelIDFromPath(requestPath string) (string, error) {
+	id := strings.Trim(strings.TrimPrefix(requestPath, "/api/cf/tunnels/"), "/")
+	if id == "" || id == requestPath || strings.Contains(id, "/") {
+		return "", fmt.Errorf("tunnel id is required")
+	}
+	return id, nil
+}
+
+func parseBoolQuery(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
+}
+
 type cfTunnelsResponse struct {
 	Data          []cfaccount.Tunnel            `json:"data"`
 	LocalProfiles []cfLocalTunnelProfileSummary `json:"local_profiles,omitempty"`
@@ -382,6 +435,15 @@ type cfTunnelCreateResponse struct {
 	LocalProfile *cfLocalTunnelProfileSummary `json:"local_profile,omitempty"`
 	Session      cfoauth.SessionSummary       `json:"session"`
 	Capabilities cfoauth.CapabilityMatrix     `json:"capabilities"`
+}
+
+type cfTunnelDeleteResponse struct {
+	Success             bool                         `json:"success"`
+	TunnelID            string                       `json:"tunnel_id"`
+	LocalProfile        *cfLocalTunnelProfileSummary `json:"local_profile,omitempty"`
+	LocalProfileRemoved bool                         `json:"local_profile_removed"`
+	Session             cfoauth.SessionSummary       `json:"session"`
+	Capabilities        cfoauth.CapabilityMatrix     `json:"capabilities"`
 }
 
 type cfLocalTunnelProfileSummary struct {
@@ -440,6 +502,48 @@ func (s *Server) localTunnelProfileSummaries(accountID string) []cfLocalTunnelPr
 		out = append(out, summarizeLocalTunnelProfile(profile, cfg.ActiveTunnelKey))
 	}
 	return out
+}
+
+func (s *Server) cleanupOAuthTunnelLocalProfile(tunnelID string) (*cfLocalTunnelProfileSummary, bool, error) {
+	tunnelID = strings.TrimSpace(tunnelID)
+	if tunnelID == "" {
+		return nil, false, fmt.Errorf("tunnel id is required")
+	}
+	cfg := s.cfgMgr.Get()
+	profile, ok := findTunnelProfileByTunnelID(cfg.Tunnels, tunnelID)
+	if !ok {
+		return nil, false, nil
+	}
+	if len(cfg.Tunnels) > 1 {
+		nextCfg, err := s.cfgMgr.DeleteTunnelProfile(profile.Key)
+		if err != nil {
+			return nil, false, err
+		}
+		s.removeRunnerProfile(profile.Key)
+		summary := summarizeLocalTunnelProfile(profile, nextCfg.ActiveTunnelKey)
+		return &summary, true, nil
+	}
+	profile.Token = ""
+	profile.AccountID = ""
+	profile.TunnelID = ""
+	profile.RemoteManagementEnabled = false
+	nextCfg, err := s.cfgMgr.SaveTunnelProfile(profile.Key, profile)
+	if err != nil {
+		return nil, false, err
+	}
+	s.removeRunnerProfile(profile.Key)
+	saved, _ := nextCfg.TunnelProfile(profile.Key)
+	summary := summarizeLocalTunnelProfile(saved, nextCfg.ActiveTunnelKey)
+	return &summary, false, nil
+}
+
+func (s *Server) removeRunnerProfile(key string) {
+	if s.runner == nil || strings.TrimSpace(key) == "" {
+		return
+	}
+	go func() {
+		_ = s.runner.RemoveProfile(key)
+	}()
 }
 
 func findTunnelProfileByTunnelID(profiles []config.TunnelProfileConfig, tunnelID string) (config.TunnelProfileConfig, bool) {

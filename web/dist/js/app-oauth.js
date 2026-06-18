@@ -527,6 +527,36 @@
         }
     }
 
+    async function deleteOAuthTunnel(tunnel, localProfile, button) {
+        const tunnelID = String(tunnel?.id || '').trim();
+        if (!state.oauth.selectedAccountId || !tunnelID) return;
+        const ok = await window.cfui.confirm({
+            title: t('oauth_tunnel_delete_title'),
+            message: localProfile
+                ? t('oauth_tunnel_delete_message_with_profile', { name: tunnel.name || tunnelID, profile: localProfile.name || localProfile.key })
+                : t('oauth_tunnel_delete_message', { name: tunnel.name || tunnelID }),
+            okText: t('delete'),
+        });
+        if (!ok) return;
+        try {
+            setBusy(button, true);
+            const params = new URLSearchParams({
+                account_id: state.oauth.selectedAccountId,
+                delete_local_profile: localProfile ? 'true' : 'false',
+            });
+            await apiSend(`/cf/tunnels/${encodeURIComponent(tunnelID)}?${params.toString()}`, 'DELETE');
+            await loadOAuthTunnels();
+            renderOAuthResource();
+            toast.ok(localProfile
+                ? t('oauth_tunnel_delete_success_with_profile', { name: tunnel.name || tunnelID })
+                : t('oauth_tunnel_delete_success', { name: tunnel.name || tunnelID }));
+        } catch (err) {
+            toast.err(err.message);
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
     async function loadOAuthWorkers() {
         if (!state.oauth.selectedAccountId) return;
         try {
@@ -2553,6 +2583,9 @@
         }
         for (const tunnel of state.oauth.tunnels) {
             const localProfile = localProfileForTunnel(tunnel);
+            const actions = canCreate ? [
+                iconButton(t('delete'), iconTrashSVG(), (event) => deleteOAuthTunnel(tunnel, localProfile, event.currentTarget), 'oauth-icon-action--danger'),
+            ] : [];
             const connectionCount = tunnelConnectionCount(tunnel);
             const meta = [
                 tunnelStatusLabel(tunnel.status),
@@ -2561,7 +2594,7 @@
                 tunnel.type || '',
                 tunnel.id || '',
             ].filter(Boolean).join(' · ');
-            const row = rowNode(tunnel.name || tunnel.id, meta);
+            const row = rowNode(tunnel.name || tunnel.id, meta, actions);
             const detail = tunnelDetailNode(tunnel, localProfile);
             if (detail) row.appendChild(detail);
             body.appendChild(row);

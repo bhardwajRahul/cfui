@@ -2194,6 +2194,21 @@ other = "Created"
 [oauth_tunnel_deleted]
 other = "Deleted"
 
+[oauth_tunnel_delete_title]
+other = "Delete tunnel?"
+
+[oauth_tunnel_delete_message]
+other = "Delete Cloudflare Tunnel {name}? This does not remove local tunnel profiles."
+
+[oauth_tunnel_delete_message_with_profile]
+other = "Delete Cloudflare Tunnel {name} and remove linked local profile {profile}?"
+
+[oauth_tunnel_delete_success]
+other = "Tunnel {name} deleted."
+
+[oauth_tunnel_delete_success_with_profile]
+other = "Tunnel {name} deleted and linked local profile cleaned up."
+
 [oauth_tunnel_connections_active_at]
 other = "Connections active"
 

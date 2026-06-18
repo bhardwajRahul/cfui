@@ -2194,6 +2194,21 @@ other = "Created"
 [oauth_tunnel_deleted]
 other = "Deleted"
 
+[oauth_tunnel_delete_title]
+other = "Tunnel を削除しますか？"
+
+[oauth_tunnel_delete_message]
+other = "Cloudflare Tunnel {name} を削除しますか？ローカルプロファイルは削除されません。"
+
+[oauth_tunnel_delete_message_with_profile]
+other = "Cloudflare Tunnel {name} を削除し、関連付け済みローカルプロファイル {profile} も整理しますか？"
+
+[oauth_tunnel_delete_success]
+other = "Tunnel {name} を削除しました。"
+
+[oauth_tunnel_delete_success_with_profile]
+other = "Tunnel {name} を削除し、関連付け済みローカルプロファイルを整理しました。"
+
 [oauth_tunnel_connections_active_at]
 other = "Connections active"
 

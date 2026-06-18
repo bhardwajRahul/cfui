@@ -216,6 +216,7 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/cf/dns", s.handleCFDNSRecords)
 	mux.HandleFunc("/api/cf/dns/", s.handleCFDNSRecord)
 	mux.HandleFunc("/api/cf/tunnels", s.handleCFTunnels)
+	mux.HandleFunc("/api/cf/tunnels/", s.handleCFTunnel)
 	mux.HandleFunc("/api/cf/workers", s.handleCFWorkers)
 	mux.HandleFunc("/api/cf/workers/", s.handleCFWorker)
 	mux.HandleFunc("/api/cf/r2/metrics", s.handleCFR2Metrics)
