@@ -286,6 +286,25 @@ type TunnelDeleteResult struct {
 	Capabilities cfoauth.CapabilityMatrix `json:"capabilities"`
 }
 
+type TunnelConfigurationResponse struct {
+	TunnelID           string                   `json:"tunnel_id"`
+	Version            int                      `json:"version"`
+	WarpRoutingEnabled bool                     `json:"warp_routing_enabled"`
+	Entries            []TunnelIngressRule      `json:"entries"`
+	Session            cfoauth.SessionSummary   `json:"session"`
+	Capabilities       cfoauth.CapabilityMatrix `json:"capabilities"`
+}
+
+type TunnelIngressRule struct {
+	Index            int    `json:"index"`
+	Hostname         string `json:"hostname"`
+	Path             string `json:"path"`
+	Service          string `json:"service"`
+	NoTLSVerify      bool   `json:"no_tls_verify"`
+	HTTPHostHeader   string `json:"http_host_header,omitempty"`
+	OriginServerName string `json:"origin_server_name,omitempty"`
+}
+
 type TunnelConnection struct {
 	ID                 string `json:"id,omitempty"`
 	ColoName           string `json:"colo_name,omitempty"`
@@ -1687,6 +1706,113 @@ func (s *Service) DeleteTunnel(ctx context.Context, accountID, tunnelID string) 
 		Session:      session,
 		Capabilities: session.Capabilities,
 	}, nil
+}
+
+func (s *Service) TunnelConfiguration(ctx context.Context, accountID, tunnelID string) (TunnelConfigurationResponse, error) {
+	client, session, accountID, tunnelID, err := s.currentTunnelConfigClient(ctx, accountID, tunnelID, false)
+	if err != nil {
+		return TunnelConfigurationResponse{}, err
+	}
+	result, err := client.GetTunnelConfiguration(ctx, cloudflare.AccountIdentifier(accountID), tunnelID)
+	if err != nil {
+		return TunnelConfigurationResponse{}, err
+	}
+	resp := mapTunnelConfiguration(result)
+	resp.Session = session
+	resp.Capabilities = session.Capabilities
+	return resp, nil
+}
+
+func (s *Service) AddTunnelIngressRule(ctx context.Context, accountID, tunnelID string, entry TunnelIngressRule) (TunnelConfigurationResponse, error) {
+	return s.mutateTunnelConfiguration(ctx, accountID, tunnelID, func(cfg *cloudflare.TunnelConfiguration) error {
+		if strings.TrimSpace(entry.Service) == "" {
+			return validationError("service is required")
+		}
+		rule := tunnelIngressRuleFromRequest(entry, nil)
+		if tunnelConfigHasCatchAll(cfg.Ingress) {
+			last := len(cfg.Ingress) - 1
+			cfg.Ingress = append(cfg.Ingress[:last], append([]cloudflare.UnvalidatedIngressRule{rule}, cfg.Ingress[last:]...)...)
+		} else {
+			cfg.Ingress = append(cfg.Ingress, rule)
+		}
+		ensureTunnelConfigCatchAll(cfg)
+		return nil
+	})
+}
+
+func (s *Service) UpdateTunnelIngressRule(ctx context.Context, accountID, tunnelID string, index int, entry TunnelIngressRule) (TunnelConfigurationResponse, error) {
+	return s.mutateTunnelConfiguration(ctx, accountID, tunnelID, func(cfg *cloudflare.TunnelConfiguration) error {
+		if index < 0 || index >= len(cfg.Ingress) {
+			return validationError("entry index %d is out of range", index)
+		}
+		if strings.TrimSpace(entry.Service) == "" {
+			return validationError("service is required")
+		}
+		cfg.Ingress[index] = tunnelIngressRuleFromRequest(entry, &cfg.Ingress[index])
+		ensureTunnelConfigCatchAll(cfg)
+		return nil
+	})
+}
+
+func (s *Service) DeleteTunnelIngressRule(ctx context.Context, accountID, tunnelID string, index int) (TunnelConfigurationResponse, error) {
+	return s.mutateTunnelConfiguration(ctx, accountID, tunnelID, func(cfg *cloudflare.TunnelConfiguration) error {
+		if index < 0 || index >= len(cfg.Ingress) {
+			return validationError("entry index %d is out of range", index)
+		}
+		cfg.Ingress = append(cfg.Ingress[:index], cfg.Ingress[index+1:]...)
+		ensureTunnelConfigCatchAll(cfg)
+		return nil
+	})
+}
+
+func (s *Service) mutateTunnelConfiguration(ctx context.Context, accountID, tunnelID string, mutate func(*cloudflare.TunnelConfiguration) error) (TunnelConfigurationResponse, error) {
+	client, session, accountID, tunnelID, err := s.currentTunnelConfigClient(ctx, accountID, tunnelID, true)
+	if err != nil {
+		return TunnelConfigurationResponse{}, err
+	}
+	current, err := client.GetTunnelConfiguration(ctx, cloudflare.AccountIdentifier(accountID), tunnelID)
+	if err != nil {
+		return TunnelConfigurationResponse{}, err
+	}
+	next := current.Config
+	if err := mutate(&next); err != nil {
+		return TunnelConfigurationResponse{}, err
+	}
+	updated, err := client.UpdateTunnelConfiguration(ctx, cloudflare.AccountIdentifier(accountID), cloudflare.TunnelConfigurationParams{
+		TunnelID: tunnelID,
+		Config:   next,
+	})
+	if err != nil {
+		return TunnelConfigurationResponse{}, err
+	}
+	resp := mapTunnelConfiguration(updated)
+	resp.Session = session
+	resp.Capabilities = session.Capabilities
+	return resp, nil
+}
+
+func (s *Service) currentTunnelConfigClient(ctx context.Context, accountID, tunnelID string, requireWrite bool) (*cloudflare.API, cfoauth.SessionSummary, string, string, error) {
+	client, session, err := s.currentClient(ctx)
+	if err != nil {
+		return nil, cfoauth.SessionSummary{}, "", "", err
+	}
+	capability := session.Capabilities["tunnels"]
+	if requireWrite {
+		if !capability.Write {
+			return nil, cfoauth.SessionSummary{}, "", "", validationError("cloudflare tunnel write scope is required")
+		}
+	} else if !capability.Read && !capability.Write {
+		return nil, cfoauth.SessionSummary{}, "", "", validationError("cloudflare tunnel read scope is required")
+	}
+	accountID = strings.TrimSpace(accountID)
+	tunnelID = strings.TrimSpace(tunnelID)
+	if accountID == "" {
+		return nil, cfoauth.SessionSummary{}, "", "", validationError("account_id is required")
+	}
+	if tunnelID == "" {
+		return nil, cfoauth.SessionSummary{}, "", "", validationError("tunnel_id is required")
+	}
+	return client, session, accountID, tunnelID, nil
 }
 
 func (s *Service) Workers(ctx context.Context, accountID string) (ListResponse[WorkerScript], error) {
@@ -5933,6 +6059,83 @@ func mapTunnel(tunnel cloudflare.Tunnel) Tunnel {
 		ConnectionCount:       len(connections),
 		Connections:           connections,
 	}
+}
+
+func mapTunnelConfiguration(result cloudflare.TunnelConfigurationResult) TunnelConfigurationResponse {
+	entries := make([]TunnelIngressRule, 0, len(result.Config.Ingress))
+	for i, rule := range result.Config.Ingress {
+		entry := TunnelIngressRule{
+			Index:    i,
+			Hostname: rule.Hostname,
+			Path:     rule.Path,
+			Service:  rule.Service,
+		}
+		if rule.OriginRequest != nil {
+			if rule.OriginRequest.NoTLSVerify != nil {
+				entry.NoTLSVerify = *rule.OriginRequest.NoTLSVerify
+			}
+			if rule.OriginRequest.HTTPHostHeader != nil {
+				entry.HTTPHostHeader = *rule.OriginRequest.HTTPHostHeader
+			}
+			if rule.OriginRequest.OriginServerName != nil {
+				entry.OriginServerName = *rule.OriginRequest.OriginServerName
+			}
+		}
+		entries = append(entries, entry)
+	}
+	warpEnabled := false
+	if result.Config.WarpRouting != nil {
+		warpEnabled = result.Config.WarpRouting.Enabled
+	}
+	return TunnelConfigurationResponse{
+		TunnelID:           result.TunnelID,
+		Version:            result.Version,
+		WarpRoutingEnabled: warpEnabled,
+		Entries:            entries,
+	}
+}
+
+func tunnelIngressRuleFromRequest(entry TunnelIngressRule, existing *cloudflare.UnvalidatedIngressRule) cloudflare.UnvalidatedIngressRule {
+	var rule cloudflare.UnvalidatedIngressRule
+	if existing != nil {
+		rule = *existing
+	}
+	rule.Hostname = strings.TrimSpace(entry.Hostname)
+	rule.Path = strings.TrimSpace(entry.Path)
+	rule.Service = strings.TrimSpace(entry.Service)
+
+	origin := rule.OriginRequest
+	if origin == nil {
+		origin = &cloudflare.OriginRequestConfig{}
+	}
+	origin.NoTLSVerify = cloudflare.BoolPtr(entry.NoTLSVerify)
+	origin.HTTPHostHeader = trimmedStringPtr(entry.HTTPHostHeader)
+	origin.OriginServerName = trimmedStringPtr(entry.OriginServerName)
+	rule.OriginRequest = origin
+	return rule
+}
+
+func trimmedStringPtr(value string) *string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func ensureTunnelConfigCatchAll(cfg *cloudflare.TunnelConfiguration) {
+	if tunnelConfigHasCatchAll(cfg.Ingress) {
+		return
+	}
+	cfg.Ingress = append(cfg.Ingress, cloudflare.UnvalidatedIngressRule{Service: "http_status:404"})
+}
+
+func tunnelConfigHasCatchAll(rules []cloudflare.UnvalidatedIngressRule) bool {
+	if len(rules) == 0 {
+		return false
+	}
+	last := rules[len(rules)-1]
+	return strings.TrimSpace(last.Hostname) == "" && strings.TrimSpace(last.Path) == "" && strings.TrimSpace(last.Service) != ""
 }
 
 func mapR2Bucket(bucket cloudflare.R2Bucket) R2Bucket {

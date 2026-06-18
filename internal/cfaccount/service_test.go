@@ -477,6 +477,129 @@ func TestDeleteTunnelRequiresWriteScope(t *testing.T) {
 	}
 }
 
+func TestTunnelConfigurationLoadsIngress(t *testing.T) {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/accounts/account-1/cfd_tunnel/tunnel-1/configurations", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		if r.Method != http.MethodGet {
+			t.Fatalf("get tunnel configuration method = %s", r.Method)
+		}
+		writeCFEnvelope(w, `{
+			"tunnel_id":"tunnel-1",
+			"version":4,
+			"config":{
+				"warp-routing":{"enabled":true},
+				"ingress":[
+					{"hostname":"app.example.com","path":"/api/*","service":"http://localhost:8080","originRequest":{"noTLSVerify":true,"httpHostHeader":"origin.internal","originServerName":"origin.example.com"}},
+					{"service":"http_status:404"}
+				]
+			}
+		}`, nil)
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewServiceWithEndpoints(testOAuthServiceWithScopes(t, "cloudflare-tunnel.read"), EndpointOverrides{
+		REST: server.URL + "/client/v4",
+	})
+	resp, err := svc.TunnelConfiguration(ctx, "account-1", "tunnel-1")
+	if err != nil {
+		t.Fatalf("TunnelConfiguration: %v", err)
+	}
+	if resp.TunnelID != "tunnel-1" || resp.Version != 4 || !resp.WarpRoutingEnabled {
+		t.Fatalf("unexpected tunnel config metadata: %#v", resp)
+	}
+	if len(resp.Entries) != 2 {
+		t.Fatalf("entries length = %d, want 2: %#v", len(resp.Entries), resp.Entries)
+	}
+	entry := resp.Entries[0]
+	if entry.Index != 0 || entry.Hostname != "app.example.com" || entry.Path != "/api/*" || entry.Service != "http://localhost:8080" || !entry.NoTLSVerify || entry.HTTPHostHeader != "origin.internal" || entry.OriginServerName != "origin.example.com" {
+		t.Fatalf("unexpected mapped ingress entry: %#v", entry)
+	}
+}
+
+func TestAddTunnelIngressRuleInsertsBeforeCatchAll(t *testing.T) {
+	ctx := context.Background()
+	putSeen := false
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/accounts/account-1/cfd_tunnel/tunnel-1/configurations", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		switch r.Method {
+		case http.MethodGet:
+			writeCFEnvelope(w, `{
+				"tunnel_id":"tunnel-1",
+				"version":1,
+				"config":{"ingress":[{"service":"http_status:404"}]}
+			}`, nil)
+		case http.MethodPut:
+			var req cloudflare.TunnelConfigurationParams
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode tunnel configuration update: %v", err)
+			}
+			if len(req.Config.Ingress) != 2 {
+				t.Fatalf("updated ingress length = %d, want 2: %#v", len(req.Config.Ingress), req.Config.Ingress)
+			}
+			rule := req.Config.Ingress[0]
+			if rule.Hostname != "app.example.com" || rule.Path != "/api/*" || rule.Service != "http://localhost:8080" {
+				t.Fatalf("unexpected inserted rule: %#v", rule)
+			}
+			if rule.OriginRequest == nil || rule.OriginRequest.NoTLSVerify == nil || !*rule.OriginRequest.NoTLSVerify || rule.OriginRequest.HTTPHostHeader == nil || *rule.OriginRequest.HTTPHostHeader != "origin.internal" {
+				t.Fatalf("unexpected origin request: %#v", rule.OriginRequest)
+			}
+			catchAll := req.Config.Ingress[1]
+			if catchAll.Hostname != "" || catchAll.Path != "" || catchAll.Service != "http_status:404" {
+				t.Fatalf("catch-all was not preserved last: %#v", catchAll)
+			}
+			putSeen = true
+			writeCFEnvelope(w, `{
+				"tunnel_id":"tunnel-1",
+				"version":2,
+				"config":{"ingress":[
+					{"hostname":"app.example.com","path":"/api/*","service":"http://localhost:8080","originRequest":{"noTLSVerify":true,"httpHostHeader":"origin.internal"}},
+					{"service":"http_status:404"}
+				]}
+			}`, nil)
+		default:
+			t.Fatalf("tunnel configuration method = %s", r.Method)
+		}
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewServiceWithEndpoints(testOAuthServiceWithScopes(t, "cloudflare-tunnel.read cloudflare-tunnel.write"), EndpointOverrides{
+		REST: server.URL + "/client/v4",
+	})
+	resp, err := svc.AddTunnelIngressRule(ctx, "account-1", "tunnel-1", TunnelIngressRule{
+		Hostname:       " app.example.com ",
+		Path:           " /api/* ",
+		Service:        " http://localhost:8080 ",
+		NoTLSVerify:    true,
+		HTTPHostHeader: " origin.internal ",
+	})
+	if err != nil {
+		t.Fatalf("AddTunnelIngressRule: %v", err)
+	}
+	if !putSeen {
+		t.Fatal("expected update request")
+	}
+	if resp.Version != 2 || len(resp.Entries) != 2 || resp.Entries[0].Hostname != "app.example.com" {
+		t.Fatalf("unexpected add response: %#v", resp)
+	}
+}
+
+func TestAddTunnelIngressRuleRequiresWriteScope(t *testing.T) {
+	svc := NewService(testOAuthServiceWithScopes(t, "cloudflare-tunnel.read"))
+	_, err := svc.AddTunnelIngressRule(context.Background(), "account-1", "tunnel-1", TunnelIngressRule{Service: "http://localhost:8080"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	var validationErr ValidationError
+	if !errors.As(err, &validationErr) {
+		t.Fatalf("expected ValidationError, got %T", err)
+	}
+}
+
 func TestOverviewAggregatesCloudflareAccountResources(t *testing.T) {
 	ctx := context.Background()
 	mux := http.NewServeMux()

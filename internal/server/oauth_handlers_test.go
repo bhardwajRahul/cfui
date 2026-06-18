@@ -19,6 +19,8 @@ import (
 	"cfui/internal/cfoauth"
 	"cfui/internal/config"
 	"cfui/internal/persist"
+
+	cloudflare "github.com/cloudflare/cloudflare-go"
 )
 
 func TestOAuthCloudflareResourceHandlersRequireLogin(t *testing.T) {
@@ -43,6 +45,10 @@ func TestOAuthCloudflareResourceHandlersRequireLogin(t *testing.T) {
 		{name: "tunnels", method: http.MethodGet, target: "/api/cf/tunnels?account_id=account-1", handler: s.handleCFTunnels},
 		{name: "tunnel create", method: http.MethodPost, target: "/api/cf/tunnels?account_id=account-1", body: strings.NewReader(`{"name":"edge","save_local_profile":true}`), handler: s.handleCFTunnels},
 		{name: "tunnel delete", method: http.MethodDelete, target: "/api/cf/tunnels/tunnel-1?account_id=account-1", handler: s.handleCFTunnel},
+		{name: "tunnel config", method: http.MethodGet, target: "/api/cf/tunnels/tunnel-1/config?account_id=account-1", handler: s.handleCFTunnel},
+		{name: "tunnel config entry create", method: http.MethodPost, target: "/api/cf/tunnels/tunnel-1/config/entries?account_id=account-1", body: strings.NewReader(`{"hostname":"app.example.com","service":"http://localhost:8080"}`), handler: s.handleCFTunnel},
+		{name: "tunnel config entry update", method: http.MethodPut, target: "/api/cf/tunnels/tunnel-1/config/entries/0?account_id=account-1", body: strings.NewReader(`{"hostname":"app.example.com","service":"http://localhost:8080"}`), handler: s.handleCFTunnel},
+		{name: "tunnel config entry delete", method: http.MethodDelete, target: "/api/cf/tunnels/tunnel-1/config/entries/0?account_id=account-1", handler: s.handleCFTunnel},
 		{name: "workers", method: http.MethodGet, target: "/api/cf/workers?account_id=account-1", handler: s.handleCFWorkers},
 		{name: "worker detail", method: http.MethodGet, target: "/api/cf/workers/script-one?account_id=account-1", handler: s.handleCFWorker},
 		{name: "worker metrics", method: http.MethodGet, target: "/api/cf/workers/script-one/metrics?account_id=account-1&range=24h", handler: s.handleCFWorker},
@@ -555,6 +561,91 @@ func TestCFTunnelDeleteClearsOnlyLinkedLocalProfile(t *testing.T) {
 	}
 }
 
+func TestCFTunnelConfigurationHandlersMutateIngress(t *testing.T) {
+	api := newFakeOAuthCloudflareServer(t)
+	defer api.Close()
+
+	s := newServerTestServer(t)
+	store := cfoauth.NewStore(s.cfgMgr.Dir())
+	if err := store.SaveSession(context.Background(), cfoauth.Session{
+		ID:          "session-1",
+		Label:       "me@example.com",
+		AccessToken: "access-token",
+		ExpiresAt:   time.Now().UTC().Add(time.Hour),
+		Scope:       "cloudflare-tunnel.read cloudflare-tunnel.write",
+		Current:     true,
+	}); err != nil {
+		t.Fatalf("SaveSession: %v", err)
+	}
+	oauthSvc := cfoauth.NewService(cfoauth.Config{Configured: true}, store)
+	s.oauthSvc = oauthSvc
+	s.cfSvc = cfaccount.NewServiceWithEndpoints(oauthSvc, cfaccount.EndpointOverrides{
+		REST: api.URL + "/client/v4",
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/cf/tunnels/tunnel-1/config?account_id=account-1", nil)
+	rec := httptest.NewRecorder()
+	s.handleCFTunnel(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("get config status %d: %s", rec.Code, rec.Body.String())
+	}
+	var loaded struct {
+		TunnelID string `json:"tunnel_id"`
+		Entries  []struct {
+			Hostname    string `json:"hostname"`
+			Service     string `json:"service"`
+			NoTLSVerify bool   `json:"no_tls_verify"`
+		} `json:"entries"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&loaded); err != nil {
+		t.Fatalf("decode tunnel config: %v", err)
+	}
+	if loaded.TunnelID != "tunnel-1" || len(loaded.Entries) != 2 || loaded.Entries[0].Hostname != "old.example.com" {
+		t.Fatalf("unexpected loaded config: %#v", loaded)
+	}
+
+	body := strings.NewReader(`{"hostname":"app.example.com","path":"/api/*","service":"http://localhost:8080","no_tls_verify":true}`)
+	req = httptest.NewRequest(http.MethodPost, "/api/cf/tunnels/tunnel-1/config/entries?account_id=account-1", body)
+	rec = httptest.NewRecorder()
+	s.handleCFTunnel(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("create entry status %d: %s", rec.Code, rec.Body.String())
+	}
+	var created struct {
+		Version int `json:"version"`
+		Entries []struct {
+			Hostname    string `json:"hostname"`
+			Path        string `json:"path"`
+			Service     string `json:"service"`
+			NoTLSVerify bool   `json:"no_tls_verify"`
+		} `json:"entries"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&created); err != nil {
+		t.Fatalf("decode created config: %v", err)
+	}
+	if created.Version != 8 || len(created.Entries) != 3 || created.Entries[1].Hostname != "app.example.com" || !created.Entries[1].NoTLSVerify || created.Entries[2].Service != "http_status:404" {
+		t.Fatalf("unexpected created config: %#v", created)
+	}
+
+	req = httptest.NewRequest(http.MethodDelete, "/api/cf/tunnels/tunnel-1/config/entries/0?account_id=account-1", nil)
+	rec = httptest.NewRecorder()
+	s.handleCFTunnel(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("delete entry status %d: %s", rec.Code, rec.Body.String())
+	}
+	var deleted struct {
+		Entries []struct {
+			Service string `json:"service"`
+		} `json:"entries"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&deleted); err != nil {
+		t.Fatalf("decode deleted config: %v", err)
+	}
+	if len(deleted.Entries) < 1 || deleted.Entries[len(deleted.Entries)-1].Service != "http_status:404" {
+		t.Fatalf("delete response must keep catch-all last: %#v", deleted)
+	}
+}
+
 func TestOAuthSessionSwitchRequiresValidSession(t *testing.T) {
 	s := newServerTestServer(t)
 	req := httptest.NewRequest(http.MethodPost, "/api/oauth/session", strings.NewReader(`{"session_id":"missing"}`))
@@ -789,6 +880,46 @@ func newFakeOAuthCloudflareServer(t *testing.T) *fakeOAuthCloudflareServer {
 			t.Fatalf("delete tunnel method = %s", r.Method)
 		}
 		writeServerCFEnvelope(w, `{"id":"tunnel-1","name":"edge local"}`, nil)
+	})
+	tunnelConfig := cloudflare.TunnelConfiguration{
+		Ingress: []cloudflare.UnvalidatedIngressRule{
+			{Hostname: "old.example.com", Service: "http://localhost:8080"},
+			{Service: "http_status:404"},
+		},
+	}
+	tunnelConfigVersion := 7
+	mux.HandleFunc("/client/v4/accounts/account-1/cfd_tunnel/tunnel-1/configurations", func(w http.ResponseWriter, r *http.Request) {
+		assertFakeBearer(t, api, r)
+		switch r.Method {
+		case http.MethodGet:
+			result, err := json.Marshal(map[string]any{
+				"tunnel_id": "tunnel-1",
+				"version":   tunnelConfigVersion,
+				"config":    tunnelConfig,
+			})
+			if err != nil {
+				t.Fatalf("marshal tunnel configuration: %v", err)
+			}
+			writeServerCFEnvelope(w, string(result), nil)
+		case http.MethodPut:
+			var req cloudflare.TunnelConfigurationParams
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode tunnel configuration update: %v", err)
+			}
+			tunnelConfig = req.Config
+			tunnelConfigVersion++
+			result, err := json.Marshal(map[string]any{
+				"tunnel_id": "tunnel-1",
+				"version":   tunnelConfigVersion,
+				"config":    tunnelConfig,
+			})
+			if err != nil {
+				t.Fatalf("marshal tunnel configuration: %v", err)
+			}
+			writeServerCFEnvelope(w, string(result), nil)
+		default:
+			t.Fatalf("tunnel configuration method = %s", r.Method)
+		}
 	})
 	mux.HandleFunc("/client/v4/accounts/account-1/workers/scripts", func(w http.ResponseWriter, r *http.Request) {
 		assertFakeBearer(t, api, r)

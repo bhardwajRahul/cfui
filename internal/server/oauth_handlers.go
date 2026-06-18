@@ -365,15 +365,19 @@ func (s *Server) handleCFTunnels(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCFTunnel(w http.ResponseWriter, r *http.Request) {
-	tunnelID, err := cfTunnelIDFromPath(r.URL.Path)
+	target, err := cfTunnelPathFromPath(r.URL.Path)
 	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	if len(target.Segments) > 0 {
+		s.handleCFTunnelSubresource(w, r, target)
 		return
 	}
 	switch r.Method {
 	case http.MethodDelete:
 		accountID := r.URL.Query().Get("account_id")
-		result, err := s.ensureCFService().DeleteTunnel(r.Context(), accountID, tunnelID)
+		result, err := s.ensureCFService().DeleteTunnel(r.Context(), accountID, target.TunnelID)
 		if err != nil {
 			writeCFResponse(w, nil, err)
 			return
@@ -381,7 +385,7 @@ func (s *Server) handleCFTunnel(w http.ResponseWriter, r *http.Request) {
 		var localProfile *cfLocalTunnelProfileSummary
 		localProfileRemoved := false
 		if parseBoolQuery(r.URL.Query().Get("delete_local_profile")) {
-			localProfile, localProfileRemoved, err = s.cleanupOAuthTunnelLocalProfile(tunnelID)
+			localProfile, localProfileRemoved, err = s.cleanupOAuthTunnelLocalProfile(target.TunnelID)
 			if err != nil {
 				writeAPIError(w, http.StatusBadRequest, err)
 				return
@@ -400,12 +404,84 @@ func (s *Server) handleCFTunnel(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func cfTunnelIDFromPath(requestPath string) (string, error) {
-	id := strings.Trim(strings.TrimPrefix(requestPath, "/api/cf/tunnels/"), "/")
-	if id == "" || id == requestPath || strings.Contains(id, "/") {
-		return "", fmt.Errorf("tunnel id is required")
+func (s *Server) handleCFTunnelSubresource(w http.ResponseWriter, r *http.Request, target cfTunnelPath) {
+	if len(target.Segments) == 1 && target.Segments[0] == "config" {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		resp, err := s.ensureCFService().TunnelConfiguration(r.Context(), r.URL.Query().Get("account_id"), target.TunnelID)
+		writeCFResponse(w, resp, err)
+		return
 	}
-	return id, nil
+	if len(target.Segments) == 2 && target.Segments[0] == "config" && target.Segments[1] == "entries" {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		var entry cfaccount.TunnelIngressRule
+		if err := json.NewDecoder(r.Body).Decode(&entry); err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		resp, err := s.ensureCFService().AddTunnelIngressRule(r.Context(), r.URL.Query().Get("account_id"), target.TunnelID, entry)
+		writeCFResponse(w, resp, err)
+		return
+	}
+	if len(target.Segments) == 3 && target.Segments[0] == "config" && target.Segments[1] == "entries" {
+		index, err := strconv.Atoi(target.Segments[2])
+		if err != nil {
+			writeAPIError(w, http.StatusBadRequest, errors.New("invalid entry index"))
+			return
+		}
+		switch r.Method {
+		case http.MethodPut, http.MethodPatch:
+			var entry cfaccount.TunnelIngressRule
+			if err := json.NewDecoder(r.Body).Decode(&entry); err != nil {
+				writeAPIError(w, http.StatusBadRequest, err)
+				return
+			}
+			resp, err := s.ensureCFService().UpdateTunnelIngressRule(r.Context(), r.URL.Query().Get("account_id"), target.TunnelID, index, entry)
+			writeCFResponse(w, resp, err)
+		case http.MethodDelete:
+			resp, err := s.ensureCFService().DeleteTunnelIngressRule(r.Context(), r.URL.Query().Get("account_id"), target.TunnelID, index)
+			writeCFResponse(w, resp, err)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+		return
+	}
+	http.NotFound(w, r)
+}
+
+type cfTunnelPath struct {
+	TunnelID string
+	Segments []string
+}
+
+func cfTunnelPathFromPath(requestPath string) (cfTunnelPath, error) {
+	rest := strings.Trim(strings.TrimPrefix(requestPath, "/api/cf/tunnels/"), "/")
+	if rest == "" || rest == requestPath {
+		return cfTunnelPath{}, fmt.Errorf("tunnel id is required")
+	}
+	parts := strings.Split(rest, "/")
+	id, err := url.PathUnescape(parts[0])
+	if err != nil {
+		return cfTunnelPath{}, fmt.Errorf("tunnel id is invalid")
+	}
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return cfTunnelPath{}, fmt.Errorf("tunnel id is required")
+	}
+	segments := make([]string, 0, len(parts)-1)
+	for _, part := range parts[1:] {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			return cfTunnelPath{}, fmt.Errorf("tunnel path is invalid")
+		}
+		segments = append(segments, part)
+	}
+	return cfTunnelPath{TunnelID: id, Segments: segments}, nil
 }
 
 func parseBoolQuery(value string) bool {
