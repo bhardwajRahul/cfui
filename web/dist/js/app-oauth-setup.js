@@ -56,7 +56,7 @@
             primaryActions.append(copy, save);
             inputRow.append(input, primaryActions);
 
-            const helper = document.createElement('p');
+            const helper = document.createElement('div');
             helper.className = 'oauth-relay-helper';
             const helperText = document.createElement('span');
             helperText.className = 'oauth-relay-helper-text';
@@ -80,7 +80,10 @@
             const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--text oauth-relay-inline-action oauth-relay-self-host-action', openWorkerScriptDialog);
             selfHost.title = t('oauth_relay_self_host_title');
             selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
-            assistActions.append(useDefault, selfHost);
+            const separator = document.createElement('span');
+            separator.className = 'oauth-relay-action-separator';
+            separator.textContent = t('oauth_relay_or');
+            assistActions.append(useDefault, separator, selfHost);
             helper.append(helperText, assistActions);
 
             const checkRelay = async (event) => {

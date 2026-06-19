@@ -29,7 +29,7 @@ other = "Sign out current"
 other = "Checking OAuth status..."
 
 [oauth_relay_callback]
-other = "Relay callback"
+other = "OAuth redirect callback URL"
 
 [oauth_relay_edit]
 other = "Edit relay callback"
@@ -50,16 +50,19 @@ other = "Copy relay callback URL"
 other = "This address must exactly match the Redirect callback URL in the Cloudflare OAuth client."
 
 [oauth_relay_assist_text]
-other = "This is the Cloudflare OAuth app Redirect callback URL. Do not use the local callback or append cfui_callback_url."
+other = "Use this as the Cloudflare OAuth client Redirect callback URL. For private use, use the provided domain; when self-hosting, enter your Worker /oauth/callback."
 
 [oauth_relay_use_default]
 other = "Use provided relay"
+
+[oauth_relay_or]
+other = "or"
 
 [oauth_relay_use_default_title]
 other = "Fill and save the provided OAuth relay domain"
 
 [oauth_relay_self_host]
-other = "Self-host Worker..."
+other = "Self-host Worker"
 
 [oauth_relay_self_host_title]
 other = "Show the Worker script and deployment steps for a self-hosted Cloudflare OAuth relay"
@@ -1031,7 +1034,7 @@ other = "Set CFUI_OAUTH_CLIENT_ID before signing in."
 other = "OAuth setup"
 
 [oauth_setup_subtitle]
-other = "Confirm the relay callback above, create the Cloudflare OAuth client with the choices below, then restart cfui with the client ID."
+other = "Confirm the Redirect callback URL above, create the Cloudflare OAuth client with the choices below, then restart cfui with the client ID."
 
 [oauth_setup_relay_title]
 other = "Set the OAuth relay callback"
@@ -1046,7 +1049,7 @@ other = "For private use, the provided domain is enough. To use your own domain,
 other = "Fill the Cloudflare OAuth client form"
 
 [oauth_setup_oauth_app_desc]
-other = "Use these choices in the Cloudflare OAuth client form. The Redirect callback URL is only the address shown in the input above; cfui uses Authorization Code, Refresh Token, and PKCE without a client secret."
+other = "Use these choices in the Cloudflare OAuth client form. The Redirect callback URL is only the address shown in the input above: either the provided domain or your self-hosted Worker /oauth/callback. cfui uses Authorization Code, Refresh Token, and PKCE without a client secret."
 
 [oauth_setup_cloudflare_path]
 other = "Cloudflare dashboard path"

@@ -4369,7 +4369,7 @@ details.disclosure > .body {
 
 .oauth-relay-editor {
     display: grid;
-    gap: 6px;
+    gap: 8px;
     max-width: 980px;
 }
 
@@ -4532,7 +4532,7 @@ details.disclosure > .body {
 .oauth-relay-helper {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 6px 12px;
+    gap: 6px 14px;
     align-items: center;
     margin: -2px 0 0;
     color: var(--text-muted);
@@ -4550,7 +4550,7 @@ details.disclosure > .body {
 .oauth-relay-assist-actions {
     display: inline-flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 6px;
     align-items: center;
     justify-content: flex-end;
     min-height: 28px;
@@ -4558,8 +4558,8 @@ details.disclosure > .body {
 }
 
 .oauth-relay-inline-action {
-    min-height: 28px;
-    padding: 0;
+    min-height: 30px;
+    padding: 0 2px;
 }
 
 .oauth-relay-default-action,
@@ -4579,6 +4579,11 @@ details.disclosure > .body {
 .oauth-relay-self-host-action:hover {
     color: var(--cf-orange-strong);
     background: transparent;
+}
+
+.oauth-relay-action-separator {
+    color: var(--text-subtle);
+    font-size: var(--fs-xs);
 }
 
 .oauth-relay-self-host-action {
