@@ -220,10 +220,13 @@
     }
 
     async function loadOAuthZones() {
+        state.oauth.zonesError = '';
         try {
             const query = state.oauth.selectedAccountId ? `?account_id=${encodeURIComponent(state.oauth.selectedAccountId)}` : '';
             const resp = await apiGet('/cf/zones' + query);
             state.oauth.zones = Array.isArray(resp.data) ? resp.data : [];
+            state.oauth.zonesSession = resp.session || state.oauth.zonesSession || null;
+            state.oauth.zonesCapabilities = resp.capabilities || state.oauth.zonesCapabilities || null;
             if (!state.oauth.selectedZoneId && state.oauth.zones.length) {
                 state.oauth.selectedZoneId = state.oauth.zones[0].id;
             }
@@ -232,6 +235,8 @@
                 resetZoneDetail();
             }
         } catch (err) {
+            state.oauth.zones = [];
+            state.oauth.zonesError = err.message || String(err);
             renderOAuthError(err.message);
         }
     }
@@ -3250,7 +3255,88 @@
         }, null, 2);
     }
 
+    function zonesDiagnosticsText() {
+        const status = state.oauth.status || {};
+        const session = state.oauth.zonesSession || state.oauth.zoneDetail?.session || status.current || {};
+        const selected = selectedZoneDetail();
+        return JSON.stringify({
+            type: 'cfui_oauth_zones_diagnostics',
+            version: 1,
+            generated_at: new Date().toISOString(),
+            browser_origin: window.location.origin,
+            browser_path: window.location.pathname,
+            contains_oauth_token: false,
+            contains_refresh_token: false,
+            sensitive_fields_omitted: [
+                'oauth_access_token',
+                'oauth_refresh_token',
+            ],
+            selected: {
+                account_id: state.oauth.selectedAccountId || '',
+                account_name: selectedAccountName(),
+                zone_id: state.oauth.selectedZoneId || '',
+                zone_name: selectedZoneName(),
+                resource: state.oauth.resource || '',
+            },
+            identity: {
+                label: session.label || '',
+                expires_at: session.expires_at || '',
+                scopes: Array.isArray(session.scopes) ? session.scopes : [],
+            },
+            capability: {
+                zones_read: canRead('zones'),
+                dns_read: canRead('dns'),
+                dns_write: canWrite('dns'),
+            },
+            state: {
+                zones_loaded: state.oauth.zones.length,
+                zones_error: state.oauth.zonesError || '',
+                detail_loaded: !!selected,
+                detail_error: state.oauth.zoneDetailError || '',
+                detail_loading: !!state.oauth.zoneDetailLoading,
+                dns_count_loaded: state.oauth.zoneDNSCount != null,
+                dns_count_value: state.oauth.zoneDNSCount == null ? null : Number(state.oauth.zoneDNSCount),
+                dns_count_error: state.oauth.zoneDNSCountError || '',
+                dns_count_loading: !!state.oauth.zoneDNSCountLoading,
+                dns_count_zone_id: state.oauth.zoneDNSCountZoneId || '',
+                scope_ready: canRead('zones'),
+            },
+            zones: state.oauth.zones.map(zoneDiagnostics),
+            selected_zone: selected ? zoneDiagnostics(selected) : null,
+            capabilities: oauthCapabilityDiagnostics(state.oauth.zonesCapabilities || state.oauth.zoneDetail?.capabilities || status.capabilities || {}),
+        }, null, 2);
+    }
+
+    function zoneDiagnostics(zone) {
+        return {
+            id: zone?.id || '',
+            name: zone?.name || '',
+            status: zone?.status || '',
+            type: zone?.type || '',
+            paused: !!zone?.paused,
+            account_id: zone?.account_id || zone?.account?.id || '',
+            account_name: zone?.account?.name || '',
+            plan_name: zone?.plan?.name || '',
+            plan_legacy_id: zone?.plan?.legacy_id || '',
+            plan_frequency: zone?.plan?.frequency || '',
+            name_servers: Array.isArray(zone?.name_servers) ? zone.name_servers : [],
+            original_name_servers_count: Array.isArray(zone?.original_name_servers) ? zone.original_name_servers.length : 0,
+            created_on: zone?.created_on || '',
+            modified_on: zone?.modified_on || '',
+        };
+    }
+
     function renderZones(body) {
+        body.appendChild(resourceActionBar(t('oauth_zones'), {
+            text: t('oauth_zones_copy_diagnostics'),
+            className: 'btn btn--sm btn--ghost',
+            title: t('oauth_zones_copy_diagnostics_title'),
+            onClick: () => copyOAuthText(zonesDiagnosticsText()),
+        }));
+        if (state.oauth.zonesError) {
+            body.appendChild(empty(state.oauth.zonesError));
+            return;
+        }
         if (!state.oauth.zones.length) {
             body.appendChild(empty(t('oauth_no_zones')));
             return;
@@ -9406,6 +9492,9 @@
         const status = state.oauth.status;
         state.oauth.accounts = [];
         state.oauth.zones = [];
+        state.oauth.zonesSession = null;
+        state.oauth.zonesCapabilities = null;
+        state.oauth.zonesError = '';
         resetOverview();
         state.oauth.dnsRecords = [];
         state.oauth.dnsSession = null;

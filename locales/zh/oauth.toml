@@ -184,6 +184,12 @@ other = "WAF 规则"
 [oauth_zones]
 other = "域名"
 
+[oauth_zones_copy_diagnostics]
+other = "复制诊断"
+
+[oauth_zones_copy_diagnostics_title]
+other = "复制当前域名列表和所选域名详情诊断信息，不包含 OAuth token。"
+
 [oauth_zone_overview]
 other = "域名概览"
 

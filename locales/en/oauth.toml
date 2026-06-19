@@ -184,6 +184,12 @@ other = "WAF rules"
 [oauth_zones]
 other = "Zones"
 
+[oauth_zones_copy_diagnostics]
+other = "Copy diagnostics"
+
+[oauth_zones_copy_diagnostics_title]
+other = "Copy current zone list and selected zone detail diagnostics. OAuth tokens are not included."
+
 [oauth_zone_overview]
 other = "Zone overview"
 
