@@ -1051,6 +1051,12 @@ other = "当前身份已授权范围"
 [oauth_scope_preview]
 other = "OAuth 权限范围预览"
 
+[oauth_scope_copy_matrix]
+other = "复制矩阵"
+
+[oauth_scope_copy_matrix_title]
+other = "复制当前 OAuth scope 与能力矩阵，不包含 OAuth token。"
+
 [oauth_no_scopes]
 other = "没有返回权限范围。"
 

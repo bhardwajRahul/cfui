@@ -1051,6 +1051,12 @@ other = "現在の ID の認可スコープ"
 [oauth_scope_preview]
 other = "OAuth スコープのプレビュー"
 
+[oauth_scope_copy_matrix]
+other = "マトリクスをコピー"
+
+[oauth_scope_copy_matrix_title]
+other = "現在の OAuth scope と capability matrix をコピーします。OAuth token は含まれません。"
+
 [oauth_no_scopes]
 other = "スコープは返されていません。"
 

@@ -1051,6 +1051,12 @@ other = "Current identity scopes"
 [oauth_scope_preview]
 other = "OAuth scope preview"
 
+[oauth_scope_copy_matrix]
+other = "Copy matrix"
+
+[oauth_scope_copy_matrix_title]
+other = "Copy the current OAuth scope and capability matrix. OAuth tokens are not included."
+
 [oauth_no_scopes]
 other = "No scopes returned."
 

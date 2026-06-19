@@ -4638,6 +4638,14 @@ details.disclosure > .body {
     gap: 10px;
 }
 
+.oauth-permission-header-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
 .oauth-permission-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -5667,6 +5675,10 @@ details.oauth-form-section > summary {
 
     .oauth-row-actions,
     .oauth-form-actions {
+        justify-content: flex-start;
+    }
+
+    .oauth-permission-header-actions {
         justify-content: flex-start;
     }
 

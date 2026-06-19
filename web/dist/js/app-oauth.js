@@ -2644,10 +2644,16 @@
         hint.className = 'oauth-row-meta';
         hint.textContent = t('oauth_authorization_scopes_hint');
         copy.append(title, hint);
+        const actions = document.createElement('div');
+        actions.className = 'oauth-permission-header-actions';
         const count = document.createElement('div');
         count.className = 'oauth-badge';
         count.textContent = t('oauth_scope_count', { n: selectedOAuthScopes().length });
-        header.append(copy, count);
+        const copyMatrix = smallButton(t('oauth_scope_copy_matrix'), 'btn btn--sm btn--ghost', () => copyOAuthText(scopeMatrixText(status)));
+        copyMatrix.title = t('oauth_scope_copy_matrix_title');
+        copyMatrix.setAttribute('aria-label', t('oauth_scope_copy_matrix_title'));
+        actions.append(count, copyMatrix);
+        header.append(copy, actions);
         section.appendChild(header);
 
         for (const definition of oauthPermissionDefinitions) {
@@ -2661,6 +2667,47 @@
         preview.textContent = selectedOAuthScopeString();
         section.appendChild(preview);
         return section;
+    }
+
+    function scopeMatrixText(status = state.oauth.status) {
+        const draft = ensurePermissionDraft(status) || {};
+        const configuredScopes = String(status?.config?.scopes || '').split(/\s+/).map((scope) => scope.trim()).filter(Boolean);
+        const requestedScopes = selectedOAuthScopes();
+        const currentScopes = Array.isArray(status?.current?.scopes) ? status.current.scopes : [];
+        const capabilities = status?.current?.capabilities || status?.capabilities || {};
+        const rows = oauthPermissionDefinitions.map((definition) => {
+            const item = draft[definition.id] || {};
+            const capability = capabilities[definition.id] || {};
+            const enabled = !!item.enabled || !!definition.required;
+            const requestedWrite = !!definition.writeOnly || !!item.write;
+            return {
+                id: definition.id,
+                label: definition.title(),
+                required: !!definition.required,
+                next_login_enabled: enabled,
+                next_login_write: enabled && requestedWrite,
+                read_scopes: definition.readScopes,
+                write_scopes: definition.writeScopes,
+                accepted_write_scopes: definition.acceptedWriteScopes || definition.writeScopes,
+                current_read: !!capability.read,
+                current_write: !!capability.write,
+            };
+        });
+        return JSON.stringify({
+            type: 'cfui_oauth_scope_matrix',
+            version: 1,
+            generated_at: new Date().toISOString(),
+            browser_origin: window.location.origin,
+            oauth_configured: !!status?.config?.configured,
+            identity: {
+                label: status?.current?.label || '',
+                expires_at: status?.current?.expires_at || '',
+                scopes: currentScopes,
+            },
+            configured_scope_template: configuredScopes,
+            next_login_requested_scopes: requestedScopes,
+            capabilities: rows,
+        }, null, 2);
     }
 
     function permissionRowNode(definition, item) {
