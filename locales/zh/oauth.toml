@@ -50,16 +50,16 @@ other = "复制中转回调 URL"
 other = "这个地址必须和 Cloudflare OAuth 客户端里的 Redirect callback URL 完全一致。"
 
 [oauth_relay_assist_text]
-other = "Cloudflare OAuth 客户端和 cfui 都填同一个 relay callback URL。"
+other = "Cloudflare OAuth 客户端只填这个 URL，不追加 cfui_callback_url。"
 
 [oauth_relay_use_default]
 other = "用提供域名"
 
 [oauth_relay_use_default_title]
-other = "使用提供的默认 OAuth 中转域名"
+other = "填入并保存提供的默认 OAuth 中转域名"
 
 [oauth_relay_self_host]
-other = "自建"
+other = "自建 Worker"
 
 [oauth_relay_self_host_title]
 other = "查看自建 Cloudflare OAuth relay 的 Worker 脚本和部署步骤"
@@ -1010,7 +1010,7 @@ other = "设置 OAuth 中转回调"
 other = "上方输入框是唯一需要填写到 Cloudflare OAuth 客户端里的 Redirect callback URL。"
 
 [oauth_setup_relay_input_note]
-other = "私用时点“用提供域名”即可；只有要换成自己的域名时，才点“自建”查看脚本和部署步骤。"
+other = "私用时用提供域名即可；要换成自己的域名时，点“自建 Worker”查看脚本和部署步骤。"
 
 [oauth_setup_oauth_app_title]
 other = "填写 Cloudflare OAuth 客户端表单"

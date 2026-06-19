@@ -56,7 +56,7 @@
             primaryActions.append(copy, save);
             inputRow.append(input, primaryActions);
 
-            const helper = document.createElement('div');
+            const helper = document.createElement('p');
             helper.className = 'oauth-relay-helper';
             const helperText = document.createElement('span');
             helperText.className = 'oauth-relay-helper-text';
@@ -64,23 +64,27 @@
             helperText.textContent = t('oauth_relay_assist_text');
             const assistActions = document.createElement('span');
             assistActions.className = 'oauth-relay-assist-actions';
-            const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--text oauth-relay-inline-action oauth-relay-default-action', (event) => {
+            const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--text oauth-relay-inline-action oauth-relay-default-action', async (event) => {
                 input.value = defaultOAuthRelayCallbackURL;
                 updateRelaySourceLine(sourceLine, input.value, configuredRelay);
                 updateSaveState(save, input.value, configuredRelay);
-                if (savedRelay === defaultOAuthRelayCallbackURL) {
+                if (configuredRelay === defaultOAuthRelayCallbackURL) {
                     input.focus();
                     input.select();
                     return;
                 }
-                saveOAuthRelayCallback(input.value, event.currentTarget);
+                await saveOAuthRelayCallback(input.value, event.currentTarget);
             });
             useDefault.title = t('oauth_relay_use_default_title');
             useDefault.setAttribute('aria-label', t('oauth_relay_use_default_title'));
+            const separator = document.createElement('span');
+            separator.className = 'oauth-relay-action-separator';
+            separator.setAttribute('aria-hidden', 'true');
+            separator.textContent = '/';
             const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--text oauth-relay-inline-action oauth-relay-self-host-action', openWorkerScriptDialog);
             selfHost.title = t('oauth_relay_self_host_title');
             selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
-            assistActions.append(useDefault, selfHost);
+            assistActions.append(useDefault, separator, selfHost);
             helper.append(helperText, assistActions);
 
             const checkRelay = async (event) => {
