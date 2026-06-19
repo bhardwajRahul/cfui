@@ -3974,9 +3974,15 @@
         const base = t(key);
         const localProfile = localProfileForTunnel({ id: tunnelID });
         if (!localProfile) return base;
-        if (localProfile.running) return `${base} ${t('oauth_tunnel_ingress_local_running_hint')}`;
-        if (String(localProfile.status || '').trim() === 'unavailable') return `${base} ${t('oauth_tunnel_ingress_local_unknown_hint')}`;
-        return `${base} ${t('oauth_tunnel_ingress_local_stopped_hint')}`;
+        const hint = tunnelIngressLocalHintText(localProfile);
+        return hint ? `${base} ${hint}` : base;
+    }
+
+    function tunnelIngressLocalHintText(localProfile) {
+        if (!localProfile) return '';
+        if (localProfile.running) return t('oauth_tunnel_ingress_local_running_hint');
+        if (String(localProfile.status || '').trim() === 'unavailable') return t('oauth_tunnel_ingress_local_unknown_hint');
+        return t('oauth_tunnel_ingress_local_stopped_hint');
     }
 
     function tunnelDiagnosticsText(tunnel, localProfile) {
@@ -4125,6 +4131,7 @@
 
     function tunnelIngressPanelNode(tunnel) {
         const tunnelID = String(tunnel?.id || '').trim();
+        const localProfile = localProfileForTunnel(tunnel);
         const section = document.createElement('section');
         section.className = 'oauth-section oauth-tunnel-ingress';
         const header = document.createElement('div');
@@ -4147,7 +4154,7 @@
 
         const actions = document.createElement('div');
         actions.className = 'oauth-row-actions';
-        const diagnostics = smallButton(t('oauth_tunnel_copy_diagnostics'), 'btn btn--sm btn--ghost', () => copyOAuthText(tunnelDiagnosticsText(tunnel, localProfileForTunnel(tunnel))));
+        const diagnostics = smallButton(t('oauth_tunnel_copy_diagnostics'), 'btn btn--sm btn--ghost', () => copyOAuthText(tunnelDiagnosticsText(tunnel, localProfile)));
         diagnostics.title = t('oauth_tunnel_copy_diagnostics_title');
         diagnostics.setAttribute('aria-label', t('oauth_tunnel_copy_diagnostics_title'));
         actions.appendChild(diagnostics);
@@ -4169,6 +4176,8 @@
         }
         header.appendChild(actions);
         section.appendChild(header);
+        const localHint = tunnelLocalWorkspaceHintNode(localProfile);
+        if (localHint) section.appendChild(localHint);
 
         if (!canWrite('tunnels')) section.appendChild(empty(t('oauth_tunnel_ingress_readonly')));
         if (loading) {
@@ -4200,6 +4209,36 @@
         section.appendChild(list);
         if (canWrite('tunnels')) bindOAuthTunnelIngressDragSort(list);
         return section;
+    }
+
+    function tunnelLocalWorkspaceHintNode(localProfile) {
+        if (!localProfile) return null;
+        const hint = tunnelIngressLocalHintText(localProfile);
+        const wrap = document.createElement('div');
+        wrap.className = 'oauth-tunnel-local-hint';
+        const copy = document.createElement('div');
+        copy.className = 'oauth-tunnel-local-hint-copy';
+        const title = document.createElement('div');
+        title.className = 'oauth-tunnel-local-hint-title';
+        title.textContent = t('oauth_tunnel_linked_local_profile', { name: localProfile.name || localProfile.key });
+        const meta = document.createElement('div');
+        meta.className = 'oauth-tunnel-local-hint-meta';
+        meta.textContent = [localTunnelRunnerLabel(localProfile), hint].filter(Boolean).join(' · ');
+        copy.append(title, meta);
+        const action = smallButton(t('oauth_tunnel_open_local_workspace'), 'btn btn--sm btn--ghost', openOAuthLocalWorkspace);
+        action.title = t('oauth_tunnel_open_local_workspace_title');
+        action.setAttribute('aria-label', t('oauth_tunnel_open_local_workspace_title'));
+        wrap.append(copy, action);
+        return wrap;
+    }
+
+    function openOAuthLocalWorkspace() {
+        if (window.cfui.activateTab?.('local')) return;
+        if (window.cfui.setWorkspace) {
+            window.cfui.setWorkspace('local');
+            return;
+        }
+        window.location.href = '/local';
     }
 
     function tunnelIngressRuleNode(tunnelID, entry, entries) {

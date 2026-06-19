@@ -50,7 +50,7 @@ other = "Copy relay callback URL"
 other = "This address must exactly match the Redirect callback URL in the Cloudflare OAuth client."
 
 [oauth_relay_assist_text]
-other = "Use this as the Cloudflare OAuth client's Redirect callback URL."
+other = "Use the same relay callback URL in the Cloudflare OAuth client and cfui."
 
 [oauth_relay_use_default]
 other = "Use provided"
@@ -74,13 +74,13 @@ other = "Custom"
 other = "Unsaved"
 
 [oauth_relay_status_default]
-other = "Saved; use this URL in Cloudflare too."
+other = "Using the provided domain"
 
 [oauth_relay_status_custom]
-other = "Saved; use the same URL in Cloudflare too."
+other = "Using a custom relay"
 
 [oauth_relay_status_unsaved]
-other = "Unsaved; save it before entering it in Cloudflare."
+other = "Unsaved changes"
 
 [oauth_local_callback]
 other = "Local callback"
@@ -570,6 +570,12 @@ other = "The linked local connector is stopped. Start it from the local workspac
 
 [oauth_tunnel_ingress_local_unknown_hint]
 other = "Local runner status could not be read. Check the local workspace when local access is needed."
+
+[oauth_tunnel_open_local_workspace]
+other = "Local workspace"
+
+[oauth_tunnel_open_local_workspace_title]
+other = "Open the local cfui tunnel configuration to start or restart the linked cloudflared connector."
 
 [oauth_tunnel_ingress_load_failed]
 other = "Failed to load tunnel ingress rules"
@@ -1076,22 +1082,22 @@ other = "View the full Worker script in this page"
 other = "Cloudflare OAuth Worker script"
 
 [oauth_worker_script_dialog_subtitle]
-other = "Use the provided domain when you do not self-host; if you self-host, deploy this Worker and use the same /oauth/callback in Cloudflare and cfui."
+other = "Use the provided domain when you do not self-host; deploy this Worker when you do. Both paths use one relay callback URL."
 
 [oauth_worker_self_host_summary]
-other = "Self-hosting only changes the relay domain; it does not change cfui's OAuth flow."
+other = "Choose a relay path first: the provided domain is fastest, while self-hosting keeps the relay under your own Cloudflare account."
 
 [oauth_worker_self_host_target_label]
 other = "Self-host callback URL"
 
 [oauth_worker_self_host_target_hint]
-other = "Replace the host with your Worker HTTPS domain and use the same URL in Cloudflare and cfui."
+other = "Replace the host with your Worker HTTPS domain and use the same URL in the Cloudflare OAuth client and cfui input."
 
 [oauth_worker_default_relay_label]
 other = "Without self-hosting"
 
 [oauth_worker_default_relay_desc]
-other = "Use this URL in Cloudflare and cfui."
+other = "Use this URL in both the Cloudflare OAuth client and the cfui input."
 
 [oauth_worker_self_host_relay_label]
 other = "Self-hosted relay"
@@ -1109,10 +1115,10 @@ other = "Self-host steps"
 other = "Create a Worker, paste the script, and deploy."
 
 [oauth_worker_self_host_step_callback]
-other = "Register your Worker /oauth/callback URL in the Cloudflare OAuth client."
+other = "Register your Worker /oauth/callback URL in the Cloudflare OAuth client; do not append cfui_callback_url."
 
 [oauth_worker_self_host_step_cfui]
-other = "Save the same /oauth/callback URL in cfui."
+other = "Save the same /oauth/callback URL in cfui's relay callback input."
 
 [oauth_worker_self_host_step_allowlist]
 other = "Public cfui domains need CFUI_ALLOWED_CALLBACK_ORIGINS."

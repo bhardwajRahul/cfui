@@ -1325,15 +1325,17 @@
             <div class="modal-body oauth-worker-script-body">
                 <div class="oauth-worker-guide">
                     <p class="oauth-worker-summary" data-i18n="oauth_worker_self_host_summary">Self-hosting only changes the relay domain; it does not change cfui's OAuth flow.</p>
-                    <div class="oauth-worker-default-note">
-                        <span data-i18n="oauth_worker_default_relay_label">Without self-hosting</span>
-                        <code class="mono">https://oauth.omarchy.qzz.io/oauth/callback</code>
-                        <small data-i18n="oauth_worker_default_relay_desc">Use this URL in Cloudflare and cfui.</small>
-                    </div>
-                    <div class="oauth-worker-self-host-target">
-                        <span data-i18n="oauth_worker_self_host_target_label">Self-host callback URL</span>
-                        <code class="mono">https://oauth.example.com/oauth/callback</code>
-                        <small data-i18n="oauth_worker_self_host_target_hint">Replace the host with your Worker HTTPS domain and use the same URL in Cloudflare and cfui.</small>
+                    <div class="oauth-worker-choice-list">
+                        <div class="oauth-worker-choice oauth-worker-choice--provided">
+                            <span data-i18n="oauth_worker_default_relay_label">Without self-hosting</span>
+                            <code class="mono">https://oauth.omarchy.qzz.io/oauth/callback</code>
+                            <small data-i18n="oauth_worker_default_relay_desc">Use this URL in Cloudflare and cfui.</small>
+                        </div>
+                        <div class="oauth-worker-choice oauth-worker-choice--self-host">
+                            <span data-i18n="oauth_worker_self_host_target_label">Self-host callback URL</span>
+                            <code class="mono">https://oauth.example.com/oauth/callback</code>
+                            <small data-i18n="oauth_worker_self_host_target_hint">Replace the host with your Worker HTTPS domain and use the same URL in Cloudflare and cfui.</small>
+                        </div>
                     </div>
                     <div class="oauth-worker-callback-format">
                         <span data-i18n="oauth_worker_callback_format">Callback URL format</span>

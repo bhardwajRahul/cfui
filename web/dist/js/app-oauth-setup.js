@@ -80,11 +80,7 @@
             const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--text oauth-relay-inline-action oauth-relay-self-host-action', openWorkerScriptDialog);
             selfHost.title = t('oauth_relay_self_host_title');
             selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
-            const actionSeparator = document.createElement('span');
-            actionSeparator.className = 'oauth-relay-action-separator';
-            actionSeparator.setAttribute('aria-hidden', 'true');
-            actionSeparator.textContent = '·';
-            assistActions.append(useDefault, actionSeparator, selfHost);
+            assistActions.append(useDefault, selfHost);
             helper.append(helperText, assistActions);
 
             const checkRelay = async (event) => {
@@ -109,6 +105,7 @@
             if (!save) return;
             const dirty = String(relayURL || '').trim() !== String(configuredRelay || '').trim();
             save.disabled = !dirty;
+            save.hidden = !dirty;
             save.classList.toggle('is-dirty', dirty);
         }
 

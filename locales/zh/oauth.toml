@@ -50,7 +50,7 @@ other = "复制中转回调 URL"
 other = "这个地址必须和 Cloudflare OAuth 客户端里的 Redirect callback URL 完全一致。"
 
 [oauth_relay_assist_text]
-other = "Cloudflare OAuth 客户端的 Redirect callback URL 填这里。"
+other = "Cloudflare OAuth 客户端和 cfui 都填同一个 relay callback URL。"
 
 [oauth_relay_use_default]
 other = "用提供域名"
@@ -74,13 +74,13 @@ other = "自定义"
 other = "未保存"
 
 [oauth_relay_status_default]
-other = "已保存，Cloudflare 也填这个 URL。"
+other = "当前使用提供域名"
 
 [oauth_relay_status_custom]
-other = "已保存，Cloudflare 也填同一个 URL。"
+other = "当前使用自定义 relay"
 
 [oauth_relay_status_unsaved]
-other = "未保存，先保存再填到 Cloudflare。"
+other = "有未保存修改"
 
 [oauth_local_callback]
 other = "本地回调"
@@ -570,6 +570,12 @@ other = "关联的本地 connector 未运行；需要本地访问时请到本地
 
 [oauth_tunnel_ingress_local_unknown_hint]
 other = "未能读取本地 runner 状态；需要本地访问时请到本地工作台确认。"
+
+[oauth_tunnel_open_local_workspace]
+other = "本地工作台"
+
+[oauth_tunnel_open_local_workspace_title]
+other = "打开本地 cfui 隧道配置，启动或重启关联的 cloudflared。"
 
 [oauth_tunnel_ingress_load_failed]
 other = "加载 Tunnel ingress 规则失败"
@@ -1076,22 +1082,22 @@ other = "在页面里查看完整 Worker 脚本"
 other = "Cloudflare OAuth Worker 脚本"
 
 [oauth_worker_script_dialog_subtitle]
-other = "不自建时直接用提供域名；自建时部署这个 Worker，并把同一个 /oauth/callback 填到 Cloudflare 和 cfui。"
+other = "不自建时直接用提供域名；自建时部署这个 Worker。两种方式都只填写一个 relay callback URL。"
 
 [oauth_worker_self_host_summary]
-other = "自建只改变中转域名，不改变 cfui 的 OAuth 流程。"
+other = "先选中转方式：用提供域名最快；自建适合想完全使用自己 Cloudflare 账号资源的人。"
 
 [oauth_worker_self_host_target_label]
 other = "自建后的回调 URL"
 
 [oauth_worker_self_host_target_hint]
-other = "把示例域名换成你的 Worker HTTPS 域名，并在 Cloudflare 和 cfui 里使用同一个 URL。"
+other = "把示例域名换成你的 Worker HTTPS 域名，并在 Cloudflare OAuth 客户端和 cfui 输入框使用同一个 URL。"
 
 [oauth_worker_default_relay_label]
 other = "不用自建时"
 
 [oauth_worker_default_relay_desc]
-other = "Cloudflare 和 cfui 都填这个 URL。"
+other = "Cloudflare OAuth 客户端和 cfui 输入框都填这个 URL。"
 
 [oauth_worker_self_host_relay_label]
 other = "自建中转"
@@ -1109,10 +1115,10 @@ other = "自建步骤"
 other = "创建 Worker，粘贴脚本并部署。"
 
 [oauth_worker_self_host_step_callback]
-other = "在 Cloudflare OAuth 客户端注册你的 Worker /oauth/callback URL。"
+other = "在 Cloudflare OAuth 客户端注册你的 Worker /oauth/callback URL，不要追加 cfui_callback_url。"
 
 [oauth_worker_self_host_step_cfui]
-other = "把同一个 /oauth/callback URL 保存到 cfui。"
+other = "把同一个 /oauth/callback URL 保存到 cfui 的中转回调输入框。"
 
 [oauth_worker_self_host_step_allowlist]
 other = "公网 cfui 域名需设置 CFUI_ALLOWED_CALLBACK_ORIGINS。"

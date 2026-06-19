@@ -50,7 +50,7 @@ other = "中継 callback URL をコピー"
 other = "このアドレスは Cloudflare OAuth クライアントの Redirect callback URL と完全に一致している必要があります。"
 
 [oauth_relay_assist_text]
-other = "Cloudflare OAuth クライアントの Redirect callback URL にはこの URL を入力します。"
+other = "Cloudflare OAuth クライアントと cfui に同じ relay callback URL を入力します。"
 
 [oauth_relay_use_default]
 other = "提供済みを使用"
@@ -74,13 +74,13 @@ other = "カスタム"
 other = "未保存"
 
 [oauth_relay_status_default]
-other = "保存済み。Cloudflare にもこの URL を使います。"
+other = "提供済みドメインを使用中"
 
 [oauth_relay_status_custom]
-other = "保存済み。Cloudflare にも同じ URL を使います。"
+other = "カスタム relay を使用中"
 
 [oauth_relay_status_unsaved]
-other = "未保存です。Cloudflare に入力する前に保存してください。"
+other = "未保存の変更があります"
 
 [oauth_local_callback]
 other = "ローカル callback"
@@ -570,6 +570,12 @@ other = "関連付けられたローカル connector は停止中です。ロー
 
 [oauth_tunnel_ingress_local_unknown_hint]
 other = "ローカル runner の状態を読み取れませんでした。ローカルアクセスが必要な場合はローカルワークスペースで確認してください。"
+
+[oauth_tunnel_open_local_workspace]
+other = "ローカル"
+
+[oauth_tunnel_open_local_workspace_title]
+other = "ローカル cfui の Tunnel 設定を開き、関連付けられた cloudflared を起動または再起動します。"
 
 [oauth_tunnel_ingress_load_failed]
 other = "Tunnel ingress ルールの読み込みに失敗しました"
@@ -1076,22 +1082,22 @@ other = "このページで完全な Worker スクリプトを表示"
 other = "Cloudflare OAuth Worker スクリプト"
 
 [oauth_worker_script_dialog_subtitle]
-other = "自前運用しない場合は提供済みドメインを使います。自前運用する場合はこの Worker をデプロイし、Cloudflare と cfui に同じ /oauth/callback を使います。"
+other = "自前運用しない場合は提供済みドメインを使います。自前運用する場合はこの Worker をデプロイします。どちらも relay callback URL は 1 つだけです。"
 
 [oauth_worker_self_host_summary]
-other = "自前運用で変わるのは中継ドメインだけです。cfui の OAuth フローは変わりません。"
+other = "まず中継方式を選びます。提供済みドメインが最短で、自前運用は relay を自分の Cloudflare アカウント配下に置きたい場合に使います。"
 
 [oauth_worker_self_host_target_label]
 other = "自前運用後の callback URL"
 
 [oauth_worker_self_host_target_hint]
-other = "例のホストを自分の Worker HTTPS ドメインに置き換え、Cloudflare と cfui で同じ URL を使います。"
+other = "例のホストを自分の Worker HTTPS ドメインに置き換え、Cloudflare OAuth クライアントと cfui 入力欄で同じ URL を使います。"
 
 [oauth_worker_default_relay_label]
 other = "自前運用しない場合"
 
 [oauth_worker_default_relay_desc]
-other = "Cloudflare と cfui の両方にこの URL を使います。"
+other = "Cloudflare OAuth クライアントと cfui 入力欄の両方にこの URL を使います。"
 
 [oauth_worker_self_host_relay_label]
 other = "自前中継"
@@ -1109,10 +1115,10 @@ other = "自前運用の手順"
 other = "Worker を作成し、スクリプトを貼り付けてデプロイします。"
 
 [oauth_worker_self_host_step_callback]
-other = "自分の Worker /oauth/callback URL を Cloudflare OAuth クライアントに登録します。"
+other = "自分の Worker /oauth/callback URL を Cloudflare OAuth クライアントに登録します。cfui_callback_url は追加しません。"
 
 [oauth_worker_self_host_step_cfui]
-other = "同じ /oauth/callback URL を cfui に保存します。"
+other = "同じ /oauth/callback URL を cfui の中継 callback 入力欄に保存します。"
 
 [oauth_worker_self_host_step_allowlist]
 other = "公開 cfui ドメインでは CFUI_ALLOWED_CALLBACK_ORIGINS を設定します。"

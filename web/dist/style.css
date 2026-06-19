@@ -4406,6 +4406,10 @@ details.disclosure > .body {
     min-width: 64px;
 }
 
+.oauth-relay-save[hidden] {
+    display: none;
+}
+
 .oauth-relay-save:disabled {
     border-color: var(--border);
     background: var(--surface-2);
@@ -4546,11 +4550,6 @@ details.disclosure > .body {
     justify-content: flex-end;
     min-height: 26px;
     white-space: nowrap;
-}
-
-.oauth-relay-action-separator {
-    color: var(--text-subtle);
-    font-size: var(--fs-xs);
 }
 
 .oauth-relay-inline-action {
@@ -4717,8 +4716,12 @@ details.disclosure > .body {
     margin-top: 0;
 }
 
-.oauth-worker-default-note,
-.oauth-worker-self-host-target,
+.oauth-worker-choice-list {
+    display: grid;
+    gap: 8px;
+}
+
+.oauth-worker-choice,
 .oauth-worker-callback-format {
     display: grid;
     gap: 4px;
@@ -4730,25 +4733,23 @@ details.disclosure > .body {
     line-height: 1.4;
 }
 
-.oauth-worker-default-note {
+.oauth-worker-choice--provided {
     border-color: color-mix(in srgb, var(--state-ok) 28%, var(--border));
     background: color-mix(in srgb, var(--state-ok) 5%, var(--surface-2));
 }
 
-.oauth-worker-self-host-target {
+.oauth-worker-choice--self-host {
     border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
     background: color-mix(in srgb, var(--accent) 4%, var(--surface-2));
 }
 
-.oauth-worker-default-note span:first-child,
-.oauth-worker-self-host-target span:first-child,
+.oauth-worker-choice span:first-child,
 .oauth-worker-callback-format span:first-child {
     color: var(--text);
     font-weight: 700;
 }
 
-.oauth-worker-default-note code,
-.oauth-worker-self-host-target code,
+.oauth-worker-choice code,
 .oauth-worker-callback-format code {
     min-width: 0;
     color: var(--text);
@@ -4756,8 +4757,7 @@ details.disclosure > .body {
     white-space: normal;
 }
 
-.oauth-worker-default-note small,
-.oauth-worker-self-host-target small {
+.oauth-worker-choice small {
     color: var(--text-muted);
     font-size: var(--fs-xs);
     line-height: 1.35;
@@ -5647,6 +5647,37 @@ details.disclosure > .body {
     gap: 8px;
     padding-top: 8px;
     border-top: 1px solid var(--border);
+}
+
+.oauth-tunnel-local-hint {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    background: var(--surface);
+}
+
+.oauth-tunnel-local-hint-copy {
+    min-width: 0;
+}
+
+.oauth-tunnel-local-hint-title {
+    color: var(--text);
+    font-size: var(--fs-sm);
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.oauth-tunnel-local-hint-meta {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
 }
 
 .oauth-ingress-list {
