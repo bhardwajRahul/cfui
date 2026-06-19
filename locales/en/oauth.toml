@@ -2251,6 +2251,12 @@ other = "Loading value..."
 [oauth_kv_value_binary]
 other = "Binary value ({bytes}); text preview is not available."
 
+[oauth_kv_value_binary_preview]
+other = "Binary preview"
+
+[oauth_kv_value_binary_preview_meta]
+other = "First {bytes}"
+
 [oauth_kv_value_too_large]
 other = "Value is too large for the text editor ({bytes})."
 

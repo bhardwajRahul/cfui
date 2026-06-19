@@ -2251,6 +2251,12 @@ other = "正在加载值..."
 [oauth_kv_value_binary]
 other = "二进制值（{bytes}），暂不支持文本预览。"
 
+[oauth_kv_value_binary_preview]
+other = "二进制预览"
+
+[oauth_kv_value_binary_preview_meta]
+other = "前 {bytes}"
+
 [oauth_kv_value_too_large]
 other = "该值过大，无法在文本编辑器中打开（{bytes}）。"
 

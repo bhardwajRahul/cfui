@@ -610,10 +610,11 @@ type KVKey struct {
 }
 
 type KVValue struct {
-	Key      string `json:"key"`
-	Value    string `json:"value,omitempty"`
-	Encoding string `json:"encoding"`
-	Bytes    int    `json:"bytes"`
+	Key           string           `json:"key"`
+	Value         string           `json:"value,omitempty"`
+	Encoding      string           `json:"encoding"`
+	Bytes         int              `json:"bytes"`
+	BinaryPreview *R2BinaryPreview `json:"binary_preview,omitempty"`
 }
 
 type KVKeysResponse struct {
@@ -2579,6 +2580,7 @@ func (s *Service) KVValue(ctx context.Context, accountID, namespaceID, key strin
 		value.Value = string(data)
 	default:
 		value.Encoding = "binary"
+		value.BinaryPreview = r2BinaryPreview(data, false)
 	}
 	return value, nil
 }

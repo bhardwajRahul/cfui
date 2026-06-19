@@ -1204,7 +1204,7 @@
         return wrapper;
     }
 
-    function r2BinaryPreviewNode(object) {
+    function binaryPreviewNode(object, titleText, metaText) {
         const preview = object?.binary_preview;
         if (!preview?.hexdump) return null;
         const wrapper = document.createElement('div');
@@ -1212,12 +1212,12 @@
 
         const label = document.createElement('div');
         label.className = 'oauth-media-label';
-        label.textContent = t('oauth_r2_object_binary_preview');
+        label.textContent = titleText;
 
         const meta = document.createElement('div');
         meta.className = 'oauth-row-meta';
         meta.textContent = [
-            t('oauth_r2_object_binary_preview_meta', { bytes: formatBytes(preview.bytes || 0) }),
+            metaText,
             preview.truncated ? t('oauth_r2_object_truncated') : '',
         ].filter(Boolean).join(' · ');
 
@@ -1227,6 +1227,22 @@
 
         wrapper.append(label, meta, dump);
         return wrapper;
+    }
+
+    function r2BinaryPreviewNode(object) {
+        return binaryPreviewNode(
+            object,
+            t('oauth_r2_object_binary_preview'),
+            t('oauth_r2_object_binary_preview_meta', { bytes: formatBytes(object?.binary_preview?.bytes || 0) }),
+        );
+    }
+
+    function kvBinaryPreviewNode(value) {
+        return binaryPreviewNode(
+            value,
+            t('oauth_kv_value_binary_preview'),
+            t('oauth_kv_value_binary_preview_meta', { bytes: formatBytes(value?.binary_preview?.bytes || 0) }),
+        );
     }
 
     async function deleteR2Object(key) {
@@ -7043,6 +7059,8 @@
         }
         if (value.encoding === 'binary') {
             section.appendChild(empty(t('oauth_kv_value_binary', { bytes: formatBytes(value.bytes || 0) })));
+            const preview = kvBinaryPreviewNode(value);
+            if (preview) section.appendChild(preview);
             if (canWrite('kv')) section.appendChild(smallButton(t('delete'), 'btn btn--sm btn--danger', () => deleteKVValue(value.key || state.oauth.selectedKVKey)));
             return section;
         }

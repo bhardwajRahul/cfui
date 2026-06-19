@@ -442,6 +442,41 @@ func TestKVKeysBulkDeleteUsesCloudflareSDK(t *testing.T) {
 	}
 }
 
+func TestKVValueIncludesBinaryPreview(t *testing.T) {
+	ctx := context.Background()
+	payload := []byte{0x00, 0x01, 0x02, 'K', 'V', 0xff}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/accounts/account-1/storage/kv/namespaces/namespace-1/values/folder%2Fkey", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		_, _ = w.Write(payload)
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewService(testOAuthServiceWithScopes(t, "workers-kv-storage.read"))
+	svc.restEndpoint = server.URL + "/client/v4"
+
+	resp, err := svc.KVValue(ctx, "account-1", "namespace-1", "folder/key")
+	if err != nil {
+		t.Fatalf("KVValue: %v", err)
+	}
+	if resp.Encoding != "binary" || resp.Value != "" || resp.Bytes != len(payload) {
+		t.Fatalf("unexpected binary kv response: %#v", resp)
+	}
+	if resp.BinaryPreview == nil {
+		t.Fatal("expected binary preview")
+	}
+	if resp.BinaryPreview.Bytes != len(payload) || resp.BinaryPreview.Truncated {
+		t.Fatalf("unexpected binary preview metadata: %#v", resp.BinaryPreview)
+	}
+	if !strings.Contains(resp.BinaryPreview.Hexdump, "00 01 02 4b 56 ff") || !strings.Contains(resp.BinaryPreview.Hexdump, "|...KV.|") {
+		t.Fatalf("unexpected hexdump: %q", resp.BinaryPreview.Hexdump)
+	}
+}
+
 func TestSplitStatusComponents(t *testing.T) {
 	components := []StatusPageComponent{
 		{ID: "services", Name: "Cloudflare Sites and Services", Status: "degraded_performance", Group: true},
