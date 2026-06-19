@@ -4997,6 +4997,57 @@ details.disclosure > .body {
     text-transform: uppercase;
 }
 
+.oauth-overview-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: 8px;
+}
+
+.oauth-overview-action {
+    display: grid;
+    gap: 3px;
+    min-height: 54px;
+    padding: 9px 10px;
+    text-align: left;
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.oauth-overview-action:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--cf-orange) 42%, var(--border));
+    background: color-mix(in srgb, var(--cf-orange) 5%, var(--surface));
+}
+
+.oauth-overview-action:focus-visible {
+    outline: none;
+    border-color: var(--cf-orange);
+    box-shadow: var(--focus-ring);
+}
+
+.oauth-overview-action:disabled {
+    cursor: not-allowed;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    opacity: 0.72;
+}
+
+.oauth-overview-action-title {
+    font-size: var(--fs-sm);
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.oauth-overview-action-meta {
+    min-height: 1.2em;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    overflow-wrap: anywhere;
+}
+
 .oauth-analytics-series {
     display: grid;
     gap: 8px;

@@ -76,6 +76,15 @@ other = "Select an account to load account-scoped resources."
 [oauth_overview_status]
 other = "Cloudflare public status"
 
+[oauth_overview_quick_actions]
+other = "Quick actions"
+
+[oauth_overview_action_select_account]
+other = "Select an account first"
+
+[oauth_overview_action_select_zone]
+other = "Select a zone first"
+
 [oauth_overview_metrics]
 other = "Dashboard metrics"
 

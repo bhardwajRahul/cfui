@@ -2847,6 +2847,36 @@
         else renderZones(body);
     }
 
+    async function switchOAuthResource(resource) {
+        state.oauth.resource = resource || 'zones';
+        resetOAuthResourceDetail(state.oauth.resource);
+        await loadOAuthCurrentResource();
+        renderOAuthResource();
+    }
+
+    function resetOAuthResourceDetail(resource) {
+        if (resource !== 'workers') resetWorkerDetail();
+        if (resource !== 'storage') resetStorageDetail();
+        if (resource !== 'tunnels') {
+            state.oauth.tunnelCreateOpen = false;
+            state.oauth.tunnelIngressCreateTunnelId = '';
+            state.oauth.tunnelIngressEditing = null;
+        }
+        state.oauth.dnsFormMode = '';
+        state.oauth.dnsEditingId = '';
+        if (resource !== 'snippets') resetSnippetDetail();
+        if (resource !== 'waf') {
+            state.oauth.wafCreateOpen = false;
+            state.oauth.wafEditingId = '';
+            state.oauth.wafManagedExceptionCreateOpen = false;
+            state.oauth.wafManagedExceptionEditingId = '';
+            state.oauth.wafManagedOverrideCreateOpen = false;
+            state.oauth.wafManagedOverrideEditingId = '';
+        }
+        if (resource !== 'analytics') resetAnalyticsDetail();
+        if (resource !== 'usage') resetUsageDetail();
+    }
+
     function renderOverview(body) {
         if (state.oauth.overviewLoading) {
             body.appendChild(empty(t('oauth_overview_loading')));
@@ -2862,6 +2892,7 @@
             return;
         }
 
+        const metrics = new Map((Array.isArray(overview.metrics) ? overview.metrics : []).map((metric) => [metric.id, metric]));
         const context = document.createElement('section');
         context.className = 'oauth-section';
         const heading = document.createElement('h4');
@@ -2878,6 +2909,9 @@
             ].filter(Boolean).join(' · ') || t('oauth_overview_no_context'),
         ));
         body.appendChild(context);
+
+        const quickActions = overviewQuickActionsNode(metrics);
+        if (quickActions) body.appendChild(quickActions);
 
         const status = overview.status || null;
         if (status) {
@@ -2901,7 +2935,6 @@
         metricHeading.textContent = t('oauth_overview_metrics');
         const grid = document.createElement('div');
         grid.className = 'oauth-metric-grid';
-        const metrics = new Map((Array.isArray(overview.metrics) ? overview.metrics : []).map((metric) => [metric.id, metric]));
         for (const [id, labelKey] of overviewMetricDefinitions) {
             const metric = metrics.get(id);
             const node = metricNode(t(labelKey), overviewMetricValue(metric));
@@ -2917,6 +2950,75 @@
         }
         section.append(metricHeading, grid);
         body.appendChild(section);
+    }
+
+    function overviewQuickActionsNode(metrics) {
+        const actions = [
+            { resource: 'zones', label: t('oauth_zones'), metric: 'zones' },
+            { resource: 'dns', label: t('oauth_dns'), metric: 'dns_records' },
+            { resource: 'tunnels', label: t('oauth_tunnels'), metric: 'tunnels' },
+            { resource: 'workers', label: t('oauth_workers'), metric: 'workers' },
+            { resource: 'storage', label: t('oauth_storage'), metrics: [['r2_buckets', 'R2'], ['d1_databases', 'D1'], ['kv_namespaces', 'KV']] },
+            { resource: 'usage', label: t('oauth_usage') },
+            { resource: 'analytics', label: t('oauth_analytics') },
+            { resource: 'waf', label: t('oauth_waf'), metric: 'waf_rules' },
+            { resource: 'settings', label: t('oauth_zone_settings') },
+            { resource: 'status', label: t('oauth_cloudflare_status') },
+        ];
+        const section = document.createElement('section');
+        section.className = 'oauth-section';
+        const heading = document.createElement('h4');
+        heading.className = 'oauth-section-title';
+        heading.textContent = t('oauth_overview_quick_actions');
+        const wrap = document.createElement('div');
+        wrap.className = 'oauth-overview-actions';
+        for (const action of actions) {
+            const resourceDef = resourceDefinitions.find((definition) => definition.id === action.resource);
+            if (!resourceDef || !canSeeResource(resourceDef)) continue;
+            const disabledReason = overviewQuickActionDisabledReason(resourceDef);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'oauth-overview-action';
+            button.disabled = !!disabledReason;
+            if (disabledReason) button.title = disabledReason;
+            button.addEventListener('click', async () => {
+                await switchOAuthResource(action.resource);
+            });
+            const title = document.createElement('span');
+            title.className = 'oauth-overview-action-title';
+            title.textContent = action.label;
+            const meta = document.createElement('span');
+            meta.className = 'oauth-overview-action-meta';
+            meta.textContent = overviewQuickActionMeta(action, metrics, disabledReason);
+            button.append(title, meta);
+            wrap.appendChild(button);
+        }
+        if (!wrap.childElementCount) return null;
+        section.append(heading, wrap);
+        return section;
+    }
+
+    function overviewQuickActionDisabledReason(resourceDef) {
+        if (resourceDef.needsAccount && !state.oauth.selectedAccountId) return t('oauth_overview_action_select_account');
+        if (resourceDef.needsZone && !state.oauth.selectedZoneId) return t('oauth_overview_action_select_zone');
+        return '';
+    }
+
+    function overviewQuickActionMeta(action, metrics, disabledReason) {
+        if (disabledReason) return disabledReason;
+        if (action.metric) {
+            const metric = metrics.get(action.metric);
+            if (metric?.available) return overviewMetricValue(metric);
+            if (metric && !metric.available) return overviewMetricErrorLabel(metric.error);
+        }
+        if (Array.isArray(action.metrics)) {
+            const parts = action.metrics.map(([id, label]) => {
+                const metric = metrics.get(id);
+                return metric?.available ? `${label} ${overviewMetricValue(metric)}` : '';
+            }).filter(Boolean);
+            if (parts.length) return parts.join(' · ');
+        }
+        return '';
     }
 
     function renderZones(body) {
@@ -7942,29 +8044,7 @@
         });
         $$('.oauth-resource-tab').forEach((btn) => {
             btn.addEventListener('click', async () => {
-                state.oauth.resource = btn.dataset.oauthResource || 'zones';
-                if (state.oauth.resource !== 'workers') resetWorkerDetail();
-                if (state.oauth.resource !== 'storage') resetStorageDetail();
-                if (state.oauth.resource !== 'tunnels') {
-                    state.oauth.tunnelCreateOpen = false;
-                    state.oauth.tunnelIngressCreateTunnelId = '';
-                    state.oauth.tunnelIngressEditing = null;
-                }
-                state.oauth.dnsFormMode = '';
-                state.oauth.dnsEditingId = '';
-                if (state.oauth.resource !== 'snippets') resetSnippetDetail();
-					if (state.oauth.resource !== 'waf') {
-						state.oauth.wafCreateOpen = false;
-						state.oauth.wafEditingId = '';
-						state.oauth.wafManagedExceptionCreateOpen = false;
-						state.oauth.wafManagedExceptionEditingId = '';
-						state.oauth.wafManagedOverrideCreateOpen = false;
-						state.oauth.wafManagedOverrideEditingId = '';
-					}
-                if (state.oauth.resource !== 'analytics') resetAnalyticsDetail();
-                if (state.oauth.resource !== 'usage') resetUsageDetail();
-                await loadOAuthCurrentResource();
-                renderOAuthResource();
+                await switchOAuthResource(btn.dataset.oauthResource || 'zones');
             });
         });
 

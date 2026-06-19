@@ -76,6 +76,15 @@ other = "选择账号后加载账号级资源。"
 [oauth_overview_status]
 other = "Cloudflare 公共状态"
 
+[oauth_overview_quick_actions]
+other = "快捷入口"
+
+[oauth_overview_action_select_account]
+other = "先选择账号"
+
+[oauth_overview_action_select_zone]
+other = "先选择域名"
+
 [oauth_overview_metrics]
 other = "Dashboard 指标"
 
