@@ -47,7 +47,7 @@ other = "中转回调已保存。"
 other = "复制中转回调 URL"
 
 [oauth_relay_config_hint]
-other = "Cloudflare OAuth 客户端的 Redirect callback URL 只填这个地址。"
+other = "这个地址必须和 Cloudflare OAuth 客户端里的 Redirect callback URL 完全一致。"
 
 [oauth_relay_assist_text]
 other = "个人使用点“使用默认”即可；需要自控域名时再点“自建 Worker”。"
@@ -902,7 +902,7 @@ other = "请先设置 CFUI_OAUTH_CLIENT_ID。"
 other = "OAuth 配置引导"
 
 [oauth_setup_subtitle]
-other = "先确认上方中转回调地址，再创建 Cloudflare OAuth 客户端并用 client ID 重启 cfui。"
+other = "先确认中转回调地址，再创建 Cloudflare OAuth 客户端，最后用 client ID 重启 cfui。"
 
 [oauth_setup_relay_title]
 other = "设置 OAuth 中转回调"
@@ -917,7 +917,7 @@ other = "这里只处理一件事：把输入框里的 URL 作为 Cloudflare OAu
 other = "填写 Cloudflare OAuth 客户端表单"
 
 [oauth_setup_oauth_app_desc]
-other = "按下面这些选项填写 Cloudflare OAuth 客户端表单。cfui 使用 Authorization Code、Refresh Token 和 PKCE，不使用 client secret。"
+other = "按下面这些选项填写 Cloudflare OAuth 客户端表单。Redirect callback URL 就是上方输入框里的中转回调；cfui 使用 Authorization Code、Refresh Token 和 PKCE，不使用 client secret。"
 
 [oauth_setup_cloudflare_path]
 other = "Cloudflare 控制台路径"
@@ -950,7 +950,7 @@ other = "None (PKCE)"
 other = "重定向回调 URL"
 
 [oauth_setup_redirect_uri_note]
-other = "这里只填 Worker relay 的公网 HTTPS 回调地址，例如 https://oauth.example.com/oauth/callback。不要追加 cfui_callback_url。Cloudflare OAuth 会先回到 Worker；Worker 从 OAuth state 里读取 cfui 回调地址，再跳回当前 cfui 实例。"
+other = "这里只填 relay 的 HTTPS 回调地址，例如 https://oauth.omarchy.qzz.io/oauth/callback 或你的 https://oauth.example.com/oauth/callback。不要追加 cfui_callback_url。Cloudflare OAuth 会先回到 relay；relay 从 OAuth state 里读取 cfui 回调地址，再跳回当前 cfui 实例。"
 
 [oauth_setup_client_url]
 other = "客户端 URL"
@@ -983,22 +983,22 @@ other = "在页面里查看完整 Worker 脚本"
 other = "Cloudflare OAuth Worker 脚本"
 
 [oauth_worker_script_dialog_subtitle]
-other = "默认中转地址可以直接使用；只有想换成自己的域名时才需要部署这个脚本。"
+other = "可以直接使用提供的中转地址；只有想换成自己的域名时才需要部署这个脚本。"
 
 [oauth_worker_self_host_summary]
-other = "个人使用不需要部署 Worker；只有想使用自己的 relay 域名时才自建。"
+other = "不想自建时直接使用提供的中转地址；自建时把示例地址换成你的 Worker 域名。"
 
 [oauth_worker_default_relay_label]
 other = "提供的中转"
 
 [oauth_worker_default_relay_desc]
-other = "不自建时，Cloudflare OAuth 客户端和 cfui 输入框都使用这个地址。"
+other = "不自建时，Cloudflare OAuth 客户端的 Redirect callback URL 和 cfui 输入框都填这个地址。"
 
 [oauth_worker_self_host_relay_label]
 other = "自建中转"
 
 [oauth_worker_self_host_relay_desc]
-other = "使用你自己的 Worker 域名，Cloudflare OAuth 客户端和 cfui 输入框必须填写同一个 /oauth/callback 地址。"
+other = "使用你自己的 Worker 域名时，Cloudflare OAuth 客户端和 cfui 输入框必须填写同一个 /oauth/callback 地址。"
 
 [oauth_worker_callback_format]
 other = "回调 URL 格式"

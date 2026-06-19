@@ -23,10 +23,8 @@
         function relayCallbackNode(status) {
             const savedRelay = status?.config?.relay_callback_url || '';
             const configuredRelay = savedRelay || defaultOAuthRelayCallbackURL;
-            const isDefaultRelay = configuredRelay === defaultOAuthRelayCallbackURL;
             const form = document.createElement('form');
             form.className = 'oauth-relay-editor';
-            form.dataset.mode = isDefaultRelay ? 'default' : 'custom';
             const field = document.createElement('div');
             field.className = 'oauth-relay-field';
             const inputRow = document.createElement('div');
@@ -40,7 +38,7 @@
             input.autocomplete = 'off';
             input.placeholder = defaultOAuthRelayCallbackURL;
             input.setAttribute('aria-label', t('oauth_relay_callback'));
-            input.setAttribute('aria-describedby', 'oauth-relay-callback-help oauth-relay-callback-status oauth-relay-callback-assist');
+            input.setAttribute('aria-describedby', 'oauth-relay-callback-help oauth-relay-callback-status');
             input.value = configuredRelay;
             const primaryActions = document.createElement('span');
             primaryActions.className = 'oauth-relay-primary-actions';
@@ -61,24 +59,15 @@
             primaryActions.append(copy, check, save);
             inputRow.append(input, primaryActions);
 
-            const statusLine = relayStatusLine(isDefaultRelay);
-
             const helper = document.createElement('div');
             helper.className = 'oauth-relay-helper';
-            const helperCopy = document.createElement('div');
-            helperCopy.className = 'oauth-relay-helper-copy';
             const helperText = document.createElement('span');
             helperText.className = 'oauth-relay-helper-text';
             helperText.id = 'oauth-relay-callback-help';
             helperText.textContent = t('oauth_relay_config_hint');
-            const assistText = document.createElement('span');
-            assistText.className = 'oauth-relay-assist-text';
-            assistText.id = 'oauth-relay-callback-assist';
-            assistText.textContent = t('oauth_relay_assist_text');
-            helperCopy.append(helperText, assistText);
             const assistActions = document.createElement('span');
             assistActions.className = 'oauth-relay-assist-actions';
-            const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--xs btn--text oauth-relay-inline-action oauth-relay-text-action', (event) => {
+            const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--text oauth-relay-inline-action oauth-relay-default-action', (event) => {
                 input.value = defaultOAuthRelayCallbackURL;
                 if (savedRelay === defaultOAuthRelayCallbackURL) {
                     input.focus();
@@ -89,13 +78,15 @@
             });
             useDefault.title = t('oauth_relay_use_default_title');
             useDefault.setAttribute('aria-label', t('oauth_relay_use_default_title'));
-            const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--xs btn--text oauth-relay-inline-action oauth-relay-text-action', () => openWorkerScriptDialog());
+            const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--text oauth-relay-inline-action oauth-relay-self-host-action', () => openWorkerScriptDialog());
             selfHost.title = t('oauth_relay_self_host_title');
             selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
             assistActions.append(useDefault, selfHost);
-            helper.append(helperCopy, assistActions);
+            helper.append(helperText, assistActions);
 
-            field.append(inputRow, statusLine, helper);
+            const statusLine = relayStatusLine();
+            field.append(inputRow, helper);
+            if (statusLine) field.appendChild(statusLine);
             form.appendChild(field);
             form.addEventListener('submit', (event) => {
                 event.preventDefault();
@@ -104,30 +95,15 @@
             return form;
         }
 
-        function relayStatusLine(isDefaultRelay) {
+        function relayStatusLine() {
+            const check = relayCheckStatusNode();
+            if (!check) return null;
             const line = document.createElement('div');
             line.className = 'oauth-relay-status-line';
             line.id = 'oauth-relay-callback-status';
             line.setAttribute('role', 'status');
             line.setAttribute('aria-live', 'polite');
-
-            const source = document.createElement('span');
-            source.className = 'pill oauth-relay-source-pill';
-            source.dataset.state = isDefaultRelay ? 'ok' : 'info';
-            const sourceDot = document.createElement('span');
-            sourceDot.className = 'dot';
-            const sourceText = document.createElement('span');
-            sourceText.className = 'text';
-            sourceText.textContent = isDefaultRelay ? t('oauth_relay_badge_default') : t('oauth_relay_badge_custom');
-            source.append(sourceDot, sourceText);
-
-            const message = document.createElement('span');
-            message.className = 'oauth-relay-status-message';
-            message.textContent = isDefaultRelay ? t('oauth_relay_status_default') : t('oauth_relay_status_custom');
-
-            line.append(source, message);
-            const check = relayCheckStatusNode();
-            if (check) line.appendChild(check);
+            line.appendChild(check);
             return line;
         }
 
@@ -266,12 +242,6 @@
             steps.append(
                 setupGuideStep(
                     '1',
-                    t('oauth_setup_relay_title'),
-                    t('oauth_setup_relay_desc'),
-                    [setupGuideNote(t('oauth_setup_relay_input_note'))]
-                ),
-                setupGuideStep(
-                    '2',
                     t('oauth_setup_oauth_app_title'),
                     t('oauth_setup_oauth_app_desc'),
                     [
@@ -281,16 +251,25 @@
                         setupGuideCodeRow(t('oauth_setup_grant_type'), t('oauth_setup_grant_type_value'), { copy: false }),
                         setupGuideCodeRow(t('oauth_setup_token_auth_method'), t('oauth_setup_token_auth_method_value'), { copy: false }),
                         setupGuideCodeRow(t('oauth_setup_redirect_uri'), relayURL || defaultOAuthRelayCallbackURL, {
-                            actionLabel: t('oauth_relay_configure'),
-                            actionTitle: t('oauth_relay_edit'),
-                            action: focusRelayInput,
+                            actions: [
+                                {
+                                    label: t('oauth_relay_configure'),
+                                    title: t('oauth_relay_edit'),
+                                    action: focusRelayInput,
+                                },
+                                {
+                                    label: t('oauth_relay_self_host'),
+                                    title: t('oauth_relay_self_host_title'),
+                                    action: openWorkerScriptDialog,
+                                },
+                            ],
                         }),
                         setupGuideNote(t('oauth_setup_redirect_uri_note')),
                         setupGuideCodeRow(t('oauth_setup_client_url'), t('oauth_setup_client_url_value'), { copy: false }),
                     ]
                 ),
                 setupGuideStep(
-                    '3',
+                    '2',
                     t('oauth_setup_permissions_title'),
                     t('oauth_setup_permissions_desc'),
                     [
@@ -302,7 +281,7 @@
                     ]
                 ),
                 setupGuideStep(
-                    '4',
+                    '3',
                     t('oauth_setup_env_title'),
                     t('oauth_setup_env_desc'),
                     [setupGuideCodeRow(t('oauth_setup_env_vars'), envSnippet)]
