@@ -740,11 +740,13 @@ type SnippetRuleUpdateRequest struct {
 }
 
 type WAFRuleset struct {
-	ID          string     `json:"id,omitempty"`
-	Name        string     `json:"name,omitempty"`
-	Phase       string     `json:"phase,omitempty"`
-	LastUpdated *time.Time `json:"last_updated,omitempty"`
-	Rules       []WAFRule  `json:"rules"`
+	ID           string                   `json:"id,omitempty"`
+	Name         string                   `json:"name,omitempty"`
+	Phase        string                   `json:"phase,omitempty"`
+	LastUpdated  *time.Time               `json:"last_updated,omitempty"`
+	Rules        []WAFRule                `json:"rules"`
+	Session      cfoauth.SessionSummary   `json:"session"`
+	Capabilities cfoauth.CapabilityMatrix `json:"capabilities"`
 }
 
 type WAFRule struct {
@@ -3190,7 +3192,7 @@ func (s *Service) WAFManagedExceptions(ctx context.Context, zoneID string) (WAFR
 }
 
 func (s *Service) WAFManagedOverrides(ctx context.Context, zoneID string) (WAFRuleset, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return WAFRuleset{}, err
 	}
@@ -3203,13 +3205,13 @@ func (s *Service) WAFManagedOverrides(ctx context.Context, zoneID string) (WAFRu
 		return WAFRuleset{}, err
 	}
 	if !found {
-		return WAFRuleset{Phase: string(cloudflare.RulesetPhaseHTTPRequestFirewallManaged), Rules: []WAFRule{}}, nil
+		return withWAFSession(WAFRuleset{Phase: string(cloudflare.RulesetPhaseHTTPRequestFirewallManaged), Rules: []WAFRule{}}, session), nil
 	}
-	return mapWAFRulesetByAction(ruleset, "execute"), nil
+	return withWAFSession(mapWAFRulesetByAction(ruleset, "execute"), session), nil
 }
 
 func (s *Service) wafRules(ctx context.Context, zoneID string, phase cloudflare.RulesetPhase, skipOnly bool) (WAFRuleset, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return WAFRuleset{}, err
 	}
@@ -3222,9 +3224,9 @@ func (s *Service) wafRules(ctx context.Context, zoneID string, phase cloudflare.
 		return WAFRuleset{}, err
 	}
 	if !found {
-		return WAFRuleset{Phase: string(phase), Rules: []WAFRule{}}, nil
+		return withWAFSession(WAFRuleset{Phase: string(phase), Rules: []WAFRule{}}, session), nil
 	}
-	return mapWAFRulesetFiltered(ruleset, skipOnly), nil
+	return withWAFSession(mapWAFRulesetFiltered(ruleset, skipOnly), session), nil
 }
 
 func (s *Service) CreateWAFRule(ctx context.Context, zoneID string, req WAFRuleRequest) (WAFRuleset, error) {
@@ -3236,7 +3238,7 @@ func (s *Service) CreateWAFManagedException(ctx context.Context, zoneID string, 
 }
 
 func (s *Service) CreateWAFManagedOverride(ctx context.Context, zoneID string, req WAFManagedOverrideRequest) (WAFRuleset, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return WAFRuleset{}, err
 	}
@@ -3266,11 +3268,11 @@ func (s *Service) CreateWAFManagedOverride(ctx context.Context, zoneID string, r
 	if err != nil {
 		return WAFRuleset{}, err
 	}
-	return mapWAFRulesetByAction(updated, "execute"), nil
+	return withWAFSession(mapWAFRulesetByAction(updated, "execute"), session), nil
 }
 
 func (s *Service) createWAFRule(ctx context.Context, zoneID string, req WAFRuleRequest, phase cloudflare.RulesetPhase, defaultDescription string, allowManagedSkip bool, skipOnly bool) (WAFRuleset, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return WAFRuleset{}, err
 	}
@@ -3300,7 +3302,7 @@ func (s *Service) createWAFRule(ctx context.Context, zoneID string, req WAFRuleR
 	if err != nil {
 		return WAFRuleset{}, err
 	}
-	return mapWAFRulesetFiltered(updated, skipOnly), nil
+	return withWAFSession(mapWAFRulesetFiltered(updated, skipOnly), session), nil
 }
 
 func (s *Service) UpdateWAFRule(ctx context.Context, zoneID, ruleID string, req WAFRuleUpdateRequest) (WAFRuleset, error) {
@@ -3312,7 +3314,7 @@ func (s *Service) UpdateWAFManagedException(ctx context.Context, zoneID, ruleID 
 }
 
 func (s *Service) UpdateWAFManagedOverride(ctx context.Context, zoneID, ruleID string, req WAFManagedOverrideUpdateRequest) (WAFRuleset, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return WAFRuleset{}, err
 	}
@@ -3358,11 +3360,11 @@ func (s *Service) UpdateWAFManagedOverride(ctx context.Context, zoneID, ruleID s
 	if err != nil {
 		return WAFRuleset{}, err
 	}
-	return mapWAFRulesetByAction(updated, "execute"), nil
+	return withWAFSession(mapWAFRulesetByAction(updated, "execute"), session), nil
 }
 
 func (s *Service) updateWAFRule(ctx context.Context, zoneID, ruleID string, req WAFRuleUpdateRequest, phase cloudflare.RulesetPhase, allowManagedSkip bool, skipOnly bool) (WAFRuleset, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return WAFRuleset{}, err
 	}
@@ -3408,7 +3410,7 @@ func (s *Service) updateWAFRule(ctx context.Context, zoneID, ruleID string, req 
 	if err != nil {
 		return WAFRuleset{}, err
 	}
-	return mapWAFRulesetFiltered(updated, skipOnly), nil
+	return withWAFSession(mapWAFRulesetFiltered(updated, skipOnly), session), nil
 }
 
 func (s *Service) DeleteWAFRule(ctx context.Context, zoneID, ruleID string) (WAFRuleset, error) {
@@ -3420,7 +3422,7 @@ func (s *Service) DeleteWAFManagedException(ctx context.Context, zoneID, ruleID 
 }
 
 func (s *Service) DeleteWAFManagedOverride(ctx context.Context, zoneID, ruleID string) (WAFRuleset, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return WAFRuleset{}, err
 	}
@@ -3462,11 +3464,11 @@ func (s *Service) DeleteWAFManagedOverride(ctx context.Context, zoneID, ruleID s
 	if err != nil {
 		return WAFRuleset{}, err
 	}
-	return mapWAFRulesetByAction(updated, "execute"), nil
+	return withWAFSession(mapWAFRulesetByAction(updated, "execute"), session), nil
 }
 
 func (s *Service) deleteWAFRule(ctx context.Context, zoneID, ruleID string, phase cloudflare.RulesetPhase, skipOnly bool) (WAFRuleset, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return WAFRuleset{}, err
 	}
@@ -3508,7 +3510,7 @@ func (s *Service) deleteWAFRule(ctx context.Context, zoneID, ruleID string, phas
 	if err != nil {
 		return WAFRuleset{}, err
 	}
-	return mapWAFRulesetFiltered(updated, skipOnly), nil
+	return withWAFSession(mapWAFRulesetFiltered(updated, skipOnly), session), nil
 }
 
 func (s *Service) ZoneAnalytics(ctx context.Context, zoneID, requestedRange string) (ZoneAnalyticsResponse, error) {
@@ -4954,6 +4956,12 @@ func mapWAFRulesetByAction(ruleset cloudflare.Ruleset, action string) WAFRuleset
 		LastUpdated: ruleset.LastUpdated,
 		Rules:       rules,
 	}
+}
+
+func withWAFSession(ruleset WAFRuleset, session cfoauth.SessionSummary) WAFRuleset {
+	ruleset.Session = session
+	ruleset.Capabilities = session.Capabilities
+	return ruleset
 }
 
 func mapWAFActionParameters(params *cloudflare.RulesetRuleActionParameters) *WAFRuleActionParameters {

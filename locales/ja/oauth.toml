@@ -1441,6 +1441,12 @@ other = "Enabled"
 [oauth_waf_copy_audit_json]
 other = "Copy audit JSON"
 
+[oauth_waf_copy_diagnostics]
+other = "診断をコピー"
+
+[oauth_waf_copy_diagnostics_title]
+other = "現在の WAF 診断情報をコピーします。OAuth token、式、説明、raw action parameters、managed rule ID、audit JSON、advanced JSON は含めません。"
+
 [oauth_waf_advanced_json]
 other = "Advanced JSON"
 

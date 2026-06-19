@@ -1914,6 +1914,7 @@
 
 	async function loadOAuthWAF() {
 		if (!state.oauth.selectedZoneId) return;
+		state.oauth.wafError = '';
 		try {
 			const zoneID = encodeURIComponent(state.oauth.selectedZoneId);
 			const [ruleset, managedRuleset, managedOverrideRuleset] = await Promise.all([
@@ -1921,12 +1922,23 @@
 				apiGet('/cf/waf/managed-exceptions?zone_id=' + zoneID),
 				apiGet('/cf/waf/managed-overrides?zone_id=' + zoneID),
 			]);
-			state.oauth.wafRuleset = ruleset;
-			state.oauth.wafManagedRuleset = managedRuleset;
-			state.oauth.wafManagedOverrideRuleset = managedOverrideRuleset;
+			applyWAFRulesetResponse('custom', ruleset);
+			applyWAFRulesetResponse('managed_exceptions', managedRuleset);
+			applyWAFRulesetResponse('managed_overrides', managedOverrideRuleset);
 		} catch (err) {
-			renderOAuthError(err.message);
+			state.oauth.wafError = err.message || String(err);
+			state.oauth.wafRuleset = null;
+			state.oauth.wafManagedRuleset = null;
+			state.oauth.wafManagedOverrideRuleset = null;
 		}
+	}
+
+	function applyWAFRulesetResponse(kind, ruleset) {
+		if (kind === 'custom') state.oauth.wafRuleset = ruleset || null;
+		else if (kind === 'managed_exceptions') state.oauth.wafManagedRuleset = ruleset || null;
+		else if (kind === 'managed_overrides') state.oauth.wafManagedOverrideRuleset = ruleset || null;
+		state.oauth.wafSession = ruleset?.session || state.oauth.wafSession || null;
+		state.oauth.wafCapabilities = ruleset?.capabilities || state.oauth.wafCapabilities || null;
 	}
 
     async function loadOAuthAnalytics() {
@@ -1951,12 +1963,14 @@
     async function createWAFRule(payload, button) {
         if (!state.oauth.selectedZoneId) return;
         setBusy(button, true, t('saving'));
+        state.oauth.wafMutationError = '';
         try {
-            state.oauth.wafRuleset = await apiSend('/cf/waf/rules?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId), 'POST', payload);
+            applyWAFRulesetResponse('custom', await apiSend('/cf/waf/rules?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId), 'POST', payload));
             state.oauth.wafCreateOpen = false;
             renderOAuthResource();
             toast.ok(t('oauth_waf_rule_saved'));
         } catch (err) {
+            state.oauth.wafMutationError = err.message || String(err);
             toast.err(err.message);
         } finally {
             setBusy(button, false);
@@ -1966,12 +1980,14 @@
     async function updateWAFRule(rule, payload, button) {
         if (!state.oauth.selectedZoneId || !rule?.id) return;
         setBusy(button, true, t('saving'));
+        state.oauth.wafMutationError = '';
         try {
-            state.oauth.wafRuleset = await apiSend(`/cf/waf/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', payload);
+            applyWAFRulesetResponse('custom', await apiSend(`/cf/waf/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', payload));
             state.oauth.wafEditingId = '';
             renderOAuthResource();
             toast.ok(t('oauth_waf_rule_updated'));
         } catch (err) {
+            state.oauth.wafMutationError = err.message || String(err);
             toast.err(err.message);
         } finally {
             setBusy(button, false);
@@ -1981,10 +1997,12 @@
     async function setWAFRuleEnabled(rule, enabled, control) {
         if (!state.oauth.selectedZoneId || !rule?.id) return;
         if (control) control.disabled = true;
+        state.oauth.wafMutationError = '';
         try {
-            state.oauth.wafRuleset = await apiSend(`/cf/waf/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', { enabled });
+            applyWAFRulesetResponse('custom', await apiSend(`/cf/waf/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', { enabled }));
             renderOAuthResource();
         } catch (err) {
+            state.oauth.wafMutationError = err.message || String(err);
             toast.err(err.message);
             if (control) control.checked = !enabled;
         } finally {
@@ -2000,11 +2018,13 @@
             okText: t('delete'),
         });
         if (!ok) return;
+        state.oauth.wafMutationError = '';
         try {
-            state.oauth.wafRuleset = await apiSend(`/cf/waf/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'DELETE');
+            applyWAFRulesetResponse('custom', await apiSend(`/cf/waf/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'DELETE'));
             renderOAuthResource();
             toast.ok(t('oauth_waf_rule_deleted'));
         } catch (err) {
+            state.oauth.wafMutationError = err.message || String(err);
             toast.err(err.message);
 		}
 	}
@@ -2012,12 +2032,14 @@
 	async function createWAFManagedException(payload, button) {
 		if (!state.oauth.selectedZoneId) return;
 		setBusy(button, true, t('saving'));
+		state.oauth.wafMutationError = '';
 		try {
-			state.oauth.wafManagedRuleset = await apiSend('/cf/waf/managed-exceptions/rules?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId), 'POST', payload);
+			applyWAFRulesetResponse('managed_exceptions', await apiSend('/cf/waf/managed-exceptions/rules?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId), 'POST', payload));
 			state.oauth.wafManagedExceptionCreateOpen = false;
 			renderOAuthResource();
 			toast.ok(t('oauth_waf_managed_exception_saved'));
 		} catch (err) {
+			state.oauth.wafMutationError = err.message || String(err);
 			toast.err(err.message);
 		} finally {
 			setBusy(button, false);
@@ -2027,12 +2049,14 @@
 	async function updateWAFManagedException(rule, payload, button) {
 		if (!state.oauth.selectedZoneId || !rule?.id) return;
 		setBusy(button, true, t('saving'));
+		state.oauth.wafMutationError = '';
 		try {
-			state.oauth.wafManagedRuleset = await apiSend(`/cf/waf/managed-exceptions/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', payload);
+			applyWAFRulesetResponse('managed_exceptions', await apiSend(`/cf/waf/managed-exceptions/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', payload));
 			state.oauth.wafManagedExceptionEditingId = '';
 			renderOAuthResource();
 			toast.ok(t('oauth_waf_managed_exception_updated'));
 		} catch (err) {
+			state.oauth.wafMutationError = err.message || String(err);
 			toast.err(err.message);
 		} finally {
 			setBusy(button, false);
@@ -2042,10 +2066,12 @@
 	async function setWAFManagedExceptionEnabled(rule, enabled, control) {
 		if (!state.oauth.selectedZoneId || !rule?.id) return;
 		if (control) control.disabled = true;
+		state.oauth.wafMutationError = '';
 		try {
-			state.oauth.wafManagedRuleset = await apiSend(`/cf/waf/managed-exceptions/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', { enabled });
+			applyWAFRulesetResponse('managed_exceptions', await apiSend(`/cf/waf/managed-exceptions/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', { enabled }));
 			renderOAuthResource();
 		} catch (err) {
+			state.oauth.wafMutationError = err.message || String(err);
 			toast.err(err.message);
 			if (control) control.checked = !enabled;
 		} finally {
@@ -2061,11 +2087,13 @@
 			okText: t('delete'),
 		});
 		if (!ok) return;
+		state.oauth.wafMutationError = '';
 		try {
-			state.oauth.wafManagedRuleset = await apiSend(`/cf/waf/managed-exceptions/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'DELETE');
+			applyWAFRulesetResponse('managed_exceptions', await apiSend(`/cf/waf/managed-exceptions/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'DELETE'));
 			renderOAuthResource();
 			toast.ok(t('oauth_waf_managed_exception_deleted'));
 		} catch (err) {
+			state.oauth.wafMutationError = err.message || String(err);
 			toast.err(err.message);
 		}
 	}
@@ -2073,12 +2101,14 @@
 	async function createWAFManagedOverride(payload, button) {
 		if (!state.oauth.selectedZoneId) return;
 		setBusy(button, true, t('saving'));
+		state.oauth.wafMutationError = '';
 		try {
-			state.oauth.wafManagedOverrideRuleset = await apiSend('/cf/waf/managed-overrides/rules?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId), 'POST', payload);
+			applyWAFRulesetResponse('managed_overrides', await apiSend('/cf/waf/managed-overrides/rules?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId), 'POST', payload));
 			state.oauth.wafManagedOverrideCreateOpen = false;
 			renderOAuthResource();
 			toast.ok(t('oauth_waf_managed_override_saved'));
 		} catch (err) {
+			state.oauth.wafMutationError = err.message || String(err);
 			toast.err(err.message);
 		} finally {
 			setBusy(button, false);
@@ -2088,12 +2118,14 @@
 	async function updateWAFManagedOverride(rule, payload, button) {
 		if (!state.oauth.selectedZoneId || !rule?.id) return;
 		setBusy(button, true, t('saving'));
+		state.oauth.wafMutationError = '';
 		try {
-			state.oauth.wafManagedOverrideRuleset = await apiSend(`/cf/waf/managed-overrides/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', payload);
+			applyWAFRulesetResponse('managed_overrides', await apiSend(`/cf/waf/managed-overrides/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', payload));
 			state.oauth.wafManagedOverrideEditingId = '';
 			renderOAuthResource();
 			toast.ok(t('oauth_waf_managed_override_updated'));
 		} catch (err) {
+			state.oauth.wafMutationError = err.message || String(err);
 			toast.err(err.message);
 		} finally {
 			setBusy(button, false);
@@ -2103,10 +2135,12 @@
 	async function setWAFManagedOverrideEnabled(rule, enabled, control) {
 		if (!state.oauth.selectedZoneId || !rule?.id) return;
 		if (control) control.disabled = true;
+		state.oauth.wafMutationError = '';
 		try {
-			state.oauth.wafManagedOverrideRuleset = await apiSend(`/cf/waf/managed-overrides/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', { enabled });
+			applyWAFRulesetResponse('managed_overrides', await apiSend(`/cf/waf/managed-overrides/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', { enabled }));
 			renderOAuthResource();
 		} catch (err) {
+			state.oauth.wafMutationError = err.message || String(err);
 			toast.err(err.message);
 			if (control) control.checked = !enabled;
 		} finally {
@@ -2122,11 +2156,13 @@
 			okText: t('delete'),
 		});
 		if (!ok) return;
+		state.oauth.wafMutationError = '';
 		try {
-			state.oauth.wafManagedOverrideRuleset = await apiSend(`/cf/waf/managed-overrides/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'DELETE');
+			applyWAFRulesetResponse('managed_overrides', await apiSend(`/cf/waf/managed-overrides/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'DELETE'));
 			renderOAuthResource();
 			toast.ok(t('oauth_waf_managed_override_deleted'));
 		} catch (err) {
+			state.oauth.wafMutationError = err.message || String(err);
 			toast.err(err.message);
 		}
 	}
@@ -6146,11 +6182,199 @@
         return `(${existing}) and (${snippet})`;
     }
 
-    function setExpressionTextareaValue(textarea, value) {
-        textarea.value = value;
-        textarea.focus();
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+	function setExpressionTextareaValue(textarea, value) {
+		textarea.value = value;
+		textarea.focus();
+		textarea.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
+	function wafDiagnosticsText() {
+		const status = state.oauth.status || {};
+		const session = state.oauth.wafSession || state.oauth.wafRuleset?.session || state.oauth.wafManagedRuleset?.session || state.oauth.wafManagedOverrideRuleset?.session || status.current || {};
+		const customRules = wafRulesetRules(state.oauth.wafRuleset);
+		const managedExceptions = wafRulesetRules(state.oauth.wafManagedRuleset);
+		const managedOverrides = wafRulesetRules(state.oauth.wafManagedOverrideRuleset);
+		return JSON.stringify({
+			type: 'cfui_oauth_waf_diagnostics',
+			version: 1,
+			generated_at: new Date().toISOString(),
+			browser_origin: window.location.origin,
+			browser_path: window.location.pathname,
+			contains_oauth_token: false,
+			contains_refresh_token: false,
+			contains_waf_expression: false,
+			contains_waf_description: false,
+			contains_action_parameters_raw: false,
+			contains_managed_ruleset_ids: false,
+			contains_managed_rule_ids: false,
+			contains_rate_limit_counting_expression: false,
+			contains_credential_check_expression: false,
+			contains_audit_json: false,
+			contains_advanced_json: false,
+			sensitive_fields_omitted: [
+				'oauth_access_token',
+				'oauth_refresh_token',
+				'waf_expression',
+				'waf_description',
+				'waf_action_parameters_raw',
+				'waf_managed_ruleset_id',
+				'waf_managed_rule_ids',
+				'waf_rate_limit_counting_expression',
+				'waf_credential_check_expression',
+				'waf_audit_json',
+				'waf_advanced_json',
+			],
+			selected: {
+				account_id: state.oauth.selectedAccountId || '',
+				account_name: selectedAccountName(),
+				zone_id: state.oauth.selectedZoneId || '',
+				zone_name: selectedZoneName(),
+				resource: state.oauth.resource || '',
+			},
+			identity: {
+				label: session.label || '',
+				expires_at: session.expires_at || '',
+				scopes: Array.isArray(session.scopes) ? session.scopes : [],
+			},
+			capability: {
+				waf_read: canRead('waf'),
+				waf_write: canWrite('waf'),
+			},
+			state: {
+				load_error: state.oauth.wafError || '',
+				mutation_error: state.oauth.wafMutationError || '',
+				custom_rules_loaded: customRules.length,
+				managed_exceptions_loaded: managedExceptions.length,
+				managed_overrides_loaded: managedOverrides.length,
+				create_rule_open: !!state.oauth.wafCreateOpen,
+				editing_rule_id: state.oauth.wafEditingId || '',
+				create_managed_exception_open: !!state.oauth.wafManagedExceptionCreateOpen,
+				editing_managed_exception_id: state.oauth.wafManagedExceptionEditingId || '',
+				create_managed_override_open: !!state.oauth.wafManagedOverrideCreateOpen,
+				editing_managed_override_id: state.oauth.wafManagedOverrideEditingId || '',
+				scope_ready: canRead('waf'),
+			},
+			rulesets: {
+				custom: wafRulesetDiagnostics(state.oauth.wafRuleset, 'custom'),
+				managed_exceptions: wafRulesetDiagnostics(state.oauth.wafManagedRuleset, 'managed_exceptions'),
+				managed_overrides: wafRulesetDiagnostics(state.oauth.wafManagedOverrideRuleset, 'managed_overrides'),
+			},
+			capabilities: oauthCapabilityDiagnostics(state.oauth.wafCapabilities || state.oauth.wafRuleset?.capabilities || state.oauth.wafManagedRuleset?.capabilities || state.oauth.wafManagedOverrideRuleset?.capabilities || status.capabilities || {}),
+		}, null, 2);
+	}
+
+	function wafRulesetRules(ruleset) {
+		return Array.isArray(ruleset?.rules) ? ruleset.rules : [];
+	}
+
+	function wafRulesetDiagnostics(ruleset, kind) {
+		const rules = wafRulesetRules(ruleset);
+		return {
+			kind,
+			loaded: !!ruleset,
+			id: ruleset?.id || '',
+			name: ruleset?.name || '',
+			phase: ruleset?.phase || '',
+			last_updated: ruleset?.last_updated || '',
+			rule_count: rules.length,
+			rules: rules.map((rule) => wafRuleDiagnostics(rule, kind)),
+		};
+	}
+
+	function wafRuleDiagnostics(rule, kind) {
+		return {
+			kind,
+			id: rule?.id || '',
+			ref: rule?.ref || '',
+			version: rule?.version || '',
+			action: rule?.action || '',
+			enabled: rule?.enabled === false ? false : true,
+			score_threshold: Number(rule?.score_threshold || 0),
+			last_updated: rule?.last_updated || '',
+			expression_included: false,
+			expression_length: String(rule?.expression || '').length,
+			description_included: false,
+			description_present: !!rule?.description,
+			description_length: String(rule?.description || '').length,
+			action_parameters: wafActionParametersDiagnostics(rule?.action_parameters),
+			rate_limit: wafRateLimitDiagnostics(rule?.ratelimit),
+			logging: rule?.logging ? { enabled: rule.logging.enabled == null ? null : !!rule.logging.enabled } : null,
+			credential_check: wafCredentialCheckDiagnostics(rule?.exposed_credential_check),
+			editable: kind === 'custom'
+				? isEditableWAFRule(rule)
+				: (kind === 'managed_overrides' ? isEditableWAFManagedOverride(rule) : isEditableWAFManagedException(rule)),
+		};
+	}
+
+	function wafActionParametersDiagnostics(params) {
+		if (!params) return null;
+		const raw = params.raw && typeof params.raw === 'object' ? params.raw : {};
+		const rules = params.rules && typeof params.rules === 'object' ? params.rules : {};
+		const rulesetRuleCounts = Object.values(rules).reduce((sum, item) => sum + (Array.isArray(item) ? item.length : 0), 0);
+		return {
+			id_present: !!params.id,
+			id_included: false,
+			id_length: String(params.id || '').length,
+			ruleset_present: !!params.ruleset,
+			ruleset_included: false,
+			ruleset_length: String(params.ruleset || '').length,
+			rulesets_count: Array.isArray(params.rulesets) ? params.rulesets.length : 0,
+			rulesets_included: false,
+			rules_map_ruleset_count: Object.keys(rules).length,
+			rules_map_rule_count: rulesetRuleCounts,
+			rules_map_included: false,
+			products_count: Array.isArray(params.products) ? params.products.length : 0,
+			products_included: false,
+			phases_count: Array.isArray(params.phases) ? params.phases.length : 0,
+			phases_included: false,
+			version_present: params.version != null && String(params.version) !== '',
+			version_included: false,
+			overrides: wafManagedOverridesDiagnostics(params.overrides),
+			raw_present: Object.keys(raw).length > 0,
+			raw_included: false,
+			raw_keys: Object.keys(raw).sort(),
+		};
+	}
+
+	function wafManagedOverridesDiagnostics(overrides) {
+		if (!overrides) return null;
+		return {
+			enabled: overrides.enabled == null ? null : !!overrides.enabled,
+			action: overrides.action || '',
+			sensitivity_level: overrides.sensitivity_level || '',
+			category_count: Array.isArray(overrides.categories) ? overrides.categories.length : 0,
+			rule_count: Array.isArray(overrides.rules) ? overrides.rules.length : 0,
+			categories_included: false,
+			rule_ids_included: false,
+		};
+	}
+
+	function wafRateLimitDiagnostics(rateLimit) {
+		if (!rateLimit) return null;
+		return {
+			characteristics_count: Array.isArray(rateLimit.characteristics) ? rateLimit.characteristics.length : 0,
+			characteristics_included: false,
+			requests_per_period: Number(rateLimit.requests_per_period || 0),
+			score_per_period: Number(rateLimit.score_per_period || 0),
+			period: Number(rateLimit.period || 0),
+			mitigation_timeout: Number(rateLimit.mitigation_timeout || 0),
+			requests_to_origin: !!rateLimit.requests_to_origin,
+			counting_expression_included: false,
+			counting_expression_length: String(rateLimit.counting_expression || '').length,
+			score_response_header_name_included: false,
+			score_response_header_name_present: !!rateLimit.score_response_header_name,
+		};
+	}
+
+	function wafCredentialCheckDiagnostics(check) {
+		if (!check) return null;
+		return {
+			username_expression_included: false,
+			username_expression_length: String(check.username_expression || '').length,
+			password_expression_included: false,
+			password_expression_length: String(check.password_expression || '').length,
+		};
+	}
 
 	function renderWAF(body) {
 		if (!state.oauth.selectedZoneId) {
@@ -6158,6 +6382,17 @@
 			return;
 		}
 		if (!canWrite('waf')) body.appendChild(empty(t('oauth_waf_readonly')));
+		body.appendChild(resourceActionBar(t('oauth_waf'), {
+			text: t('oauth_waf_copy_diagnostics'),
+			className: 'btn btn--sm btn--ghost',
+			title: t('oauth_waf_copy_diagnostics_title'),
+			onClick: () => copyOAuthText(wafDiagnosticsText()),
+		}));
+		if (state.oauth.wafError) {
+			body.appendChild(empty(state.oauth.wafError));
+			return;
+		}
+		if (state.oauth.wafMutationError) body.appendChild(empty(state.oauth.wafMutationError));
 
 		body.appendChild(resourceActionBar(t('oauth_waf_custom_rules'), canWrite('waf') ? {
 			text: state.oauth.wafCreateOpen ? t('cancel') : t('oauth_waf_create_rule'),
@@ -9172,6 +9407,10 @@
 		state.oauth.wafRuleset = null;
 		state.oauth.wafManagedRuleset = null;
 		state.oauth.wafManagedOverrideRuleset = null;
+		state.oauth.wafSession = null;
+		state.oauth.wafCapabilities = null;
+		state.oauth.wafError = '';
+		state.oauth.wafMutationError = '';
 		state.oauth.wafCreateOpen = false;
 		state.oauth.wafEditingId = '';
 		state.oauth.wafManagedExceptionCreateOpen = false;

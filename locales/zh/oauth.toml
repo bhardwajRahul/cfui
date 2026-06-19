@@ -1441,6 +1441,12 @@ other = "启用"
 [oauth_waf_copy_audit_json]
 other = "复制审计 JSON"
 
+[oauth_waf_copy_diagnostics]
+other = "复制诊断"
+
+[oauth_waf_copy_diagnostics_title]
+other = "复制当前 WAF 诊断信息，不包含 OAuth token、表达式、描述、原始 action parameters、托管规则 ID、审计 JSON 和高级 JSON。"
+
 [oauth_waf_advanced_json]
 other = "高级 JSON"
 

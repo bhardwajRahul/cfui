@@ -1441,6 +1441,12 @@ other = "Enabled"
 [oauth_waf_copy_audit_json]
 other = "Copy audit JSON"
 
+[oauth_waf_copy_diagnostics]
+other = "Copy diagnostics"
+
+[oauth_waf_copy_diagnostics_title]
+other = "Copy current WAF diagnostics. OAuth tokens, expressions, descriptions, raw action parameters, managed rule IDs, audit JSON, and advanced JSON are not included."
+
 [oauth_waf_advanced_json]
 other = "Advanced JSON"
 
