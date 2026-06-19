@@ -86,7 +86,7 @@
             title: () => t('oauth_workers'),
             description: () => t('oauth_permission_workers_desc'),
             readScopes: ['workers-scripts.read'],
-            writeScopes: ['workers-scripts.write'],
+            writeScopes: [],
         },
         {
             id: 'workers_tail',

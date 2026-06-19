@@ -29,3 +29,14 @@ func TestCapabilitiesAreCaseInsensitive(t *testing.T) {
 		t.Fatalf("expected tunnel write from mixed-case scope: %#v", matrix["tunnels"])
 	}
 }
+
+func TestWorkersCapabilityIsReadOnlyUntilDeployUXExists(t *testing.T) {
+	matrix := Capabilities("workers-scripts.read workers-scripts.write")
+
+	if !matrix["workers"].Read {
+		t.Fatalf("expected workers read capability: %#v", matrix["workers"])
+	}
+	if matrix["workers"].Write {
+		t.Fatalf("workers write should stay disabled until worker deploy UX exists: %#v", matrix["workers"])
+	}
+}

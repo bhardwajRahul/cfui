@@ -31,7 +31,7 @@ var featureScopes = []FeatureScope{
 	{ID: "account", ReadScopes: []string{"account-settings.read"}},
 	{ID: "zones", ReadScopes: []string{"zone.read"}, WriteScopes: []string{"zone.write"}},
 	{ID: "dns", ReadScopes: []string{"dns.read"}, WriteScopes: []string{"dns.write"}},
-	{ID: "workers", ReadScopes: []string{"workers-scripts.read"}, WriteScopes: []string{"workers-scripts.write"}},
+	{ID: "workers", ReadScopes: []string{"workers-scripts.read"}},
 	{ID: "workers_tail", ReadScopes: []string{"workers-tail.read"}},
 	{ID: "snippets", ReadScopes: []string{"snippets.read"}, WriteScopes: []string{"snippets.write"}},
 	{ID: "r2", ReadScopes: []string{"workers-r2.read"}, WriteScopes: []string{"workers-r2.write"}},
