@@ -2087,7 +2087,7 @@
     }
 
     async function purgeZoneCache(button) {
-        if (!state.oauth.selectedZoneId) return;
+        if (!state.oauth.selectedZoneId || !canWrite('cache_purge')) return;
         const ok = await window.cfui.confirm({
             title: t('oauth_cache_purge_title'),
             message: t('oauth_cache_purge_message'),
@@ -2142,7 +2142,8 @@
         const draft = {};
         for (const definition of oauthPermissionDefinitions) {
             const hasRead = definition.readScopes.some((scope) => configured.has(scope.toLowerCase()));
-            const hasWrite = definition.writeScopes.some((scope) => configured.has(scope.toLowerCase()));
+            const writeScopes = definition.acceptedWriteScopes || definition.writeScopes;
+            const hasWrite = writeScopes.some((scope) => configured.has(scope.toLowerCase()));
             draft[definition.id] = {
                 enabled: !!definition.required || hasRead || hasWrite,
                 write: hasWrite,
@@ -2161,7 +2162,7 @@
             const item = draft[definition.id] || {};
             if (!item.enabled && !definition.required) continue;
             definition.readScopes.forEach((scope) => scopes.add(scope));
-            if (item.write) definition.writeScopes.forEach((scope) => scopes.add(scope));
+            if (definition.writeOnly || item.write) definition.writeScopes.forEach((scope) => scopes.add(scope));
         }
         return Array.from(scopes).sort((a, b) => a.localeCompare(b));
     }
@@ -2177,6 +2178,7 @@
         if (!definition || definition.required) return;
         draft[id] = draft[id] || { enabled: false, write: false };
         draft[id].enabled = !!enabled;
+        if (definition.writeOnly) draft[id].write = !!enabled;
         if (!draft[id].enabled) draft[id].write = false;
         renderOAuthScopePanel(state.oauth.status);
         renderOAuthScopeDialog(state.oauth.status);
@@ -2237,10 +2239,13 @@
         const configuredRelay = status?.config?.relay_callback_url || defaultOAuthRelayCallbackURL;
         const form = document.createElement('form');
         form.className = 'oauth-relay-editor';
-        const inputWrap = document.createElement('div');
-        inputWrap.className = 'oauth-relay-editor-main';
+        const field = document.createElement('div');
+        field.className = 'oauth-relay-field';
+        const inputRow = document.createElement('div');
+        inputRow.className = 'oauth-relay-input-row';
         const input = document.createElement('input');
         input.className = 'input oauth-relay-input mono';
+        input.id = 'oauth-relay-callback-input';
         input.type = 'url';
         input.required = true;
         input.spellcheck = false;
@@ -2251,23 +2256,30 @@
         const hint = document.createElement('div');
         hint.className = 'oauth-config-hint';
         hint.textContent = t('oauth_relay_config_hint');
-        inputWrap.append(input, hint);
+        const save = smallButton(t('save'), 'btn btn--sm btn--primary');
+        save.type = 'submit';
+        inputRow.append(input, save);
 
-        const actions = document.createElement('div');
-        actions.className = 'oauth-relay-editor-actions';
-        const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--sm btn--text', (event) => {
+        const assist = document.createElement('div');
+        assist.className = 'oauth-relay-assist';
+        const assistText = document.createElement('span');
+        assistText.textContent = t('oauth_relay_assist_text');
+        const assistActions = document.createElement('span');
+        assistActions.className = 'oauth-relay-assist-actions';
+        const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--xs btn--text oauth-relay-inline-action', (event) => {
             input.value = defaultOAuthRelayCallbackURL;
             saveOAuthRelayCallback(input.value, event.currentTarget);
         });
         useDefault.title = t('oauth_relay_use_default_title');
         useDefault.setAttribute('aria-label', t('oauth_relay_use_default_title'));
-        const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--sm btn--ghost', () => openOAuthWorkerScriptDialog());
+        const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--xs btn--text oauth-relay-inline-action', () => openOAuthWorkerScriptDialog());
         selfHost.title = t('oauth_relay_self_host_title');
         selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
-        const save = smallButton(t('save'), 'btn btn--sm btn--primary');
-        save.type = 'submit';
-        actions.append(useDefault, selfHost, save);
-        form.append(inputWrap, actions);
+        assistActions.append(useDefault, selfHost);
+        assist.append(assistText, assistActions);
+
+        field.append(inputRow, assist, hint);
+        form.appendChild(field);
         form.addEventListener('submit', (event) => {
             event.preventDefault();
             saveOAuthRelayCallback(input.value, save);
@@ -2675,7 +2687,7 @@
         label.append(checkbox, text);
         row.appendChild(label);
 
-        if (definition.writeScopes.length) {
+        if (definition.writeScopes.length && !definition.writeOnly) {
             const select = document.createElement('select');
             select.className = 'select select--sm oauth-permission-level';
             select.setAttribute('aria-label', t('oauth_permission_level'));
@@ -6461,7 +6473,7 @@
             body.appendChild(empty(t('oauth_select_zone')));
             return;
         }
-        if (canWrite('zone_settings')) {
+        if (canWrite('zone_settings') || canWrite('cache_purge')) {
             body.appendChild(zoneSettingActionsNode());
         }
         if (!state.oauth.zoneSettings.length) {
@@ -7230,24 +7242,28 @@
         heading.textContent = t('oauth_zone_actions');
         section.appendChild(heading);
 
-        for (const [settingID, labelKey] of zoneSettingToggles) {
-            const node = zoneSettingToggleNode(settingID, labelKey);
-            if (node) section.appendChild(node);
+        if (canWrite('zone_settings')) {
+            for (const [settingID, labelKey] of zoneSettingToggles) {
+                const node = zoneSettingToggleNode(settingID, labelKey);
+                if (node) section.appendChild(node);
+            }
+            appendZoneSettingSelect(section, 'ssl', 'oauth_ssl_mode', sslModes, 'full');
+            appendZoneSettingSelect(section, 'security_level', 'oauth_security_level', securityLevels, 'medium');
+            appendZoneSettingSelect(section, 'cache_level', 'oauth_cache_level', cacheLevels, 'aggressive');
+            appendZoneSettingSelect(
+                section,
+                'browser_cache_ttl',
+                'oauth_browser_cache_ttl',
+                browserCacheTTLs,
+                14400,
+                (value) => Number.parseInt(value, 10)
+            );
         }
-        appendZoneSettingSelect(section, 'ssl', 'oauth_ssl_mode', sslModes, 'full');
-        appendZoneSettingSelect(section, 'security_level', 'oauth_security_level', securityLevels, 'medium');
-        appendZoneSettingSelect(section, 'cache_level', 'oauth_cache_level', cacheLevels, 'aggressive');
-        appendZoneSettingSelect(
-            section,
-            'browser_cache_ttl',
-            'oauth_browser_cache_ttl',
-            browserCacheTTLs,
-            14400,
-            (value) => Number.parseInt(value, 10)
-        );
 
-        const purgeButton = smallButton(t('oauth_cache_purge'), 'btn btn--sm btn--danger', () => purgeZoneCache(purgeButton));
-        section.appendChild(purgeButton);
+        if (canWrite('cache_purge')) {
+            const purgeButton = smallButton(t('oauth_cache_purge'), 'btn btn--sm btn--danger', () => purgeZoneCache(purgeButton));
+            section.appendChild(purgeButton);
+        }
         return section;
     }
 

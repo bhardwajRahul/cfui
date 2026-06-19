@@ -203,6 +203,80 @@ func TestNormalizeZoneSettingValue(t *testing.T) {
 	}
 }
 
+func TestUpdateZoneSettingRequiresZoneSettingsWriteScope(t *testing.T) {
+	svc := NewService(testOAuthServiceWithScopes(t, "zone-settings.read cache_purge.write"))
+
+	_, err := svc.UpdateZoneSetting(context.Background(), "zone-1", "development_mode", ZoneSettingUpdateRequest{Value: "on"})
+	var validationErr ValidationError
+	if !errors.As(err, &validationErr) || !strings.Contains(err.Error(), "zone settings write scope is required") {
+		t.Fatalf("expected zone settings write validation error, got %T %v", err, err)
+	}
+}
+
+func TestUpdateZoneSettingUsesZoneSettingsWriteScope(t *testing.T) {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/zones/zone-1/settings/development_mode", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		if r.Method != http.MethodPatch {
+			t.Fatalf("method = %s, want PATCH", r.Method)
+		}
+		writeCFEnvelope(w, `{"id":"development_mode","editable":true,"value":"on"}`, nil)
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewServiceWithEndpoints(testOAuthServiceWithScopes(t, "zone-settings.read zone-settings.write"), EndpointOverrides{
+		REST: server.URL + "/client/v4",
+	})
+	setting, err := svc.UpdateZoneSetting(ctx, "zone-1", "development_mode", ZoneSettingUpdateRequest{Value: "on"})
+	if err != nil {
+		t.Fatalf("UpdateZoneSetting: %v", err)
+	}
+	if setting.ID != "development_mode" || setting.Value != "on" {
+		t.Fatalf("unexpected setting response: %#v", setting)
+	}
+}
+
+func TestPurgeZoneCacheRequiresCachePurgeScope(t *testing.T) {
+	svc := NewService(testOAuthServiceWithScopes(t, "zone-settings.read zone-settings.write"))
+
+	_, err := svc.PurgeZoneCache(context.Background(), "zone-1")
+	var validationErr ValidationError
+	if !errors.As(err, &validationErr) || !strings.Contains(err.Error(), "cache purge write scope is required") {
+		t.Fatalf("expected cache purge validation error, got %T %v", err, err)
+	}
+}
+
+func TestPurgeZoneCacheAcceptsCachePurgeScopes(t *testing.T) {
+	for _, scope := range []string{"cache_purge.write", "cache.purge"} {
+		t.Run(scope, func(t *testing.T) {
+			ctx := context.Background()
+			mux := http.NewServeMux()
+			mux.HandleFunc("/client/v4/zones/zone-1/purge_cache", func(w http.ResponseWriter, r *http.Request) {
+				assertBearer(t, r)
+				if r.Method != http.MethodPost {
+					t.Fatalf("method = %s, want POST", r.Method)
+				}
+				writeCFEnvelope(w, `{"id":"purge-1"}`, nil)
+			})
+			server := httptest.NewServer(mux)
+			defer server.Close()
+
+			svc := NewServiceWithEndpoints(testOAuthServiceWithScopes(t, scope), EndpointOverrides{
+				REST: server.URL + "/client/v4",
+			})
+			resp, err := svc.PurgeZoneCache(ctx, "zone-1")
+			if err != nil {
+				t.Fatalf("PurgeZoneCache: %v", err)
+			}
+			if resp.ID != "purge-1" || !resp.Success {
+				t.Fatalf("unexpected purge response: %#v", resp)
+			}
+		})
+	}
+}
+
 func TestNormalizeKVValueTarget(t *testing.T) {
 	accountID, namespaceID, key, err := normalizeKVValueTarget(" account ", " namespace ", " folder/key ")
 	if err != nil {

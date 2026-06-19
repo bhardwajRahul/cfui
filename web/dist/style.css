@@ -4314,26 +4314,47 @@ details.disclosure > .body {
 }
 
 .oauth-relay-editor {
+    display: block;
+}
+
+.oauth-relay-field {
+    min-width: 0;
+}
+
+.oauth-relay-input-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
-    align-items: start;
-}
-
-.oauth-relay-editor-main {
-    min-width: 0;
+    align-items: center;
 }
 
 .oauth-relay-input {
     width: 100%;
-    min-height: 32px;
+    min-height: var(--tap);
     font-size: 0.8rem;
 }
 
-.oauth-relay-editor-actions {
-    display: inline-flex;
-    gap: 6px;
+.oauth-relay-assist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
     align-items: center;
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+}
+
+.oauth-relay-assist-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.oauth-relay-inline-action {
+    min-height: 28px;
+    padding: 0 4px;
 }
 
 .oauth-setup-guide {
@@ -5551,7 +5572,6 @@ details.oauth-form-section > summary {
     .oauth-row,
     .oauth-ingress-rule,
     .oauth-identity-item,
-    .oauth-relay-editor,
     .oauth-permission-row,
     .oauth-permission-header {
         grid-template-columns: 1fr;
@@ -5562,9 +5582,16 @@ details.oauth-form-section > summary {
     }
 
     .oauth-row-actions,
-    .oauth-relay-editor-actions,
     .oauth-form-actions {
         justify-content: flex-start;
+    }
+
+    .oauth-relay-input-row {
+        grid-template-columns: 1fr;
+    }
+
+    .oauth-relay-inline-action {
+        min-height: var(--tap);
     }
 
     .oauth-analytics-trend-meta {

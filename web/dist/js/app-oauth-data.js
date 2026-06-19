@@ -142,7 +142,16 @@
             title: () => t('oauth_zone_settings'),
             description: () => t('oauth_permission_zone_settings_desc'),
             readScopes: ['zone-settings.read'],
-            writeScopes: ['zone-settings.write', 'cache.purge'],
+            writeScopes: ['zone-settings.write'],
+        },
+        {
+            id: 'cache_purge',
+            title: () => t('oauth_cache_purge'),
+            description: () => t('oauth_permission_cache_purge_desc'),
+            readScopes: [],
+            writeOnly: true,
+            acceptedWriteScopes: ['cache_purge.write', 'cache.purge'],
+            writeScopes: ['cache_purge.write'],
         },
         {
             id: 'analytics',
@@ -180,7 +189,7 @@
         'zone-waf.write',
         'zone-settings.read',
         'zone-settings.write',
-        'cache.purge',
+        'cache_purge.write',
         'analytics.read',
         'account-analytics.read',
     ];

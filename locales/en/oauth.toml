@@ -44,16 +44,19 @@ other = "Enter a relay callback URL."
 other = "Relay callback saved."
 
 [oauth_relay_config_hint]
-other = "This must exactly match the Redirect callback URL in the Cloudflare OAuth client. For personal use, use the default relay address; when self-hosting, enter your own Worker /oauth/callback URL."
+other = "This must exactly match the Redirect callback URL in the Cloudflare OAuth client. Register only this URL in Cloudflare and do not append parameters."
+
+[oauth_relay_assist_text]
+other = "Use the provided relay for personal deployments; self-host the Worker only when you need full control."
 
 [oauth_relay_use_default]
-other = "Default"
+other = "Use default relay"
 
 [oauth_relay_use_default_title]
 other = "Use the provided default relay domain"
 
 [oauth_relay_self_host]
-other = "Self-host"
+other = "Self-host Worker"
 
 [oauth_relay_self_host_title]
 other = "Show how to self-host the Cloudflare OAuth relay"
@@ -848,7 +851,7 @@ other = "Set the OAuth relay callback"
 other = "The input above is the Redirect callback URL to register in the Cloudflare OAuth client."
 
 [oauth_setup_relay_input_note]
-other = "For personal deployments, click \"Default\" to use the provided relay domain. To fully self-host, click \"Self-host\", deploy the Worker from the dialog, then enter your own /oauth/callback URL here."
+other = "This is the only callback URL to register in the Cloudflare OAuth client. Use the default relay directly, or click \"Self-host Worker\" for the script and deployment steps."
 
 [oauth_setup_oauth_app_title]
 other = "Fill the Cloudflare OAuth client form"
@@ -1016,7 +1019,7 @@ other = "Full workspace"
 other = "In the Cloudflare form these are usually under Account/Account Settings, DNS & Zones, Developer Platform, Cloudflare One/Zero Trust, Security/WAF, and Analytics & Logs."
 
 [oauth_setup_permissions_write_note]
-other = "Scopes ending in .write or cache.purge let cfui modify Cloudflare resources; skip write scopes when you only want a read-only console."
+other = "Scopes ending in .write let cfui modify Cloudflare resources; skip write scopes when you only want a read-only console."
 
 [oauth_authorization_scopes]
 other = "Authorization scopes"
@@ -1079,7 +1082,10 @@ other = "View Cloudflare Tunnel records and create remote-managed tunnels when w
 other = "View, create, toggle, or delete custom WAF rules."
 
 [oauth_permission_zone_settings_desc]
-other = "Read zone settings, change supported settings, and purge cache."
+other = "Read zone settings and change supported settings."
+
+[oauth_permission_cache_purge_desc]
+other = "Purge all cached files for the selected zone."
 
 [oauth_permission_analytics_desc]
 other = "Load zone analytics, Worker metrics, and account usage."

@@ -1354,6 +1354,11 @@ func canReadCapability(caps cfoauth.CapabilityMatrix, feature string) bool {
 	return ok && capability.Read
 }
 
+func canWriteCapability(caps cfoauth.CapabilityMatrix, feature string) bool {
+	capability, ok := caps[feature]
+	return ok && capability.Write
+}
+
 func overviewMetricError(err error) string {
 	if err == nil {
 		return ""
@@ -3569,9 +3574,12 @@ func (s *Service) ZoneSettings(ctx context.Context, zoneID string) (ListResponse
 }
 
 func (s *Service) UpdateZoneSetting(ctx context.Context, zoneID, settingID string, req ZoneSettingUpdateRequest) (ZoneSetting, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return ZoneSetting{}, err
+	}
+	if !canWriteCapability(session.Capabilities, "zone_settings") {
+		return ZoneSetting{}, validationError("zone settings write scope is required")
 	}
 	zoneID = strings.TrimSpace(zoneID)
 	settingID = strings.TrimSpace(settingID)
@@ -3599,9 +3607,12 @@ func (s *Service) UpdateZoneSetting(ctx context.Context, zoneID, settingID strin
 }
 
 func (s *Service) PurgeZoneCache(ctx context.Context, zoneID string) (CachePurgeResult, error) {
-	client, _, err := s.currentClient(ctx)
+	client, session, err := s.currentClient(ctx)
 	if err != nil {
 		return CachePurgeResult{}, err
+	}
+	if !canWriteCapability(session.Capabilities, "cache_purge") {
+		return CachePurgeResult{}, validationError("cache purge write scope is required")
 	}
 	zoneID = strings.TrimSpace(zoneID)
 	if zoneID == "" {

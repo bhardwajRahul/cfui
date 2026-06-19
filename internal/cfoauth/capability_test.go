@@ -40,3 +40,32 @@ func TestWorkersCapabilityIsReadOnlyUntilDeployUXExists(t *testing.T) {
 		t.Fatalf("workers write should stay disabled until worker deploy UX exists: %#v", matrix["workers"])
 	}
 }
+
+func TestZoneSettingsAndCachePurgeCapabilitiesAreIndependent(t *testing.T) {
+	matrix := Capabilities("zone-settings.read zone-settings.write cache_purge.write")
+
+	if !matrix["zone_settings"].Read || !matrix["zone_settings"].Write {
+		t.Fatalf("expected zone settings read/write: %#v", matrix["zone_settings"])
+	}
+	if !matrix["cache_purge"].Write {
+		t.Fatalf("expected cache purge write: %#v", matrix["cache_purge"])
+	}
+
+	settingsOnly := Capabilities("zone-settings.read zone-settings.write")
+	if !settingsOnly["zone_settings"].Write || settingsOnly["cache_purge"].Write {
+		t.Fatalf("zone settings write should not imply cache purge: zone=%#v cache=%#v", settingsOnly["zone_settings"], settingsOnly["cache_purge"])
+	}
+
+	purgeOnly := Capabilities("cache_purge.write")
+	if purgeOnly["zone_settings"].Write || !purgeOnly["cache_purge"].Write {
+		t.Fatalf("cache purge should not imply zone settings write: zone=%#v cache=%#v", purgeOnly["zone_settings"], purgeOnly["cache_purge"])
+	}
+}
+
+func TestCachePurgeCapabilityAcceptsLegacyScopeName(t *testing.T) {
+	matrix := Capabilities("cache.purge")
+
+	if !matrix["cache_purge"].Write {
+		t.Fatalf("expected legacy cache.purge to enable cache purge write: %#v", matrix["cache_purge"])
+	}
+}

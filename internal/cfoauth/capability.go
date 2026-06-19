@@ -53,7 +53,8 @@ var featureScopes = []FeatureScope{
 		},
 	},
 	{ID: "waf", ReadScopes: []string{"zone-waf.read"}, WriteScopes: []string{"zone-waf.write"}},
-	{ID: "zone_settings", ReadScopes: []string{"zone-settings.read"}, WriteScopes: []string{"zone-settings.write", "cache.purge"}},
+	{ID: "zone_settings", ReadScopes: []string{"zone-settings.read"}, WriteScopes: []string{"zone-settings.write"}},
+	{ID: "cache_purge", WriteScopes: []string{"cache_purge.write", "cache.purge"}},
 	{ID: "analytics", ReadScopes: []string{"account-analytics.read", "analytics.read"}},
 }
 
