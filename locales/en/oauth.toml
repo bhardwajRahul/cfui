@@ -50,7 +50,7 @@ other = "This must exactly match the Redirect callback URL in the Cloudflare OAu
 other = "Use the provided relay for personal deployments; self-host the Worker only when you need full control."
 
 [oauth_relay_use_default]
-other = "Use default relay"
+other = "Default relay"
 
 [oauth_relay_use_default_title]
 other = "Use the provided default relay domain"
@@ -60,6 +60,18 @@ other = "Self-host Worker"
 
 [oauth_relay_self_host_title]
 other = "Show how to self-host the Cloudflare OAuth relay"
+
+[oauth_relay_badge_default]
+other = "Default"
+
+[oauth_relay_badge_custom]
+other = "Custom"
+
+[oauth_relay_status_default]
+other = "Using the provided OAuth relay."
+
+[oauth_relay_status_custom]
+other = "Using your saved relay address."
 
 [oauth_local_callback]
 other = "Local callback"
@@ -851,7 +863,7 @@ other = "Set the OAuth relay callback"
 other = "The input above is the Redirect callback URL to register in the Cloudflare OAuth client."
 
 [oauth_setup_relay_input_note]
-other = "This is the only callback URL to register in the Cloudflare OAuth client. Use the default relay directly, or click \"Self-host Worker\" for the script and deployment steps."
+other = "This is the only callback URL to register in the Cloudflare OAuth client. The default relay can be used directly; click \"Self-host Worker\" only when you want the script and deployment steps."
 
 [oauth_setup_oauth_app_title]
 other = "Fill the Cloudflare OAuth client form"
@@ -974,7 +986,7 @@ other = "<your Cloudflare OAuth client ID>"
 other = "<your Worker relay callback URL>"
 
 [oauth_relay_check]
-other = "Check relay"
+other = "Check"
 
 [oauth_relay_checking]
 other = "Checking relay..."

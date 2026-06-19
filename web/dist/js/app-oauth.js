@@ -53,22 +53,21 @@
     async function checkOAuthRelay(button) {
         state.oauth.relayCheckLoading = true;
         state.oauth.relayCheckError = '';
-        renderOAuthSetupGuide(state.oauth.status);
-        setBusy(button, true, t('oauth_relay_checking'));
+        renderOAuthStatus(state.oauth.status);
         try {
             state.oauth.relayCheck = await apiGet('/oauth/relay-check');
-            renderOAuthSetupGuide(state.oauth.status);
+            renderOAuthStatus(state.oauth.status);
             if (state.oauth.relayCheck?.reachable && state.oauth.relayCheck?.supports_state_callback) toast.ok(t('oauth_relay_check_ok'));
             else if (state.oauth.relayCheck?.reachable) toast.warn(t('oauth_relay_check_outdated'));
             else toast.warn(t('oauth_relay_check_failed'));
         } catch (err) {
             state.oauth.relayCheckError = err.message;
-            renderOAuthSetupGuide(state.oauth.status);
+            renderOAuthStatus(state.oauth.status);
             toast.err(err.message);
         } finally {
             state.oauth.relayCheckLoading = false;
             setBusy(button, false);
-            renderOAuthSetupGuide(state.oauth.status);
+            renderOAuthStatus(state.oauth.status);
         }
     }
 
@@ -2237,8 +2236,10 @@
 
     function oauthRelayCallbackNode(status) {
         const configuredRelay = status?.config?.relay_callback_url || defaultOAuthRelayCallbackURL;
+        const isDefaultRelay = configuredRelay === defaultOAuthRelayCallbackURL;
         const form = document.createElement('form');
         form.className = 'oauth-relay-editor';
+        form.dataset.mode = isDefaultRelay ? 'default' : 'custom';
         const field = document.createElement('div');
         field.className = 'oauth-relay-field';
         const inputRow = document.createElement('div');
@@ -2260,25 +2261,42 @@
         save.type = 'submit';
         inputRow.append(input, save);
 
-        const assist = document.createElement('div');
-        assist.className = 'oauth-relay-assist';
-        const assistText = document.createElement('span');
-        assistText.textContent = t('oauth_relay_assist_text');
+        const helper = document.createElement('div');
+        helper.className = 'oauth-relay-helper';
+        const stateLine = document.createElement('div');
+        stateLine.className = 'oauth-relay-state';
+        const badge = document.createElement('span');
+        badge.className = 'oauth-relay-badge';
+        badge.dataset.mode = isDefaultRelay ? 'default' : 'custom';
+        badge.textContent = isDefaultRelay ? t('oauth_relay_badge_default') : t('oauth_relay_badge_custom');
+        const stateText = document.createElement('span');
+        stateText.textContent = isDefaultRelay ? t('oauth_relay_status_default') : t('oauth_relay_status_custom');
+        stateLine.append(badge, stateText);
         const assistActions = document.createElement('span');
         assistActions.className = 'oauth-relay-assist-actions';
         const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--xs btn--text oauth-relay-inline-action', (event) => {
             input.value = defaultOAuthRelayCallbackURL;
             saveOAuthRelayCallback(input.value, event.currentTarget);
         });
+        useDefault.disabled = isDefaultRelay;
         useDefault.title = t('oauth_relay_use_default_title');
         useDefault.setAttribute('aria-label', t('oauth_relay_use_default_title'));
         const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--xs btn--text oauth-relay-inline-action', () => openOAuthWorkerScriptDialog());
         selfHost.title = t('oauth_relay_self_host_title');
         selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
-        assistActions.append(useDefault, selfHost);
-        assist.append(assistText, assistActions);
+        const check = smallButton(
+            state.oauth.relayCheckLoading ? t('oauth_relay_checking') : t('oauth_relay_check'),
+            'btn btn--xs btn--text oauth-relay-inline-action',
+            (event) => checkOAuthRelay(event.currentTarget),
+        );
+        check.disabled = state.oauth.relayCheckLoading;
+        if (!isDefaultRelay) assistActions.appendChild(useDefault);
+        assistActions.append(selfHost, check);
+        helper.append(stateLine, assistActions);
 
-        field.append(inputRow, assist, hint);
+        const relayCheck = relayCheckStatusNode();
+        field.append(inputRow, helper, hint);
+        if (relayCheck) field.appendChild(relayCheck);
         form.appendChild(field);
         form.addEventListener('submit', (event) => {
             event.preventDefault();
@@ -2386,10 +2404,7 @@
                 '1',
                 t('oauth_setup_relay_title'),
                 t('oauth_setup_relay_desc'),
-                [
-                    setupGuideNote(t('oauth_setup_relay_input_note')),
-                    setupGuideRelayCheckNode(),
-                ]
+                [setupGuideNote(t('oauth_setup_relay_input_note'))]
             ),
             setupGuideStep(
                 '2',
@@ -2497,17 +2512,7 @@
         return note;
     }
 
-    function setupGuideRelayCheckNode() {
-        const node = document.createElement('div');
-        node.className = 'oauth-relay-check';
-        const actions = document.createElement('div');
-        actions.className = 'oauth-form-actions';
-        const button = smallButton(t('oauth_relay_check'), 'btn btn--sm');
-        button.disabled = state.oauth.relayCheckLoading;
-        button.addEventListener('click', () => checkOAuthRelay(button));
-        actions.appendChild(button);
-        node.appendChild(actions);
-
+    function relayCheckStatusNode() {
         const result = state.oauth.relayCheck;
         const error = state.oauth.relayCheckError;
         if (state.oauth.relayCheckLoading || result || error) {
@@ -2534,9 +2539,9 @@
                 ].filter(Boolean).join(' · ');
             }
             status.append(title, meta);
-            node.appendChild(status);
+            return status;
         }
-        return node;
+        return null;
     }
 
     function copyOAuthText(value) {

@@ -4342,10 +4342,13 @@ details.disclosure > .body {
 }
 
 .oauth-relay-editor {
-    display: block;
+    display: grid;
+    gap: 8px;
 }
 
 .oauth-relay-field {
+    display: grid;
+    gap: 7px;
     min-width: 0;
 }
 
@@ -4362,15 +4365,47 @@ details.disclosure > .body {
     font-size: 0.8rem;
 }
 
-.oauth-relay-assist {
+.oauth-relay-helper {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 8px;
+    gap: 6px 10px;
     align-items: center;
-    margin-top: 6px;
+    justify-content: space-between;
     color: var(--text-muted);
     font-size: var(--fs-xs);
     line-height: 1.45;
+}
+
+.oauth-relay-state {
+    display: inline-flex;
+    min-width: 0;
+    gap: 6px;
+    align-items: center;
+}
+
+.oauth-relay-badge {
+    display: inline-flex;
+    min-height: 22px;
+    align-items: center;
+    padding: 0 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.oauth-relay-badge[data-mode="default"] {
+    border-color: color-mix(in srgb, var(--state-ok) 35%, var(--border));
+    background: color-mix(in srgb, var(--state-ok) 8%, var(--surface));
+}
+
+.oauth-relay-badge[data-mode="custom"] {
+    border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+    background: color-mix(in srgb, var(--accent) 7%, var(--surface));
 }
 
 .oauth-relay-assist-actions {
@@ -4383,6 +4418,10 @@ details.disclosure > .body {
 .oauth-relay-inline-action {
     min-height: 28px;
     padding: 0 4px;
+}
+
+.oauth-relay-inline-action:disabled {
+    text-decoration: none;
 }
 
 .oauth-setup-guide {
@@ -5625,6 +5664,11 @@ details.oauth-form-section > summary {
 
     .oauth-relay-input-row {
         grid-template-columns: 1fr;
+    }
+
+    .oauth-relay-helper {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     .oauth-relay-inline-action {

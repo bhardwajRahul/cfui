@@ -50,7 +50,7 @@ other = "这个地址必须和 Cloudflare OAuth 客户端里的 Redirect callbac
 other = "个人使用可直接走提供的中转；需要完全自控时再自建 Worker。"
 
 [oauth_relay_use_default]
-other = "使用默认中转"
+other = "默认中转"
 
 [oauth_relay_use_default_title]
 other = "使用提供的默认中转域名"
@@ -60,6 +60,18 @@ other = "自建 Worker"
 
 [oauth_relay_self_host_title]
 other = "查看自建 Cloudflare OAuth relay 的步骤"
+
+[oauth_relay_badge_default]
+other = "默认"
+
+[oauth_relay_badge_custom]
+other = "自定义"
+
+[oauth_relay_status_default]
+other = "正在使用提供的 OAuth 中转。"
+
+[oauth_relay_status_custom]
+other = "正在使用你保存的中转地址。"
 
 [oauth_local_callback]
 other = "本地回调"
@@ -851,7 +863,7 @@ other = "设置 OAuth 中转回调"
 other = "上方输入框就是 Cloudflare OAuth 客户端要填写的 Redirect callback URL。"
 
 [oauth_setup_relay_input_note]
-other = "这里就是唯一要登记到 Cloudflare OAuth 客户端的回调地址。可以直接使用默认中转；如果要自建，点“自建 Worker”查看脚本和部署步骤。"
+other = "这里就是唯一要登记到 Cloudflare OAuth 客户端的回调地址。默认中转可以直接用；要自建时点“自建 Worker”查看脚本和部署步骤。"
 
 [oauth_setup_oauth_app_title]
 other = "填写 Cloudflare OAuth 客户端表单"
@@ -974,7 +986,7 @@ other = "<你的 Cloudflare OAuth client ID>"
 other = "<你的 Worker relay 回调 URL>"
 
 [oauth_relay_check]
-other = "检查中继服务"
+other = "检测"
 
 [oauth_relay_checking]
 other = "正在检查 relay..."
