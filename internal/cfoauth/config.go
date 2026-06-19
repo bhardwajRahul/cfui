@@ -30,7 +30,7 @@ type Config struct {
 func ConfigFromEnv() Config {
 	cfg := Config{
 		ClientID:          strings.TrimSpace(os.Getenv("CFUI_OAUTH_CLIENT_ID")),
-		RelayCallbackURL:  firstEnv("CFUI_OAUTH_RELAY_URL", "CFUI_OAUTH_REDIRECT_URI", defaultRelayCallbackURL),
+		RelayCallbackURL:  normalizeRelayCallbackURL(firstEnv("CFUI_OAUTH_RELAY_URL", "CFUI_OAUTH_REDIRECT_URI", defaultRelayCallbackURL)),
 		LocalCallbackPath: "/oauth/callback",
 		AuthorizationURL:  firstEnv("CFUI_OAUTH_AUTH_URL", defaultAuthorizationURL),
 		LogoutURL:         firstEnv("CFUI_OAUTH_LOGOUT_URL", defaultLogoutURL),

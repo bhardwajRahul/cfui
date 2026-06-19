@@ -182,6 +182,8 @@ func TestOAuthLoginCallbackAndOverviewEndToEndWithFakeCloudflare(t *testing.T) {
 	}
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/api/oauth/login", strings.NewReader(`{"scope":"dns.read zone.read account-settings.read workers-r2.read d1.read workers-kv-storage.read snippets.read zone-waf.read argotunnel.read workers-scripts.read"}`))
+	loginReq.Host = "cfui.example.internal"
+	loginReq.Header.Set("X-Forwarded-Proto", "https")
 	loginReq.Header.Set("Content-Type", "application/json")
 	loginRec := httptest.NewRecorder()
 	s.handleOAuthLogin(loginRec, loginReq)
@@ -201,6 +203,13 @@ func TestOAuthLoginCallbackAndOverviewEndToEndWithFakeCloudflare(t *testing.T) {
 	state := startURL.Query().Get("state")
 	if state == "" || startURL.Query().Get("code_challenge") == "" {
 		t.Fatalf("login URL missing OAuth state or PKCE challenge: %s", loginResp.URL)
+	}
+	callbackURL, ok := cfoauth.RelayStateCallbackURL(state)
+	if !ok {
+		t.Fatalf("login state missing encoded callback URL: %s", loginResp.URL)
+	}
+	if got, want := callbackURL, "https://cfui.example.internal/oauth/callback"; got != want {
+		t.Fatalf("callback URL in state = %q, want %q", got, want)
 	}
 
 	callbackReq := httptest.NewRequest(http.MethodGet, "/oauth/callback?code=auth-code&state="+url.QueryEscape(state), nil)

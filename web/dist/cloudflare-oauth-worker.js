@@ -1,16 +1,19 @@
 const DEFAULT_CFUI_CALLBACK_URL = "http://127.0.0.1:14333/oauth/callback";
 const CALLBACK_PATH = "/oauth/callback";
 const CALLBACK_URL_PARAM = "cfui_callback_url";
+const STATE_PREFIX = "cfui1.";
 const OAUTH_QUERY_PARAMS = ["code", "state", "error", "error_description", "error_uri"];
 
 // Optional Worker variables:
-// - CFUI_CALLBACK_URL: fixed fallback target, for example https://cfui.example.internal/oauth/callback.
+// - CFUI_CALLBACK_URL: fallback target, for example https://cfui.example.internal/oauth/callback.
 // - CFUI_ALLOWED_CALLBACK_ORIGINS: comma-separated origins allowed for cfui_callback_url.
-//   Without this allowlist, cfui_callback_url is limited to loopback, .local, and private/LAN IP hosts.
+//   Use "*" only when this Worker intentionally serves multiple cfui domains.
+//   Without this allowlist, dynamic callbacks are limited to loopback, private/LAN,
+//   .local, .internal, .lan, .home.arpa, and .test hosts.
 //
 // Cloudflare OAuth Client redirect URI:
-// - Register this Worker's public HTTPS callback, for example https://oauth.example.com/oauth/callback.
-// - Do not register the private cfui callback there unless it is also reachable by every user's browser.
+// - Register only this Worker's public HTTPS callback, for example https://oauth.example.com/oauth/callback.
+// - Do not append cfui_callback_url to the Cloudflare OAuth Client redirect URI.
 
 export default {
   async fetch(request, env) {
@@ -67,9 +70,10 @@ export default {
 };
 
 function callbackURL(requestURL, env) {
+  const stateCallback = callbackURLFromState(requestURL.searchParams.get("state"));
   const callbackParam = String(requestURL.searchParams.get(CALLBACK_URL_PARAM) || "").trim();
-  const fromParam = callbackParam !== "";
-  const raw = String(callbackParam || env.CFUI_CALLBACK_URL || DEFAULT_CFUI_CALLBACK_URL).trim();
+  const dynamic = stateCallback !== "" || callbackParam !== "";
+  const raw = String(stateCallback || callbackParam || env.CFUI_CALLBACK_URL || DEFAULT_CFUI_CALLBACK_URL).trim();
   const target = new URL(raw);
   if (target.protocol !== "http:" && target.protocol !== "https:") {
     throw new Error("cfui callback URL must use http or https");
@@ -80,11 +84,31 @@ function callbackURL(requestURL, env) {
   if (target.pathname !== CALLBACK_PATH) {
     throw new Error(`cfui callback URL path must be ${CALLBACK_PATH}`);
   }
-  if (fromParam && !isParamCallbackAllowed(target, env)) {
-    throw new Error(`${CALLBACK_URL_PARAM} is not allowed by this Worker`);
+  if (dynamic && !isParamCallbackAllowed(target, env)) {
+    throw new Error("dynamic cfui callback URL is not allowed by this Worker");
   }
+  target.search = "";
   target.hash = "";
   return target;
+}
+
+function callbackURLFromState(state) {
+  const raw = String(state || "").trim();
+  if (!raw.startsWith(STATE_PREFIX)) {
+    return "";
+  }
+  try {
+    const payload = JSON.parse(base64URLDecode(raw.slice(STATE_PREFIX.length)));
+    return String(payload.u || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function base64URLDecode(value) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  return atob(padded);
 }
 
 function isParamCallbackAllowed(target, env) {
@@ -123,7 +147,15 @@ function normalizeOrigin(value) {
 
 function isLocalCallbackHost(hostname) {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local")) {
+  if (
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal") ||
+    host.endsWith(".lan") ||
+    host.endsWith(".home.arpa") ||
+    host.endsWith(".test")
+  ) {
     return true;
   }
   if (host.includes(":")) {

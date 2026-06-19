@@ -4558,8 +4558,8 @@ details.disclosure > .body {
 }
 
 .oauth-identity-item[data-current="true"] {
-    border-color: var(--cf-orange);
-    background: color-mix(in srgb, var(--cf-orange) 8%, var(--surface));
+    border-color: var(--border);
+    background: color-mix(in srgb, var(--state-ok) 8%, var(--surface));
 }
 
 .oauth-identity-main {

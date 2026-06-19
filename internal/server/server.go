@@ -111,7 +111,7 @@ type Server struct {
 	oauthSvc  *cfoauth.Service
 	cfSvc     *cfaccount.Service
 	assets    embed.FS
-	locales   embed.FS
+	locales   fs.FS
 
 	// shutdownC is closed by PrepareShutdown so long-lived connections
 	// (SSE log streams) exit promptly instead of stalling http.Server.Shutdown
@@ -1366,29 +1366,55 @@ func (s *Server) handleI18n(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Read the corresponding TOML file
-	filePath := "locales/" + lang + ".toml"
-	data, err := s.locales.ReadFile(filePath)
-	if err != nil {
-		logger.Sugar.Warnf("Language file not found: %s (requested by %s)", lang, r.RemoteAddr)
-		http.Error(w, "Language not found", http.StatusNotFound)
-		return
+	simple := make(map[string]string)
+	loaded := false
+	loadFile := func(filePath string) error {
+		data, err := fs.ReadFile(s.locales, filePath)
+		if err != nil {
+			return err
+		}
+		var translations map[string]map[string]string
+		if err := toml.Unmarshal(data, &translations); err != nil {
+			return fmt.Errorf("failed to parse %s: %w", filePath, err)
+		}
+		for key, value := range translations {
+			if other, ok := value["other"]; ok {
+				simple[key] = other
+			}
+		}
+		loaded = true
+		return nil
 	}
 
-	// Parse TOML into a map
-	var translations map[string]map[string]string
-	if err := toml.Unmarshal(data, &translations); err != nil {
+	// Keep the legacy single-file locale, then overlay split files.
+	legacyPath := "locales/" + lang + ".toml"
+	if err := loadFile(legacyPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		logger.Sugar.Errorf("Failed to parse translations for %s: %v", lang, err)
 		http.Error(w, "Failed to parse translations", http.StatusInternalServerError)
 		return
 	}
-
-	// Convert to simplified format: key -> translation
-	simple := make(map[string]string)
-	for key, value := range translations {
-		if other, ok := value["other"]; ok {
-			simple[key] = other
+	dirPath := "locales/" + lang
+	if entries, err := fs.ReadDir(s.locales, dirPath); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".toml") {
+				continue
+			}
+			if err := loadFile(dirPath + "/" + entry.Name()); err != nil {
+				logger.Sugar.Errorf("Failed to parse translations for %s: %v", lang, err)
+				http.Error(w, "Failed to parse translations", http.StatusInternalServerError)
+				return
+			}
 		}
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		logger.Sugar.Errorf("Failed to read translation directory for %s: %v", lang, err)
+		http.Error(w, "Failed to parse translations", http.StatusInternalServerError)
+		return
+	}
+
+	if !loaded {
+		logger.Sugar.Warnf("Language file not found: %s (requested by %s)", lang, r.RemoteAddr)
+		http.Error(w, "Language not found", http.StatusNotFound)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -55,8 +55,9 @@ type UserInfo struct {
 }
 
 type StartURLOptions struct {
-	Scopes     string
-	FreshLogin bool
+	Scopes      string
+	FreshLogin  bool
+	CallbackURL string
 }
 
 func NewService(cfg Config, store *Store) *Service {
@@ -176,7 +177,11 @@ func (s *Service) StartURLWithOptions(ctx context.Context, opts StartURLOptions)
 	if scopes == "" {
 		return "", fmt.Errorf("oauth scopes are required")
 	}
-	state, err := randomURLToken(32)
+	stateID, err := randomURLToken(32)
+	if err != nil {
+		return "", err
+	}
+	state, err := encodeRelayState(stateID, opts.CallbackURL, s.cfg.LocalCallbackPath)
 	if err != nil {
 		return "", err
 	}

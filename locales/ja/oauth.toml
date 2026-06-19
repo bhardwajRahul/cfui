@@ -1,0 +1,2249 @@
+[oauth_tab]
+other = "Cloudflare"
+
+[oauth_console_title]
+other = "Cloudflare Console"
+
+[oauth_console_subtitle]
+other = "OAuth で Cloudflare アカウントリソースを管理します。ローカル cfui ツールは別のワークスペースにあります。"
+
+[oauth_sign_in]
+other = "サインイン"
+
+[oauth_add_identity]
+other = "ID を追加"
+
+[oauth_add_identity_fresh_hint]
+other = "Cloudflare のログアウトページを先に開き、ブラウザー Cookie で現在のアカウントが再利用されないようにします。"
+
+[oauth_signing_in]
+other = "サインイン中"
+
+[oauth_sign_out]
+other = "サインアウト"
+
+[oauth_sign_out_current]
+other = "現在の ID をサインアウト"
+
+[oauth_status_checking]
+other = "OAuth 状態を確認中..."
+
+[oauth_relay_callback]
+other = "Relay callback"
+
+[oauth_local_callback]
+other = "Local callback"
+
+[oauth_accounts]
+other = "Accounts"
+
+[oauth_resources]
+other = "Resources"
+
+[oauth_resources_subtitle]
+other = "アカウントまたはゾーンを選択して Cloudflare リソースを読み込みます。"
+
+[oauth_overview]
+other = "概要"
+
+[oauth_overview_loading]
+other = "概要を読み込み中..."
+
+[oauth_overview_empty]
+other = "概要データはまだありません。"
+
+[oauth_overview_context]
+other = "コンテキスト"
+
+[oauth_overview_no_context]
+other = "アカウントを選択するとアカウントスコープのリソースを読み込みます。"
+
+[oauth_overview_status]
+other = "Cloudflare 公開ステータス"
+
+[oauth_overview_metrics]
+other = "Dashboard metrics"
+
+[oauth_overview_limited]
+other = "先頭 {{ .n }} 件"
+
+[oauth_overview_error_missing_scope]
+other = "スコープが必要"
+
+[oauth_overview_error_missing_account]
+other = "アカウントを選択"
+
+[oauth_overview_error_missing_zone]
+other = "ゾーンを選択"
+
+[oauth_overview_error_permission_denied]
+other = "権限がありません"
+
+[oauth_overview_error_not_found]
+other = "見つかりません"
+
+[oauth_overview_error_request_failed]
+other = "リクエスト失敗"
+
+[oauth_overview_error_unavailable]
+other = "利用不可"
+
+[oauth_unavailable]
+other = "利用不可"
+
+[oauth_overview_metric_accounts]
+other = "Accounts"
+
+[oauth_overview_metric_zones]
+other = "Zones"
+
+[oauth_overview_metric_active_zones]
+other = "Active zones"
+
+[oauth_overview_metric_dns_records]
+other = "DNS records"
+
+[oauth_overview_metric_workers]
+other = "Workers"
+
+[oauth_overview_metric_tunnels]
+other = "Tunnels"
+
+[oauth_overview_metric_r2_buckets]
+other = "R2 buckets"
+
+[oauth_overview_metric_d1_databases]
+other = "D1 databases"
+
+[oauth_overview_metric_kv_namespaces]
+other = "KV namespaces"
+
+[oauth_overview_metric_snippets]
+other = "Snippets"
+
+[oauth_overview_metric_waf_rules]
+other = "WAF rules"
+
+[oauth_zones]
+other = "Zones"
+
+[oauth_zone_overview]
+other = "ゾーン概要"
+
+[oauth_zone_loading]
+other = "ゾーン詳細を読み込み中..."
+
+[oauth_zone_unavailable]
+other = "利用不可"
+
+[oauth_zone_status]
+other = "ステータス"
+
+[oauth_zone_plan]
+other = "プラン"
+
+[oauth_zone_type]
+other = "タイプ"
+
+[oauth_zone_account]
+other = "アカウント"
+
+[oauth_zone_dns_records]
+other = "DNS レコード"
+
+[oauth_zone_dns_loading]
+other = "読み込み中..."
+
+[oauth_zone_id]
+other = "Zone ID"
+
+[oauth_zone_name_servers]
+other = "ネームサーバー"
+
+[oauth_zone_original_name_servers]
+other = "元のネームサーバー"
+
+[oauth_zone_created]
+other = "作成日時"
+
+[oauth_zone_modified]
+other = "更新日時"
+
+[oauth_zone_paused]
+other = "一時停止"
+
+[oauth_dns]
+other = "DNS"
+
+[oauth_tunnels]
+other = "Tunnels"
+
+[oauth_tunnel_create]
+other = "Tunnel を作成"
+
+[oauth_tunnel_name]
+other = "Tunnel 名"
+
+[oauth_tunnel_name_placeholder]
+other = "edge-prod"
+
+[oauth_tunnel_save_local_profile]
+other = "ローカル Tunnel プロファイルとして保存"
+
+[oauth_tunnel_activate_local_profile]
+other = "現在のローカル Tunnel として使用"
+
+[oauth_tunnel_create_hint]
+other = "リモート管理の Cloudflare Tunnel を作成します。選択した場合、connector token はローカル SQLite 設定にのみ保存されます。"
+
+[oauth_tunnel_create_success]
+other = "Tunnel {name} を作成しました。"
+
+[oauth_tunnel_create_success_with_profile]
+other = "Tunnel {name} を作成し、ローカルプロファイル {profile} に関連付けました。{state}。"
+
+[oauth_tunnel_local_profile_saved]
+other = "ローカルプロファイルを保存しました"
+
+[oauth_tunnel_local_profile_activated]
+other = "ローカルプロファイルを有効にしました"
+
+[oauth_tunnel_linked_local_profile]
+other = "ローカルプロファイル {name} に関連付け済み"
+
+[oauth_tunnel_local_profile]
+other = "ローカルプロファイル"
+
+[oauth_tunnel_local_state]
+other = "ローカル状態"
+
+[oauth_tunnels_readonly]
+other = "現在の OAuth scope では Tunnel の読み取りのみ可能です。作成してローカルと関連付けるには cloudflare-tunnel.write を追加してください。"
+
+[oauth_tunnel_connector_count]
+other = "{n} connectors"
+
+[oauth_tunnel_id]
+other = "Tunnel ID"
+
+[oauth_tunnel_status]
+other = "Status"
+
+[oauth_tunnel_status_healthy]
+other = "Healthy"
+
+[oauth_tunnel_status_degraded]
+other = "Degraded"
+
+[oauth_tunnel_status_down]
+other = "Down"
+
+[oauth_tunnel_status_inactive]
+other = "Inactive"
+
+[oauth_tunnel_status_unknown]
+other = "Unknown"
+
+[oauth_tunnel_type]
+other = "Type"
+
+[oauth_tunnel_remote_config]
+other = "Remote config"
+
+[oauth_tunnel_created]
+other = "Created"
+
+[oauth_tunnel_deleted]
+other = "Deleted"
+
+[oauth_tunnel_delete_title]
+other = "Tunnel を削除しますか？"
+
+[oauth_tunnel_delete_message]
+other = "Cloudflare Tunnel {name} を削除しますか？ローカルプロファイルは削除されません。"
+
+[oauth_tunnel_delete_message_with_profile]
+other = "Cloudflare Tunnel {name} を削除し、関連付け済みローカルプロファイル {profile} も整理しますか？"
+
+[oauth_tunnel_delete_success]
+other = "Tunnel {name} を削除しました。"
+
+[oauth_tunnel_delete_success_with_profile]
+other = "Tunnel {name} を削除し、関連付け済みローカルプロファイルを整理しました。"
+
+[oauth_tunnel_connections_active_at]
+other = "Connections active"
+
+[oauth_tunnel_connections_inactive_at]
+other = "Connections inactive"
+
+[oauth_tunnel_connections]
+other = "Active connections"
+
+[oauth_tunnel_no_active_connections]
+other = "No active connections"
+
+[oauth_tunnel_client_version]
+other = "cloudflared {version}"
+
+[oauth_tunnel_opened_at]
+other = "opened {time}"
+
+[oauth_tunnel_pending_reconnect]
+other = "pending reconnect"
+
+[oauth_tunnel_ingress]
+other = "公開ホスト名"
+
+[oauth_tunnel_ingress_not_loaded]
+other = "ルールは未読み込みです"
+
+[oauth_tunnel_ingress_rules_meta]
+other = "{n} 件のルール · バージョン {version}"
+
+[oauth_tunnel_ingress_load]
+other = "ルールを読み込む"
+
+[oauth_tunnel_ingress_refresh]
+other = "ルールを更新"
+
+[oauth_tunnel_ingress_loading]
+other = "ingress ルールを読み込み中..."
+
+[oauth_tunnel_ingress_error]
+other = "ingress ルールの読み込みに失敗しました: {error}"
+
+[oauth_tunnel_ingress_empty]
+other = "公開ホスト名ルールはありません。"
+
+[oauth_tunnel_ingress_readonly]
+other = "現在の OAuth scope では Tunnel ingress ルールの読み取りのみ可能です。編集するには cloudflare-tunnel.write を追加してください。"
+
+[oauth_tunnel_ingress_create]
+other = "ホスト名を追加"
+
+[oauth_tunnel_ingress_edit]
+other = "ホスト名を編集"
+
+[oauth_tunnel_ingress_hostname]
+other = "ホスト名"
+
+[oauth_tunnel_ingress_hostname_placeholder]
+other = "app.example.com"
+
+[oauth_tunnel_ingress_path]
+other = "パス"
+
+[oauth_tunnel_ingress_path_placeholder]
+other = "/api/*"
+
+[oauth_tunnel_ingress_service_type]
+other = "サービスタイプ"
+
+[oauth_tunnel_ingress_service]
+other = "サービス"
+
+[oauth_tunnel_ingress_advanced]
+other = "オリジンリクエスト"
+
+[oauth_tunnel_ingress_no_tls_verify]
+other = "TLS 検証を無効化"
+
+[oauth_tunnel_ingress_http_host_header]
+other = "HTTP Host ヘッダー"
+
+[oauth_tunnel_ingress_origin_server_name]
+other = "オリジンサーバー名"
+
+[oauth_tunnel_ingress_saved]
+other = "Tunnel ingress ルールを保存しました。"
+
+[oauth_tunnel_ingress_deleted]
+other = "Tunnel ingress ルールを削除しました。"
+
+[oauth_tunnel_ingress_reordered]
+other = "Tunnel ingress ルールの順序を更新しました。"
+
+[oauth_tunnel_ingress_load_failed]
+other = "Tunnel ingress ルールの読み込みに失敗しました"
+
+[oauth_tunnel_ingress_save_failed]
+other = "Tunnel ingress ルールの保存に失敗しました"
+
+[oauth_tunnel_ingress_delete_failed]
+other = "Tunnel ingress ルールの削除に失敗しました"
+
+[oauth_tunnel_ingress_reorder_failed]
+other = "Tunnel ingress ルールの並べ替えに失敗しました"
+
+[oauth_tunnel_ingress_delete_title]
+other = "公開ホスト名を削除しますか？"
+
+[oauth_tunnel_ingress_delete_message]
+other = "ingress ルール {hostname}{path} を削除しますか？"
+
+[oauth_workers]
+other = "Workers"
+
+[oauth_worker_detail]
+other = "Worker detail"
+
+[oauth_worker_loading]
+other = "Worker detail を読み込み中..."
+
+[oauth_worker_metadata]
+other = "メタデータ"
+
+[oauth_worker_settings]
+other = "設定"
+
+[oauth_worker_script]
+other = "スクリプト"
+
+[oauth_worker_size]
+other = "サイズ"
+
+[oauth_worker_created]
+other = "Created"
+
+[oauth_worker_modified]
+other = "Modified"
+
+[oauth_worker_deployment]
+other = "Deployment"
+
+[oauth_worker_source]
+other = "Source"
+
+[oauth_worker_etag]
+other = "ETag"
+
+[oauth_worker_logpush]
+other = "Logpush"
+
+[oauth_worker_placement]
+other = "Placement"
+
+[oauth_worker_tail_consumers]
+other = "Tail consumers"
+
+[oauth_worker_no_tail_consumers]
+other = "Tail consumers は設定されていません。"
+
+[oauth_worker_metrics]
+other = "Metrics"
+
+[oauth_worker_metrics_range]
+other = "Worker metrics range"
+
+[oauth_worker_metrics_scope_required]
+other = "Worker metrics を表示するには account-analytics.read または analytics.read を許可してください。"
+
+[oauth_worker_metrics_loading]
+other = "Worker metrics を読み込み中..."
+
+[oauth_worker_metrics_empty]
+other = "Worker metrics はまだ読み込まれていません。"
+
+[oauth_worker_metrics_requests]
+other = "Requests"
+
+[oauth_worker_metrics_errors]
+other = "Errors"
+
+[oauth_worker_metrics_subrequests]
+other = "Subrequests"
+
+[oauth_worker_metrics_error_rate]
+other = "Error rate"
+
+[oauth_worker_metrics_cpu_total]
+other = "CPU total"
+
+[oauth_worker_metrics_cpu_single]
+other = "CPU per invocation"
+
+[oauth_worker_metrics_status]
+other = "Invocation status"
+
+[oauth_worker_metrics_timeseries]
+other = "Recent trend"
+
+[oauth_worker_status_success]
+other = "Success"
+
+[oauth_worker_status_script_exception]
+other = "Script exception"
+
+[oauth_worker_status_exceeded_cpu]
+other = "Exceeded CPU"
+
+[oauth_worker_status_exceeded_memory]
+other = "Exceeded memory"
+
+[oauth_worker_status_client_disconnected]
+other = "Client disconnected"
+
+[oauth_worker_status_canceled]
+other = "Canceled"
+
+[oauth_worker_status_response_stream_disconnected]
+other = "Response stream disconnected"
+
+[oauth_worker_tail_live]
+other = "Live Tail"
+
+[oauth_worker_tail_start]
+other = "Tail を開始"
+
+[oauth_worker_tail_stop]
+other = "Tail を停止"
+
+[oauth_worker_tail_pause]
+other = "一時停止"
+
+[oauth_worker_tail_resume]
+other = "再開"
+
+[oauth_worker_tail_clear]
+other = "クリア"
+
+[oauth_worker_tail_scope_required]
+other = "Worker のライブログを表示するには workers-tail.read を許可してください。"
+
+[oauth_worker_tail_empty]
+other = "Tail イベントはまだありません。"
+
+[oauth_worker_tail_idle]
+other = "待機中"
+
+[oauth_worker_tail_connecting]
+other = "Tail に接続中..."
+
+[oauth_worker_tail_connected]
+other = "Tail 接続済み: {id}"
+
+[oauth_worker_tail_connected_short]
+other = "接続済み"
+
+[oauth_worker_tail_disconnected]
+other = "Tail が切断されました。"
+
+[oauth_worker_tail_failed]
+other = "Worker Tail に失敗しました。"
+
+[oauth_worker_tail_stopped]
+other = "Tail を停止しました。"
+
+[oauth_worker_tail_paused]
+other = "一時停止中"
+
+[oauth_worker_tail_dropped]
+other = "ブラウザ側の処理が遅れたため、{count} 件の Tail イベントを破棄しました。"
+
+[oauth_worker_no_metadata]
+other = "メタデータが返されませんでした。"
+
+[oauth_worker_script_truncated]
+other = "Preview truncated"
+
+[oauth_worker_script_binary]
+other = "Script content is not UTF-8 text ({bytes})."
+
+[oauth_storage]
+other = "Storage"
+
+[oauth_snippets]
+other = "Snippets"
+
+[oauth_waf]
+other = "WAF"
+
+[oauth_analytics]
+other = "Analytics"
+
+[oauth_usage]
+other = "Usage"
+
+[oauth_usage_loading]
+other = "アカウント使用量を読み込んでいます..."
+
+[oauth_usage_empty]
+other = "アカウント使用量はまだ読み込まれていません。"
+
+[oauth_usage_scope_required]
+other = "アカウント使用量を表示するには analytics.read または account-analytics.read を許可してください。"
+
+[oauth_usage_period]
+other = "Usage period"
+
+[oauth_usage_billing]
+other = "Billing"
+
+[oauth_usage_billing_status]
+other = "Billing status"
+
+[oauth_usage_billing_reason_permission_denied]
+other = "この OAuth セッションには Billing 読み取り権限がありません。"
+
+[oauth_usage_billing_reason_not_found]
+other = "このアカウントの Billing レコードが見つかりません。"
+
+[oauth_usage_billing_reason_request_failed]
+other = "Billing データを読み込めませんでした。"
+
+[oauth_usage_billing_reason_unavailable]
+other = "Billing データは利用できません。"
+
+[oauth_usage_workers_paid]
+other = "Workers paid plan"
+
+[oauth_usage_r2_paid]
+other = "R2 paid plan"
+
+[oauth_usage_subscription_count]
+other = "Subscriptions"
+
+[oauth_usage_billing_period]
+other = "Billing period"
+
+[oauth_usage_subscription]
+other = "Subscription"
+
+[oauth_usage_no_subscriptions]
+other = "Cloudflare からアカウントのサブスクリプションが返されていません。"
+
+[oauth_usage_subscription_active]
+other = "Active"
+
+[oauth_usage_subscription_inactive]
+other = "Inactive"
+
+[oauth_usage_workers]
+other = "Workers"
+
+[oauth_usage_r2]
+other = "R2"
+
+[oauth_usage_d1]
+other = "D1"
+
+[oauth_usage_kv]
+other = "KV"
+
+[oauth_usage_requests_today]
+other = "Requests today"
+
+[oauth_usage_requests_period]
+other = "Requests in period"
+
+[oauth_usage_errors_period]
+other = "Errors in period"
+
+[oauth_usage_errors_last_hour]
+other = "Errors last hour"
+
+[oauth_usage_subrequests]
+other = "Subrequests"
+
+[oauth_usage_cpu_period]
+other = "CPU in period"
+
+[oauth_usage_cpu_today]
+other = "CPU today"
+
+[oauth_usage_cpu_single]
+other = "Single request CPU"
+
+[oauth_usage_r2_class_a]
+other = "Class A operations"
+
+[oauth_usage_r2_class_b]
+other = "Class B operations"
+
+[oauth_usage_r2_storage]
+other = "Storage"
+
+[oauth_usage_r2_objects]
+other = "Objects"
+
+[oauth_usage_d1_rows_read_today]
+other = "Rows read today"
+
+[oauth_usage_d1_rows_written_today]
+other = "Rows written today"
+
+[oauth_usage_d1_rows_read_period]
+other = "Rows read in period"
+
+[oauth_usage_d1_rows_written_period]
+other = "Rows written in period"
+
+[oauth_usage_d1_read_queries_period]
+other = "Read queries in period"
+
+[oauth_usage_d1_write_queries_period]
+other = "Write queries in period"
+
+[oauth_usage_kv_reads_today]
+other = "Reads today"
+
+[oauth_usage_kv_writes_today]
+other = "Writes today"
+
+[oauth_usage_kv_reads_period]
+other = "Reads in period"
+
+[oauth_usage_kv_writes_period]
+other = "Writes in period"
+
+[oauth_usage_kv_storage]
+other = "Storage"
+
+[oauth_usage_kv_keys]
+other = "Keys"
+
+[oauth_no_analytics]
+other = "このゾーンの Analytics データはまだ読み込まれていません。"
+
+[oauth_no_analytics_timeseries]
+other = "この範囲の Analytics 時系列は返されませんでした。"
+
+[oauth_analytics_summary]
+other = "Summary"
+
+[oauth_analytics_timeseries]
+other = "Time series"
+
+[oauth_analytics_range]
+other = "Analytics range"
+
+[oauth_analytics_range_24h]
+other = "Last 24 hours"
+
+[oauth_analytics_range_7d]
+other = "Last 7 days"
+
+[oauth_analytics_range_30d]
+other = "Last 30 days"
+
+[oauth_analytics_requests]
+other = "Requests"
+
+[oauth_analytics_bandwidth]
+other = "Bandwidth"
+
+[oauth_analytics_threats]
+other = "Threats"
+
+[oauth_analytics_pageviews]
+other = "Page views"
+
+[oauth_analytics_uniques]
+other = "Uniques"
+
+[oauth_analytics_cache_hit]
+other = "Cache hit"
+
+[oauth_zone_settings]
+other = "設定"
+
+[oauth_not_configured]
+other = "CFUI_OAUTH_CLIENT_ID を設定してください。"
+
+[oauth_setup_title]
+other = "OAuth 設定ガイド"
+
+[oauth_setup_subtitle]
+other = "Cloudflare OAuth クライアントを作成し、relay callback をリダイレクト URI として登録してから client ID で cfui を再起動します。"
+
+[oauth_setup_oauth_app_title]
+other = "Cloudflare OAuth クライアントフォームを入力"
+
+[oauth_setup_oauth_app_desc]
+other = "Cloudflare OAuth クライアントフォームでは以下の選択肢を使います。cfui は Authorization Code、Refresh Token、PKCE を使用し、client secret は使いません。"
+
+[oauth_setup_cloudflare_path]
+other = "Cloudflare ダッシュボードの場所"
+
+[oauth_setup_cloudflare_path_value]
+other = "アカウント管理 > OAuth クライアント > OAuth クライアントを作成"
+
+[oauth_setup_client_name]
+other = "クライアント名"
+
+[oauth_setup_response_type]
+other = "レスポンス種別"
+
+[oauth_setup_response_type_value]
+other = "Code"
+
+[oauth_setup_grant_type]
+other = "トークン認可タイプ"
+
+[oauth_setup_grant_type_value]
+other = "Authorization Code, Refresh Token"
+
+[oauth_setup_token_auth_method]
+other = "トークンエンドポイント認証方法"
+
+[oauth_setup_token_auth_method_value]
+other = "None (PKCE)"
+
+[oauth_setup_redirect_uri]
+other = "リダイレクト callback URL"
+
+[oauth_setup_redirect_uri_note]
+other = "ここには Relay Worker の公開 HTTPS callback URL だけを入力します。例: https://oauth.example.com/oauth/callback。cfui_callback_url は追加しません。Cloudflare OAuth はまず Worker に戻り、Worker が OAuth state から cfui callback を読み取って現在の cfui インスタンスへ戻します。"
+
+[oauth_setup_client_url]
+other = "クライアント URL"
+
+[oauth_setup_client_url_value]
+other = "個人利用では空欄で構いません。公開アプリではプロジェクトまたはドキュメントの URL を入力します。"
+
+[oauth_setup_worker_title]
+other = "Relay Worker を使用または自前でデプロイ"
+
+[oauth_setup_worker_desc]
+other = "Worker は OAuth state から cfui callback を読み取り、Cloudflare から戻る code と state をこの cfui インスタンスへ転送します。下の内蔵ファイルを開くかダウンロードし、Cloudflare Workers にデプロイしてください。"
+
+[oauth_setup_worker_script]
+other = "内蔵 Worker ファイル"
+
+[oauth_setup_worker_deploy_path]
+other = "Cloudflare Worker のデプロイ場所"
+
+[oauth_setup_worker_deploy_path_value]
+other = "Workers & Pages > 作成 > Worker > コードを編集、このファイルを貼り付けてデプロイ"
+
+[oauth_setup_worker_callback_var]
+other = "任意: fallback callback の Worker 変数"
+
+[oauth_setup_worker_callback_param]
+other = "任意: 動的 callback relay URL"
+
+[oauth_setup_worker_allowlist_var]
+other = "動的 callback origin 許可リスト"
+
+[oauth_setup_internal_dns_note]
+other = "ユーザーのブラウザーから到達できるなら、cfui は内部 DNS 名でも問題ありません。cfui は現在ブラウザーから見えている /oauth/callback URL を OAuth state に自動的に入れます。"
+
+[oauth_setup_dynamic_callback_note]
+other = "公開 cfui ドメインを共有 Worker で扱う場合は、Worker に CFUI_ALLOWED_CALLBACK_ORIGINS を設定してください。複数ユーザー向け relay として明示的に運用する場合は * も使えます。loopback、private/LAN、.local、.internal、.lan、.home.arpa、.test の callback host は既定で許可されます。"
+
+[oauth_setup_client_id_placeholder]
+other = "<Cloudflare OAuth client ID>"
+
+[oauth_setup_relay_url_placeholder]
+other = "<Worker relay callback URL>"
+
+[oauth_relay_check]
+other = "Relay を確認"
+
+[oauth_relay_checking]
+other = "Relay を確認中..."
+
+[oauth_relay_check_ok]
+other = "Relay に到達できます"
+
+[oauth_relay_check_failed]
+other = "Relay の確認に失敗しました"
+
+[oauth_setup_env_title]
+other = "cfui 環境変数を設定"
+
+[oauth_setup_env_desc]
+other = "OAuth client ID と relay URL を設定して cfui を再起動します。Relay URL は Cloudflare に登録した redirect URI と一致している必要があります。"
+
+[oauth_setup_env_vars]
+other = "環境変数"
+
+[oauth_setup_permissions_title]
+other = "Cloudflare OAuth 権限を選択"
+
+[oauth_setup_permissions_desc]
+other = "Cloudflare OAuth の scope 名は API token permission に対応します。まず最小セットで動作確認し、全体のコンソールが必要な場合に完全セットを追加してください。"
+
+[oauth_setup_permissions_scope_model]
+other = "Cloudflare OAuth アプリで選択した権限は、このクライアントが要求できる上限の許可リストです。cfui に表示される scope は 1 回のサインインで実際に要求する scope であり、この許可リストのサブセットである必要があります。Cloudflare は両方のリストを和集合にしません。"
+
+[oauth_setup_permissions_minimum]
+other = "最小構成: DNS + Tunnel"
+
+[oauth_setup_permissions_full]
+other = "完全なワークスペース"
+
+[oauth_setup_permissions_categories]
+other = "Cloudflare のフォームでは通常 Account/Account Settings、DNS & Zones、Developer Platform、Cloudflare One/Zero Trust、Security/WAF、Analytics & Logs の分類にあります。"
+
+[oauth_setup_permissions_write_note]
+other = ".write または cache.purge の scope は cfui が Cloudflare リソースを変更できる権限です。読み取り専用にしたい場合は write scope を選ばないでください。"
+
+[oauth_authorization_scopes]
+other = "認可スコープ"
+
+[oauth_authorization_scopes_hint]
+other = "次の OAuth サインインで要求する Cloudflare モジュール権限を選択します。"
+
+[oauth_current_scopes]
+other = "現在の ID の認可スコープ"
+
+[oauth_scope_preview]
+other = "OAuth スコープのプレビュー"
+
+[oauth_no_scopes]
+other = "スコープは返されていません。"
+
+[oauth_permission_required]
+other = "必須"
+
+[oauth_permission_level]
+other = "権限レベル"
+
+[oauth_permission_readonly]
+other = "読み取りのみ"
+
+[oauth_permission_readwrite]
+other = "読み取りと書き込み"
+
+[oauth_permission_account_desc]
+other = "Cloudflare アカウント ID と設定を読み取ります。"
+
+[oauth_permission_zones_desc]
+other = "ゾーンを一覧し、ゾーン概要を読み込みます。"
+
+[oauth_permission_dns_desc]
+other = "選択したゾーンの DNS レコードを表示または編集します。"
+
+[oauth_permission_workers_desc]
+other = "Workers スクリプトを一覧し、メタデータを読み込みます。"
+
+[oauth_permission_workers_tail_desc]
+other = "cfui 経由で Worker の実行イベントをライブストリームします。"
+
+[oauth_permission_snippets_desc]
+other = "ゾーンレベルの Snippets とトリガールールを管理します。"
+
+[oauth_permission_r2_desc]
+other = "R2 バケットを参照し、オブジェクトを管理します。"
+
+[oauth_permission_d1_desc]
+other = "D1 データベースを参照し、SQL クエリを実行します。"
+
+[oauth_permission_kv_desc]
+other = "KV namespace を参照し、UTF-8 key value を編集します。"
+
+[oauth_permission_tunnels_desc]
+other = "Cloudflare Tunnel の記録を表示し、書き込み scope がある場合はリモート管理の Tunnel を作成します。"
+
+[oauth_permission_waf_desc]
+other = "WAF カスタムルールを表示、作成、切り替え、削除します。"
+
+[oauth_permission_zone_settings_desc]
+other = "ゾーン設定を読み取り、対応済み設定の変更とキャッシュ削除を行います。"
+
+[oauth_permission_analytics_desc]
+other = "Zone Analytics、Worker metrics、アカウント使用量を読み込みます。"
+
+[oauth_account]
+other = "Cloudflare account"
+
+[oauth_identities]
+other = "OAuth identities"
+
+[oauth_current_identity]
+other = "現在の OAuth identity"
+
+[oauth_no_identities]
+other = "保存済みの OAuth identity はありません。"
+
+[oauth_identity_current]
+other = "Current"
+
+[oauth_identity_switch]
+other = "Switch"
+
+[oauth_identity_switch_to]
+other = "{label} に切り替え"
+
+[oauth_identity_switching]
+other = "Switching"
+
+[oauth_identity_remove]
+other = "Remove"
+
+[oauth_identity_rename]
+other = "Rename"
+
+[oauth_identity_rename_prompt]
+other = "この OAuth identity の新しい名前を入力してください"
+
+[oauth_identity_renamed]
+other = "OAuth identity の名前を変更しました。"
+
+[oauth_identity_removed]
+other = "OAuth identity を削除しました。"
+
+[oauth_identity_switched]
+other = "OAuth identity を切り替えました。"
+
+[oauth_identity_remove_title]
+other = "OAuth identity を削除"
+
+[oauth_identity_remove_message]
+other = "{label} を削除しますか？保存済み OAuth セッションは可能な場合に失効されます。"
+
+[oauth_scope_count]
+other = "{n} scopes"
+
+[oauth_scope_edit]
+other = "認可スコープを編集"
+
+[oauth_scope_summary_empty]
+other = "スコープ未選択"
+
+[oauth_logged_in_as]
+other = "{label} としてサインイン中"
+
+[oauth_not_logged_in]
+other = "未サインイン"
+
+[oauth_login_required]
+other = "Cloudflare OAuth でサインインしてリソースを読み込みます。"
+
+[oauth_no_accounts]
+other = "このトークンで利用できるアカウントがありません。"
+
+[oauth_no_zones]
+other = "利用できるゾーンがありません。"
+
+[oauth_no_dns]
+other = "DNS レコードがありません。"
+
+[oauth_no_tunnels]
+other = "Tunnel がありません。"
+
+[oauth_no_workers]
+other = "Workers スクリプトがありません。"
+
+[oauth_no_r2_buckets]
+other = "R2 バケットがありません。"
+
+[oauth_no_d1_databases]
+other = "D1 データベースがありません。"
+
+[oauth_no_kv_namespaces]
+other = "KV namespace がありません。"
+
+[oauth_no_snippets]
+other = "Snippets がありません。"
+
+[oauth_snippets_readonly]
+other = "Current token can read Snippets. Grant snippets.write to create snippets or manage rules."
+
+[oauth_snippet_create]
+other = "Create Snippet"
+
+[oauth_snippet_name]
+other = "Name"
+
+[oauth_snippet_main_file]
+other = "Main file"
+
+[oauth_snippet_code]
+other = "Code"
+
+[oauth_snippet_content]
+other = "Snippet code"
+
+[oauth_snippet_content_loading]
+other = "Snippet code を読み込み中..."
+
+[oauth_snippet_content_unavailable]
+other = "Snippet code はまだ読み込まれていません。"
+
+[oauth_snippet_content_binary]
+other = "Snippet code は UTF-8 テキストではないため、ここでは編集できません。"
+
+[oauth_snippet_content_truncated]
+other = "Snippet code は切り詰められています。全体を読み込めるまで保存は推奨されません。"
+
+[oauth_snippet_content_saved]
+other = "Snippet code を保存しました。"
+
+[oauth_snippet_saved]
+other = "Snippet を保存しました。"
+
+[oauth_snippet_deleted]
+other = "Snippet を削除しました。"
+
+[oauth_snippet_delete_title]
+other = "Snippet を削除"
+
+[oauth_snippet_delete_message]
+other = "{name} を削除しますか？trigger rules も削除されます。"
+
+[oauth_snippet_rule_count]
+other = "{n} trigger rules"
+
+[oauth_snippet_rules]
+other = "Trigger rules"
+
+[oauth_snippet_no_rules]
+other = "No trigger rules for this Snippet."
+
+[oauth_snippet_rule_add]
+other = "Add rule"
+
+[oauth_snippet_rule_expression]
+other = "Expression"
+
+[oauth_snippet_rule_description]
+other = "Description"
+
+[oauth_snippet_rule_enabled]
+other = "Enabled"
+
+[oauth_snippet_rule_saved]
+other = "Snippet rule を保存しました。"
+
+[oauth_snippet_rule_deleted]
+other = "Snippet rule を削除しました。"
+
+[oauth_snippet_rule_delete_title]
+other = "Snippet rule を削除"
+
+[oauth_snippet_rule_delete_message]
+other = "この trigger rule を削除しますか？この操作は元に戻せません。"
+
+[oauth_no_waf_rules]
+other = "カスタム WAF ルールがありません。"
+
+[oauth_waf_custom_rules]
+other = "Custom WAF rules"
+
+[oauth_waf_managed_exceptions]
+other = "Managed exceptions"
+
+[oauth_waf_managed_overrides]
+other = "Managed ruleset overrides"
+
+[oauth_no_waf_managed_exceptions]
+other = "Managed exception がありません。"
+
+[oauth_no_waf_managed_overrides]
+other = "Managed ruleset override がありません。"
+
+[oauth_waf_readonly]
+other = "現在の token は WAF rule の読み取りのみ可能です。作成、編集、有効化、無効化、削除には zone-waf.write を付与してください。"
+
+[oauth_waf_create_rule]
+other = "WAF rule を作成"
+
+[oauth_waf_create_managed_exception]
+other = "Exception を作成"
+
+[oauth_waf_create_managed_override]
+other = "Override を作成"
+
+[oauth_waf_edit_rule]
+other = "編集"
+
+[oauth_waf_edit_managed_exception]
+other = "編集"
+
+[oauth_waf_edit_managed_override]
+other = "編集"
+
+[oauth_waf_update_rule]
+other = "ルールを更新"
+
+[oauth_waf_update_managed_exception]
+other = "Exception を更新"
+
+[oauth_waf_update_managed_override]
+other = "Override を更新"
+
+[oauth_waf_action]
+other = "Action"
+
+[oauth_waf_expression]
+other = "Expression"
+
+[oauth_waf_description]
+other = "Description"
+
+[oauth_waf_enabled]
+other = "Enabled"
+
+[oauth_waf_copy_audit_json]
+other = "Copy audit JSON"
+
+[oauth_waf_advanced_json]
+other = "Advanced JSON"
+
+[oauth_waf_advanced_json_help]
+other = "この rule の raw WAF structure を編集します。JSON object、または field を消す場合は null を入力してください。未変更の field は送信されません。"
+
+[oauth_waf_advanced_json_invalid]
+other = "{field} は JSON object または null にしてください。"
+
+[oauth_waf_rule_saved]
+other = "WAF rule を保存しました。"
+
+[oauth_waf_rule_updated]
+other = "WAF rule を更新しました。"
+
+[oauth_waf_rule_deleted]
+other = "WAF rule を削除しました。"
+
+[oauth_waf_managed_exception_saved]
+other = "Managed exception を保存しました。"
+
+[oauth_waf_managed_exception_updated]
+other = "Managed exception を更新しました。"
+
+[oauth_waf_managed_exception_deleted]
+other = "Managed exception を削除しました。"
+
+[oauth_waf_managed_override_saved]
+other = "Managed ruleset override を保存しました。"
+
+[oauth_waf_managed_override_updated]
+other = "Managed ruleset override を更新しました。"
+
+[oauth_waf_managed_override_deleted]
+other = "Managed ruleset override を削除しました。"
+
+[oauth_waf_delete_rule_title]
+other = "WAF rule を削除"
+
+[oauth_waf_delete_rule_message]
+other = "この custom WAF rule を削除しますか？この操作は元に戻せません。"
+
+[oauth_waf_delete_managed_exception_title]
+other = "Managed exception を削除"
+
+[oauth_waf_delete_managed_exception_message]
+other = "この managed exception を削除しますか？この操作は元に戻せません。"
+
+[oauth_waf_delete_managed_override_title]
+other = "Managed override を削除"
+
+[oauth_waf_delete_managed_override_message]
+other = "この managed ruleset override を削除しますか？この操作は元に戻せません。"
+
+[oauth_waf_action_execute]
+other = "Execute"
+
+[oauth_waf_action_block]
+other = "Block"
+
+[oauth_waf_action_challenge]
+other = "Challenge"
+
+[oauth_waf_action_managed_challenge]
+other = "Managed challenge"
+
+[oauth_waf_action_js_challenge]
+other = "JS challenge"
+
+[oauth_waf_action_log]
+other = "Log"
+
+[oauth_waf_action_skip]
+other = "Skip"
+
+[oauth_waf_skip_options]
+other = "Skip options"
+
+[oauth_waf_skip_current_ruleset]
+other = "この ruleset の残りの custom rules をスキップ"
+
+[oauth_waf_skip_current_ruleset_short]
+other = "skip current ruleset"
+
+[oauth_waf_skip_products]
+other = "Security products"
+
+[oauth_waf_skip_phases]
+other = "Ruleset phases"
+
+[oauth_waf_skip_requires_option]
+other = "少なくとも 1 つの skip option を選択してください。"
+
+[oauth_waf_managed_exception_targets]
+other = "Exception targets"
+
+[oauth_waf_managed_exception_skip_current]
+other = "残りの managed rules をすべてスキップ"
+
+[oauth_waf_managed_rulesets]
+other = "Managed ruleset IDs"
+
+[oauth_waf_managed_rule_ruleset_id]
+other = "Ruleset ID"
+
+[oauth_waf_managed_rule_ids]
+other = "Managed rule IDs"
+
+[oauth_waf_managed_exception_add_rule_target]
+other = "Rule target を追加"
+
+[oauth_waf_managed_exception_rule_target_required]
+other = "各 rule target には ruleset ID と少なくとも 1 つの managed rule ID が必要です。"
+
+[oauth_waf_managed_ruleset_id]
+other = "Managed ruleset ID"
+
+[oauth_waf_managed_rule_id]
+other = "Managed rule ID"
+
+[oauth_waf_managed_override_overrides]
+other = "Override settings"
+
+[oauth_waf_managed_override_ruleset_action]
+other = "Ruleset action override"
+
+[oauth_waf_managed_override_ruleset_enabled]
+other = "Ruleset enabled override"
+
+[oauth_waf_managed_override_enabled_override]
+other = "Enabled override"
+
+[oauth_waf_managed_override_sensitivity]
+other = "Sensitivity"
+
+[oauth_waf_managed_override_no_action_override]
+other = "No action override"
+
+[oauth_waf_managed_override_no_enabled_override]
+other = "No enabled override"
+
+[oauth_waf_managed_override_no_sensitivity_override]
+other = "No sensitivity override"
+
+[oauth_waf_managed_override_categories]
+other = "Category overrides"
+
+[oauth_waf_managed_override_category]
+other = "Category tag"
+
+[oauth_waf_managed_override_add_category]
+other = "Category override を追加"
+
+[oauth_waf_managed_override_category_required]
+other = "Category override には tag が必要です。"
+
+[oauth_waf_managed_override_rules]
+other = "Rule overrides"
+
+[oauth_waf_managed_override_add_rule]
+other = "Rule override を追加"
+
+[oauth_waf_managed_override_rule_required]
+other = "Rule override には managed rule ID が必要です。"
+
+[oauth_waf_managed_override_score_threshold]
+other = "Score threshold"
+
+[oauth_waf_managed_override_score_invalid]
+other = "Score threshold は 0 から 100 の整数にしてください。"
+
+[oauth_waf_sensitivity_default]
+other = "Default"
+
+[oauth_waf_sensitivity_high]
+other = "High"
+
+[oauth_waf_sensitivity_medium]
+other = "Medium"
+
+[oauth_waf_sensitivity_low]
+other = "Low"
+
+[oauth_waf_sensitivity_eoff]
+other = "Essentially off"
+
+[oauth_waf_skip_products_summary]
+other = "{n} products"
+
+[oauth_waf_skip_phases_summary]
+other = "{n} phases"
+
+[oauth_waf_rulesets_summary]
+other = "{n} rulesets"
+
+[oauth_waf_rules_summary]
+other = "{n} managed rules"
+
+[oauth_waf_overrides_summary]
+other = "overrides"
+
+[oauth_waf_matched_data_summary]
+other = "matched data"
+
+[oauth_waf_response_summary]
+other = "custom response"
+
+[oauth_waf_rate_limit_summary]
+other = "rate limit"
+
+[oauth_waf_logging_summary]
+other = "logging"
+
+[oauth_waf_credential_check_summary]
+other = "credential check"
+
+[oauth_waf_ref]
+other = "Ref"
+
+[oauth_waf_version]
+other = "Version"
+
+[oauth_waf_score_threshold]
+other = "Score threshold"
+
+[oauth_waf_last_updated]
+other = "Last updated"
+
+[oauth_waf_action_parameters]
+other = "Action parameters"
+
+[oauth_waf_rate_limit]
+other = "Rate limit"
+
+[oauth_waf_rate_limit_help]
+other = "Raw JSON を編集せずに、よく使う rate limit フィールドを設定できます。Advanced JSON でこのフィールドを上書きすることもできます。"
+
+[oauth_waf_rate_limit_enable]
+other = "このルールに rate limit を適用"
+
+[oauth_waf_rate_limit_characteristics]
+other = "Characteristics"
+
+[oauth_waf_rate_limit_period]
+other = "Period seconds"
+
+[oauth_waf_rate_limit_requests]
+other = "Requests per period"
+
+[oauth_waf_rate_limit_mitigation]
+other = "Mitigation timeout seconds"
+
+[oauth_waf_rate_limit_counting_expression]
+other = "Counting expression"
+
+[oauth_waf_rate_limit_requests_to_origin]
+other = "Count only requests that reach origin"
+
+[oauth_waf_rate_limit_score]
+other = "Score per period"
+
+[oauth_waf_rate_limit_score_header]
+other = "Score response header"
+
+[oauth_waf_rate_limit_required]
+other = "Rate limit requires at least one characteristic, a period, and either requests per period or score per period."
+
+[oauth_waf_rate_limit_invalid_number]
+other = "{field} must be a whole number in the allowed range."
+
+[oauth_waf_logging]
+other = "Logging"
+
+[oauth_waf_credential_check]
+other = "Credential check"
+
+[oauth_waf_json_truncated]
+other = "... truncated"
+
+[oauth_waf_skip_product_zone_lockdown]
+other = "Zone Lockdown"
+
+[oauth_waf_skip_product_ua_block]
+other = "User Agent Blocking"
+
+[oauth_waf_skip_product_bic]
+other = "Browser Integrity Check"
+
+[oauth_waf_skip_product_hot]
+other = "Hotlink Protection"
+
+[oauth_waf_skip_product_security_level]
+other = "Security Level"
+
+[oauth_waf_skip_product_rate_limit]
+other = "Rate limiting (previous version)"
+
+[oauth_waf_skip_product_waf]
+other = "Managed rules (previous version)"
+
+[oauth_waf_skip_phase_rate_limit]
+other = "Rate limiting rules"
+
+[oauth_waf_skip_phase_sbfm]
+other = "Super Bot Fight Mode"
+
+[oauth_waf_skip_phase_managed_waf]
+other = "WAF Managed Rules"
+
+[oauth_no_zone_settings]
+other = "表示できる Zone 設定が返されませんでした。"
+
+[oauth_storage_scope_required]
+other = "Storage リソースを読み込むには R2、D1、または KV の read scope が必要です。"
+
+[oauth_select_account]
+other = "先にアカウントを選択してください。"
+
+[oauth_select_zone]
+other = "先にゾーンを選択してください。"
+
+[oauth_login_success]
+other = "Cloudflare OAuth ログインが完了しました。"
+
+[oauth_login_failed]
+other = "Cloudflare OAuth ログインに失敗しました。"
+
+[oauth_login_url_missing]
+other = "OAuth ログイン URL が返されませんでした。"
+
+[oauth_logpush_off]
+other = "Logpush off"
+
+[oauth_modified]
+other = "Modified"
+
+[oauth_r2_buckets]
+other = "R2 buckets"
+
+[oauth_r2_metrics]
+other = "R2 メトリクス"
+
+[oauth_r2_metrics_loading]
+other = "R2 メトリクスを読み込み中..."
+
+[oauth_r2_metrics_error]
+other = "R2 メトリクスを利用できません: {error}"
+
+[oauth_r2_metrics_empty]
+other = "R2 メトリクスが返されませんでした。"
+
+[oauth_r2_metrics_standard]
+other = "Standard"
+
+[oauth_r2_metrics_infrequent_access]
+other = "Infrequent Access"
+
+[oauth_r2_metrics_published]
+other = "Published"
+
+[oauth_r2_metrics_uploaded]
+other = "Uploaded"
+
+[oauth_r2_metrics_objects]
+other = "Objects"
+
+[oauth_r2_metrics_payload]
+other = "Payload"
+
+[oauth_r2_metrics_metadata]
+other = "Metadata"
+
+[oauth_r2_metrics_total]
+other = "Total"
+
+[oauth_r2_create_bucket]
+other = "bucket を作成"
+
+[oauth_r2_bucket_name]
+other = "Bucket name"
+
+[oauth_r2_location_hint]
+other = "Location hint"
+
+[oauth_r2_created]
+other = "R2 bucket を作成しました。"
+
+[oauth_r2_deleted]
+other = "R2 bucket を削除しました。"
+
+[oauth_r2_delete_title]
+other = "R2 bucket を削除"
+
+[oauth_r2_delete_message]
+other = "{name} を削除しますか？この操作は元に戻せません。"
+
+[oauth_r2_objects]
+other = "Objects"
+
+[oauth_r2_objects_readonly]
+other = "R2 オブジェクトを作成、編集、削除するには workers-r2.write を許可してください。"
+
+[oauth_r2_no_objects]
+other = "この bucket にはオブジェクトがありません。"
+
+[oauth_r2_no_object_matches]
+other = "読み込み済みのオブジェクトに一致するものがありません。"
+
+[oauth_r2_object_search_label]
+other = "R2 オブジェクトを検索"
+
+[oauth_r2_object_search_placeholder]
+other = "key、Content-Type、クラス、サイズを検索..."
+
+[oauth_r2_object_search_count]
+other = "{n}/{m} 件の読み込み済みオブジェクト"
+
+[oauth_r2_load_more_objects]
+other = "Load more objects"
+
+[oauth_r2_select_object]
+other = "プレビューするオブジェクトを選択してください。"
+
+[oauth_r2_object]
+other = "R2 object"
+
+[oauth_r2_object_create]
+other = "Create text object"
+
+[oauth_r2_object_upload]
+other = "Upload file"
+
+[oauth_r2_object_edit]
+other = "Edit text object"
+
+[oauth_r2_object_key]
+other = "Object key"
+
+[oauth_r2_object_copy_key]
+other = "キーをコピー"
+
+[oauth_r2_object_copy]
+other = "Object をコピー"
+
+[oauth_r2_object_move]
+other = "移動"
+
+[oauth_r2_object_copy_bucket_prompt]
+other = "コピー先 bucket を入力してください"
+
+[oauth_r2_object_move_bucket_prompt]
+other = "移動先 bucket を入力してください"
+
+[oauth_r2_object_copy_prompt]
+other = "コピー先の object key を入力してください"
+
+[oauth_r2_object_move_prompt]
+other = "移動先の object key を入力してください"
+
+[oauth_r2_object_copying]
+other = "コピー中"
+
+[oauth_r2_object_moving]
+other = "移動中"
+
+[oauth_r2_object_copied]
+other = "R2 object をコピーしました。"
+
+[oauth_r2_object_moved]
+other = "R2 object を移動しました。"
+
+[oauth_r2_object_destination_diff]
+other = "移動/コピー先 key は元の key と異なる必要があります。"
+
+[oauth_r2_object_detail]
+other = "オブジェクト詳細"
+
+[oauth_r2_object_size]
+other = "サイズ"
+
+[oauth_r2_object_etag]
+other = "ETag"
+
+[oauth_r2_object_storage_class]
+other = "ストレージクラス"
+
+[oauth_r2_object_last_modified]
+other = "最終更新"
+
+[oauth_r2_object_encoding]
+other = "エンコード"
+
+[oauth_r2_object_encoding_binary]
+other = "バイナリ"
+
+[oauth_r2_object_encoding_too_large]
+other = "大きすぎます"
+
+[oauth_r2_object_encoding_text]
+other = "UTF-8 テキスト"
+
+[oauth_r2_object_encoding_utf8]
+other = "UTF-8"
+
+[oauth_r2_object_key_required]
+other = "Object key is required."
+
+[oauth_r2_object_file]
+other = "File"
+
+[oauth_r2_object_file_required]
+other = "アップロードするファイルを選択してください。"
+
+[oauth_r2_object_upload_limit]
+other = "1 回のアップロード上限: {max}。"
+
+[oauth_r2_object_upload_selected]
+other = "選択したファイル: {size}。1 回のアップロード上限: {max}。"
+
+[oauth_r2_object_upload_too_large]
+other = "選択したファイルは {size} で、現在の 1 回のアップロード上限 {max} を超えています。"
+
+[oauth_r2_object_content_type]
+other = "Content-Type"
+
+[oauth_r2_object_value]
+other = "Value"
+
+[oauth_r2_object_loading]
+other = "オブジェクトを読み込んでいます..."
+
+[oauth_r2_object_truncated]
+other = "Preview truncated"
+
+[oauth_r2_object_binary]
+other = "Object content is not UTF-8 text ({bytes})."
+
+[oauth_r2_object_binary_preview]
+other = "16進プレビュー"
+
+[oauth_r2_object_binary_preview_meta]
+other = "オブジェクト内容の先頭 {bytes}。全文を確認するにはダウンロードしてください。"
+
+[oauth_r2_object_preview]
+other = "Media preview"
+
+[oauth_r2_object_preview_too_large]
+other = "{max} を超えるオブジェクトはダウンロードのみ対応です。"
+
+[oauth_r2_object_preview_failed]
+other = "Preview failed. Download the object to inspect it."
+
+[oauth_r2_object_saved]
+other = "R2 object saved."
+
+[oauth_r2_object_uploaded]
+other = "R2 object uploaded."
+
+[oauth_r2_object_deleted]
+other = "R2 object deleted."
+
+[oauth_r2_object_delete_title]
+other = "Delete R2 object"
+
+[oauth_r2_object_delete_message]
+other = "Object {key} を削除しますか？この操作は取り消せません。"
+
+[oauth_d1_databases]
+other = "D1 databases"
+
+[oauth_d1_database_detail]
+other = "データベース詳細"
+
+[oauth_d1_file_size]
+other = "ファイルサイズ"
+
+[oauth_d1_version]
+other = "バージョン"
+
+[oauth_d1_created]
+other = "作成日時"
+
+[oauth_d1_unavailable]
+other = "利用不可"
+
+[oauth_kv_namespaces]
+other = "KV namespaces"
+
+[oauth_tables]
+other = "tables"
+
+[oauth_disabled]
+other = "Disabled"
+
+[oauth_enabled_state]
+other = "Enabled"
+
+[oauth_editable]
+other = "Editable"
+
+[oauth_readonly]
+other = "Read only"
+
+[oauth_dns_create]
+other = "レコード作成"
+
+[oauth_dns_edit]
+other = "DNS レコード編集"
+
+[oauth_dns_update]
+other = "レコード更新"
+
+[oauth_dns_set_proxied]
+other = "プロキシを有効化"
+
+[oauth_dns_set_dns_only]
+other = "DNS only"
+
+[oauth_dns_type]
+other = "タイプ"
+
+[oauth_dns_name]
+other = "名前"
+
+[oauth_dns_content]
+other = "内容"
+
+[oauth_dns_ttl]
+other = "TTL"
+
+[oauth_dns_comment]
+other = "コメント"
+
+[oauth_dns_created]
+other = "DNS レコードを作成しました。"
+
+[oauth_dns_updated]
+other = "DNS レコードを更新しました。"
+
+[oauth_dns_deleted]
+other = "DNS レコードを削除しました。"
+
+[oauth_dns_delete_title]
+other = "DNS レコードを削除"
+
+[oauth_dns_delete_message]
+other = "{name} を削除しますか？この操作は元に戻せません。"
+
+[oauth_dns_search_label]
+other = "DNS レコードを検索"
+
+[oauth_dns_search_placeholder]
+other = "タイプ、名前、内容、コメント、プロキシ状態で検索"
+
+[oauth_dns_search_count]
+other = "{n}/{m} records"
+
+[oauth_dns_no_matches]
+other = "この検索に一致する DNS レコードはありません。"
+
+[oauth_zone_actions]
+other = "Zone actions"
+
+[oauth_development_mode]
+other = "Development mode"
+
+[oauth_security_level]
+other = "Security level"
+
+[oauth_security_essentially_off]
+other = "Essentially off"
+
+[oauth_security_low]
+other = "Low"
+
+[oauth_security_medium]
+other = "Medium"
+
+[oauth_security_high]
+other = "High"
+
+[oauth_security_under_attack]
+other = "Under attack"
+
+[oauth_always_use_https]
+other = "常に HTTPS を使用"
+
+[oauth_automatic_https_rewrites]
+other = "Automatic HTTPS Rewrites"
+
+[oauth_brotli]
+other = "Brotli"
+
+[oauth_rocket_loader]
+other = "Rocket Loader"
+
+[oauth_ssl_mode]
+other = "SSL/TLS モード"
+
+[oauth_ssl_off]
+other = "Off"
+
+[oauth_ssl_flexible]
+other = "Flexible"
+
+[oauth_ssl_full]
+other = "Full"
+
+[oauth_ssl_strict]
+other = "Full (strict)"
+
+[oauth_ssl_origin_pull]
+other = "Origin Pull"
+
+[oauth_cache_level]
+other = "Cache level"
+
+[oauth_cache_level_aggressive]
+other = "Standard"
+
+[oauth_cache_level_basic]
+other = "No query string"
+
+[oauth_cache_level_simplified]
+other = "Ignore query string"
+
+[oauth_browser_cache_ttl]
+other = "Browser cache TTL"
+
+[oauth_browser_cache_ttl_origin]
+other = "既存のヘッダーを尊重"
+
+[oauth_browser_cache_ttl_2h]
+other = "2 時間"
+
+[oauth_browser_cache_ttl_4h]
+other = "4 時間"
+
+[oauth_browser_cache_ttl_8h]
+other = "8 時間"
+
+[oauth_browser_cache_ttl_12h]
+other = "12 時間"
+
+[oauth_browser_cache_ttl_1d]
+other = "1 日"
+
+[oauth_browser_cache_ttl_3d]
+other = "3 日"
+
+[oauth_browser_cache_ttl_1w]
+other = "1 週間"
+
+[oauth_browser_cache_ttl_1mo]
+other = "1 か月"
+
+[oauth_browser_cache_ttl_1y]
+other = "1 年"
+
+[oauth_current_setting_value]
+other = "Current: {value}"
+
+[oauth_cache_purge]
+other = "Purge cache"
+
+[oauth_cache_purge_title]
+other = "Zone cache を purge"
+
+[oauth_cache_purge_message]
+other = "この Zone のすべてのキャッシュファイルを purge しますか？オリジンへのトラフィックがすぐ増える可能性があります。"
+
+[oauth_cache_purged]
+other = "Zone cache の purge をリクエストしました。"
+
+[oauth_zone_setting_saved]
+other = "Zone 設定を保存しました。"
+
+[oauth_write_enabled]
+other = "Write enabled"
+
+[oauth_storage_back]
+other = "Back to storage"
+
+[oauth_kv_keys]
+other = "KV keys"
+
+[oauth_kv_load_more]
+other = "さらに読み込む"
+
+[oauth_kv_no_keys]
+other = "この namespace に key はありません。"
+
+[oauth_kv_select_key]
+other = "key を選択して値を表示します。"
+
+[oauth_kv_create_key]
+other = "key を作成"
+
+[oauth_kv_key_name]
+other = "Key"
+
+[oauth_kv_value]
+other = "Value"
+
+[oauth_kv_loading_value]
+other = "値を読み込み中..."
+
+[oauth_kv_value_binary]
+other = "Binary value ({bytes}); text preview is not available."
+
+[oauth_kv_value_too_large]
+other = "Value is too large for the text editor ({bytes})."
+
+[oauth_kv_saved]
+other = "KV value を保存しました。"
+
+[oauth_kv_deleted]
+other = "KV key を削除しました。"
+
+[oauth_kv_delete_title]
+other = "KV key を削除"
+
+[oauth_kv_delete_message]
+other = "{key} を削除しますか？この操作は元に戻せません。"
+
+[oauth_kv_readonly]
+other = "Current token can read KV. Grant workers-kv-storage.write to edit values."
+
+[oauth_kv_expiration]
+other = "Expires"
+
+[oauth_d1_tables]
+other = "Tables"
+
+[oauth_d1_load_tables]
+other = "Load tables"
+
+[oauth_d1_no_tables]
+other = "No user tables in this database."
+
+[oauth_d1_table_meta]
+other = "{rows} rows loaded from offset {offset}"
+
+[oauth_d1_load_more_rows]
+other = "Load more rows"
+
+[oauth_d1_empty_table]
+other = "This table has no rows."
+
+[oauth_d1_edit_row_title]
+other = "Edit row {rowid}"
+
+[oauth_d1_edit_hint]
+other = "Values are saved as strings through parameterized D1 queries. Leave unchanged fields as-is."
+
+[oauth_d1_no_changes]
+other = "No changes to save."
+
+[oauth_d1_row_saved]
+other = "D1 row saved."
+
+[oauth_d1_row_deleted]
+other = "D1 row deleted."
+
+[oauth_d1_delete_row_title]
+other = "Delete D1 row"
+
+[oauth_d1_delete_row_message]
+other = "Delete row {rowid}? This cannot be undone."
+
+[oauth_d1_sql]
+other = "SQL"
+
+[oauth_d1_run]
+other = "Run query"
+
+[oauth_d1_running]
+other = "Running"
+
+[oauth_d1_query_done]
+other = "D1 query が完了しました。"
+
+[oauth_d1_results]
+other = "Results"
+
+[oauth_d1_no_results]
+other = "Run a query to show results."
+
+[oauth_d1_readonly_warning]
+other = "Current token is read-only for D1. Write statements may be rejected by Cloudflare."
+
+[oauth_d1_statement]
+other = "Statement {n}"
+
+[oauth_d1_rows_read]
+other = "read"
+
+[oauth_d1_rows_written]
+other = "written"
+
+[oauth_d1_failed]
+other = "Query failed."
+
+[oauth_d1_success_no_rows]
+other = "Query succeeded with no rows."
+
+[oauth_d1_rows_truncated]
+other = "Showing the first 100 of {n} rows."
+
+[oauth_cloudflare_status]
+other = "Status"
+
+[oauth_cf_status_public]
+other = "Public Cloudflare status. No OAuth scope is required."
+
+[oauth_cf_status_loading]
+other = "Cloudflare status を読み込み中..."
+
+[oauth_cf_status_empty]
+other = "Cloudflare status data is not loaded."
+
+[oauth_cf_status_updated]
+other = "Updated"
+
+[oauth_cf_status_fetched]
+other = "Fetched"
+
+[oauth_cf_status_products]
+other = "Products"
+
+[oauth_cf_status_affected]
+other = "Affected"
+
+[oauth_cf_status_active_incidents]
+other = "Active incidents"
+
+[oauth_cf_status_maintenances]
+other = "Maintenance"
+
+[oauth_cf_status_affected_products]
+other = "Affected products"
+
+[oauth_cf_status_no_affected_products]
+other = "All product services are operational."
+
+[oauth_cf_status_regions]
+other = "Edge regions"
+
+[oauth_cf_status_region_impacted]
+other = "{n}/{m} nodes impacted"
+
+[oauth_cf_status_region_ok]
+other = "{n} nodes operational"
+
+[oauth_cf_status_no_regions]
+other = "No edge region data."
+
+[oauth_cf_status_active]
+other = "Active incidents"
+
+[oauth_cf_status_no_active]
+other = "No active incidents."
+
+[oauth_cf_status_maintenance]
+other = "Scheduled maintenance"
+
+[oauth_cf_status_no_maintenance]
+other = "No scheduled maintenance."
+
+[oauth_cf_status_recent]
+other = "Recent incidents"
+
+[oauth_cf_status_no_recent]
+other = "No recent incidents."
+
+[oauth_cf_status_indicator_none]
+other = "All systems operational"
+
+[oauth_cf_status_indicator_minor]
+other = "Minor service disruption"
+
+[oauth_cf_status_indicator_major]
+other = "Major service disruption"
+
+[oauth_cf_status_indicator_critical]
+other = "Critical service disruption"
+
+[oauth_cf_status_indicator_maintenance]
+other = "Maintenance in progress"
+
+[oauth_cf_status_component_operational]
+other = "Operational"
+
+[oauth_cf_status_component_degraded_performance]
+other = "Degraded performance"
+
+[oauth_cf_status_component_partial_outage]
+other = "Partial outage"
+
+[oauth_cf_status_component_major_outage]
+other = "Major outage"
+
+[oauth_cf_status_component_under_maintenance]
+other = "Under maintenance"
+
+[oauth_cf_status_incident_investigating]
+other = "Investigating"
+
+[oauth_cf_status_incident_identified]
+other = "Identified"
+
+[oauth_cf_status_incident_monitoring]
+other = "Monitoring"
+
+[oauth_cf_status_incident_resolved]
+other = "Resolved"
+
+[oauth_cf_status_incident_postmortem]
+other = "Postmortem"
+
+[oauth_cf_status_incident_scheduled]
+other = "Scheduled"
+
+[oauth_cf_status_incident_in_progress]
+other = "In progress"
+
+[oauth_cf_status_incident_verifying]
+other = "Verifying"
+
+[oauth_cf_status_incident_completed]
+other = "Completed"
+
+[oauth_cf_status_impact_critical]
+other = "Critical"
+
+[oauth_cf_status_impact_major]
+other = "Major"
+
+[oauth_cf_status_impact_minor]
+other = "Minor"
+
+[oauth_cf_status_impact_maintenance]
+other = "Maintenance"
+
+[oauth_cf_status_impact_none]
+other = "No impact"
+
+[oauth_cf_status_region_africa]
+other = "Africa"
+
+[oauth_cf_status_region_asia]
+other = "Asia"
+
+[oauth_cf_status_region_europe]
+other = "Europe"
+
+[oauth_cf_status_region_latin_america]
+other = "Latin America & the Caribbean"
+
+[oauth_cf_status_region_middle_east]
+other = "Middle East"
+
+[oauth_cf_status_region_north_america]
+other = "North America"
+
+[oauth_cf_status_region_oceania]
+other = "Oceania"

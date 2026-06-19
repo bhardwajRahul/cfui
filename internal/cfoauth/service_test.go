@@ -42,7 +42,18 @@ func TestStartURLWithScopesUsesRequestedScopes(t *testing.T) {
 	if got, want := parsed.Query().Get("scope"), "dns.read dns.write"; got != want {
 		t.Fatalf("scope query mismatch: got %q want %q", got, want)
 	}
-	pending, err := store.ConsumeState(ctx, parsed.Query().Get("state"))
+	if got, want := parsed.Query().Get("redirect_uri"), "https://oauth.example.test/oauth/callback"; got != want {
+		t.Fatalf("redirect_uri mismatch: got %q want %q", got, want)
+	}
+	state := parsed.Query().Get("state")
+	callbackURL, ok := RelayStateCallbackURL(state)
+	if !ok {
+		t.Fatalf("state missing encoded callback URL: %q", state)
+	}
+	if got, want := callbackURL, defaultLocalCallback; got != want {
+		t.Fatalf("callback URL mismatch: got %q want %q", got, want)
+	}
+	pending, err := store.ConsumeState(ctx, state)
 	if err != nil {
 		t.Fatalf("ConsumeState: %v", err)
 	}
@@ -74,6 +85,65 @@ func TestStartURLWithScopesFallsBackToConfiguredScopes(t *testing.T) {
 	}
 	if got, want := parsed.Query().Get("scope"), "zone.read dns.read"; got != want {
 		t.Fatalf("scope query mismatch: got %q want %q", got, want)
+	}
+}
+
+func TestStartURLWithOptionsEncodesRequestCallbackInState(t *testing.T) {
+	ctx := context.Background()
+	store := NewStore(t.TempDir())
+	t.Cleanup(func() { closeStore(t, store) })
+
+	svc := NewService(Config{
+		ClientID:          "client-id",
+		RelayCallbackURL:  "https://oauth.example.test/oauth/callback",
+		LocalCallbackPath: "/oauth/callback",
+		AuthorizationURL:  "https://dash.cloudflare.com/oauth2/auth",
+		Scopes:            "zone.read",
+		Configured:        true,
+	}, store)
+
+	startURL, err := svc.StartURLWithOptions(ctx, StartURLOptions{
+		Scopes:      "dns.read",
+		CallbackURL: "https://cfui.example.internal/oauth/callback?ignored=1#section",
+	})
+	if err != nil {
+		t.Fatalf("StartURLWithOptions: %v", err)
+	}
+	parsed, err := url.Parse(startURL)
+	if err != nil {
+		t.Fatalf("parse start url: %v", err)
+	}
+	if got, want := parsed.Query().Get("redirect_uri"), "https://oauth.example.test/oauth/callback"; got != want {
+		t.Fatalf("redirect_uri mismatch: got %q want %q", got, want)
+	}
+	callbackURL, ok := RelayStateCallbackURL(parsed.Query().Get("state"))
+	if !ok {
+		t.Fatalf("state missing encoded callback URL: %s", startURL)
+	}
+	if got, want := callbackURL, "https://cfui.example.internal/oauth/callback"; got != want {
+		t.Fatalf("callback URL mismatch: got %q want %q", got, want)
+	}
+}
+
+func TestStartURLWithOptionsRejectsInvalidCallbackURL(t *testing.T) {
+	ctx := context.Background()
+	store := NewStore(t.TempDir())
+	t.Cleanup(func() { closeStore(t, store) })
+
+	svc := NewService(Config{
+		ClientID:          "client-id",
+		RelayCallbackURL:  "https://oauth.example.test/oauth/callback",
+		LocalCallbackPath: "/oauth/callback",
+		AuthorizationURL:  "https://dash.cloudflare.com/oauth2/auth",
+		Scopes:            "zone.read",
+		Configured:        true,
+	}, store)
+
+	if _, err := svc.StartURLWithOptions(ctx, StartURLOptions{
+		Scopes:      "dns.read",
+		CallbackURL: "https://cfui.example.internal/not-oauth",
+	}); err == nil || !strings.Contains(err.Error(), "path must be /oauth/callback") {
+		t.Fatalf("expected callback path error, got %v", err)
 	}
 }
 

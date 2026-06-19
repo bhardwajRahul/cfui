@@ -220,7 +220,7 @@ To use OAuth mode:
 1. Create a Cloudflare OAuth app and set its redirect URI to the Worker relay URL.
 2. Set `CFUI_OAUTH_CLIENT_ID` to the OAuth client ID.
 3. Keep `CFUI_OAUTH_RELAY_URL` at the default relay (`https://oauth.omarchy.qzz.io/oauth/callback`) or point it to your own Worker relay.
-4. Configure the Worker relay to forward `code` and `state` back to your cfui instance's `/oauth/callback` endpoint, for example `http://127.0.0.1:14333/oauth/callback` for local use. A ready-to-deploy Worker script is available at `docs/cloudflare-oauth-worker.js`; set its `CFUI_CALLBACK_URL` Worker variable if your cfui callback is fixed, or append `?cfui_callback_url=<urlencoded cfui callback>` to `CFUI_OAUTH_RELAY_URL` for per-run callback selection, for example `CFUI_OAUTH_RELAY_URL=https://oauth.omarchy.qzz.io/oauth/callback?cfui_callback_url=https%3A%2F%2Fcfui.example.internal%2Foauth%2Fcallback`. If the parameter points to a public origin, also set the Worker variable `CFUI_ALLOWED_CALLBACK_ORIGINS` to a comma-separated origin allowlist; loopback and private/LAN callback hosts are allowed by default. The Cloudflare OAuth app redirect URI must match the relay callback URL you use, including the query string when you use `cfui_callback_url`. The Worker exposes `/health`, and cfui can check it from the OAuth setup page or `GET /api/oauth/relay-check`.
+4. Deploy or use the Worker relay from `docs/cloudflare-oauth-worker.js`. The Cloudflare OAuth app redirect URI should be only the Worker's public HTTPS callback URL, for example `https://oauth.omarchy.qzz.io/oauth/callback`; do not append `cfui_callback_url`. cfui encodes the current browser-facing `/oauth/callback` URL into OAuth `state`, and the Worker reads that state to forward `code` and `state` back to the correct cfui instance. If one Worker serves public cfui domains, configure the Worker variable `CFUI_ALLOWED_CALLBACK_ORIGINS` with a comma-separated origin allowlist, or intentionally set `*` for a multi-user relay. Loopback, private/LAN IPs, `.local`, `.internal`, `.lan`, `.home.arpa`, and `.test` callback hosts are allowed by default. `CFUI_CALLBACK_URL` remains an optional fallback only. The Worker exposes `/health`, and cfui can check it from the OAuth setup page or `GET /api/oauth/relay-check`.
 
 Zone overview uses `GET /api/cf/dns/count` to fetch DNS record totals without loading every record. For D1, cfui loads the database list first and then best-effort refreshes each database with `GET /api/cf/d1/databases/{database_id}` so table count and file size match Cloudflare's detail endpoint. Failed detail lookups do not block the database list, SQL console, or table browser.
 
@@ -230,7 +230,7 @@ The default OAuth scope template is:
 account-settings.read zone.read dns.read dns.write cloudflare-tunnel.read
 ```
 
-You can override them with `CFUI_OAUTH_SCOPES`.
+You can override them with `CFUI_OAUTH_SCOPES`. The scopes selected when creating the Cloudflare OAuth app are the maximum allowlist for that OAuth client. The scopes cfui sends during sign-in, from the UI selector or `CFUI_OAUTH_SCOPES`, must be a subset of that allowlist; Cloudflare does not merge both lists into the final token.
 
 For Cloudflare Tunnel creation and local profile linking, add:
 

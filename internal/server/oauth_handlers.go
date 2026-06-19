@@ -69,9 +69,16 @@ func (s *Server) handleOAuthLogin(w http.ResponseWriter, r *http.Request) {
 	if strings.TrimSpace(scope) == "" {
 		scope = req.Scopes
 	}
-	url, err := s.ensureOAuthService().StartURLWithOptions(r.Context(), cfoauth.StartURLOptions{
-		Scopes:     scope,
-		FreshLogin: req.FreshLogin,
+	oauthSvc := s.ensureOAuthService()
+	callbackURL, err := oauthCallbackURLForRequest(r, oauthSvc.Config().LocalCallbackPath)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	url, err := oauthSvc.StartURLWithOptions(r.Context(), cfoauth.StartURLOptions{
+		Scopes:      scope,
+		FreshLogin:  req.FreshLogin,
+		CallbackURL: callbackURL,
 	})
 	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, err)
@@ -85,15 +92,55 @@ func (s *Server) handleOAuthStart(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	url, err := s.ensureOAuthService().StartURLWithOptions(r.Context(), cfoauth.StartURLOptions{
-		Scopes:     r.URL.Query().Get("scope"),
-		FreshLogin: truthyQuery(r.URL.Query().Get("fresh_login")),
+	oauthSvc := s.ensureOAuthService()
+	callbackURL, err := oauthCallbackURLForRequest(r, oauthSvc.Config().LocalCallbackPath)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	url, err := oauthSvc.StartURLWithOptions(r.Context(), cfoauth.StartURLOptions{
+		Scopes:      r.URL.Query().Get("scope"),
+		FreshLogin:  truthyQuery(r.URL.Query().Get("fresh_login")),
+		CallbackURL: callbackURL,
 	})
 	if err != nil {
 		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
 	http.Redirect(w, r, url, http.StatusFound)
+}
+
+func oauthCallbackURLForRequest(r *http.Request, callbackPath string) (string, error) {
+	scheme := firstForwardedHeaderValue(r.Header.Get("X-Forwarded-Proto"))
+	if scheme != "http" && scheme != "https" {
+		if r.TLS != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	}
+	host := firstForwardedHeaderValue(r.Header.Get("X-Forwarded-Host"))
+	if host == "" {
+		host = strings.TrimSpace(r.Host)
+	}
+	if host == "" {
+		return "", fmt.Errorf("request host is required for OAuth callback URL")
+	}
+	if strings.ContainsAny(host, " \t\r\n/\\") {
+		return "", fmt.Errorf("request host is invalid for OAuth callback URL")
+	}
+	if strings.TrimSpace(callbackPath) == "" {
+		callbackPath = "/oauth/callback"
+	}
+	if !strings.HasPrefix(callbackPath, "/") {
+		callbackPath = "/" + callbackPath
+	}
+	return (&url.URL{Scheme: scheme, Host: host, Path: callbackPath}).String(), nil
+}
+
+func firstForwardedHeaderValue(value string) string {
+	part := strings.TrimSpace(strings.Split(value, ",")[0])
+	return strings.ToLower(part)
 }
 
 func truthyQuery(value string) bool {

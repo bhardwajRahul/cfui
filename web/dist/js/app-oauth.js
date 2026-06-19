@@ -5,231 +5,28 @@
     'use strict';
     const { state, $, $$, t, API_BASE, apiGet, apiSend, toast, setBusy } = window.cfui;
 
-    const resourceDefinitions = [
-        { id: 'overview', public: true },
-        { id: 'zones', feature: 'zones' },
-        { id: 'dns', feature: 'dns', needsZone: true },
-        { id: 'tunnels', feature: 'tunnels', needsAccount: true },
-        { id: 'workers', feature: 'workers', needsAccount: true },
-        { id: 'storage', anyFeature: ['r2', 'd1', 'kv'], needsAccount: true },
-        { id: 'usage', feature: 'analytics', needsAccount: true },
-        { id: 'snippets', feature: 'snippets', needsZone: true },
-        { id: 'waf', feature: 'waf', needsZone: true },
-        { id: 'analytics', feature: 'analytics', needsZone: true },
-        { id: 'settings', feature: 'zone_settings', needsZone: true },
-        { id: 'status', public: true },
-    ];
-
-    const dnsTypes = ['A', 'AAAA', 'CNAME', 'TXT'];
-    const wafActions = ['block', 'challenge', 'managed_challenge', 'js_challenge', 'log', 'skip'];
-    const wafManagedOverrideActions = ['', 'block', 'challenge', 'managed_challenge', 'js_challenge', 'log'];
-    const wafManagedSensitivityLevels = ['', 'default', 'high', 'medium', 'low', 'eoff'];
-    const wafSkipProducts = [
-        ['zoneLockdown', 'oauth_waf_skip_product_zone_lockdown'],
-        ['uaBlock', 'oauth_waf_skip_product_ua_block'],
-        ['bic', 'oauth_waf_skip_product_bic'],
-        ['hot', 'oauth_waf_skip_product_hot'],
-        ['securityLevel', 'oauth_waf_skip_product_security_level'],
-        ['rateLimit', 'oauth_waf_skip_product_rate_limit'],
-        ['waf', 'oauth_waf_skip_product_waf'],
-    ];
-    const wafSkipPhases = [
-        ['http_ratelimit', 'oauth_waf_skip_phase_rate_limit'],
-        ['http_request_sbfm', 'oauth_waf_skip_phase_sbfm'],
-        ['http_request_firewall_managed', 'oauth_waf_skip_phase_managed_waf'],
-    ];
-    const maxR2ObjectUploadBytes = 128 * 1024 * 1024;
-    const maxR2InlinePreviewBytes = 50 * 1024 * 1024;
-    const analyticsRanges = ['24h', '7d', '30d'];
-    const overviewMetricDefinitions = [
-        ['accounts', 'oauth_overview_metric_accounts'],
-        ['zones', 'oauth_overview_metric_zones'],
-        ['active_zones', 'oauth_overview_metric_active_zones'],
-        ['dns_records', 'oauth_overview_metric_dns_records'],
-        ['workers', 'oauth_overview_metric_workers'],
-        ['tunnels', 'oauth_overview_metric_tunnels'],
-        ['r2_buckets', 'oauth_overview_metric_r2_buckets'],
-        ['d1_databases', 'oauth_overview_metric_d1_databases'],
-        ['kv_namespaces', 'oauth_overview_metric_kv_namespaces'],
-        ['snippets', 'oauth_overview_metric_snippets'],
-        ['waf_rules', 'oauth_overview_metric_waf_rules'],
-    ];
-    const oauthPermissionDefinitions = [
-        {
-            id: 'account',
-            title: () => t('oauth_account'),
-            description: () => t('oauth_permission_account_desc'),
-            readScopes: ['account-settings.read'],
-            writeScopes: [],
-            required: true,
-        },
-        {
-            id: 'zones',
-            title: () => t('oauth_zones'),
-            description: () => t('oauth_permission_zones_desc'),
-            readScopes: ['zone.read'],
-            writeScopes: ['zone.write'],
-            required: true,
-        },
-        {
-            id: 'dns',
-            title: () => t('oauth_dns'),
-            description: () => t('oauth_permission_dns_desc'),
-            readScopes: ['dns.read'],
-            writeScopes: ['dns.write'],
-        },
-        {
-            id: 'workers',
-            title: () => t('oauth_workers'),
-            description: () => t('oauth_permission_workers_desc'),
-            readScopes: ['workers-scripts.read'],
-            writeScopes: ['workers-scripts.write'],
-        },
-        {
-            id: 'workers_tail',
-            title: () => t('oauth_worker_tail_live'),
-            description: () => t('oauth_permission_workers_tail_desc'),
-            readScopes: ['workers-tail.read'],
-            writeScopes: [],
-        },
-        {
-            id: 'snippets',
-            title: () => t('oauth_snippets'),
-            description: () => t('oauth_permission_snippets_desc'),
-            readScopes: ['snippets.read'],
-            writeScopes: ['snippets.write'],
-        },
-        {
-            id: 'r2',
-            title: () => t('oauth_r2_buckets'),
-            description: () => t('oauth_permission_r2_desc'),
-            readScopes: ['workers-r2.read'],
-            writeScopes: ['workers-r2.write'],
-        },
-        {
-            id: 'd1',
-            title: () => t('oauth_d1_databases'),
-            description: () => t('oauth_permission_d1_desc'),
-            readScopes: ['d1.read'],
-            writeScopes: ['d1.write'],
-        },
-        {
-            id: 'kv',
-            title: () => t('oauth_kv_namespaces'),
-            description: () => t('oauth_permission_kv_desc'),
-            readScopes: ['workers-kv-storage.read'],
-            writeScopes: ['workers-kv-storage.write'],
-        },
-        {
-            id: 'tunnels',
-            title: () => t('oauth_tunnels'),
-            description: () => t('oauth_permission_tunnels_desc'),
-            readScopes: ['cloudflare-tunnel.read'],
-            writeScopes: ['cloudflare-tunnel.write'],
-        },
-        {
-            id: 'waf',
-            title: () => t('oauth_waf'),
-            description: () => t('oauth_permission_waf_desc'),
-            readScopes: ['zone-waf.read'],
-            writeScopes: ['zone-waf.write'],
-        },
-        {
-            id: 'zone_settings',
-            title: () => t('oauth_zone_settings'),
-            description: () => t('oauth_permission_zone_settings_desc'),
-            readScopes: ['zone-settings.read'],
-            writeScopes: ['zone-settings.write', 'cache.purge'],
-        },
-        {
-            id: 'analytics',
-            title: () => t('oauth_analytics'),
-            description: () => t('oauth_permission_analytics_desc'),
-            readScopes: ['account-analytics.read', 'analytics.read'],
-            writeScopes: [],
-        },
-    ];
-    const oauthMinimumSetupScopes = [
-        'account-settings.read',
-        'zone.read',
-        'dns.read',
-        'dns.write',
-        'cloudflare-tunnel.read',
-    ];
-    const oauthFullConsoleSetupScopes = [
-        'account-settings.read',
-        'zone.read',
-        'dns.read',
-        'dns.write',
-        'cloudflare-tunnel.read',
-        'cloudflare-tunnel.write',
-        'workers-scripts.read',
-        'workers-tail.read',
-        'workers-r2.read',
-        'workers-r2.write',
-        'd1.read',
-        'd1.write',
-        'workers-kv-storage.read',
-        'workers-kv-storage.write',
-        'snippets.read',
-        'snippets.write',
-        'zone-waf.read',
-        'zone-waf.write',
-        'zone-settings.read',
-        'zone-settings.write',
-        'cache.purge',
-        'analytics.read',
-        'account-analytics.read',
-    ];
-    const securityLevels = [
-        ['essentially_off', 'oauth_security_essentially_off'],
-        ['low', 'oauth_security_low'],
-        ['medium', 'oauth_security_medium'],
-        ['high', 'oauth_security_high'],
-        ['under_attack', 'oauth_security_under_attack'],
-    ];
-    const zoneSettingToggles = [
-        ['development_mode', 'oauth_development_mode'],
-        ['always_use_https', 'oauth_always_use_https'],
-        ['automatic_https_rewrites', 'oauth_automatic_https_rewrites'],
-        ['brotli', 'oauth_brotli'],
-        ['rocket_loader', 'oauth_rocket_loader'],
-    ];
-    const cacheLevels = [
-        ['aggressive', 'oauth_cache_level_aggressive'],
-        ['basic', 'oauth_cache_level_basic'],
-        ['simplified', 'oauth_cache_level_simplified'],
-    ];
-    const sslModes = [
-        ['off', 'oauth_ssl_off'],
-        ['flexible', 'oauth_ssl_flexible'],
-        ['full', 'oauth_ssl_full'],
-        ['strict', 'oauth_ssl_strict'],
-        ['origin_pull', 'oauth_ssl_origin_pull'],
-    ];
-    const browserCacheTTLs = [
-        [0, 'oauth_browser_cache_ttl_origin'],
-        [7200, 'oauth_browser_cache_ttl_2h'],
-        [14400, 'oauth_browser_cache_ttl_4h'],
-        [28800, 'oauth_browser_cache_ttl_8h'],
-        [43200, 'oauth_browser_cache_ttl_12h'],
-        [86400, 'oauth_browser_cache_ttl_1d'],
-        [259200, 'oauth_browser_cache_ttl_3d'],
-        [604800, 'oauth_browser_cache_ttl_1w'],
-        [2678400, 'oauth_browser_cache_ttl_1mo'],
-        [31536000, 'oauth_browser_cache_ttl_1y'],
-    ];
-    const writableZoneSettings = new Set([
-        'ssl',
-        'security_level',
-        'development_mode',
-        'cache_level',
-        'browser_cache_ttl',
-        'always_use_https',
-        'automatic_https_rewrites',
-        'brotli',
-        'rocket_loader',
-    ]);
+    const {
+        resourceDefinitions,
+        dnsTypes,
+        wafActions,
+        wafManagedOverrideActions,
+        wafManagedSensitivityLevels,
+        wafSkipProducts,
+        wafSkipPhases,
+        maxR2ObjectUploadBytes,
+        maxR2InlinePreviewBytes,
+        analyticsRanges,
+        overviewMetricDefinitions,
+        oauthPermissionDefinitions,
+        oauthMinimumSetupScopes,
+        oauthFullConsoleSetupScopes,
+        securityLevels,
+        zoneSettingToggles,
+        cacheLevels,
+        sslModes,
+        browserCacheTTLs,
+        writableZoneSettings,
+    } = window.cfui.oauthData;
 
     async function fetchOAuthStatus() {
         if (!state.features?.oauth_enabled) return null;
@@ -2011,7 +1808,6 @@
         const relayURL = status?.config?.relay_callback_url || '';
         const localCallbackURL = window.location.origin + callbackPath;
         const workerScriptURL = window.location.origin + '/cloudflare-oauth-worker.js';
-        const relayURLWithCallback = buildRelayURLWithCallback(relayURL, localCallbackURL);
         const minimumScopeList = oauthMinimumSetupScopes.join(' ');
         const fullConsoleScopeList = oauthFullConsoleSetupScopes.join(' ');
         const envSnippet = [
@@ -2053,6 +1849,7 @@
                 [
                     setupGuideCodeRow(t('oauth_setup_permissions_minimum'), minimumScopeList),
                     setupGuideCodeRow(t('oauth_setup_permissions_full'), fullConsoleScopeList),
+                    setupGuideNote(t('oauth_setup_permissions_scope_model')),
                     setupGuideNote(t('oauth_setup_permissions_categories')),
                     setupGuideNote(t('oauth_setup_permissions_write_note')),
                 ]
@@ -2065,7 +1862,6 @@
                     setupGuideCodeRow(t('oauth_setup_worker_script'), workerScriptURL),
                     setupGuideCodeRow(t('oauth_setup_worker_deploy_path'), t('oauth_setup_worker_deploy_path_value'), { copy: false }),
                     setupGuideCodeRow(t('oauth_setup_worker_callback_var'), `CFUI_CALLBACK_URL=${localCallbackURL}`),
-                    setupGuideCodeRow(t('oauth_setup_worker_callback_param'), `CFUI_OAUTH_RELAY_URL=${relayURLWithCallback || t('oauth_setup_relay_url_placeholder')}`),
                     setupGuideCodeRow(t('oauth_setup_worker_allowlist_var'), `CFUI_ALLOWED_CALLBACK_ORIGINS=${window.location.origin}`),
                     setupGuideNote(t('oauth_setup_internal_dns_note')),
                     setupGuideNote(t('oauth_setup_dynamic_callback_note')),
@@ -2080,17 +1876,6 @@
             ),
         );
         guide.appendChild(steps);
-    }
-
-    function buildRelayURLWithCallback(relayURL, localCallbackURL) {
-        if (!relayURL || !localCallbackURL) return '';
-        try {
-            const url = new URL(relayURL);
-            url.searchParams.set('cfui_callback_url', localCallbackURL);
-            return url.toString();
-        } catch {
-            return '';
-        }
     }
 
     function setupGuideStep(index, titleText, descText, rows = []) {
@@ -2373,7 +2158,7 @@
             main.type = 'button';
             main.className = 'oauth-identity-main';
             main.disabled = !!session.current;
-            main.setAttribute('aria-pressed', String(!!session.current));
+            if (session.current) main.setAttribute('aria-current', 'true');
             main.setAttribute('aria-label', session.current ? t('oauth_current_identity') : t('oauth_identity_switch_to', { label: session.label || t('oauth_account') }));
             const name = document.createElement('div');
             name.className = 'oauth-list-title';
