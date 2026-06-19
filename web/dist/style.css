@@ -4288,6 +4288,18 @@ details.disclosure > .body {
     margin-top: 16px;
 }
 
+.oauth-config-item {
+    min-width: 0;
+}
+
+.oauth-config-item--relay {
+    grid-column: 1 / -1;
+}
+
+.oauth-config-item--local {
+    max-width: 720px;
+}
+
 .oauth-code {
     min-height: 34px;
     padding: 8px 10px;
@@ -4344,17 +4356,18 @@ details.disclosure > .body {
 .oauth-relay-editor {
     display: grid;
     gap: 8px;
+    max-width: 920px;
 }
 
 .oauth-relay-field {
     display: grid;
-    gap: 7px;
+    gap: 8px;
     min-width: 0;
 }
 
 .oauth-relay-input-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(84px, auto);
     gap: 8px;
     align-items: center;
 }
@@ -4368,8 +4381,8 @@ details.disclosure > .body {
 .oauth-relay-helper {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px 12px;
-    align-items: baseline;
+    gap: 8px 16px;
+    align-items: flex-start;
     justify-content: space-between;
     color: var(--text-muted);
     font-size: var(--fs-xs);
@@ -4389,10 +4402,17 @@ details.disclosure > .body {
     overflow-wrap: anywhere;
 }
 
+.oauth-relay-assist-text {
+    display: block;
+    margin-top: 2px;
+    color: color-mix(in srgb, var(--text-muted) 82%, var(--text));
+    overflow-wrap: anywhere;
+}
+
 .oauth-relay-assist-actions {
     display: inline-flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 2px;
     align-items: center;
     justify-content: flex-end;
     min-height: 28px;
@@ -4400,7 +4420,7 @@ details.disclosure > .body {
 
 .oauth-relay-inline-action {
     min-height: 26px;
-    padding: 0 2px;
+    padding: 0 4px;
 }
 
 .oauth-relay-text-action {
@@ -4408,6 +4428,12 @@ details.disclosure > .body {
     color: var(--text-muted);
     font-size: var(--fs-xs);
     font-weight: 650;
+}
+
+.oauth-relay-text-action + .oauth-relay-text-action {
+    margin-left: 2px;
+    padding-left: 10px;
+    border-left: 1px solid var(--border);
 }
 
 .oauth-setup-guide {
@@ -4508,13 +4534,14 @@ details.disclosure > .body {
 
 .oauth-worker-guide {
     display: grid;
-    gap: 12px;
-    padding: 16px var(--gap-4);
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 10px 14px;
+    padding: 14px var(--gap-4);
     border-bottom: 1px solid var(--border);
     background: var(--surface);
     color: var(--text-muted);
-    font-size: var(--fs-sm);
-    line-height: 1.55;
+    font-size: var(--fs-xs);
+    line-height: 1.45;
 }
 
 .oauth-worker-guide p {
@@ -4522,8 +4549,10 @@ details.disclosure > .body {
 }
 
 .oauth-worker-summary {
+    grid-column: 1 / -1;
     max-width: 78ch;
     color: var(--text);
+    font-size: var(--fs-sm);
     font-weight: 550;
 }
 
@@ -4533,13 +4562,13 @@ details.disclosure > .body {
 }
 
 .oauth-worker-guide li + li {
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .oauth-worker-default-line {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px 8px;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 3px 10px;
     align-items: baseline;
     padding: 9px 10px;
     border: 1px solid color-mix(in srgb, var(--state-ok) 24%, var(--border));
@@ -4556,17 +4585,21 @@ details.disclosure > .body {
 
 .oauth-worker-default-line code {
     color: var(--text);
-    overflow-wrap: anywhere;
+    min-width: 0;
+    overflow: auto;
+    white-space: nowrap;
 }
 
 .oauth-worker-default-line span:last-child {
+    grid-column: 1 / -1;
     color: var(--text-muted);
 }
 
 .oauth-worker-steps {
     display: grid;
-    gap: 8px;
-    padding-top: 2px;
+    gap: 7px;
+    grid-column: 2;
+    grid-row: 2 / span 2;
 }
 
 .oauth-worker-steps-title,
@@ -4581,7 +4614,9 @@ details.disclosure > .body {
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    padding-top: 2px;
+    grid-column: 1 / -1;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
 }
 
 .oauth-worker-script-heading code {
@@ -5699,8 +5734,33 @@ details.oauth-form-section > summary {
         min-height: var(--tap);
     }
 
+    .oauth-relay-text-action + .oauth-relay-text-action {
+        margin-left: 0;
+        padding-left: 4px;
+        border-left: 0;
+    }
+
     .oauth-relay-assist-actions {
         justify-content: flex-start;
+    }
+
+    .oauth-worker-default-line {
+        grid-template-columns: 1fr;
+    }
+
+    .oauth-worker-default-line span:last-child {
+        grid-column: auto;
+    }
+
+    .oauth-worker-guide {
+        grid-template-columns: 1fr;
+    }
+
+    .oauth-worker-summary,
+    .oauth-worker-steps,
+    .oauth-worker-script-heading {
+        grid-column: auto;
+        grid-row: auto;
     }
 
     .oauth-analytics-trend-meta {

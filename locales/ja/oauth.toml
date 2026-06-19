@@ -44,16 +44,16 @@ other = "Relay callback URL を入力してください。"
 other = "Relay callback を保存しました。"
 
 [oauth_relay_config_hint]
-other = "保存したアドレスが Cloudflare OAuth クライアントの Redirect callback URL になります。"
+other = "Cloudflare OAuth クライアントの Redirect callback URL にはこのアドレスだけを入力します。"
 
 [oauth_relay_assist_text]
-other = "個人利用なら既定ドメインを使えます。自分のドメインが必要な場合だけ Worker を自前運用します。"
+other = "個人利用では提供済みドメインを使います。自分の relay ドメインが必要な場合だけ自前運用します。"
 
 [oauth_relay_use_default]
-other = "既定を使用"
+other = "提供済みドメインを使用"
 
 [oauth_relay_use_default_title]
-other = "提供済みの既定 relay callback アドレスを入力"
+other = "提供済みの既定 OAuth relay ドメインを使用"
 
 [oauth_relay_self_host]
 other = "Worker 自前運用"
@@ -971,10 +971,10 @@ other = "このページで完全な Worker スクリプトを表示"
 other = "Cloudflare OAuth Worker スクリプト"
 
 [oauth_worker_script_dialog_subtitle]
-other = "既定の relay アドレスはそのまま使えます。relay ドメインと Worker を完全に自分で管理したい場合だけ、このスクリプトをデプロイします。"
+other = "既定の relay アドレスはそのまま使えます。自分のドメインで relay したい場合だけ、このスクリプトをデプロイします。"
 
 [oauth_worker_self_host_summary]
-other = "個人利用なら、このダイアログを閉じて入力欄の下の「既定を使用」を押せば十分です。自分のドメインまたは Worker を使いたい場合だけ、下の手順で自前運用します。"
+other = "個人利用では Worker は不要です。自分の relay ドメインが必要な場合だけ自前運用します。"
 
 [oauth_worker_default_relay_label]
 other = "提供済み relay"

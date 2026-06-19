@@ -44,16 +44,16 @@ other = "Enter a relay callback URL."
 other = "Relay callback saved."
 
 [oauth_relay_config_hint]
-other = "The saved address is the Cloudflare OAuth client's Redirect callback URL."
+other = "Use this exact address as the Cloudflare OAuth client's Redirect callback URL."
 
 [oauth_relay_assist_text]
-other = "For personal deployments, use the provided default domain; self-host the Worker only when you need your own domain."
+other = "For personal use, choose the provided domain. Self-host only when you need your own relay domain."
 
 [oauth_relay_use_default]
-other = "Use default"
+other = "Use provided domain"
 
 [oauth_relay_use_default_title]
-other = "Fill in the provided default relay callback address"
+other = "Use the provided default OAuth relay domain"
 
 [oauth_relay_self_host]
 other = "Self-host Worker"
@@ -971,10 +971,10 @@ other = "View the full Worker script in this page"
 other = "Cloudflare OAuth Worker script"
 
 [oauth_worker_script_dialog_subtitle]
-other = "The default relay address can be used directly; deploy this script only when you want full control of the relay domain and Worker."
+other = "The default relay address works as-is; deploy this script only when you want to use your own domain."
 
 [oauth_worker_self_host_summary]
-other = "For personal use, close this dialog and click \"Use default\" under the input. Follow the steps below only when you want your own domain or Worker."
+other = "Personal use does not need a Worker; self-host only when the relay must use your own domain."
 
 [oauth_worker_default_relay_label]
 other = "Provided relay"

@@ -2415,7 +2415,7 @@
         input.autocomplete = 'off';
         input.placeholder = defaultOAuthRelayCallbackURL;
         input.setAttribute('aria-label', t('oauth_relay_callback'));
-        input.setAttribute('aria-describedby', 'oauth-relay-callback-help');
+        input.setAttribute('aria-describedby', 'oauth-relay-callback-help oauth-relay-callback-assist');
         input.value = configuredRelay;
         const save = smallButton(t('save'), 'btn btn--sm btn--primary oauth-relay-save');
         save.type = 'submit';
@@ -2429,7 +2429,11 @@
         helperText.className = 'oauth-relay-helper-text';
         helperText.id = 'oauth-relay-callback-help';
         helperText.textContent = t('oauth_relay_config_hint');
-        helperCopy.appendChild(helperText);
+        const assistText = document.createElement('span');
+        assistText.className = 'oauth-relay-assist-text';
+        assistText.id = 'oauth-relay-callback-assist';
+        assistText.textContent = t('oauth_relay_assist_text');
+        helperCopy.append(helperText, assistText);
         const assistActions = document.createElement('span');
         assistActions.className = 'oauth-relay-assist-actions';
         const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--xs btn--text oauth-relay-inline-action oauth-relay-text-action', (event) => {
