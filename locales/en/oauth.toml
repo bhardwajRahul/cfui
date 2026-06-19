@@ -50,7 +50,7 @@ other = "Copy relay callback URL"
 other = "This address must exactly match the Redirect callback URL in the Cloudflare OAuth client."
 
 [oauth_relay_assist_text]
-other = "For personal use, use the provided domain. Open the self-host guide only when you need your own relay domain."
+other = "Use the provided domain if you do not want to self-host. Open the self-host guide only when you need your own relay domain."
 
 [oauth_relay_use_default]
 other = "Use provided domain"
@@ -74,13 +74,13 @@ other = "Custom"
 other = "Unsaved"
 
 [oauth_relay_status_default]
-other = "Using the provided OAuth relay domain."
+other = "Using the provided relay address. Use the same value as the Redirect callback URL in the Cloudflare OAuth client."
 
 [oauth_relay_status_custom]
-other = "Using your saved relay address."
+other = "Using your saved relay address. The Cloudflare OAuth client's Redirect callback URL must use the same value."
 
 [oauth_relay_status_unsaved]
-other = "This input is not saved yet. Save it before OAuth sign-in or relay checks use it."
+other = "This input is not saved yet. Save it before entering it in the Cloudflare OAuth client."
 
 [oauth_local_callback]
 other = "Local callback"
@@ -998,7 +998,7 @@ other = "Cloudflare OAuth Worker script"
 other = "You can use the provided relay address as-is; deploy this script only when you want to use your own domain."
 
 [oauth_worker_self_host_summary]
-other = "Use the provided relay address when you do not want to self-host; replace the example with your Worker domain when you do."
+other = "Choose one relay callback address: use the provided domain directly, or deploy the Worker below and replace the example with your own domain."
 
 [oauth_worker_self_host_target_label]
 other = "Self-host callback URL"
@@ -2486,7 +2486,22 @@ other = "This table has no rows."
 other = "Edit row {rowid}"
 
 [oauth_d1_edit_hint]
-other = "Values are saved as strings through parameterized D1 queries. Leave unchanged fields as-is."
+other = "Inputs adapt to column types for numbers, booleans, dates, and text. Saves still use parameterized D1 queries and leave unchanged fields as-is."
+
+[oauth_d1_null]
+other = "NULL"
+
+[oauth_d1_now]
+other = "Now"
+
+[oauth_d1_restore_null]
+other = "Restore NULL"
+
+[oauth_d1_datetime_utc_hint]
+other = "Written back in UTC while preserving the original datetime format."
+
+[oauth_d1_date_hint]
+other = "Written back using the original date format."
 
 [oauth_d1_no_changes]
 other = "No changes to save."

@@ -4635,31 +4635,48 @@ details.disclosure > .body {
     margin-top: 2px;
 }
 
-.oauth-worker-target {
+.oauth-worker-relay-options {
     display: grid;
-    gap: 4px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
     grid-column: 1 / -1;
+}
+
+.oauth-worker-relay-option {
+    display: grid;
+    align-content: start;
+    gap: 4px;
     padding: 10px 12px;
-    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+    border: 1px solid var(--border);
     border-radius: var(--r-card);
-    background: color-mix(in srgb, var(--accent) 4%, var(--surface-2));
+    background: var(--surface-2);
     font-size: var(--fs-xs);
     line-height: 1.5;
 }
 
-.oauth-worker-target span:first-child {
+.oauth-worker-relay-option[data-kind="default"] {
+    border-color: color-mix(in srgb, var(--state-ok) 28%, var(--border));
+    background: color-mix(in srgb, var(--state-ok) 5%, var(--surface-2));
+}
+
+.oauth-worker-relay-option[data-kind="self-host"] {
+    border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+    background: color-mix(in srgb, var(--accent) 4%, var(--surface-2));
+}
+
+.oauth-worker-relay-option span:first-child {
     color: var(--text);
     font-weight: 700;
 }
 
-.oauth-worker-target code {
+.oauth-worker-relay-option code {
     min-width: 0;
     color: var(--text);
     overflow-wrap: anywhere;
     white-space: normal;
 }
 
-.oauth-worker-target span:last-child {
+.oauth-worker-relay-option span:last-child {
     color: var(--text-muted);
 }
 
@@ -5565,6 +5582,20 @@ details.disclosure > .body {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.oauth-d1-date-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.oauth-d1-date-actions {
+    justify-content: flex-start;
+}
+
+.oauth-d1-textarea {
+    min-height: 74px;
+}
+
 .oauth-form-grid--snippet {
     grid-template-columns: minmax(180px, 0.6fr) minmax(0, 1fr);
 }
@@ -5836,6 +5867,10 @@ details.oauth-form-section > summary {
     }
 
     .oauth-worker-guide {
+        grid-template-columns: 1fr;
+    }
+
+    .oauth-worker-relay-options {
         grid-template-columns: 1fr;
     }
 

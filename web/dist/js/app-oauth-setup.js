@@ -66,7 +66,7 @@
             const helperText = document.createElement('span');
             helperText.className = 'oauth-relay-helper-text';
             helperText.id = 'oauth-relay-callback-help';
-            helperText.textContent = t('oauth_relay_config_hint');
+            helperText.textContent = t('oauth_relay_assist_text');
             const assistActions = document.createElement('span');
             assistActions.className = 'oauth-relay-assist-actions';
             const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--text oauth-relay-inline-action oauth-relay-default-action', (event) => {
@@ -88,7 +88,7 @@
             helper.append(helperText, assistActions);
 
             const statusLine = relayStatusLine();
-            field.append(inputRow, helper, sourceLine);
+            field.append(inputRow, sourceLine, helper);
             if (statusLine) field.appendChild(statusLine);
             form.appendChild(field);
             form.addEventListener('submit', (event) => {
@@ -294,11 +294,6 @@
                                     label: t('oauth_relay_configure'),
                                     title: t('oauth_relay_edit'),
                                     action: focusRelayInput,
-                                },
-                                {
-                                    label: t('oauth_relay_self_host'),
-                                    title: t('oauth_relay_self_host_title'),
-                                    action: openWorkerScriptDialog,
                                 },
                             ],
                         }),

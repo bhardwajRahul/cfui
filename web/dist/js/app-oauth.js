@@ -5668,10 +5668,9 @@
         grid.className = 'oauth-form-grid oauth-form-grid--d1-row';
         const inputs = new Map();
         for (const column of state.oauth.d1TableColumns) {
-            const input = textInput(fieldEditValue(row?.[column.name]), 'text');
-            input.maxLength = 65536;
-            inputs.set(column.name, input);
-            grid.appendChild(formField(column.name, input));
+            const editor = d1ColumnEditor(column, row?.[column.name]);
+            inputs.set(column.name, editor);
+            grid.appendChild(formField(d1ColumnLabel(column), editor.node));
         }
         form.appendChild(grid);
 
@@ -5697,7 +5696,7 @@
             const changes = {};
             for (const column of state.oauth.d1TableColumns) {
                 const original = fieldEditValue(row?.[column.name]);
-                const next = inputs.get(column.name)?.value ?? '';
+                const next = inputs.get(column.name)?.value() ?? '';
                 if (next !== original) changes[column.name] = next;
             }
             if (!Object.keys(changes).length) {
@@ -5707,6 +5706,186 @@
             updateD1Row(changes, saveButton);
         });
         return form;
+    }
+
+    function d1ColumnLabel(column) {
+        return [
+            column?.name || '',
+            column?.type || '',
+            column?.primary_key ? 'PK' : '',
+            column?.not_null ? 'NOT NULL' : '',
+        ].filter(Boolean).join(' · ');
+    }
+
+    function d1ColumnEditor(column, value) {
+        const original = fieldEditValue(value);
+        const kind = d1InputKind(column?.type || '');
+        if ((kind === 'integer' || kind === 'real') && d1CanUseNumberInput(original)) {
+            const input = textInput(original, 'number');
+            input.inputMode = kind === 'integer' ? 'numeric' : 'decimal';
+            input.step = kind === 'integer' ? '1' : 'any';
+            input.maxLength = 65536;
+            return { node: input, value: () => input.value };
+        }
+        if (kind === 'boolean') return d1BooleanEditor(original);
+        if (kind === 'datetime' || kind === 'date') return d1DateEditor(original, kind === 'datetime');
+        return d1TextEditor(original);
+    }
+
+    function d1TextEditor(original) {
+        if (original.length > 120 || original.includes('\n')) {
+            const area = document.createElement('textarea');
+            area.className = 'oauth-code-editor oauth-code-editor--compact oauth-d1-textarea';
+            area.value = original;
+            area.spellcheck = false;
+            area.maxLength = 65536;
+            return { node: area, value: () => area.value };
+        }
+        const input = textInput(original, 'text');
+        input.maxLength = 65536;
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+        return { node: input, value: () => input.value };
+    }
+
+    function d1BooleanEditor(original) {
+        const select = document.createElement('select');
+        select.className = 'form-select';
+        const options = [];
+        if (!original) options.push(['', t('oauth_d1_null')]);
+        else if (!['0', '1'].includes(original)) options.push([original, original]);
+        options.push(['1', t('yes')], ['0', t('no')]);
+        for (const [value, label] of options) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            select.appendChild(option);
+        }
+        select.value = options.some(([value]) => value === original) ? original : (d1Truthy(original) ? '1' : '0');
+        return { node: select, value: () => select.value };
+    }
+
+    function d1DateEditor(original, includesTime) {
+        const parsed = original ? d1ParseDateValue(original) : null;
+        if (original && !parsed) return d1TextEditor(original);
+
+        const wrap = document.createElement('div');
+        wrap.className = 'oauth-d1-date-field';
+        const input = textInput('', includesTime ? 'datetime-local' : 'date');
+        if (includesTime) input.step = '1';
+        if (parsed) input.value = d1DateInputValue(parsed.date, includesTime);
+        wrap.appendChild(input);
+
+        const actions = document.createElement('div');
+        actions.className = 'oauth-value-actions oauth-d1-date-actions';
+        const now = smallButton(t('oauth_d1_now'), 'btn btn--sm btn--ghost', () => {
+            input.value = d1DateInputValue(new Date(), includesTime);
+        });
+        actions.appendChild(now);
+        if (!original) {
+            actions.appendChild(smallButton(t('oauth_d1_restore_null'), 'btn btn--sm btn--ghost', () => {
+                input.value = '';
+            }));
+        }
+        wrap.appendChild(actions);
+
+        const meta = document.createElement('div');
+        meta.className = 'oauth-row-meta';
+        meta.textContent = includesTime ? t('oauth_d1_datetime_utc_hint') : t('oauth_d1_date_hint');
+        wrap.appendChild(meta);
+
+        const fallbackFormat = includesTime ? 'sqlDateTime' : 'sqlDate';
+        return {
+            node: wrap,
+            value: () => {
+                if (!input.value) return '';
+                return d1FormatDateValue(d1DateFromInputValue(input.value, includesTime), parsed?.format || fallbackFormat);
+            },
+        };
+    }
+
+    function d1InputKind(declaredType) {
+        const type = String(declaredType || '').toUpperCase();
+        if (type.includes('BOOL')) return 'boolean';
+        if (type.includes('DATETIME') || type.includes('TIMESTAMP')) return 'datetime';
+        if (type.includes('DATE')) return 'date';
+        if (type.includes('INT')) return 'integer';
+        if (type.includes('REAL') || type.includes('FLOA') || type.includes('DOUB') || type.includes('DEC') || type.includes('NUM')) return 'real';
+        return 'text';
+    }
+
+    function d1CanUseNumberInput(value) {
+        if (!value) return true;
+        return /^[-+]?\d+(\.\d+)?([eE][-+]?\d+)?$/.test(value.trim());
+    }
+
+    function d1Truthy(value) {
+        const text = String(value || '').trim().toLowerCase();
+        return text === '1' || text === 'true' || text === 'yes' || text === 'on';
+    }
+
+    function d1ParseDateValue(value) {
+        const text = String(value || '').trim();
+        let match = text.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+        if (match) return { date: d1UTCDate(match), format: 'sqlDateTime' };
+        match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (match) return { date: d1UTCDate(match), format: 'sqlDate' };
+        match = text.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?Z$/);
+        if (match) return { date: d1UTCDate(match), format: 'iso8601' };
+        match = text.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{1,3})Z$/);
+        if (match) return { date: d1UTCDate(match), format: 'iso8601Fractional' };
+        if (/^\d{13}$/.test(text)) return { date: new Date(Number(text)), format: 'epochMillis' };
+        if (/^\d{10}$/.test(text)) return { date: new Date(Number(text) * 1000), format: 'epochSeconds' };
+        return null;
+    }
+
+    function d1UTCDate(match) {
+        return new Date(Date.UTC(
+            Number(match[1]),
+            Number(match[2]) - 1,
+            Number(match[3]),
+            Number(match[4] || 0),
+            Number(match[5] || 0),
+            Number(match[6] || 0),
+            Number((match[7] || '0').padEnd(3, '0')),
+        ));
+    }
+
+    function d1DateInputValue(date, includesTime) {
+        const pad = (value, len = 2) => String(value).padStart(len, '0');
+        const y = date.getUTCFullYear();
+        const m = pad(date.getUTCMonth() + 1);
+        const d = pad(date.getUTCDate());
+        if (!includesTime) return `${y}-${m}-${d}`;
+        return `${y}-${m}-${d}T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+    }
+
+    function d1DateFromInputValue(value, includesTime) {
+        const match = includesTime
+            ? String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/)
+            : String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) return new Date(0);
+        return d1UTCDate(match);
+    }
+
+    function d1FormatDateValue(date, format) {
+        const iso = date.toISOString();
+        switch (format) {
+        case 'sqlDateTime':
+            return d1DateInputValue(date, true).replace('T', ' ');
+        case 'sqlDate':
+            return d1DateInputValue(date, false);
+        case 'iso8601':
+            return iso.replace('.000Z', 'Z');
+        case 'iso8601Fractional':
+            return iso;
+        case 'epochMillis':
+            return String(date.getTime());
+        case 'epochSeconds':
+            return String(Math.floor(date.getTime() / 1000));
+        default:
+            return d1DateInputValue(date, true).replace('T', ' ');
+        }
     }
 
     function snippetDiagnosticsText() {

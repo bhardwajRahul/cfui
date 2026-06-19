@@ -50,7 +50,7 @@ other = "复制中转回调 URL"
 other = "这个地址必须和 Cloudflare OAuth 客户端里的 Redirect callback URL 完全一致。"
 
 [oauth_relay_assist_text]
-other = "个人使用直接用提供域名即可；只有需要自己的中转域名时再看自建说明。"
+other = "不想自建时点“使用提供域名”即可；需要自己的中转域名时再打开“自建说明”。"
 
 [oauth_relay_use_default]
 other = "使用提供域名"
@@ -74,13 +74,13 @@ other = "自定义"
 other = "未保存"
 
 [oauth_relay_status_default]
-other = "当前使用提供的 OAuth 中转域名。"
+other = "当前使用提供的中转地址；Cloudflare OAuth 客户端 Redirect callback URL 也填这个地址。"
 
 [oauth_relay_status_custom]
-other = "正在使用你保存的中转地址。"
+other = "当前使用你保存的中转地址；Cloudflare OAuth 客户端 Redirect callback URL 必须填同一个地址。"
 
 [oauth_relay_status_unsaved]
-other = "当前输入还没有保存；保存后才会用于 OAuth 登录和检测。"
+other = "当前输入还没有保存；保存后再填到 Cloudflare OAuth 客户端。"
 
 [oauth_local_callback]
 other = "本地回调"
@@ -998,7 +998,7 @@ other = "Cloudflare OAuth Worker 脚本"
 other = "可以直接使用提供的中转地址；只有想换成自己的域名时才需要部署这个脚本。"
 
 [oauth_worker_self_host_summary]
-other = "不想自建时直接使用提供的中转地址；自建时把示例地址换成你的 Worker 域名。"
+other = "选择一种中转回调地址：可以直接使用提供域名，也可以部署下面的 Worker 换成自己的域名。"
 
 [oauth_worker_self_host_target_label]
 other = "自建后的回调 URL"
@@ -2486,7 +2486,22 @@ other = "该表暂无行。"
 other = "编辑行 {rowid}"
 
 [oauth_d1_edit_hint]
-other = "值会通过参数化 D1 查询按字符串保存。未修改的字段保持不变。"
+other = "会按列类型显示数字、布尔、日期时间或文本输入；保存仍通过参数化 D1 查询提交，未修改字段保持不变。"
+
+[oauth_d1_null]
+other = "NULL"
+
+[oauth_d1_now]
+other = "现在"
+
+[oauth_d1_restore_null]
+other = "恢复 NULL"
+
+[oauth_d1_datetime_utc_hint]
+other = "按 UTC 写回，保留原日期时间格式。"
+
+[oauth_d1_date_hint]
+other = "按原日期格式写回。"
 
 [oauth_d1_no_changes]
 other = "没有需要保存的修改。"

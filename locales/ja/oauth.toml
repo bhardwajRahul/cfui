@@ -50,7 +50,7 @@ other = "Relay callback URL をコピー"
 other = "このアドレスは Cloudflare OAuth クライアントの Redirect callback URL と完全に一致している必要があります。"
 
 [oauth_relay_assist_text]
-other = "個人利用では提供済みドメインをそのまま使います。自分の relay ドメインが必要な場合だけ自前運用ガイドを開きます。"
+other = "自前運用しない場合は提供済みドメインを使います。自分の relay ドメインが必要な場合だけ自前運用ガイドを開きます。"
 
 [oauth_relay_use_default]
 other = "提供済みドメインを使用"
@@ -74,13 +74,13 @@ other = "カスタム"
 other = "未保存"
 
 [oauth_relay_status_default]
-other = "提供済み OAuth relay ドメインを使用中です。"
+other = "提供済み relay アドレスを使用中です。Cloudflare OAuth クライアントの Redirect callback URL も同じ値にします。"
 
 [oauth_relay_status_custom]
-other = "保存済みの relay アドレスを使用中です。"
+other = "保存済みの relay アドレスを使用中です。Cloudflare OAuth クライアントの Redirect callback URL も同じ値にする必要があります。"
 
 [oauth_relay_status_unsaved]
-other = "この入力はまだ保存されていません。OAuth ログインや relay 確認に使う前に保存してください。"
+other = "この入力はまだ保存されていません。Cloudflare OAuth クライアントに入力する前に保存してください。"
 
 [oauth_local_callback]
 other = "Local callback"
@@ -998,7 +998,7 @@ other = "Cloudflare OAuth Worker スクリプト"
 other = "提供済み relay アドレスはそのまま使えます。自分のドメインで relay したい場合だけ、このスクリプトをデプロイします。"
 
 [oauth_worker_self_host_summary]
-other = "自前運用しない場合は提供済み relay アドレスを使います。自前運用する場合は例のアドレスを自分の Worker ドメインに置き換えます。"
+other = "Relay callback アドレスを 1 つ選びます。提供済みドメインをそのまま使うか、下の Worker をデプロイして自分のドメインに置き換えます。"
 
 [oauth_worker_self_host_target_label]
 other = "自前運用後の callback URL"
@@ -2486,7 +2486,22 @@ other = "This table has no rows."
 other = "Edit row {rowid}"
 
 [oauth_d1_edit_hint]
-other = "Values are saved as strings through parameterized D1 queries. Leave unchanged fields as-is."
+other = "列タイプに応じて数値、真偽値、日付時刻、テキスト入力を表示します。保存は引き続きパラメータ化 D1 クエリで行い、未変更のフィールドはそのままにします。"
+
+[oauth_d1_null]
+other = "NULL"
+
+[oauth_d1_now]
+other = "現在"
+
+[oauth_d1_restore_null]
+other = "NULL に戻す"
+
+[oauth_d1_datetime_utc_hint]
+other = "UTC として書き戻し、元の日付時刻フォーマットを維持します。"
+
+[oauth_d1_date_hint]
+other = "元の日付フォーマットで書き戻します。"
 
 [oauth_d1_no_changes]
 other = "No changes to save."
