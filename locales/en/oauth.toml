@@ -154,6 +154,12 @@ other = "{{ .scopes }} missing scopes, {{ .apis }} API issues, {{ .actions }} ac
 [oauth_validation_archive_scope_meta]
 other = "requested {{ .requested }} scopes #{{ .requested_hash }}, granted {{ .granted }} #{{ .granted_hash }}"
 
+[oauth_validation_archive_fingerprint]
+other = "fingerprint {{ .fingerprint }}"
+
+[oauth_validation_archive_issue_meta]
+other = "{{ .issues }} items to review"
+
 [oauth_validation_archive_deleted]
 other = "OAuth validation snapshot deleted."
 
@@ -213,6 +219,69 @@ other = "Missing scopes"
 
 [oauth_validation_api_issues]
 other = "API issues"
+
+[oauth_validation_workbench_title]
+other = "Validation workbench"
+
+[oauth_validation_workbench_desc]
+other = "Grouped by module to separate OAuth app allowlist, granted sign-in scopes, Cloudflare API/plan limits, and public status."
+
+[oauth_validation_group_identity]
+other = "Identity and account"
+
+[oauth_validation_group_dns]
+other = "Zone, DNS, and settings"
+
+[oauth_validation_group_tunnel]
+other = "Cloudflare Tunnel"
+
+[oauth_validation_group_workers]
+other = "Workers and Tail"
+
+[oauth_validation_group_r2]
+other = "R2"
+
+[oauth_validation_group_d1]
+other = "D1"
+
+[oauth_validation_group_kv]
+other = "KV"
+
+[oauth_validation_group_snippets]
+other = "Snippets"
+
+[oauth_validation_group_waf]
+other = "WAF"
+
+[oauth_validation_group_analytics]
+other = "Analytics"
+
+[oauth_validation_group_status]
+other = "Cloudflare Status"
+
+[oauth_validation_group_summary]
+other = "{{ .scopes }} scope checks, {{ .apis }} API checks, {{ .issues }} items to review"
+
+[oauth_validation_public_api]
+other = "The public status endpoint does not require OAuth scopes; failures usually point to network or Cloudflare Status service issues."
+
+[oauth_validation_no_group_issues]
+other = "No issue found for this module"
+
+[oauth_validation_no_group_issues_desc]
+other = "Scopes and checked APIs are available; empty resources do not need action."
+
+[oauth_validation_scope_ready_detail]
+other = "The current sign-in has the required scopes."
+
+[oauth_validation_scope_missing_detail]
+other = "Missing scopes: {{ .scopes }}. Add them to the Cloudflare OAuth app allowlist, then sign in again."
+
+[oauth_validation_scope_not_requested]
+other = "This sign-in did not request scopes for this module; reselect authorization scopes when you need this feature."
+
+[oauth_validation_api_ready_detail]
+other = "Checked API is available."
 
 [oauth_validation_status_limited]
 other = "limited to first {{ .n }}"

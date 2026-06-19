@@ -154,6 +154,12 @@ other = "{{ .scopes }} 个 scope 缺失，{{ .apis }} 个 API 问题，{{ .actio
 [oauth_validation_archive_scope_meta]
 other = "请求 {{ .requested }} 个 scope #{{ .requested_hash }}，授权 {{ .granted }} 个 #{{ .granted_hash }}"
 
+[oauth_validation_archive_fingerprint]
+other = "指纹 {{ .fingerprint }}"
+
+[oauth_validation_archive_issue_meta]
+other = "{{ .issues }} 个待确认项"
+
 [oauth_validation_archive_deleted]
 other = "OAuth 校验快照已删除。"
 
@@ -213,6 +219,69 @@ other = "缺失 scope"
 
 [oauth_validation_api_issues]
 other = "API 问题"
+
+[oauth_validation_workbench_title]
+other = "验证工作台"
+
+[oauth_validation_workbench_desc]
+other = "按模块区分 OAuth app 权限白名单、当前登录授权 scope、Cloudflare API/套餐限制和公共状态。"
+
+[oauth_validation_group_identity]
+other = "身份与账号"
+
+[oauth_validation_group_dns]
+other = "Zone、DNS 与设置"
+
+[oauth_validation_group_tunnel]
+other = "Cloudflare Tunnel"
+
+[oauth_validation_group_workers]
+other = "Workers 与 Tail"
+
+[oauth_validation_group_r2]
+other = "R2"
+
+[oauth_validation_group_d1]
+other = "D1"
+
+[oauth_validation_group_kv]
+other = "KV"
+
+[oauth_validation_group_snippets]
+other = "Snippets"
+
+[oauth_validation_group_waf]
+other = "WAF"
+
+[oauth_validation_group_analytics]
+other = "Analytics"
+
+[oauth_validation_group_status]
+other = "Cloudflare Status"
+
+[oauth_validation_group_summary]
+other = "{{ .scopes }} 个 scope 检查，{{ .apis }} 个 API 检查，{{ .issues }} 个待确认项"
+
+[oauth_validation_public_api]
+other = "公共状态接口不需要 OAuth scope；不可用时通常是网络或 Cloudflare Status 服务问题。"
+
+[oauth_validation_no_group_issues]
+other = "当前模块未发现问题"
+
+[oauth_validation_no_group_issues_desc]
+other = "scope 与已校验 API 状态都可用；资源为空时无需处理。"
+
+[oauth_validation_scope_ready_detail]
+other = "当前登录已获得所需 scope。"
+
+[oauth_validation_scope_missing_detail]
+other = "缺失 scope：{{ .scopes }}。请在 Cloudflare OAuth app 权限白名单中加入后重新登录。"
+
+[oauth_validation_scope_not_requested]
+other = "本次登录未请求该模块 scope；需要使用该功能时重新选择授权范围。"
+
+[oauth_validation_api_ready_detail]
+other = "已校验 API 可用。"
 
 [oauth_validation_status_limited]
 other = "结果限制为前 {{ .n }} 个"

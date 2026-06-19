@@ -3201,12 +3201,8 @@
                 total: summary.api_checks || 0,
             })
         ));
-        const actions = validationActionItemsNode(state.oauth.validationReport);
-        if (actions) section.appendChild(actions);
-        const missingScopes = validationMissingScopesNode(state.oauth.validationReport);
-        if (missingScopes) section.appendChild(missingScopes);
-        const apiIssues = validationAPIIssuesNode(state.oauth.validationReport);
-        if (apiIssues) section.appendChild(apiIssues);
+        const workbench = validationWorkbenchNode(state.oauth.validationReport);
+        if (workbench) section.appendChild(workbench);
         return section;
     }
 
@@ -3255,10 +3251,14 @@
 
     function validationArchiveMeta(report) {
         const scopeMeta = validationArchiveScopeMeta(report);
+        const fingerprint = validationArchiveFingerprint(report);
+        const issueCount = validationArchiveIssueCount(report);
         return [
             formatDate(report?.saved_at),
             report?.session_label || '',
             scopeMeta,
+            fingerprint ? t('oauth_validation_archive_fingerprint', { fingerprint }) : '',
+            t('oauth_validation_archive_issue_meta', { issues: issueCount }),
             t('oauth_validation_archive_meta', {
                 scopes: report?.scope_missing || 0,
                 apis: (report?.api_unavailable || 0) + (report?.api_missing_scope || 0),
@@ -3279,49 +3279,166 @@
         });
     }
 
-    function validationActionItemsNode(report) {
-        const items = (report?.action_items || []).filter((item) => item?.kind && item.kind !== 'ok');
-        const panel = validationPanel(t('oauth_validation_action_items'));
-        if (!items.length) {
-            panel.appendChild(empty(t('oauth_validation_no_action_items')));
-            return panel;
-        }
-        for (const item of items) {
-            panel.appendChild(validationItemNode(validationActionTitle(item), validationActionMeta(item), item.severity));
-        }
+    function validationArchiveIssueCount(report) {
+        return Number(report?.scope_missing || 0) + Number(report?.api_unavailable || 0) + Number(report?.api_missing_scope || 0);
+    }
+
+    function validationArchiveFingerprint(report) {
+        const requested = report?.requested_scope_hash || '';
+        const granted = report?.granted_scope_hash || '';
+        if (!requested && !granted) return '';
+        return [requested || '-', granted || '-'].join(' / ');
+    }
+
+    function validationWorkbenchNode(report) {
+        const groups = validationWorkbenchGroups(report);
+        if (!groups.length) return null;
+        const panel = validationPanel(t('oauth_validation_workbench_title'));
+        const intro = document.createElement('div');
+        intro.className = 'oauth-validation-meta';
+        intro.textContent = t('oauth_validation_workbench_desc');
+        panel.appendChild(intro);
+        for (const group of groups) panel.appendChild(validationGroupNode(group));
         return panel;
     }
 
-    function validationMissingScopesNode(report) {
-        const checks = (report?.scope_checks || []).filter((check) => check?.status === 'missing_scope');
-        if (!checks.length) return null;
-        const panel = validationPanel(t('oauth_validation_missing_scopes'));
-        for (const check of checks) {
+    function validationWorkbenchGroups(report) {
+        const scopeChecks = new Map();
+        for (const check of report?.scope_checks || []) {
+            if (!check?.feature || scopeChecks.has(check.feature)) continue;
+            scopeChecks.set(check.feature, check);
+        }
+        const apiChecks = new Map();
+        for (const check of report?.api_checks || []) {
+            if (!check?.id || apiChecks.has(check.id)) continue;
+            apiChecks.set(check.id, check);
+        }
+        return validationGroupDefinitions().map((group) => ({
+            ...group,
+            scopeChecks: group.features.map((feature) => scopeChecks.get(feature)).filter(Boolean),
+            apiChecks: group.metrics.map((metric) => apiChecks.get(metric)).filter(Boolean),
+        })).filter((group) => group.publicOnly || group.scopeChecks.length || group.apiChecks.length);
+    }
+
+    function validationGroupDefinitions() {
+        return [
+            { id: 'identity', label: t('oauth_validation_group_identity'), features: ['account'], metrics: ['accounts'] },
+            { id: 'dns', label: t('oauth_validation_group_dns'), features: ['zones', 'dns', 'zone_settings', 'cache_purge'], metrics: ['zones', 'active_zones', 'dns_records'] },
+            { id: 'tunnel', label: t('oauth_validation_group_tunnel'), features: ['tunnels'], metrics: ['tunnels'] },
+            { id: 'workers', label: t('oauth_validation_group_workers'), features: ['workers', 'workers_tail'], metrics: ['workers'] },
+            { id: 'r2', label: t('oauth_validation_group_r2'), features: ['r2'], metrics: ['r2_buckets'] },
+            { id: 'd1', label: t('oauth_validation_group_d1'), features: ['d1'], metrics: ['d1_databases'] },
+            { id: 'kv', label: t('oauth_validation_group_kv'), features: ['kv'], metrics: ['kv_namespaces'] },
+            { id: 'snippets', label: t('oauth_validation_group_snippets'), features: ['snippets'], metrics: ['snippets'] },
+            { id: 'waf', label: t('oauth_validation_group_waf'), features: ['waf'], metrics: ['waf_rules'] },
+            { id: 'analytics', label: t('oauth_validation_group_analytics'), features: ['analytics'], metrics: [] },
+            { id: 'status', label: t('oauth_validation_group_status'), features: [], metrics: [], publicOnly: true },
+        ];
+    }
+
+    function validationGroupNode(group) {
+        const issueCount = validationGroupIssueCount(group);
+        const item = document.createElement('div');
+        item.className = 'oauth-validation-item oauth-validation-item--group';
+        item.dataset.severity = group.publicOnly || issueCount === 0 ? 'info' : validationGroupSeverity(group);
+        const dot = document.createElement('span');
+        dot.className = 'oauth-validation-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        const copy = document.createElement('div');
+        copy.className = 'oauth-validation-copy';
+        const title = document.createElement('div');
+        title.className = 'oauth-validation-title';
+        title.textContent = group.label;
+        const meta = document.createElement('div');
+        meta.className = 'oauth-validation-meta';
+        meta.textContent = group.publicOnly
+            ? t('oauth_validation_public_api')
+            : t('oauth_validation_group_summary', {
+                scopes: group.scopeChecks.length,
+                apis: group.apiChecks.length,
+                issues: issueCount,
+            });
+        copy.append(title, meta);
+        for (const check of group.scopeChecks) copy.appendChild(validationGroupLineNode(validationFeatureLabel(check.feature), validationScopeCheckText(check), validationScopeSeverity(check)));
+        for (const check of group.apiChecks) copy.appendChild(validationGroupLineNode(validationMetricLabel(check.id), validationAPIStatusText(check), validationAPISeverity(check), validationAPIActionText(check)));
+        if (!group.publicOnly && issueCount === 0) copy.appendChild(validationGroupLineNode(t('oauth_validation_no_group_issues'), t('oauth_validation_no_group_issues_desc'), 'info'));
+        item.append(dot, copy);
+        return item;
+    }
+
+    function validationGroupLineNode(titleText, metaText, severity, actionText = '') {
+        const row = document.createElement('div');
+        row.className = 'oauth-validation-subitem';
+        row.dataset.severity = severity || 'info';
+        const title = document.createElement('div');
+        title.className = 'oauth-validation-subtitle';
+        title.textContent = titleText || '';
+        const meta = document.createElement('div');
+        meta.className = 'oauth-validation-submeta';
+        meta.textContent = [metaText, actionText].filter(Boolean).join(' · ');
+        row.append(title, meta);
+        return row;
+    }
+
+    function validationGroupIssueCount(group) {
+        let count = 0;
+        for (const check of group.scopeChecks) {
+            if (check?.status === 'missing_scope') count++;
+        }
+        for (const check of group.apiChecks) {
+            if (check?.status && check.status !== 'ok') count++;
+        }
+        return count;
+    }
+
+    function validationGroupSeverity(group) {
+        if (group.scopeChecks.some((check) => check?.status === 'missing_scope')) return 'error';
+        if (group.apiChecks.some((check) => check?.status === 'unavailable')) return 'error';
+        if (group.apiChecks.some((check) => check?.status === 'missing_scope')) return 'warn';
+        return 'info';
+    }
+
+    function validationScopeSeverity(check) {
+        return check?.status === 'missing_scope' ? 'error' : 'info';
+    }
+
+    function validationAPISeverity(check) {
+        if (check?.status === 'unavailable') return 'error';
+        if (check?.status === 'missing_scope') return 'warn';
+        return 'info';
+    }
+
+    function validationScopeCheckText(check) {
+        switch (check?.status) {
+        case 'ready':
+            return t('oauth_validation_scope_ready_detail');
+        case 'missing_scope': {
             const scopes = [
                 ...(check.missing_read_scopes || []),
                 ...(check.missing_write_scopes || []),
             ];
-            panel.appendChild(validationItemNode(
-                validationFeatureLabel(check.feature),
-                scopes.length ? scopes.join(' ') : t('oauth_validation_missing_scope_action'),
-                'error'
-            ));
+            return scopes.length
+                ? t('oauth_validation_scope_missing_detail', { scopes: scopes.join(' ') })
+                : t('oauth_validation_missing_scope_action');
         }
-        return panel;
+        case 'not_requested':
+            return t('oauth_validation_scope_not_requested');
+        default:
+            return check?.status || t('oauth_unavailable');
+        }
     }
 
-    function validationAPIIssuesNode(report) {
-        const checks = (report?.api_checks || []).filter((check) => check?.status && check.status !== 'ok');
-        if (!checks.length) return null;
-        const panel = validationPanel(t('oauth_validation_api_issues'));
-        for (const check of checks) {
-            panel.appendChild(validationItemNode(
-                validationMetricLabel(check.id),
-                validationAPIStatusText(check),
-                check.status === 'limited' ? 'info' : (check.status === 'missing_scope' ? 'warn' : 'error')
-            ));
+    function validationAPIActionText(check) {
+        switch (check?.status) {
+        case 'limited':
+            return t('oauth_validation_api_limited_action');
+        case 'missing_scope':
+            return t('oauth_validation_api_missing_scope_action');
+        case 'unavailable':
+            return t('oauth_validation_api_unavailable_action');
+        default:
+            return '';
         }
-        return panel;
     }
 
     function validationPanel(titleText) {
@@ -3332,56 +3449,6 @@
         title.textContent = titleText;
         panel.appendChild(title);
         return panel;
-    }
-
-    function validationItemNode(titleText, metaText, severity) {
-        const item = document.createElement('div');
-        item.className = 'oauth-validation-item';
-        item.dataset.severity = severity || 'info';
-        const dot = document.createElement('span');
-        dot.className = 'oauth-validation-dot';
-        dot.setAttribute('aria-hidden', 'true');
-        const copy = document.createElement('div');
-        copy.className = 'oauth-validation-copy';
-        const title = document.createElement('div');
-        title.className = 'oauth-validation-title';
-        title.textContent = titleText || '';
-        const meta = document.createElement('div');
-        meta.className = 'oauth-validation-meta';
-        meta.textContent = metaText || '';
-        copy.append(title, meta);
-        item.append(dot, copy);
-        return item;
-    }
-
-    function validationActionTitle(item) {
-        if (item?.id) return validationMetricLabel(item.id);
-        if (item?.feature) return validationFeatureLabel(item.feature);
-        return t('oauth_validation_action_items');
-    }
-
-    function validationActionMeta(item) {
-        const scopes = Array.isArray(item?.scopes) && item.scopes.length
-            ? `${t('oauth_validation_missing_scopes')}: ${item.scopes.join(' ')}`
-            : '';
-        let message = '';
-        switch (item?.kind) {
-        case 'missing_scope':
-            message = t('oauth_validation_missing_scope_action');
-            break;
-        case 'api_missing_scope':
-            message = t('oauth_validation_api_missing_scope_action');
-            break;
-        case 'api_unavailable':
-            message = t('oauth_validation_api_unavailable_action');
-            break;
-        case 'api_limited':
-            message = t('oauth_validation_api_limited_action');
-            break;
-        default:
-            message = item?.kind || '';
-        }
-        return [message, scopes].filter(Boolean).join(' · ');
     }
 
     function validationFeatureLabel(feature) {
@@ -3407,6 +3474,9 @@
             break;
         case 'unavailable':
             parts.push(t('oauth_validation_status_unavailable'));
+            break;
+        case 'ok':
+            parts.push(t('oauth_validation_api_ready_detail'));
             break;
         default:
             parts.push(check?.status || t('oauth_unavailable'));

@@ -154,6 +154,12 @@ other = "scope 不足 {{ .scopes }} 件、API 問題 {{ .apis }} 件、対応項
 [oauth_validation_archive_scope_meta]
 other = "要求 {{ .requested }} scopes #{{ .requested_hash }}、許可 {{ .granted }} #{{ .granted_hash }}"
 
+[oauth_validation_archive_fingerprint]
+other = "fingerprint {{ .fingerprint }}"
+
+[oauth_validation_archive_issue_meta]
+other = "確認項目 {{ .issues }} 件"
+
 [oauth_validation_archive_deleted]
 other = "OAuth 検証スナップショットを削除しました。"
 
@@ -213,6 +219,69 @@ other = "不足している scope"
 
 [oauth_validation_api_issues]
 other = "API の問題"
+
+[oauth_validation_workbench_title]
+other = "検証ワークベンチ"
+
+[oauth_validation_workbench_desc]
+other = "モジュール別に OAuth app の許可リスト、現在のサインイン scope、Cloudflare API/プラン制限、公開ステータスを切り分けます。"
+
+[oauth_validation_group_identity]
+other = "ID とアカウント"
+
+[oauth_validation_group_dns]
+other = "Zone、DNS、設定"
+
+[oauth_validation_group_tunnel]
+other = "Cloudflare Tunnel"
+
+[oauth_validation_group_workers]
+other = "Workers と Tail"
+
+[oauth_validation_group_r2]
+other = "R2"
+
+[oauth_validation_group_d1]
+other = "D1"
+
+[oauth_validation_group_kv]
+other = "KV"
+
+[oauth_validation_group_snippets]
+other = "Snippets"
+
+[oauth_validation_group_waf]
+other = "WAF"
+
+[oauth_validation_group_analytics]
+other = "Analytics"
+
+[oauth_validation_group_status]
+other = "Cloudflare Status"
+
+[oauth_validation_group_summary]
+other = "scope チェック {{ .scopes }} 件、API チェック {{ .apis }} 件、確認項目 {{ .issues }} 件"
+
+[oauth_validation_public_api]
+other = "公開ステータス API は OAuth scope を必要としません。失敗する場合は通常、ネットワークまたは Cloudflare Status サービスの問題です。"
+
+[oauth_validation_no_group_issues]
+other = "このモジュールで問題は見つかっていません"
+
+[oauth_validation_no_group_issues_desc]
+other = "scope と確認済み API は利用可能です。リソースが空の場合、対応は不要です。"
+
+[oauth_validation_scope_ready_detail]
+other = "現在のサインインには必要な scope があります。"
+
+[oauth_validation_scope_missing_detail]
+other = "不足 scope: {{ .scopes }}。Cloudflare OAuth app の許可リストに追加し、再度サインインしてください。"
+
+[oauth_validation_scope_not_requested]
+other = "今回のサインインではこのモジュールの scope を要求していません。必要になったら認可 scope を選び直してください。"
+
+[oauth_validation_api_ready_detail]
+other = "確認済み API は利用可能です。"
 
 [oauth_validation_status_limited]
 other = "先頭 {{ .n }} 件に制限"

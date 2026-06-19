@@ -5300,6 +5300,10 @@ details.disclosure > .body {
     background: var(--surface);
 }
 
+.oauth-validation-item--group {
+    align-items: start;
+}
+
 .oauth-validation-dot {
     width: 8px;
     height: 8px;
@@ -5337,6 +5341,39 @@ details.disclosure > .body {
     font-size: var(--fs-xs);
     line-height: 1.45;
     overflow-wrap: anywhere;
+}
+
+.oauth-validation-subitem {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.34fr) minmax(0, 0.66fr);
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.oauth-validation-subtitle {
+    min-width: 0;
+    color: var(--text);
+    font-size: var(--fs-xs);
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+
+.oauth-validation-submeta {
+    min-width: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.oauth-validation-subitem[data-severity="error"] .oauth-validation-subtitle {
+    color: var(--state-error);
+}
+
+.oauth-validation-subitem[data-severity="warn"] .oauth-validation-subtitle {
+    color: var(--state-warn);
 }
 
 .oauth-action-bar {
@@ -6148,6 +6185,11 @@ details.oauth-form-section > summary {
 
     .oauth-permission-level {
         width: 100%;
+    }
+
+    .oauth-validation-subitem {
+        grid-template-columns: 1fr;
+        gap: 2px;
     }
 
     .oauth-media-frame--pdf {
