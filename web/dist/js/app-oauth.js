@@ -716,6 +716,8 @@
         const account = encodeURIComponent(state.oauth.selectedAccountId);
         const resp = await apiGet('/cf/kv/namespaces?account_id=' + account);
         state.oauth.kvNamespaces = Array.isArray(resp.data) ? resp.data : [];
+        state.oauth.kvSession = resp.session || state.oauth.kvSession || null;
+        state.oauth.kvCapabilities = resp.capabilities || state.oauth.kvCapabilities || null;
     }
 
     async function createD1Database(payload, button) {
@@ -1298,8 +1300,12 @@
             const keys = Array.isArray(resp.data) ? resp.data : [];
             state.oauth.kvKeys = append ? state.oauth.kvKeys.concat(keys) : keys;
             state.oauth.kvCursor = resp.cursor || '';
+            state.oauth.kvSession = resp.session || state.oauth.kvSession || null;
+            state.oauth.kvCapabilities = resp.capabilities || state.oauth.kvCapabilities || null;
+            state.oauth.kvKeysError = '';
             pruneKVSelectedKeys();
         } catch (err) {
+            state.oauth.kvKeysError = err.message || String(err);
             toast.err(err.message);
         }
     }
@@ -1313,7 +1319,9 @@
         });
         try {
             state.oauth.kvValue = await apiGet('/cf/kv/value?' + params.toString());
+            state.oauth.kvValueError = '';
         } catch (err) {
+            state.oauth.kvValueError = err.message || String(err);
             toast.err(err.message);
         }
     }
@@ -1329,6 +1337,7 @@
         try {
             state.oauth.kvValue = await apiSend('/cf/kv/value?' + params.toString(), 'PUT', { value });
             state.oauth.selectedKVKey = key;
+            state.oauth.kvValueError = '';
             state.oauth.kvCreateOpen = false;
             await loadKVKeys(state.oauth.selectedKVNamespaceId);
             renderOAuthResource();
@@ -1373,6 +1382,7 @@
             if (!res.ok) throw new Error(await rawAPIError(res));
             state.oauth.kvValue = await res.json();
             state.oauth.selectedKVKey = key;
+            state.oauth.kvValueError = '';
             state.oauth.kvCreateOpen = false;
             await loadKVKeys(state.oauth.selectedKVNamespaceId);
             renderOAuthResource();
@@ -1401,6 +1411,7 @@
             await apiSend('/cf/kv/value?' + params.toString(), 'DELETE');
             state.oauth.selectedKVKey = '';
             state.oauth.kvValue = null;
+            state.oauth.kvValueError = '';
             state.oauth.kvSelectedKeys = kvSelectedKeys().filter((item) => item !== key);
             await loadKVKeys(state.oauth.selectedKVNamespaceId);
             renderOAuthResource();
@@ -1432,6 +1443,7 @@
             if (deleted.has(state.oauth.selectedKVKey)) {
                 state.oauth.selectedKVKey = '';
                 state.oauth.kvValue = null;
+                state.oauth.kvValueError = '';
             }
             await loadKVKeys(state.oauth.selectedKVNamespaceId);
             renderOAuthResource();
@@ -1459,6 +1471,8 @@
                 state.oauth.kvKeys = [];
                 state.oauth.kvCursor = '';
                 state.oauth.kvValue = null;
+                state.oauth.kvKeysError = '';
+                state.oauth.kvValueError = '';
                 state.oauth.kvCreateOpen = false;
                 await loadKVKeys(resp.namespace.id);
             }
@@ -4423,8 +4437,9 @@
             }, t('oauth_no_d1_databases'));
         }
         if (canRead('kv')) {
+            const kvActions = [];
             if (canWrite('kv')) {
-                body.appendChild(resourceActionBar(t('oauth_kv_namespaces'), {
+                kvActions.push({
                     text: state.oauth.kvNamespaceCreateOpen ? t('cancel') : t('oauth_kv_create_namespace'),
                     className: state.oauth.kvNamespaceCreateOpen ? 'btn btn--sm btn--ghost' : 'btn btn--sm',
                     onClick: () => {
@@ -4436,9 +4451,16 @@
                         }
                         renderOAuthResource();
                     },
-                }));
-                if (state.oauth.kvNamespaceCreateOpen) body.appendChild(kvNamespaceFormNode('', true));
+                });
             }
+            kvActions.push({
+                text: t('oauth_kv_copy_diagnostics'),
+                className: 'btn btn--sm btn--ghost',
+                title: t('oauth_kv_copy_diagnostics_title'),
+                onClick: () => copyOAuthText(kvDiagnosticsText()),
+            });
+            body.appendChild(resourceActionBar(t('oauth_kv_namespaces'), kvActions));
+            if (canWrite('kv') && state.oauth.kvNamespaceCreateOpen) body.appendChild(kvNamespaceFormNode('', true));
             rendered += renderSection(body, t('oauth_kv_namespaces'), state.oauth.kvNamespaces, (namespace) => {
                 if (state.oauth.kvNamespaceEditingId === namespace.id) {
                     return kvNamespaceFormNode(namespace.title || '', false, namespace.id);
@@ -4460,6 +4482,8 @@
                     state.oauth.selectedKVKey = '';
                     state.oauth.kvSelectedKeys = [];
                     state.oauth.kvValue = null;
+                    state.oauth.kvKeysError = '';
+                    state.oauth.kvValueError = '';
                     state.oauth.kvCreateOpen = false;
                     await loadKVKeys(namespace.id);
                     renderOAuthResource();
@@ -4684,6 +4708,115 @@
         };
     }
 
+    function kvDiagnosticsText() {
+        const status = state.oauth.status || {};
+        const session = state.oauth.kvSession || status.current || {};
+        const namespace = selectedKVNamespace();
+        const selectedValue = state.oauth.kvValue || null;
+        const selectedListKey = selectedKVListKey(selectedValue?.key || state.oauth.selectedKVKey);
+        return JSON.stringify({
+            type: 'cfui_oauth_kv_diagnostics',
+            version: 1,
+            generated_at: new Date().toISOString(),
+            browser_origin: window.location.origin,
+            browser_path: window.location.pathname,
+            contains_oauth_token: false,
+            contains_refresh_token: false,
+            contains_kv_value: false,
+            contains_binary_preview: false,
+            contains_download_url: false,
+            contains_local_file_path: false,
+            sensitive_fields_omitted: [
+                'oauth_access_token',
+                'oauth_refresh_token',
+                'kv_value',
+                'kv_binary_preview',
+                'kv_download_url',
+                'local_file_name',
+            ],
+            selected: {
+                account_id: state.oauth.selectedAccountId || '',
+                account_name: selectedAccountName(),
+                namespace_id: state.oauth.selectedKVNamespaceId || '',
+                namespace_title: namespace?.title || '',
+                key: state.oauth.selectedKVKey || '',
+                storage_view: state.oauth.storageView || '',
+            },
+            identity: {
+                label: session.label || '',
+                expires_at: session.expires_at || '',
+                scopes: Array.isArray(session.scopes) ? session.scopes : [],
+            },
+            capability: {
+                kv_read: canRead('kv'),
+                kv_write: canWrite('kv'),
+            },
+            state: {
+                namespace_count: state.oauth.kvNamespaces.length,
+                keys_loaded: state.oauth.kvKeys.length,
+                keys_has_more: !!state.oauth.kvCursor,
+                keys_error: state.oauth.kvKeysError || '',
+                value_loaded: !!selectedValue,
+                value_error: state.oauth.kvValueError || '',
+                create_namespace_open: !!state.oauth.kvNamespaceCreateOpen,
+                create_key_open: !!state.oauth.kvCreateOpen,
+                editing_namespace_id: state.oauth.kvNamespaceEditingId || '',
+                scope_ready: canRead('kv'),
+            },
+            limits: {
+                value_upload_bytes: maxKVValueUploadBytes,
+            },
+            namespaces: state.oauth.kvNamespaces.map(kvNamespaceDiagnostics),
+            keys: {
+                loaded_count: state.oauth.kvKeys.length,
+                has_more: !!state.oauth.kvCursor,
+                cursor_present: !!state.oauth.kvCursor,
+                items: state.oauth.kvKeys.map(kvKeyDiagnostics),
+            },
+            selected_value: selectedValue ? kvSelectedValueDiagnostics(selectedValue, selectedListKey) : null,
+            bulk_selection: kvBulkSelectionDiagnostics(),
+            capabilities: oauthCapabilityDiagnostics(state.oauth.kvCapabilities || status.capabilities || {}),
+        }, null, 2);
+    }
+
+    function kvNamespaceDiagnostics(namespace) {
+        return {
+            id: namespace?.id || '',
+            title: namespace?.title || '',
+        };
+    }
+
+    function kvKeyDiagnostics(key) {
+        const expiration = Number(key?.expiration || 0);
+        return {
+            name: key?.name || '',
+            expiration: expiration || null,
+            expiration_at: expiration ? new Date(expiration * 1000).toISOString() : '',
+        };
+    }
+
+    function kvSelectedValueDiagnostics(value, listKey) {
+        return {
+            key: value?.key || state.oauth.selectedKVKey || '',
+            encoding: value?.encoding || '',
+            bytes: value?.bytes == null ? null : Number(value.bytes),
+            value_included: false,
+            binary_preview_included: false,
+            download_url_included: false,
+            binary_preview_available: !!value?.binary_preview,
+            list_metadata: kvKeyDiagnostics(listKey || {}),
+        };
+    }
+
+    function kvBulkSelectionDiagnostics() {
+        const selected = kvSelectedKeys();
+        return {
+            selected_count: selected.length,
+            loaded_count: state.oauth.kvKeys.length,
+            keys: selected,
+        };
+    }
+
     function renderR2Detail(body) {
         const bucket = selectedR2Bucket();
         if (!bucket) {
@@ -4789,7 +4922,12 @@
             body.appendChild(empty(t('oauth_select_account')));
             return;
         }
-        body.appendChild(storageBackHeader(namespace.title || namespace.id, namespace.id));
+        body.appendChild(storageBackHeader(namespace.title || namespace.id, namespace.id, [{
+            text: t('oauth_kv_copy_diagnostics'),
+            className: 'btn btn--sm btn--ghost',
+            title: t('oauth_kv_copy_diagnostics_title'),
+            onClick: () => copyOAuthText(kvDiagnosticsText()),
+        }]));
         const canEdit = canWrite('kv');
         if (canEdit) {
             body.appendChild(resourceActionBar(t('oauth_kv_keys'), {
@@ -4811,7 +4949,9 @@
         heading.className = 'oauth-section-title';
         heading.textContent = t('oauth_kv_keys');
         section.appendChild(heading);
-        if (!state.oauth.kvKeys.length) {
+        if (state.oauth.kvKeysError) {
+            section.appendChild(empty(state.oauth.kvKeysError));
+        } else if (!state.oauth.kvKeys.length) {
             section.appendChild(empty(t('oauth_kv_no_keys')));
         } else {
             if (canEdit) section.appendChild(kvBulkActionsNode());
@@ -4824,6 +4964,7 @@
                     state.oauth.selectedKVKey = key.name;
                     state.oauth.kvCreateOpen = false;
                     state.oauth.kvValue = null;
+                    state.oauth.kvValueError = '';
                     await loadKVValue(key.name);
                     renderOAuthResource();
                 });
@@ -8200,6 +8341,10 @@
         return state.oauth.kvNamespaces.find((item) => item.id === state.oauth.selectedKVNamespaceId);
     }
 
+    function selectedKVListKey(keyName = state.oauth.selectedKVKey) {
+        return state.oauth.kvKeys.find((item) => item.name === keyName) || {};
+    }
+
     function kvSelectedKeys() {
         return Array.isArray(state.oauth.kvSelectedKeys) ? state.oauth.kvSelectedKeys.filter(Boolean) : [];
     }
@@ -8357,6 +8502,8 @@
         state.oauth.r2Capabilities = null;
         state.oauth.d1Databases = [];
         state.oauth.kvNamespaces = [];
+        state.oauth.kvSession = null;
+        state.oauth.kvCapabilities = null;
         state.oauth.snippets = [];
         state.oauth.zoneSettings = [];
         state.oauth.selectedAccountId = '';
@@ -8396,8 +8543,10 @@
         state.oauth.selectedKVKey = '';
         state.oauth.kvSelectedKeys = [];
         state.oauth.kvKeys = [];
+        state.oauth.kvKeysError = '';
         state.oauth.kvCursor = '';
         state.oauth.kvValue = null;
+        state.oauth.kvValueError = '';
         state.oauth.kvCreateOpen = false;
         state.oauth.selectedD1DatabaseId = '';
         state.oauth.selectedD1TableName = '';
@@ -8417,8 +8566,10 @@
         state.oauth.selectedKVKey = '';
         state.oauth.kvSelectedKeys = [];
         state.oauth.kvKeys = [];
+        state.oauth.kvKeysError = '';
         state.oauth.kvCursor = '';
         state.oauth.kvValue = null;
+        state.oauth.kvValueError = '';
         state.oauth.kvCreateOpen = false;
         state.oauth.kvNamespaceEditingId = '';
     }

@@ -2080,6 +2080,12 @@ other = "KV namespaces"
 [oauth_kv_create_namespace]
 other = "Create namespace"
 
+[oauth_kv_copy_diagnostics]
+other = "Copy diagnostics"
+
+[oauth_kv_copy_diagnostics_title]
+other = "Copy current KV namespace, key list, and value panel diagnostics. OAuth tokens, KV values, binary previews, and download URLs are not included."
+
 [oauth_kv_rename_namespace]
 other = "Rename namespace"
 

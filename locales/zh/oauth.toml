@@ -2080,6 +2080,12 @@ other = "KV namespaces"
 [oauth_kv_create_namespace]
 other = "创建 namespace"
 
+[oauth_kv_copy_diagnostics]
+other = "复制诊断"
+
+[oauth_kv_copy_diagnostics_title]
+other = "复制当前 KV namespace、key 列表和值面板诊断。OAuth token、KV value、二进制预览和下载 URL 不会包含在内。"
+
 [oauth_kv_rename_namespace]
 other = "重命名 namespace"
 
