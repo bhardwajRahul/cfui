@@ -10,6 +10,7 @@ import (
 	"cfui/internal/persist/ent/mcptoken"
 	"cfui/internal/persist/ent/oauthsession"
 	"cfui/internal/persist/ent/oauthstate"
+	"cfui/internal/persist/ent/oauthvalidationreport"
 	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
 	"cfui/internal/persist/ent/tunnelprofile"
@@ -83,17 +84,18 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			appsetting.Table:       appsetting.ValidColumn,
-			ddnsipsource.Table:     ddnsipsource.ValidColumn,
-			ddnsrecord.Table:       ddnsrecord.ValidColumn,
-			ddnssetting.Table:      ddnssetting.ValidColumn,
-			mcptoken.Table:         mcptoken.ValidColumn,
-			oauthsession.Table:     oauthsession.ValidColumn,
-			oauthstate.Table:       oauthstate.ValidColumn,
-			s3webdavsetting.Table:  s3webdavsetting.ValidColumn,
-			tunnelmanagement.Table: tunnelmanagement.ValidColumn,
-			tunnelprofile.Table:    tunnelprofile.ValidColumn,
-			tunneltoken.Table:      tunneltoken.ValidColumn,
+			appsetting.Table:            appsetting.ValidColumn,
+			ddnsipsource.Table:          ddnsipsource.ValidColumn,
+			ddnsrecord.Table:            ddnsrecord.ValidColumn,
+			ddnssetting.Table:           ddnssetting.ValidColumn,
+			mcptoken.Table:              mcptoken.ValidColumn,
+			oauthsession.Table:          oauthsession.ValidColumn,
+			oauthstate.Table:            oauthstate.ValidColumn,
+			oauthvalidationreport.Table: oauthvalidationreport.ValidColumn,
+			s3webdavsetting.Table:       s3webdavsetting.ValidColumn,
+			tunnelmanagement.Table:      tunnelmanagement.ValidColumn,
+			tunnelprofile.Table:         tunnelprofile.ValidColumn,
+			tunneltoken.Table:           tunneltoken.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

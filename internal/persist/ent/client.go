@@ -18,6 +18,7 @@ import (
 	"cfui/internal/persist/ent/mcptoken"
 	"cfui/internal/persist/ent/oauthsession"
 	"cfui/internal/persist/ent/oauthstate"
+	"cfui/internal/persist/ent/oauthvalidationreport"
 	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
 	"cfui/internal/persist/ent/tunnelprofile"
@@ -47,6 +48,8 @@ type Client struct {
 	OAuthSession *OAuthSessionClient
 	// OAuthState is the client for interacting with the OAuthState builders.
 	OAuthState *OAuthStateClient
+	// OAuthValidationReport is the client for interacting with the OAuthValidationReport builders.
+	OAuthValidationReport *OAuthValidationReportClient
 	// S3WebDAVSetting is the client for interacting with the S3WebDAVSetting builders.
 	S3WebDAVSetting *S3WebDAVSettingClient
 	// TunnelManagement is the client for interacting with the TunnelManagement builders.
@@ -73,6 +76,7 @@ func (c *Client) init() {
 	c.MCPToken = NewMCPTokenClient(c.config)
 	c.OAuthSession = NewOAuthSessionClient(c.config)
 	c.OAuthState = NewOAuthStateClient(c.config)
+	c.OAuthValidationReport = NewOAuthValidationReportClient(c.config)
 	c.S3WebDAVSetting = NewS3WebDAVSettingClient(c.config)
 	c.TunnelManagement = NewTunnelManagementClient(c.config)
 	c.TunnelProfile = NewTunnelProfileClient(c.config)
@@ -167,19 +171,20 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		AppSetting:       NewAppSettingClient(cfg),
-		DDNSIPSource:     NewDDNSIPSourceClient(cfg),
-		DDNSRecord:       NewDDNSRecordClient(cfg),
-		DDNSSetting:      NewDDNSSettingClient(cfg),
-		MCPToken:         NewMCPTokenClient(cfg),
-		OAuthSession:     NewOAuthSessionClient(cfg),
-		OAuthState:       NewOAuthStateClient(cfg),
-		S3WebDAVSetting:  NewS3WebDAVSettingClient(cfg),
-		TunnelManagement: NewTunnelManagementClient(cfg),
-		TunnelProfile:    NewTunnelProfileClient(cfg),
-		TunnelToken:      NewTunnelTokenClient(cfg),
+		ctx:                   ctx,
+		config:                cfg,
+		AppSetting:            NewAppSettingClient(cfg),
+		DDNSIPSource:          NewDDNSIPSourceClient(cfg),
+		DDNSRecord:            NewDDNSRecordClient(cfg),
+		DDNSSetting:           NewDDNSSettingClient(cfg),
+		MCPToken:              NewMCPTokenClient(cfg),
+		OAuthSession:          NewOAuthSessionClient(cfg),
+		OAuthState:            NewOAuthStateClient(cfg),
+		OAuthValidationReport: NewOAuthValidationReportClient(cfg),
+		S3WebDAVSetting:       NewS3WebDAVSettingClient(cfg),
+		TunnelManagement:      NewTunnelManagementClient(cfg),
+		TunnelProfile:         NewTunnelProfileClient(cfg),
+		TunnelToken:           NewTunnelTokenClient(cfg),
 	}, nil
 }
 
@@ -197,19 +202,20 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		AppSetting:       NewAppSettingClient(cfg),
-		DDNSIPSource:     NewDDNSIPSourceClient(cfg),
-		DDNSRecord:       NewDDNSRecordClient(cfg),
-		DDNSSetting:      NewDDNSSettingClient(cfg),
-		MCPToken:         NewMCPTokenClient(cfg),
-		OAuthSession:     NewOAuthSessionClient(cfg),
-		OAuthState:       NewOAuthStateClient(cfg),
-		S3WebDAVSetting:  NewS3WebDAVSettingClient(cfg),
-		TunnelManagement: NewTunnelManagementClient(cfg),
-		TunnelProfile:    NewTunnelProfileClient(cfg),
-		TunnelToken:      NewTunnelTokenClient(cfg),
+		ctx:                   ctx,
+		config:                cfg,
+		AppSetting:            NewAppSettingClient(cfg),
+		DDNSIPSource:          NewDDNSIPSourceClient(cfg),
+		DDNSRecord:            NewDDNSRecordClient(cfg),
+		DDNSSetting:           NewDDNSSettingClient(cfg),
+		MCPToken:              NewMCPTokenClient(cfg),
+		OAuthSession:          NewOAuthSessionClient(cfg),
+		OAuthState:            NewOAuthStateClient(cfg),
+		OAuthValidationReport: NewOAuthValidationReportClient(cfg),
+		S3WebDAVSetting:       NewS3WebDAVSettingClient(cfg),
+		TunnelManagement:      NewTunnelManagementClient(cfg),
+		TunnelProfile:         NewTunnelProfileClient(cfg),
+		TunnelToken:           NewTunnelTokenClient(cfg),
 	}, nil
 }
 
@@ -240,8 +246,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.AppSetting, c.DDNSIPSource, c.DDNSRecord, c.DDNSSetting, c.MCPToken,
-		c.OAuthSession, c.OAuthState, c.S3WebDAVSetting, c.TunnelManagement,
-		c.TunnelProfile, c.TunnelToken,
+		c.OAuthSession, c.OAuthState, c.OAuthValidationReport, c.S3WebDAVSetting,
+		c.TunnelManagement, c.TunnelProfile, c.TunnelToken,
 	} {
 		n.Use(hooks...)
 	}
@@ -252,8 +258,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.AppSetting, c.DDNSIPSource, c.DDNSRecord, c.DDNSSetting, c.MCPToken,
-		c.OAuthSession, c.OAuthState, c.S3WebDAVSetting, c.TunnelManagement,
-		c.TunnelProfile, c.TunnelToken,
+		c.OAuthSession, c.OAuthState, c.OAuthValidationReport, c.S3WebDAVSetting,
+		c.TunnelManagement, c.TunnelProfile, c.TunnelToken,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -276,6 +282,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OAuthSession.mutate(ctx, m)
 	case *OAuthStateMutation:
 		return c.OAuthState.mutate(ctx, m)
+	case *OAuthValidationReportMutation:
+		return c.OAuthValidationReport.mutate(ctx, m)
 	case *S3WebDAVSettingMutation:
 		return c.S3WebDAVSetting.mutate(ctx, m)
 	case *TunnelManagementMutation:
@@ -1220,6 +1228,139 @@ func (c *OAuthStateClient) mutate(ctx context.Context, m *OAuthStateMutation) (V
 	}
 }
 
+// OAuthValidationReportClient is a client for the OAuthValidationReport schema.
+type OAuthValidationReportClient struct {
+	config
+}
+
+// NewOAuthValidationReportClient returns a client for the OAuthValidationReport from the given config.
+func NewOAuthValidationReportClient(c config) *OAuthValidationReportClient {
+	return &OAuthValidationReportClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `oauthvalidationreport.Hooks(f(g(h())))`.
+func (c *OAuthValidationReportClient) Use(hooks ...Hook) {
+	c.hooks.OAuthValidationReport = append(c.hooks.OAuthValidationReport, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `oauthvalidationreport.Intercept(f(g(h())))`.
+func (c *OAuthValidationReportClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OAuthValidationReport = append(c.inters.OAuthValidationReport, interceptors...)
+}
+
+// Create returns a builder for creating a OAuthValidationReport entity.
+func (c *OAuthValidationReportClient) Create() *OAuthValidationReportCreate {
+	mutation := newOAuthValidationReportMutation(c.config, OpCreate)
+	return &OAuthValidationReportCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OAuthValidationReport entities.
+func (c *OAuthValidationReportClient) CreateBulk(builders ...*OAuthValidationReportCreate) *OAuthValidationReportCreateBulk {
+	return &OAuthValidationReportCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OAuthValidationReportClient) MapCreateBulk(slice any, setFunc func(*OAuthValidationReportCreate, int)) *OAuthValidationReportCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OAuthValidationReportCreateBulk{err: fmt.Errorf("calling to OAuthValidationReportClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OAuthValidationReportCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OAuthValidationReportCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OAuthValidationReport.
+func (c *OAuthValidationReportClient) Update() *OAuthValidationReportUpdate {
+	mutation := newOAuthValidationReportMutation(c.config, OpUpdate)
+	return &OAuthValidationReportUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OAuthValidationReportClient) UpdateOne(_m *OAuthValidationReport) *OAuthValidationReportUpdateOne {
+	mutation := newOAuthValidationReportMutation(c.config, OpUpdateOne, withOAuthValidationReport(_m))
+	return &OAuthValidationReportUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OAuthValidationReportClient) UpdateOneID(id int) *OAuthValidationReportUpdateOne {
+	mutation := newOAuthValidationReportMutation(c.config, OpUpdateOne, withOAuthValidationReportID(id))
+	return &OAuthValidationReportUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OAuthValidationReport.
+func (c *OAuthValidationReportClient) Delete() *OAuthValidationReportDelete {
+	mutation := newOAuthValidationReportMutation(c.config, OpDelete)
+	return &OAuthValidationReportDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OAuthValidationReportClient) DeleteOne(_m *OAuthValidationReport) *OAuthValidationReportDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OAuthValidationReportClient) DeleteOneID(id int) *OAuthValidationReportDeleteOne {
+	builder := c.Delete().Where(oauthvalidationreport.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OAuthValidationReportDeleteOne{builder}
+}
+
+// Query returns a query builder for OAuthValidationReport.
+func (c *OAuthValidationReportClient) Query() *OAuthValidationReportQuery {
+	return &OAuthValidationReportQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOAuthValidationReport},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OAuthValidationReport entity by its id.
+func (c *OAuthValidationReportClient) Get(ctx context.Context, id int) (*OAuthValidationReport, error) {
+	return c.Query().Where(oauthvalidationreport.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OAuthValidationReportClient) GetX(ctx context.Context, id int) *OAuthValidationReport {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *OAuthValidationReportClient) Hooks() []Hook {
+	return c.hooks.OAuthValidationReport
+}
+
+// Interceptors returns the client interceptors.
+func (c *OAuthValidationReportClient) Interceptors() []Interceptor {
+	return c.inters.OAuthValidationReport
+}
+
+func (c *OAuthValidationReportClient) mutate(ctx context.Context, m *OAuthValidationReportMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OAuthValidationReportCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OAuthValidationReportUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OAuthValidationReportUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OAuthValidationReportDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OAuthValidationReport mutation op: %q", m.Op())
+	}
+}
+
 // S3WebDAVSettingClient is a client for the S3WebDAVSetting schema.
 type S3WebDAVSettingClient struct {
 	config
@@ -1756,12 +1897,12 @@ func (c *TunnelTokenClient) mutate(ctx context.Context, m *TunnelTokenMutation) 
 type (
 	hooks struct {
 		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, OAuthSession,
-		OAuthState, S3WebDAVSetting, TunnelManagement, TunnelProfile,
-		TunnelToken []ent.Hook
+		OAuthState, OAuthValidationReport, S3WebDAVSetting, TunnelManagement,
+		TunnelProfile, TunnelToken []ent.Hook
 	}
 	inters struct {
 		AppSetting, DDNSIPSource, DDNSRecord, DDNSSetting, MCPToken, OAuthSession,
-		OAuthState, S3WebDAVSetting, TunnelManagement, TunnelProfile,
-		TunnelToken []ent.Interceptor
+		OAuthState, OAuthValidationReport, S3WebDAVSetting, TunnelManagement,
+		TunnelProfile, TunnelToken []ent.Interceptor
 	}
 )

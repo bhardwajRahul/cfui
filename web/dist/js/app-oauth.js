@@ -244,6 +244,7 @@
         if (canRead('zones')) await loadOAuthZones();
         ensureVisibleResource();
         await loadOAuthCurrentResource();
+        loadOAuthValidationArchives();
         renderOAuthResource();
     }
 
@@ -284,6 +285,85 @@
             toast.err(state.oauth.validationError);
         } finally {
             state.oauth.validationLoading = false;
+            setBusy(button, false);
+            renderOAuthResource();
+        }
+    }
+
+    async function loadOAuthValidationArchives() {
+        if (!state.oauth.status?.logged_in) return;
+        state.oauth.validationReportsLoading = true;
+        state.oauth.validationReportsError = '';
+        try {
+            const resp = await apiGet('/cf/validation-reports?limit=12');
+            state.oauth.validationReports = Array.isArray(resp.data) ? resp.data : [];
+        } catch (err) {
+            state.oauth.validationReports = [];
+            state.oauth.validationReportsError = err.message || String(err);
+        } finally {
+            state.oauth.validationReportsLoading = false;
+            renderOAuthResource();
+        }
+    }
+
+    async function saveOAuthValidationArchive(button) {
+        if (!state.oauth.status?.logged_in || state.oauth.validationArchiveSaving) return;
+        state.oauth.validationArchiveSaving = true;
+        setBusy(button, true, t('saving'));
+        try {
+            const payload = {};
+            if (state.oauth.selectedAccountId) payload.account_id = state.oauth.selectedAccountId;
+            const archive = await apiSend('/cf/validation-reports', 'POST', payload);
+            state.oauth.validationReport = archive.report || null;
+            state.oauth.validationError = '';
+            await loadOAuthValidationArchives();
+            toast.ok(t('oauth_validation_archive_saved'));
+        } catch (err) {
+            toast.err(err.message || String(err));
+        } finally {
+            state.oauth.validationArchiveSaving = false;
+            setBusy(button, false);
+            renderOAuthResource();
+        }
+    }
+
+    async function openOAuthValidationArchive(reportID, button) {
+        reportID = String(reportID || '').trim();
+        if (!reportID || state.oauth.validationArchiveLoadingId) return;
+        state.oauth.validationArchiveLoadingId = reportID;
+        setBusy(button, true);
+        try {
+            const archive = await apiGet('/cf/validation-reports/' + encodeURIComponent(reportID));
+            state.oauth.validationReport = archive.report || null;
+            state.oauth.validationError = '';
+        } catch (err) {
+            toast.err(err.message || String(err));
+        } finally {
+            state.oauth.validationArchiveLoadingId = '';
+            setBusy(button, false);
+            renderOAuthResource();
+        }
+    }
+
+    async function deleteOAuthValidationArchive(reportID, button) {
+        reportID = String(reportID || '').trim();
+        if (!reportID || state.oauth.validationArchiveDeletingId) return;
+		const ok = await window.cfui.confirm({
+			title: t('oauth_validation_archive_delete_title'),
+			message: t('oauth_validation_archive_delete_message'),
+			okText: t('delete'),
+		});
+        if (!ok) return;
+        state.oauth.validationArchiveDeletingId = reportID;
+        setBusy(button, true, t('delete'));
+        try {
+            await apiSend('/cf/validation-reports/' + encodeURIComponent(reportID), 'DELETE');
+            state.oauth.validationReports = state.oauth.validationReports.filter((item) => item.report_id !== reportID);
+            toast.ok(t('oauth_validation_archive_deleted'));
+        } catch (err) {
+            toast.err(err.message || String(err));
+        } finally {
+            state.oauth.validationArchiveDeletingId = '';
             setBusy(button, false);
             renderOAuthResource();
         }
@@ -2976,7 +3056,11 @@
         validation.title = t('oauth_validation_run_title');
         validation.setAttribute('aria-label', t('oauth_validation_run_title'));
         validation.disabled = !!state.oauth.validationLoading;
-        actions.append(diagnostics, validation);
+        const saveValidation = smallButton(t('oauth_validation_archive_save'), 'btn btn--sm btn--ghost', (event) => saveOAuthValidationArchive(event.currentTarget));
+        saveValidation.title = t('oauth_validation_archive_save_title');
+        saveValidation.setAttribute('aria-label', t('oauth_validation_archive_save_title'));
+        saveValidation.disabled = !!state.oauth.validationArchiveSaving;
+        actions.append(diagnostics, validation, saveValidation);
         contextHead.append(heading, actions);
         const account = overview.account || {};
         const zone = overview.zone || {};
@@ -2991,6 +3075,8 @@
         body.appendChild(context);
         const validationNode = overviewValidationNode();
         if (validationNode) body.appendChild(validationNode);
+        const validationArchives = overviewValidationArchivesNode();
+        if (validationArchives) body.appendChild(validationArchives);
 
         const quickActions = overviewQuickActionsNode(metrics);
         if (quickActions) body.appendChild(quickActions);
@@ -3097,6 +3183,61 @@
         const apiIssues = validationAPIIssuesNode(state.oauth.validationReport);
         if (apiIssues) section.appendChild(apiIssues);
         return section;
+    }
+
+    function overviewValidationArchivesNode() {
+        const loading = !!state.oauth.validationReportsLoading;
+        const error = state.oauth.validationReportsError || '';
+        const reports = Array.isArray(state.oauth.validationReports) ? state.oauth.validationReports : [];
+        if (!loading && !error && !reports.length) return null;
+        const section = document.createElement('section');
+        section.className = 'oauth-section';
+        const head = document.createElement('div');
+        head.className = 'oauth-section-head';
+        const heading = document.createElement('h4');
+        heading.className = 'oauth-section-title';
+        heading.textContent = t('oauth_validation_archive_title');
+        const refresh = smallButton(t('refresh'), 'btn btn--sm btn--ghost', () => loadOAuthValidationArchives());
+        head.append(heading, refresh);
+        section.appendChild(head);
+        if (loading) {
+            section.appendChild(empty(t('oauth_validation_archive_loading')));
+            return section;
+        }
+        if (error) {
+            section.appendChild(empty(error));
+            return section;
+        }
+        for (const report of reports) {
+            const reportID = report.report_id || '';
+            const actions = [
+                smallButton(t('open'), 'btn btn--sm btn--ghost', (event) => openOAuthValidationArchive(reportID, event.currentTarget)),
+                smallButton(t('delete'), 'btn btn--sm btn--ghost', (event) => deleteOAuthValidationArchive(reportID, event.currentTarget)),
+            ];
+            const row = rowNode(validationArchiveTitle(report), validationArchiveMeta(report), actions);
+            row.addEventListener('click', () => openOAuthValidationArchive(reportID));
+            section.appendChild(row);
+        }
+        return section;
+    }
+
+    function validationArchiveTitle(report) {
+        return [
+            report?.account_name || report?.account_id || t('oauth_account'),
+            report?.zone_name || '',
+        ].filter(Boolean).join(' · ');
+    }
+
+    function validationArchiveMeta(report) {
+        return [
+            formatDate(report?.saved_at),
+            report?.session_label || '',
+            t('oauth_validation_archive_meta', {
+                scopes: report?.scope_missing || 0,
+                apis: (report?.api_unavailable || 0) + (report?.api_missing_scope || 0),
+                actions: report?.action_items || 0,
+            }),
+        ].filter(Boolean).join(' · ');
     }
 
     function validationActionItemsNode(report) {
@@ -10169,6 +10310,15 @@
         state.oauth.overview = null;
         state.oauth.overviewLoading = false;
         state.oauth.overviewError = '';
+        state.oauth.validationReport = null;
+        state.oauth.validationLoading = false;
+        state.oauth.validationError = '';
+        state.oauth.validationReports = [];
+        state.oauth.validationReportsLoading = false;
+        state.oauth.validationReportsError = '';
+        state.oauth.validationArchiveSaving = false;
+        state.oauth.validationArchiveLoadingId = '';
+        state.oauth.validationArchiveDeletingId = '';
     }
 
     function resetZoneDetail() {

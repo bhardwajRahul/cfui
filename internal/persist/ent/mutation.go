@@ -10,6 +10,7 @@ import (
 	"cfui/internal/persist/ent/mcptoken"
 	"cfui/internal/persist/ent/oauthsession"
 	"cfui/internal/persist/ent/oauthstate"
+	"cfui/internal/persist/ent/oauthvalidationreport"
 	"cfui/internal/persist/ent/predicate"
 	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/tunnelmanagement"
@@ -34,17 +35,18 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAppSetting       = "AppSetting"
-	TypeDDNSIPSource     = "DDNSIPSource"
-	TypeDDNSRecord       = "DDNSRecord"
-	TypeDDNSSetting      = "DDNSSetting"
-	TypeMCPToken         = "MCPToken"
-	TypeOAuthSession     = "OAuthSession"
-	TypeOAuthState       = "OAuthState"
-	TypeS3WebDAVSetting  = "S3WebDAVSetting"
-	TypeTunnelManagement = "TunnelManagement"
-	TypeTunnelProfile    = "TunnelProfile"
-	TypeTunnelToken      = "TunnelToken"
+	TypeAppSetting            = "AppSetting"
+	TypeDDNSIPSource          = "DDNSIPSource"
+	TypeDDNSRecord            = "DDNSRecord"
+	TypeDDNSSetting           = "DDNSSetting"
+	TypeMCPToken              = "MCPToken"
+	TypeOAuthSession          = "OAuthSession"
+	TypeOAuthState            = "OAuthState"
+	TypeOAuthValidationReport = "OAuthValidationReport"
+	TypeS3WebDAVSetting       = "S3WebDAVSetting"
+	TypeTunnelManagement      = "TunnelManagement"
+	TypeTunnelProfile         = "TunnelProfile"
+	TypeTunnelToken           = "TunnelToken"
 )
 
 // AppSettingMutation represents an operation that mutates the AppSetting nodes in the graph.
@@ -6221,6 +6223,1169 @@ func (m *OAuthStateMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *OAuthStateMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown OAuthState edge %s", name)
+}
+
+// OAuthValidationReportMutation represents an operation that mutates the OAuthValidationReport nodes in the graph.
+type OAuthValidationReportMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *int
+	report_id            *string
+	session_id           *string
+	session_label        *string
+	account_id           *string
+	account_name         *string
+	zone_id              *string
+	zone_name            *string
+	generated_at         *time.Time
+	saved_at             *time.Time
+	scope_missing        *int
+	addscope_missing     *int
+	api_unavailable      *int
+	addapi_unavailable   *int
+	api_missing_scope    *int
+	addapi_missing_scope *int
+	action_items         *int
+	addaction_items      *int
+	report_body          *string
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*OAuthValidationReport, error)
+	predicates           []predicate.OAuthValidationReport
+}
+
+var _ ent.Mutation = (*OAuthValidationReportMutation)(nil)
+
+// oauthvalidationreportOption allows management of the mutation configuration using functional options.
+type oauthvalidationreportOption func(*OAuthValidationReportMutation)
+
+// newOAuthValidationReportMutation creates new mutation for the OAuthValidationReport entity.
+func newOAuthValidationReportMutation(c config, op Op, opts ...oauthvalidationreportOption) *OAuthValidationReportMutation {
+	m := &OAuthValidationReportMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeOAuthValidationReport,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withOAuthValidationReportID sets the ID field of the mutation.
+func withOAuthValidationReportID(id int) oauthvalidationreportOption {
+	return func(m *OAuthValidationReportMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *OAuthValidationReport
+		)
+		m.oldValue = func(ctx context.Context) (*OAuthValidationReport, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().OAuthValidationReport.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withOAuthValidationReport sets the old OAuthValidationReport of the mutation.
+func withOAuthValidationReport(node *OAuthValidationReport) oauthvalidationreportOption {
+	return func(m *OAuthValidationReportMutation) {
+		m.oldValue = func(context.Context) (*OAuthValidationReport, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m OAuthValidationReportMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m OAuthValidationReportMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *OAuthValidationReportMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *OAuthValidationReportMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().OAuthValidationReport.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetReportID sets the "report_id" field.
+func (m *OAuthValidationReportMutation) SetReportID(s string) {
+	m.report_id = &s
+}
+
+// ReportID returns the value of the "report_id" field in the mutation.
+func (m *OAuthValidationReportMutation) ReportID() (r string, exists bool) {
+	v := m.report_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReportID returns the old "report_id" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldReportID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReportID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReportID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReportID: %w", err)
+	}
+	return oldValue.ReportID, nil
+}
+
+// ResetReportID resets all changes to the "report_id" field.
+func (m *OAuthValidationReportMutation) ResetReportID() {
+	m.report_id = nil
+}
+
+// SetSessionID sets the "session_id" field.
+func (m *OAuthValidationReportMutation) SetSessionID(s string) {
+	m.session_id = &s
+}
+
+// SessionID returns the value of the "session_id" field in the mutation.
+func (m *OAuthValidationReportMutation) SessionID() (r string, exists bool) {
+	v := m.session_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSessionID returns the old "session_id" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldSessionID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSessionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSessionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSessionID: %w", err)
+	}
+	return oldValue.SessionID, nil
+}
+
+// ResetSessionID resets all changes to the "session_id" field.
+func (m *OAuthValidationReportMutation) ResetSessionID() {
+	m.session_id = nil
+}
+
+// SetSessionLabel sets the "session_label" field.
+func (m *OAuthValidationReportMutation) SetSessionLabel(s string) {
+	m.session_label = &s
+}
+
+// SessionLabel returns the value of the "session_label" field in the mutation.
+func (m *OAuthValidationReportMutation) SessionLabel() (r string, exists bool) {
+	v := m.session_label
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSessionLabel returns the old "session_label" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldSessionLabel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSessionLabel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSessionLabel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSessionLabel: %w", err)
+	}
+	return oldValue.SessionLabel, nil
+}
+
+// ResetSessionLabel resets all changes to the "session_label" field.
+func (m *OAuthValidationReportMutation) ResetSessionLabel() {
+	m.session_label = nil
+}
+
+// SetAccountID sets the "account_id" field.
+func (m *OAuthValidationReportMutation) SetAccountID(s string) {
+	m.account_id = &s
+}
+
+// AccountID returns the value of the "account_id" field in the mutation.
+func (m *OAuthValidationReportMutation) AccountID() (r string, exists bool) {
+	v := m.account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountID returns the old "account_id" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldAccountID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountID: %w", err)
+	}
+	return oldValue.AccountID, nil
+}
+
+// ResetAccountID resets all changes to the "account_id" field.
+func (m *OAuthValidationReportMutation) ResetAccountID() {
+	m.account_id = nil
+}
+
+// SetAccountName sets the "account_name" field.
+func (m *OAuthValidationReportMutation) SetAccountName(s string) {
+	m.account_name = &s
+}
+
+// AccountName returns the value of the "account_name" field in the mutation.
+func (m *OAuthValidationReportMutation) AccountName() (r string, exists bool) {
+	v := m.account_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountName returns the old "account_name" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldAccountName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountName: %w", err)
+	}
+	return oldValue.AccountName, nil
+}
+
+// ResetAccountName resets all changes to the "account_name" field.
+func (m *OAuthValidationReportMutation) ResetAccountName() {
+	m.account_name = nil
+}
+
+// SetZoneID sets the "zone_id" field.
+func (m *OAuthValidationReportMutation) SetZoneID(s string) {
+	m.zone_id = &s
+}
+
+// ZoneID returns the value of the "zone_id" field in the mutation.
+func (m *OAuthValidationReportMutation) ZoneID() (r string, exists bool) {
+	v := m.zone_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldZoneID returns the old "zone_id" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldZoneID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldZoneID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldZoneID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldZoneID: %w", err)
+	}
+	return oldValue.ZoneID, nil
+}
+
+// ResetZoneID resets all changes to the "zone_id" field.
+func (m *OAuthValidationReportMutation) ResetZoneID() {
+	m.zone_id = nil
+}
+
+// SetZoneName sets the "zone_name" field.
+func (m *OAuthValidationReportMutation) SetZoneName(s string) {
+	m.zone_name = &s
+}
+
+// ZoneName returns the value of the "zone_name" field in the mutation.
+func (m *OAuthValidationReportMutation) ZoneName() (r string, exists bool) {
+	v := m.zone_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldZoneName returns the old "zone_name" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldZoneName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldZoneName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldZoneName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldZoneName: %w", err)
+	}
+	return oldValue.ZoneName, nil
+}
+
+// ResetZoneName resets all changes to the "zone_name" field.
+func (m *OAuthValidationReportMutation) ResetZoneName() {
+	m.zone_name = nil
+}
+
+// SetGeneratedAt sets the "generated_at" field.
+func (m *OAuthValidationReportMutation) SetGeneratedAt(t time.Time) {
+	m.generated_at = &t
+}
+
+// GeneratedAt returns the value of the "generated_at" field in the mutation.
+func (m *OAuthValidationReportMutation) GeneratedAt() (r time.Time, exists bool) {
+	v := m.generated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGeneratedAt returns the old "generated_at" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldGeneratedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGeneratedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGeneratedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGeneratedAt: %w", err)
+	}
+	return oldValue.GeneratedAt, nil
+}
+
+// ResetGeneratedAt resets all changes to the "generated_at" field.
+func (m *OAuthValidationReportMutation) ResetGeneratedAt() {
+	m.generated_at = nil
+}
+
+// SetSavedAt sets the "saved_at" field.
+func (m *OAuthValidationReportMutation) SetSavedAt(t time.Time) {
+	m.saved_at = &t
+}
+
+// SavedAt returns the value of the "saved_at" field in the mutation.
+func (m *OAuthValidationReportMutation) SavedAt() (r time.Time, exists bool) {
+	v := m.saved_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSavedAt returns the old "saved_at" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldSavedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSavedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSavedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSavedAt: %w", err)
+	}
+	return oldValue.SavedAt, nil
+}
+
+// ResetSavedAt resets all changes to the "saved_at" field.
+func (m *OAuthValidationReportMutation) ResetSavedAt() {
+	m.saved_at = nil
+}
+
+// SetScopeMissing sets the "scope_missing" field.
+func (m *OAuthValidationReportMutation) SetScopeMissing(i int) {
+	m.scope_missing = &i
+	m.addscope_missing = nil
+}
+
+// ScopeMissing returns the value of the "scope_missing" field in the mutation.
+func (m *OAuthValidationReportMutation) ScopeMissing() (r int, exists bool) {
+	v := m.scope_missing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldScopeMissing returns the old "scope_missing" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldScopeMissing(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldScopeMissing is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldScopeMissing requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldScopeMissing: %w", err)
+	}
+	return oldValue.ScopeMissing, nil
+}
+
+// AddScopeMissing adds i to the "scope_missing" field.
+func (m *OAuthValidationReportMutation) AddScopeMissing(i int) {
+	if m.addscope_missing != nil {
+		*m.addscope_missing += i
+	} else {
+		m.addscope_missing = &i
+	}
+}
+
+// AddedScopeMissing returns the value that was added to the "scope_missing" field in this mutation.
+func (m *OAuthValidationReportMutation) AddedScopeMissing() (r int, exists bool) {
+	v := m.addscope_missing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetScopeMissing resets all changes to the "scope_missing" field.
+func (m *OAuthValidationReportMutation) ResetScopeMissing() {
+	m.scope_missing = nil
+	m.addscope_missing = nil
+}
+
+// SetAPIUnavailable sets the "api_unavailable" field.
+func (m *OAuthValidationReportMutation) SetAPIUnavailable(i int) {
+	m.api_unavailable = &i
+	m.addapi_unavailable = nil
+}
+
+// APIUnavailable returns the value of the "api_unavailable" field in the mutation.
+func (m *OAuthValidationReportMutation) APIUnavailable() (r int, exists bool) {
+	v := m.api_unavailable
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIUnavailable returns the old "api_unavailable" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldAPIUnavailable(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIUnavailable is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIUnavailable requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIUnavailable: %w", err)
+	}
+	return oldValue.APIUnavailable, nil
+}
+
+// AddAPIUnavailable adds i to the "api_unavailable" field.
+func (m *OAuthValidationReportMutation) AddAPIUnavailable(i int) {
+	if m.addapi_unavailable != nil {
+		*m.addapi_unavailable += i
+	} else {
+		m.addapi_unavailable = &i
+	}
+}
+
+// AddedAPIUnavailable returns the value that was added to the "api_unavailable" field in this mutation.
+func (m *OAuthValidationReportMutation) AddedAPIUnavailable() (r int, exists bool) {
+	v := m.addapi_unavailable
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAPIUnavailable resets all changes to the "api_unavailable" field.
+func (m *OAuthValidationReportMutation) ResetAPIUnavailable() {
+	m.api_unavailable = nil
+	m.addapi_unavailable = nil
+}
+
+// SetAPIMissingScope sets the "api_missing_scope" field.
+func (m *OAuthValidationReportMutation) SetAPIMissingScope(i int) {
+	m.api_missing_scope = &i
+	m.addapi_missing_scope = nil
+}
+
+// APIMissingScope returns the value of the "api_missing_scope" field in the mutation.
+func (m *OAuthValidationReportMutation) APIMissingScope() (r int, exists bool) {
+	v := m.api_missing_scope
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAPIMissingScope returns the old "api_missing_scope" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldAPIMissingScope(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAPIMissingScope is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAPIMissingScope requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAPIMissingScope: %w", err)
+	}
+	return oldValue.APIMissingScope, nil
+}
+
+// AddAPIMissingScope adds i to the "api_missing_scope" field.
+func (m *OAuthValidationReportMutation) AddAPIMissingScope(i int) {
+	if m.addapi_missing_scope != nil {
+		*m.addapi_missing_scope += i
+	} else {
+		m.addapi_missing_scope = &i
+	}
+}
+
+// AddedAPIMissingScope returns the value that was added to the "api_missing_scope" field in this mutation.
+func (m *OAuthValidationReportMutation) AddedAPIMissingScope() (r int, exists bool) {
+	v := m.addapi_missing_scope
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAPIMissingScope resets all changes to the "api_missing_scope" field.
+func (m *OAuthValidationReportMutation) ResetAPIMissingScope() {
+	m.api_missing_scope = nil
+	m.addapi_missing_scope = nil
+}
+
+// SetActionItems sets the "action_items" field.
+func (m *OAuthValidationReportMutation) SetActionItems(i int) {
+	m.action_items = &i
+	m.addaction_items = nil
+}
+
+// ActionItems returns the value of the "action_items" field in the mutation.
+func (m *OAuthValidationReportMutation) ActionItems() (r int, exists bool) {
+	v := m.action_items
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActionItems returns the old "action_items" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldActionItems(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActionItems is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActionItems requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActionItems: %w", err)
+	}
+	return oldValue.ActionItems, nil
+}
+
+// AddActionItems adds i to the "action_items" field.
+func (m *OAuthValidationReportMutation) AddActionItems(i int) {
+	if m.addaction_items != nil {
+		*m.addaction_items += i
+	} else {
+		m.addaction_items = &i
+	}
+}
+
+// AddedActionItems returns the value that was added to the "action_items" field in this mutation.
+func (m *OAuthValidationReportMutation) AddedActionItems() (r int, exists bool) {
+	v := m.addaction_items
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetActionItems resets all changes to the "action_items" field.
+func (m *OAuthValidationReportMutation) ResetActionItems() {
+	m.action_items = nil
+	m.addaction_items = nil
+}
+
+// SetReportBody sets the "report_body" field.
+func (m *OAuthValidationReportMutation) SetReportBody(s string) {
+	m.report_body = &s
+}
+
+// ReportBody returns the value of the "report_body" field in the mutation.
+func (m *OAuthValidationReportMutation) ReportBody() (r string, exists bool) {
+	v := m.report_body
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReportBody returns the old "report_body" field's value of the OAuthValidationReport entity.
+// If the OAuthValidationReport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthValidationReportMutation) OldReportBody(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReportBody is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReportBody requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReportBody: %w", err)
+	}
+	return oldValue.ReportBody, nil
+}
+
+// ResetReportBody resets all changes to the "report_body" field.
+func (m *OAuthValidationReportMutation) ResetReportBody() {
+	m.report_body = nil
+}
+
+// Where appends a list predicates to the OAuthValidationReportMutation builder.
+func (m *OAuthValidationReportMutation) Where(ps ...predicate.OAuthValidationReport) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the OAuthValidationReportMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *OAuthValidationReportMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.OAuthValidationReport, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *OAuthValidationReportMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *OAuthValidationReportMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (OAuthValidationReport).
+func (m *OAuthValidationReportMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *OAuthValidationReportMutation) Fields() []string {
+	fields := make([]string, 0, 14)
+	if m.report_id != nil {
+		fields = append(fields, oauthvalidationreport.FieldReportID)
+	}
+	if m.session_id != nil {
+		fields = append(fields, oauthvalidationreport.FieldSessionID)
+	}
+	if m.session_label != nil {
+		fields = append(fields, oauthvalidationreport.FieldSessionLabel)
+	}
+	if m.account_id != nil {
+		fields = append(fields, oauthvalidationreport.FieldAccountID)
+	}
+	if m.account_name != nil {
+		fields = append(fields, oauthvalidationreport.FieldAccountName)
+	}
+	if m.zone_id != nil {
+		fields = append(fields, oauthvalidationreport.FieldZoneID)
+	}
+	if m.zone_name != nil {
+		fields = append(fields, oauthvalidationreport.FieldZoneName)
+	}
+	if m.generated_at != nil {
+		fields = append(fields, oauthvalidationreport.FieldGeneratedAt)
+	}
+	if m.saved_at != nil {
+		fields = append(fields, oauthvalidationreport.FieldSavedAt)
+	}
+	if m.scope_missing != nil {
+		fields = append(fields, oauthvalidationreport.FieldScopeMissing)
+	}
+	if m.api_unavailable != nil {
+		fields = append(fields, oauthvalidationreport.FieldAPIUnavailable)
+	}
+	if m.api_missing_scope != nil {
+		fields = append(fields, oauthvalidationreport.FieldAPIMissingScope)
+	}
+	if m.action_items != nil {
+		fields = append(fields, oauthvalidationreport.FieldActionItems)
+	}
+	if m.report_body != nil {
+		fields = append(fields, oauthvalidationreport.FieldReportBody)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *OAuthValidationReportMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case oauthvalidationreport.FieldReportID:
+		return m.ReportID()
+	case oauthvalidationreport.FieldSessionID:
+		return m.SessionID()
+	case oauthvalidationreport.FieldSessionLabel:
+		return m.SessionLabel()
+	case oauthvalidationreport.FieldAccountID:
+		return m.AccountID()
+	case oauthvalidationreport.FieldAccountName:
+		return m.AccountName()
+	case oauthvalidationreport.FieldZoneID:
+		return m.ZoneID()
+	case oauthvalidationreport.FieldZoneName:
+		return m.ZoneName()
+	case oauthvalidationreport.FieldGeneratedAt:
+		return m.GeneratedAt()
+	case oauthvalidationreport.FieldSavedAt:
+		return m.SavedAt()
+	case oauthvalidationreport.FieldScopeMissing:
+		return m.ScopeMissing()
+	case oauthvalidationreport.FieldAPIUnavailable:
+		return m.APIUnavailable()
+	case oauthvalidationreport.FieldAPIMissingScope:
+		return m.APIMissingScope()
+	case oauthvalidationreport.FieldActionItems:
+		return m.ActionItems()
+	case oauthvalidationreport.FieldReportBody:
+		return m.ReportBody()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *OAuthValidationReportMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case oauthvalidationreport.FieldReportID:
+		return m.OldReportID(ctx)
+	case oauthvalidationreport.FieldSessionID:
+		return m.OldSessionID(ctx)
+	case oauthvalidationreport.FieldSessionLabel:
+		return m.OldSessionLabel(ctx)
+	case oauthvalidationreport.FieldAccountID:
+		return m.OldAccountID(ctx)
+	case oauthvalidationreport.FieldAccountName:
+		return m.OldAccountName(ctx)
+	case oauthvalidationreport.FieldZoneID:
+		return m.OldZoneID(ctx)
+	case oauthvalidationreport.FieldZoneName:
+		return m.OldZoneName(ctx)
+	case oauthvalidationreport.FieldGeneratedAt:
+		return m.OldGeneratedAt(ctx)
+	case oauthvalidationreport.FieldSavedAt:
+		return m.OldSavedAt(ctx)
+	case oauthvalidationreport.FieldScopeMissing:
+		return m.OldScopeMissing(ctx)
+	case oauthvalidationreport.FieldAPIUnavailable:
+		return m.OldAPIUnavailable(ctx)
+	case oauthvalidationreport.FieldAPIMissingScope:
+		return m.OldAPIMissingScope(ctx)
+	case oauthvalidationreport.FieldActionItems:
+		return m.OldActionItems(ctx)
+	case oauthvalidationreport.FieldReportBody:
+		return m.OldReportBody(ctx)
+	}
+	return nil, fmt.Errorf("unknown OAuthValidationReport field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *OAuthValidationReportMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case oauthvalidationreport.FieldReportID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReportID(v)
+		return nil
+	case oauthvalidationreport.FieldSessionID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSessionID(v)
+		return nil
+	case oauthvalidationreport.FieldSessionLabel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSessionLabel(v)
+		return nil
+	case oauthvalidationreport.FieldAccountID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountID(v)
+		return nil
+	case oauthvalidationreport.FieldAccountName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountName(v)
+		return nil
+	case oauthvalidationreport.FieldZoneID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetZoneID(v)
+		return nil
+	case oauthvalidationreport.FieldZoneName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetZoneName(v)
+		return nil
+	case oauthvalidationreport.FieldGeneratedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGeneratedAt(v)
+		return nil
+	case oauthvalidationreport.FieldSavedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSavedAt(v)
+		return nil
+	case oauthvalidationreport.FieldScopeMissing:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetScopeMissing(v)
+		return nil
+	case oauthvalidationreport.FieldAPIUnavailable:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIUnavailable(v)
+		return nil
+	case oauthvalidationreport.FieldAPIMissingScope:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAPIMissingScope(v)
+		return nil
+	case oauthvalidationreport.FieldActionItems:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActionItems(v)
+		return nil
+	case oauthvalidationreport.FieldReportBody:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReportBody(v)
+		return nil
+	}
+	return fmt.Errorf("unknown OAuthValidationReport field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *OAuthValidationReportMutation) AddedFields() []string {
+	var fields []string
+	if m.addscope_missing != nil {
+		fields = append(fields, oauthvalidationreport.FieldScopeMissing)
+	}
+	if m.addapi_unavailable != nil {
+		fields = append(fields, oauthvalidationreport.FieldAPIUnavailable)
+	}
+	if m.addapi_missing_scope != nil {
+		fields = append(fields, oauthvalidationreport.FieldAPIMissingScope)
+	}
+	if m.addaction_items != nil {
+		fields = append(fields, oauthvalidationreport.FieldActionItems)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *OAuthValidationReportMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case oauthvalidationreport.FieldScopeMissing:
+		return m.AddedScopeMissing()
+	case oauthvalidationreport.FieldAPIUnavailable:
+		return m.AddedAPIUnavailable()
+	case oauthvalidationreport.FieldAPIMissingScope:
+		return m.AddedAPIMissingScope()
+	case oauthvalidationreport.FieldActionItems:
+		return m.AddedActionItems()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *OAuthValidationReportMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case oauthvalidationreport.FieldScopeMissing:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddScopeMissing(v)
+		return nil
+	case oauthvalidationreport.FieldAPIUnavailable:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAPIUnavailable(v)
+		return nil
+	case oauthvalidationreport.FieldAPIMissingScope:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAPIMissingScope(v)
+		return nil
+	case oauthvalidationreport.FieldActionItems:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddActionItems(v)
+		return nil
+	}
+	return fmt.Errorf("unknown OAuthValidationReport numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *OAuthValidationReportMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *OAuthValidationReportMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *OAuthValidationReportMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown OAuthValidationReport nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *OAuthValidationReportMutation) ResetField(name string) error {
+	switch name {
+	case oauthvalidationreport.FieldReportID:
+		m.ResetReportID()
+		return nil
+	case oauthvalidationreport.FieldSessionID:
+		m.ResetSessionID()
+		return nil
+	case oauthvalidationreport.FieldSessionLabel:
+		m.ResetSessionLabel()
+		return nil
+	case oauthvalidationreport.FieldAccountID:
+		m.ResetAccountID()
+		return nil
+	case oauthvalidationreport.FieldAccountName:
+		m.ResetAccountName()
+		return nil
+	case oauthvalidationreport.FieldZoneID:
+		m.ResetZoneID()
+		return nil
+	case oauthvalidationreport.FieldZoneName:
+		m.ResetZoneName()
+		return nil
+	case oauthvalidationreport.FieldGeneratedAt:
+		m.ResetGeneratedAt()
+		return nil
+	case oauthvalidationreport.FieldSavedAt:
+		m.ResetSavedAt()
+		return nil
+	case oauthvalidationreport.FieldScopeMissing:
+		m.ResetScopeMissing()
+		return nil
+	case oauthvalidationreport.FieldAPIUnavailable:
+		m.ResetAPIUnavailable()
+		return nil
+	case oauthvalidationreport.FieldAPIMissingScope:
+		m.ResetAPIMissingScope()
+		return nil
+	case oauthvalidationreport.FieldActionItems:
+		m.ResetActionItems()
+		return nil
+	case oauthvalidationreport.FieldReportBody:
+		m.ResetReportBody()
+		return nil
+	}
+	return fmt.Errorf("unknown OAuthValidationReport field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *OAuthValidationReportMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *OAuthValidationReportMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *OAuthValidationReportMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *OAuthValidationReportMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *OAuthValidationReportMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *OAuthValidationReportMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *OAuthValidationReportMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown OAuthValidationReport unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *OAuthValidationReportMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown OAuthValidationReport edge %s", name)
 }
 
 // S3WebDAVSettingMutation represents an operation that mutates the S3WebDAVSetting nodes in the graph.

@@ -130,6 +130,33 @@ other = "レポートをコピー"
 [oauth_validation_copy_report_title]
 other = "現在の OAuth 検証レポートをコピーします。OAuth token は含めません。"
 
+[oauth_validation_archive_save]
+other = "スナップショット保存"
+
+[oauth_validation_archive_save_title]
+other = "現在の OAuth 検証レポートを生成し、ローカル SQLite に保存します。OAuth token は含めません。"
+
+[oauth_validation_archive_saved]
+other = "OAuth 検証スナップショットを保存しました。"
+
+[oauth_validation_archive_title]
+other = "検証履歴"
+
+[oauth_validation_archive_loading]
+other = "検証履歴を読み込み中..."
+
+[oauth_validation_archive_meta]
+other = "scope 不足 {{ .scopes }} 件、API 問題 {{ .apis }} 件、対応項目 {{ .actions }} 件"
+
+[oauth_validation_archive_deleted]
+other = "OAuth 検証スナップショットを削除しました。"
+
+[oauth_validation_archive_delete_title]
+other = "検証スナップショットを削除しますか？"
+
+[oauth_validation_archive_delete_message]
+other = "このローカル OAuth 検証スナップショットを削除しますか？Cloudflare アカウントや現在のサインインには影響しません。"
+
 [oauth_validation_running]
 other = "現在の OAuth scope と Cloudflare API の利用可否を確認中..."
 

@@ -26,6 +26,8 @@ type Tx struct {
 	OAuthSession *OAuthSessionClient
 	// OAuthState is the client for interacting with the OAuthState builders.
 	OAuthState *OAuthStateClient
+	// OAuthValidationReport is the client for interacting with the OAuthValidationReport builders.
+	OAuthValidationReport *OAuthValidationReportClient
 	// S3WebDAVSetting is the client for interacting with the S3WebDAVSetting builders.
 	S3WebDAVSetting *S3WebDAVSettingClient
 	// TunnelManagement is the client for interacting with the TunnelManagement builders.
@@ -172,6 +174,7 @@ func (tx *Tx) init() {
 	tx.MCPToken = NewMCPTokenClient(tx.config)
 	tx.OAuthSession = NewOAuthSessionClient(tx.config)
 	tx.OAuthState = NewOAuthStateClient(tx.config)
+	tx.OAuthValidationReport = NewOAuthValidationReportClient(tx.config)
 	tx.S3WebDAVSetting = NewS3WebDAVSettingClient(tx.config)
 	tx.TunnelManagement = NewTunnelManagementClient(tx.config)
 	tx.TunnelProfile = NewTunnelProfileClient(tx.config)

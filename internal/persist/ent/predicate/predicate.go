@@ -27,6 +27,9 @@ type OAuthSession func(*sql.Selector)
 // OAuthState is the predicate function for oauthstate builders.
 type OAuthState func(*sql.Selector)
 
+// OAuthValidationReport is the predicate function for oauthvalidationreport builders.
+type OAuthValidationReport func(*sql.Selector)
+
 // S3WebDAVSetting is the predicate function for s3webdavsetting builders.
 type S3WebDAVSetting func(*sql.Selector)
 

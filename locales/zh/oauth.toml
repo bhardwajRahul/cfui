@@ -130,6 +130,33 @@ other = "复制报告"
 [oauth_validation_copy_report_title]
 other = "复制当前 OAuth 校验报告，不包含 OAuth token。"
 
+[oauth_validation_archive_save]
+other = "保存快照"
+
+[oauth_validation_archive_save_title]
+other = "生成当前 OAuth 校验报告并保存到本地 SQLite，不包含 OAuth token。"
+
+[oauth_validation_archive_saved]
+other = "OAuth 校验快照已保存。"
+
+[oauth_validation_archive_title]
+other = "校验历史"
+
+[oauth_validation_archive_loading]
+other = "正在加载校验历史..."
+
+[oauth_validation_archive_meta]
+other = "{{ .scopes }} 个 scope 缺失，{{ .apis }} 个 API 问题，{{ .actions }} 条建议"
+
+[oauth_validation_archive_deleted]
+other = "OAuth 校验快照已删除。"
+
+[oauth_validation_archive_delete_title]
+other = "删除校验快照？"
+
+[oauth_validation_archive_delete_message]
+other = "删除这条本地 OAuth 校验快照？这不会影响 Cloudflare 账号或当前登录。"
+
 [oauth_validation_running]
 other = "正在校验当前 OAuth scope 和 Cloudflare API 可用性..."
 

@@ -2,6 +2,8 @@ package cfoauth
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -250,6 +252,135 @@ func TestStoreUpdateSessionLabelOnlyChangesTargetLabel(t *testing.T) {
 	}
 	if err := store.UpdateSessionLabel(ctx, "missing", "Name"); err != ErrNotLoggedIn {
 		t.Fatalf("expected ErrNotLoggedIn for missing session, got %v", err)
+	}
+}
+
+func TestStoreValidationReportArchivesPersistSanitizedSnapshots(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	store := NewStore(dir)
+	t.Cleanup(func() { closeStore(t, store) })
+
+	generatedAt := time.Date(2026, 6, 19, 10, 30, 0, 0, time.UTC)
+	reportBody := []byte(`{"version":1,"generated_at":"2026-06-19T10:30:00Z","contains_oauth_token":false,"contains_refresh_token":false,"summary":{"scope_missing":2,"api_unavailable":1}}`)
+	saved, err := store.SaveValidationReportArchive(ctx, ValidationReportArchiveInput{
+		SessionID:       "session-1",
+		SessionLabel:    "Production",
+		AccountID:       "account-1",
+		AccountName:     "Example Account",
+		ZoneID:          "zone-1",
+		ZoneName:        "example.com",
+		GeneratedAt:     generatedAt,
+		ScopeMissing:    2,
+		APIUnavailable:  1,
+		APIMissingScope: -1,
+		ActionItems:     3,
+		ReportBody:      reportBody,
+	})
+	if err != nil {
+		t.Fatalf("SaveValidationReportArchive: %v", err)
+	}
+	if saved.ReportID == "" || saved.SessionID != "session-1" || saved.AccountName != "Example Account" || !saved.GeneratedAt.Equal(generatedAt) {
+		t.Fatalf("unexpected saved archive: %#v", saved)
+	}
+	if saved.APIMissingScope != 0 {
+		t.Fatalf("negative counters should be normalized, got %#v", saved)
+	}
+	if string(saved.Report) != string(reportBody) {
+		t.Fatalf("saved report body mismatch: %s", saved.Report)
+	}
+
+	items, err := store.ListValidationReportArchives(ctx, 12)
+	if err != nil {
+		t.Fatalf("ListValidationReportArchives: %v", err)
+	}
+	if len(items) != 1 || items[0].ReportID != saved.ReportID || items[0].ScopeMissing != 2 {
+		t.Fatalf("unexpected archive summaries: %#v", items)
+	}
+	publicList, err := json.Marshal(items)
+	if err != nil {
+		t.Fatalf("Marshal archive summaries: %v", err)
+	}
+	if strings.Contains(string(publicList), "contains_oauth_token") || strings.Contains(string(publicList), "summary") || strings.Contains(string(publicList), "access-token") || strings.Contains(string(publicList), "refresh-token") {
+		t.Fatalf("archive summaries leaked report or token material: %s", publicList)
+	}
+
+	detail, err := store.ValidationReportArchive(ctx, saved.ReportID)
+	if err != nil {
+		t.Fatalf("ValidationReportArchive: %v", err)
+	}
+	if string(detail.Report) != string(reportBody) || detail.ReportID != saved.ReportID {
+		t.Fatalf("unexpected archive detail: %#v", detail)
+	}
+
+	db, err := persist.OpenRawDB(dir)
+	if err != nil {
+		t.Fatalf("OpenRawDB: %v", err)
+	}
+	defer db.Close()
+	var rows int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM oauth_validation_reports WHERE report_id = ? AND report_body = ?`, saved.ReportID, string(reportBody)).Scan(&rows); err != nil {
+		t.Fatalf("query oauth_validation_reports: %v", err)
+	}
+	if rows != 1 {
+		t.Fatalf("expected validation report archive in SQLite, got %d rows", rows)
+	}
+
+	if err := store.DeleteValidationReportArchive(ctx, saved.ReportID); err != nil {
+		t.Fatalf("DeleteValidationReportArchive: %v", err)
+	}
+	if _, err := store.ValidationReportArchive(ctx, saved.ReportID); !errors.Is(err, ErrValidationReportNotFound) {
+		t.Fatalf("expected ErrValidationReportNotFound after delete, got %v", err)
+	}
+	if err := store.DeleteValidationReportArchive(ctx, saved.ReportID); !errors.Is(err, ErrValidationReportNotFound) {
+		t.Fatalf("expected ErrValidationReportNotFound for missing delete, got %v", err)
+	}
+
+	assertNoJSONFiles(t, dir)
+}
+
+func TestStoreValidationReportArchiveRejectsUnsafeBodies(t *testing.T) {
+	ctx := context.Background()
+	store := NewStore(t.TempDir())
+	t.Cleanup(func() { closeStore(t, store) })
+
+	tests := []struct {
+		name  string
+		input ValidationReportArchiveInput
+		want  string
+	}{
+		{
+			name:  "oauth token flag",
+			input: ValidationReportArchiveInput{ContainsToken: true, ReportBody: []byte(`{"ok":true}`)},
+			want:  "oauth tokens",
+		},
+		{
+			name:  "refresh token flag",
+			input: ValidationReportArchiveInput{ContainsRefresh: true, ReportBody: []byte(`{"ok":true}`)},
+			want:  "oauth tokens",
+		},
+		{
+			name:  "empty body",
+			input: ValidationReportArchiveInput{},
+			want:  "required",
+		},
+		{
+			name:  "invalid json",
+			input: ValidationReportArchiveInput{ReportBody: []byte(`not json`)},
+			want:  "valid json",
+		},
+		{
+			name:  "token field in body",
+			input: ValidationReportArchiveInput{ReportBody: []byte(`{"report":{"access_token":"secret"}}`)},
+			want:  "token fields",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := store.SaveValidationReportArchive(ctx, tt.input); err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("expected %q error, got %v", tt.want, err)
+			}
+		})
 	}
 }
 

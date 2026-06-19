@@ -95,6 +95,22 @@ func (s *Service) Status(ctx context.Context) (Status, error) {
 	return status, nil
 }
 
+func (s *Service) SaveValidationReportArchive(ctx context.Context, input ValidationReportArchiveInput) (ValidationReportArchiveDetail, error) {
+	return s.store.SaveValidationReportArchive(ctx, input)
+}
+
+func (s *Service) ListValidationReportArchives(ctx context.Context, limit int) ([]ValidationReportArchiveSummary, error) {
+	return s.store.ListValidationReportArchives(ctx, limit)
+}
+
+func (s *Service) ValidationReportArchive(ctx context.Context, reportID string) (ValidationReportArchiveDetail, error) {
+	return s.store.ValidationReportArchive(ctx, reportID)
+}
+
+func (s *Service) DeleteValidationReportArchive(ctx context.Context, reportID string) error {
+	return s.store.DeleteValidationReportArchive(ctx, reportID)
+}
+
 func relayHealthURL(relayCallbackURL string) (string, error) {
 	raw := strings.TrimSpace(relayCallbackURL)
 	if raw == "" {

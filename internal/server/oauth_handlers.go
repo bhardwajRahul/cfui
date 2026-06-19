@@ -304,6 +304,61 @@ func (s *Server) handleCFValidation(w http.ResponseWriter, r *http.Request) {
 	writeCFResponse(w, resp, err)
 }
 
+func (s *Server) handleCFValidationReports(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		limit := intQuery(r.URL.Query().Get("limit"), 20)
+		items, err := s.ensureOAuthService().ListValidationReportArchives(r.Context(), limit)
+		writeCFResponse(w, map[string]any{"data": items}, err)
+	case http.MethodPost:
+		var req struct {
+			AccountID string `json:"account_id"`
+		}
+		if r.Body != nil {
+			if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
+				writeAPIError(w, http.StatusBadRequest, err)
+				return
+			}
+		}
+		report, err := s.ensureCFService().ValidationReport(r.Context(), req.AccountID)
+		if err != nil {
+			writeCFResponse(w, nil, err)
+			return
+		}
+		input, err := validationReportArchiveInput(report)
+		if err != nil {
+			writeCFResponse(w, nil, err)
+			return
+		}
+		archive, err := s.ensureOAuthService().SaveValidationReportArchive(r.Context(), input)
+		writeCFResponse(w, archive, err)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleCFValidationReport(w http.ResponseWriter, r *http.Request) {
+	reportID := strings.TrimPrefix(r.URL.Path, "/api/cf/validation-reports/")
+	reportID = strings.TrimSpace(strings.TrimRight(reportID, "/"))
+	if strings.Contains(reportID, "/") {
+		reportID = ""
+	}
+	if reportID == "" || reportID == "." || reportID == "validation-reports" {
+		writeAPIError(w, http.StatusBadRequest, fmt.Errorf("validation report id is required"))
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		item, err := s.ensureOAuthService().ValidationReportArchive(r.Context(), reportID)
+		writeCFResponse(w, item, err)
+	case http.MethodDelete:
+		err := s.ensureOAuthService().DeleteValidationReportArchive(r.Context(), reportID)
+		writeCFResponse(w, map[string]bool{"deleted": err == nil}, err)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 func (s *Server) handleCFAccountUsage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -1796,6 +1851,42 @@ func (s *Server) handleCFCachePurge(w http.ResponseWriter, r *http.Request) {
 	writeCFResponse(w, resp, err)
 }
 
+func validationReportArchiveInput(report cfaccount.ValidationReport) (cfoauth.ValidationReportArchiveInput, error) {
+	body, err := json.Marshal(report)
+	if err != nil {
+		return cfoauth.ValidationReportArchiveInput{}, err
+	}
+	input := cfoauth.ValidationReportArchiveInput{
+		SessionID:       report.Session.ID,
+		SessionLabel:    report.Session.Label,
+		GeneratedAt:     report.GeneratedAt,
+		ScopeMissing:    report.Summary.ScopeMissing,
+		APIUnavailable:  report.Summary.APIUnavailable,
+		APIMissingScope: report.Summary.APIMissingScope,
+		ActionItems:     len(report.ActionItems),
+		ContainsToken:   report.ContainsOAuthToken,
+		ContainsRefresh: report.ContainsRefreshToken,
+		ReportBody:      body,
+	}
+	if report.Account != nil {
+		input.AccountID = report.Account.ID
+		input.AccountName = report.Account.Name
+	}
+	if report.Zone != nil {
+		input.ZoneID = report.Zone.ID
+		input.ZoneName = report.Zone.Name
+	}
+	return input, nil
+}
+
+func intQuery(raw string, fallback int) int {
+	value, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil {
+		return fallback
+	}
+	return value
+}
+
 func (s *Server) ensureCFService() *cfaccount.Service {
 	s.ensureOAuthService()
 	return s.cfSvc
@@ -1828,6 +1919,10 @@ func writeCFResponse(w http.ResponseWriter, payload any, err error) {
 	}
 	if cfoauth.IsAuthError(err) {
 		writeAPIError(w, http.StatusUnauthorized, err)
+		return
+	}
+	if errors.Is(err, cfoauth.ErrValidationReportNotFound) {
+		writeAPIError(w, http.StatusNotFound, err)
 		return
 	}
 	var validationErr cfaccount.ValidationError

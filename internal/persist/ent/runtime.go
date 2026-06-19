@@ -10,6 +10,7 @@ import (
 	"cfui/internal/persist/ent/mcptoken"
 	"cfui/internal/persist/ent/oauthsession"
 	"cfui/internal/persist/ent/oauthstate"
+	"cfui/internal/persist/ent/oauthvalidationreport"
 	"cfui/internal/persist/ent/s3webdavsetting"
 	"cfui/internal/persist/ent/schema"
 	"cfui/internal/persist/ent/tunnelmanagement"
@@ -334,6 +335,60 @@ func init() {
 	oauthstateDescCreatedAt := oauthstateFields[5].Descriptor()
 	// oauthstate.DefaultCreatedAt holds the default value on creation for the created_at field.
 	oauthstate.DefaultCreatedAt = oauthstateDescCreatedAt.Default.(func() time.Time)
+	oauthvalidationreportFields := schema.OAuthValidationReport{}.Fields()
+	_ = oauthvalidationreportFields
+	// oauthvalidationreportDescReportID is the schema descriptor for report_id field.
+	oauthvalidationreportDescReportID := oauthvalidationreportFields[0].Descriptor()
+	// oauthvalidationreport.ReportIDValidator is a validator for the "report_id" field. It is called by the builders before save.
+	oauthvalidationreport.ReportIDValidator = oauthvalidationreportDescReportID.Validators[0].(func(string) error)
+	// oauthvalidationreportDescSessionID is the schema descriptor for session_id field.
+	oauthvalidationreportDescSessionID := oauthvalidationreportFields[1].Descriptor()
+	// oauthvalidationreport.DefaultSessionID holds the default value on creation for the session_id field.
+	oauthvalidationreport.DefaultSessionID = oauthvalidationreportDescSessionID.Default.(string)
+	// oauthvalidationreportDescSessionLabel is the schema descriptor for session_label field.
+	oauthvalidationreportDescSessionLabel := oauthvalidationreportFields[2].Descriptor()
+	// oauthvalidationreport.DefaultSessionLabel holds the default value on creation for the session_label field.
+	oauthvalidationreport.DefaultSessionLabel = oauthvalidationreportDescSessionLabel.Default.(string)
+	// oauthvalidationreportDescAccountID is the schema descriptor for account_id field.
+	oauthvalidationreportDescAccountID := oauthvalidationreportFields[3].Descriptor()
+	// oauthvalidationreport.DefaultAccountID holds the default value on creation for the account_id field.
+	oauthvalidationreport.DefaultAccountID = oauthvalidationreportDescAccountID.Default.(string)
+	// oauthvalidationreportDescAccountName is the schema descriptor for account_name field.
+	oauthvalidationreportDescAccountName := oauthvalidationreportFields[4].Descriptor()
+	// oauthvalidationreport.DefaultAccountName holds the default value on creation for the account_name field.
+	oauthvalidationreport.DefaultAccountName = oauthvalidationreportDescAccountName.Default.(string)
+	// oauthvalidationreportDescZoneID is the schema descriptor for zone_id field.
+	oauthvalidationreportDescZoneID := oauthvalidationreportFields[5].Descriptor()
+	// oauthvalidationreport.DefaultZoneID holds the default value on creation for the zone_id field.
+	oauthvalidationreport.DefaultZoneID = oauthvalidationreportDescZoneID.Default.(string)
+	// oauthvalidationreportDescZoneName is the schema descriptor for zone_name field.
+	oauthvalidationreportDescZoneName := oauthvalidationreportFields[6].Descriptor()
+	// oauthvalidationreport.DefaultZoneName holds the default value on creation for the zone_name field.
+	oauthvalidationreport.DefaultZoneName = oauthvalidationreportDescZoneName.Default.(string)
+	// oauthvalidationreportDescSavedAt is the schema descriptor for saved_at field.
+	oauthvalidationreportDescSavedAt := oauthvalidationreportFields[8].Descriptor()
+	// oauthvalidationreport.DefaultSavedAt holds the default value on creation for the saved_at field.
+	oauthvalidationreport.DefaultSavedAt = oauthvalidationreportDescSavedAt.Default.(func() time.Time)
+	// oauthvalidationreportDescScopeMissing is the schema descriptor for scope_missing field.
+	oauthvalidationreportDescScopeMissing := oauthvalidationreportFields[9].Descriptor()
+	// oauthvalidationreport.DefaultScopeMissing holds the default value on creation for the scope_missing field.
+	oauthvalidationreport.DefaultScopeMissing = oauthvalidationreportDescScopeMissing.Default.(int)
+	// oauthvalidationreportDescAPIUnavailable is the schema descriptor for api_unavailable field.
+	oauthvalidationreportDescAPIUnavailable := oauthvalidationreportFields[10].Descriptor()
+	// oauthvalidationreport.DefaultAPIUnavailable holds the default value on creation for the api_unavailable field.
+	oauthvalidationreport.DefaultAPIUnavailable = oauthvalidationreportDescAPIUnavailable.Default.(int)
+	// oauthvalidationreportDescAPIMissingScope is the schema descriptor for api_missing_scope field.
+	oauthvalidationreportDescAPIMissingScope := oauthvalidationreportFields[11].Descriptor()
+	// oauthvalidationreport.DefaultAPIMissingScope holds the default value on creation for the api_missing_scope field.
+	oauthvalidationreport.DefaultAPIMissingScope = oauthvalidationreportDescAPIMissingScope.Default.(int)
+	// oauthvalidationreportDescActionItems is the schema descriptor for action_items field.
+	oauthvalidationreportDescActionItems := oauthvalidationreportFields[12].Descriptor()
+	// oauthvalidationreport.DefaultActionItems holds the default value on creation for the action_items field.
+	oauthvalidationreport.DefaultActionItems = oauthvalidationreportDescActionItems.Default.(int)
+	// oauthvalidationreportDescReportBody is the schema descriptor for report_body field.
+	oauthvalidationreportDescReportBody := oauthvalidationreportFields[13].Descriptor()
+	// oauthvalidationreport.ReportBodyValidator is a validator for the "report_body" field. It is called by the builders before save.
+	oauthvalidationreport.ReportBodyValidator = oauthvalidationreportDescReportBody.Validators[0].(func(string) error)
 	s3webdavsettingFields := schema.S3WebDAVSetting{}.Fields()
 	_ = s3webdavsettingFields
 	// s3webdavsettingDescKey is the schema descriptor for key field.

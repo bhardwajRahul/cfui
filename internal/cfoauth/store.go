@@ -2,6 +2,7 @@ package cfoauth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -13,11 +14,13 @@ import (
 	"cfui/internal/persist/ent"
 	"cfui/internal/persist/ent/oauthsession"
 	"cfui/internal/persist/ent/oauthstate"
+	"cfui/internal/persist/ent/oauthvalidationreport"
 )
 
 var (
-	ErrNotLoggedIn  = errors.New("cloudflare oauth session is not logged in")
-	ErrStateExpired = errors.New("oauth state expired")
+	ErrNotLoggedIn              = errors.New("cloudflare oauth session is not logged in")
+	ErrStateExpired             = errors.New("oauth state expired")
+	ErrValidationReportNotFound = errors.New("validation report not found")
 )
 
 type Store struct {
@@ -55,6 +58,44 @@ type PendingState struct {
 	RedirectURI  string
 	Scope        string
 	ExpiresAt    time.Time
+}
+
+type ValidationReportArchiveInput struct {
+	SessionID       string
+	SessionLabel    string
+	AccountID       string
+	AccountName     string
+	ZoneID          string
+	ZoneName        string
+	GeneratedAt     time.Time
+	ScopeMissing    int
+	APIUnavailable  int
+	APIMissingScope int
+	ActionItems     int
+	ContainsToken   bool
+	ContainsRefresh bool
+	ReportBody      []byte
+}
+
+type ValidationReportArchiveSummary struct {
+	ReportID        string    `json:"report_id"`
+	SessionID       string    `json:"session_id"`
+	SessionLabel    string    `json:"session_label"`
+	AccountID       string    `json:"account_id"`
+	AccountName     string    `json:"account_name"`
+	ZoneID          string    `json:"zone_id"`
+	ZoneName        string    `json:"zone_name"`
+	GeneratedAt     time.Time `json:"generated_at"`
+	SavedAt         time.Time `json:"saved_at"`
+	ScopeMissing    int       `json:"scope_missing"`
+	APIUnavailable  int       `json:"api_unavailable"`
+	APIMissingScope int       `json:"api_missing_scope"`
+	ActionItems     int       `json:"action_items"`
+}
+
+type ValidationReportArchiveDetail struct {
+	ValidationReportArchiveSummary
+	Report json.RawMessage `json:"report"`
 }
 
 func NewStore(dir string) *Store {
@@ -322,6 +363,111 @@ func (s *Store) ConsumeState(ctx context.Context, state string) (PendingState, e
 	}, nil
 }
 
+func (s *Store) SaveValidationReportArchive(ctx context.Context, input ValidationReportArchiveInput) (ValidationReportArchiveDetail, error) {
+	if err := s.ensureClient(); err != nil {
+		return ValidationReportArchiveDetail{}, err
+	}
+	if input.ContainsToken || input.ContainsRefresh {
+		return ValidationReportArchiveDetail{}, fmt.Errorf("validation report archive must not contain oauth tokens")
+	}
+	if len(input.ReportBody) == 0 {
+		return ValidationReportArchiveDetail{}, fmt.Errorf("validation report body is required")
+	}
+	if len(input.ReportBody) > 1<<20 {
+		return ValidationReportArchiveDetail{}, fmt.Errorf("validation report body is too large")
+	}
+	if !json.Valid(input.ReportBody) {
+		return ValidationReportArchiveDetail{}, fmt.Errorf("validation report body must be valid json")
+	}
+	if validationReportBodyHasSensitiveKeys(input.ReportBody) {
+		return ValidationReportArchiveDetail{}, fmt.Errorf("validation report archive must not contain oauth token fields")
+	}
+	reportID, err := randomURLToken(18)
+	if err != nil {
+		return ValidationReportArchiveDetail{}, err
+	}
+	generatedAt := input.GeneratedAt
+	if generatedAt.IsZero() {
+		generatedAt = time.Now().UTC()
+	}
+	row, err := s.client.OAuthValidationReport.Create().
+		SetReportID(reportID).
+		SetSessionID(strings.TrimSpace(input.SessionID)).
+		SetSessionLabel(strings.TrimSpace(input.SessionLabel)).
+		SetAccountID(strings.TrimSpace(input.AccountID)).
+		SetAccountName(strings.TrimSpace(input.AccountName)).
+		SetZoneID(strings.TrimSpace(input.ZoneID)).
+		SetZoneName(strings.TrimSpace(input.ZoneName)).
+		SetGeneratedAt(generatedAt.UTC()).
+		SetScopeMissing(nonNegative(input.ScopeMissing)).
+		SetAPIUnavailable(nonNegative(input.APIUnavailable)).
+		SetAPIMissingScope(nonNegative(input.APIMissingScope)).
+		SetActionItems(nonNegative(input.ActionItems)).
+		SetReportBody(string(input.ReportBody)).
+		Save(ctx)
+	if err != nil {
+		return ValidationReportArchiveDetail{}, err
+	}
+	return validationReportArchiveDetail(row), nil
+}
+
+func (s *Store) ListValidationReportArchives(ctx context.Context, limit int) ([]ValidationReportArchiveSummary, error) {
+	if err := s.ensureClient(); err != nil {
+		return nil, err
+	}
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.client.OAuthValidationReport.Query().
+		Order(ent.Desc(oauthvalidationreport.FieldSavedAt)).
+		Limit(limit).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]ValidationReportArchiveSummary, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, validationReportArchiveSummary(row))
+	}
+	return items, nil
+}
+
+func (s *Store) ValidationReportArchive(ctx context.Context, reportID string) (ValidationReportArchiveDetail, error) {
+	if err := s.ensureClient(); err != nil {
+		return ValidationReportArchiveDetail{}, err
+	}
+	reportID = strings.TrimSpace(reportID)
+	if reportID == "" {
+		return ValidationReportArchiveDetail{}, fmt.Errorf("validation report id is required")
+	}
+	row, err := s.client.OAuthValidationReport.Query().Where(oauthvalidationreport.ReportID(reportID)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return ValidationReportArchiveDetail{}, ErrValidationReportNotFound
+	}
+	if err != nil {
+		return ValidationReportArchiveDetail{}, err
+	}
+	return validationReportArchiveDetail(row), nil
+}
+
+func (s *Store) DeleteValidationReportArchive(ctx context.Context, reportID string) error {
+	if err := s.ensureClient(); err != nil {
+		return err
+	}
+	reportID = strings.TrimSpace(reportID)
+	if reportID == "" {
+		return fmt.Errorf("validation report id is required")
+	}
+	count, err := s.client.OAuthValidationReport.Delete().Where(oauthvalidationreport.ReportID(reportID)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return ErrValidationReportNotFound
+	}
+	return nil
+}
+
 func (s *Store) ensureClient() error {
 	s.initOnce.Do(func() {
 		client, err := persist.OpenClient(s.dir)
@@ -349,6 +495,68 @@ func (s *Store) ensureCurrentSession(ctx context.Context) error {
 	}
 	_, err = s.client.OAuthSession.UpdateOneID(first.ID).SetCurrent(true).Save(ctx)
 	return err
+}
+
+func validationReportArchiveSummary(row *ent.OAuthValidationReport) ValidationReportArchiveSummary {
+	return ValidationReportArchiveSummary{
+		ReportID:        row.ReportID,
+		SessionID:       row.SessionID,
+		SessionLabel:    row.SessionLabel,
+		AccountID:       row.AccountID,
+		AccountName:     row.AccountName,
+		ZoneID:          row.ZoneID,
+		ZoneName:        row.ZoneName,
+		GeneratedAt:     row.GeneratedAt,
+		SavedAt:         row.SavedAt,
+		ScopeMissing:    row.ScopeMissing,
+		APIUnavailable:  row.APIUnavailable,
+		APIMissingScope: row.APIMissingScope,
+		ActionItems:     row.ActionItems,
+	}
+}
+
+func validationReportArchiveDetail(row *ent.OAuthValidationReport) ValidationReportArchiveDetail {
+	return ValidationReportArchiveDetail{
+		ValidationReportArchiveSummary: validationReportArchiveSummary(row),
+		Report:                         json.RawMessage(row.ReportBody),
+	}
+}
+
+func nonNegative(value int) int {
+	if value < 0 {
+		return 0
+	}
+	return value
+}
+
+func validationReportBodyHasSensitiveKeys(body []byte) bool {
+	var value any
+	if err := json.Unmarshal(body, &value); err != nil {
+		return true
+	}
+	return jsonValueHasSensitiveKeys(value)
+}
+
+func jsonValueHasSensitiveKeys(value any) bool {
+	switch v := value.(type) {
+	case map[string]any:
+		for key, child := range v {
+			switch strings.ToLower(strings.TrimSpace(key)) {
+			case "access_token", "refresh_token", "oauth_access_token", "oauth_refresh_token":
+				return true
+			}
+			if jsonValueHasSensitiveKeys(child) {
+				return true
+			}
+		}
+	case []any:
+		for _, child := range v {
+			if jsonValueHasSensitiveKeys(child) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func rowToSession(row *ent.OAuthSession) Session {

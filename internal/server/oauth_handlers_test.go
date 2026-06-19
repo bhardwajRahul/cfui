@@ -311,6 +311,147 @@ func TestOAuthLoginCallbackAndOverviewEndToEndWithFakeCloudflare(t *testing.T) {
 	}
 }
 
+func TestCFValidationReportArchiveHandlersReadAndDeleteLocalSnapshots(t *testing.T) {
+	s := newServerTestServer(t)
+	store := cfoauth.NewStore(s.cfgMgr.Dir())
+	oauthSvc := cfoauth.NewService(cfoauth.Config{Configured: true}, store)
+	s.oauthSvc = oauthSvc
+
+	saved, err := oauthSvc.SaveValidationReportArchive(context.Background(), cfoauth.ValidationReportArchiveInput{
+		SessionID:      "session-1",
+		SessionLabel:   "Production",
+		AccountID:      "account-1",
+		AccountName:    "Example Account",
+		GeneratedAt:    time.Date(2026, 6, 19, 9, 0, 0, 0, time.UTC),
+		ScopeMissing:   1,
+		APIUnavailable: 2,
+		ActionItems:    3,
+		ReportBody:     []byte(`{"version":1,"contains_oauth_token":false,"contains_refresh_token":false,"summary":{"scope_missing":1}}`),
+	})
+	if err != nil {
+		t.Fatalf("SaveValidationReportArchive: %v", err)
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, "/api/cf/validation-reports?limit=12", nil)
+	listRec := httptest.NewRecorder()
+	s.handleCFValidationReports(listRec, listReq)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("list status %d: %s", listRec.Code, listRec.Body.String())
+	}
+	if strings.Contains(listRec.Body.String(), "contains_oauth_token") || strings.Contains(listRec.Body.String(), "access-token") || strings.Contains(listRec.Body.String(), "refresh-token") {
+		t.Fatalf("list response leaked report or token material: %s", listRec.Body.String())
+	}
+	var listResp struct {
+		Data []cfoauth.ValidationReportArchiveSummary `json:"data"`
+	}
+	if err := json.NewDecoder(listRec.Body).Decode(&listResp); err != nil {
+		t.Fatalf("decode list response: %v", err)
+	}
+	if len(listResp.Data) != 1 || listResp.Data[0].ReportID != saved.ReportID || listResp.Data[0].ActionItems != 3 {
+		t.Fatalf("unexpected archive list: %#v", listResp.Data)
+	}
+
+	detailReq := httptest.NewRequest(http.MethodGet, "/api/cf/validation-reports/"+saved.ReportID, nil)
+	detailRec := httptest.NewRecorder()
+	s.handleCFValidationReport(detailRec, detailReq)
+	if detailRec.Code != http.StatusOK {
+		t.Fatalf("detail status %d: %s", detailRec.Code, detailRec.Body.String())
+	}
+	var detail cfoauth.ValidationReportArchiveDetail
+	if err := json.NewDecoder(detailRec.Body).Decode(&detail); err != nil {
+		t.Fatalf("decode detail response: %v", err)
+	}
+	if detail.ReportID != saved.ReportID || !strings.Contains(string(detail.Report), `"contains_oauth_token":false`) {
+		t.Fatalf("unexpected archive detail: %#v", detail)
+	}
+
+	badPathReq := httptest.NewRequest(http.MethodGet, "/api/cf/validation-reports/"+saved.ReportID+"/extra", nil)
+	badPathRec := httptest.NewRecorder()
+	s.handleCFValidationReport(badPathRec, badPathReq)
+	if badPathRec.Code != http.StatusBadRequest {
+		t.Fatalf("bad path status = %d, want 400: %s", badPathRec.Code, badPathRec.Body.String())
+	}
+
+	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/cf/validation-reports/"+saved.ReportID, nil)
+	deleteRec := httptest.NewRecorder()
+	s.handleCFValidationReport(deleteRec, deleteReq)
+	if deleteRec.Code != http.StatusOK {
+		t.Fatalf("delete status %d: %s", deleteRec.Code, deleteRec.Body.String())
+	}
+
+	missingReq := httptest.NewRequest(http.MethodGet, "/api/cf/validation-reports/"+saved.ReportID, nil)
+	missingRec := httptest.NewRecorder()
+	s.handleCFValidationReport(missingRec, missingReq)
+	if missingRec.Code != http.StatusNotFound {
+		t.Fatalf("missing detail status = %d, want 404: %s", missingRec.Code, missingRec.Body.String())
+	}
+}
+
+func TestCFValidationReportArchivePostGeneratesServerSideSnapshot(t *testing.T) {
+	api := newFakeOAuthCloudflareServer(t)
+	defer api.Close()
+
+	s := newServerTestServer(t)
+	store := cfoauth.NewStore(s.cfgMgr.Dir())
+	if err := store.SaveSession(context.Background(), cfoauth.Session{
+		ID:           "session-1",
+		Label:        "me@example.com",
+		AccessToken:  "access-token",
+		RefreshToken: "refresh-token",
+		ExpiresAt:    time.Now().UTC().Add(time.Hour),
+		Scope:        "account-settings.read zone.read dns.read argotunnel.read workers-scripts.read workers-r2.read d1.read workers-kv-storage.read snippets.read zone-waf.read",
+		Current:      true,
+	}); err != nil {
+		t.Fatalf("SaveSession: %v", err)
+	}
+	oauthSvc := cfoauth.NewService(cfoauth.Config{
+		ClientID:   "client-id",
+		Scopes:     "account-settings.read zone.read dns.read argotunnel.read workers-scripts.read workers-r2.read d1.read workers-kv-storage.read snippets.read zone-waf.read",
+		Configured: true,
+	}, store)
+	s.oauthSvc = oauthSvc
+	s.cfSvc = cfaccount.NewServiceWithEndpoints(oauthSvc, cfaccount.EndpointOverrides{
+		REST:   api.URL + "/client/v4",
+		Status: api.URL + "/status",
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/api/cf/validation-reports", strings.NewReader(`{"account_id":"account-1"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	s.handleCFValidationReports(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("archive post status %d: %s", rec.Code, rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), "access-token") || strings.Contains(rec.Body.String(), "refresh-token") {
+		t.Fatalf("archive response leaked OAuth token material: %s", rec.Body.String())
+	}
+	var saved cfoauth.ValidationReportArchiveDetail
+	if err := json.NewDecoder(rec.Body).Decode(&saved); err != nil {
+		t.Fatalf("decode archive response: %v", err)
+	}
+	if saved.ReportID == "" || saved.AccountID != "account-1" || saved.SessionID != "session-1" || len(saved.Report) == 0 {
+		t.Fatalf("unexpected archive response: %#v", saved)
+	}
+	var report cfaccount.ValidationReport
+	if err := json.Unmarshal(saved.Report, &report); err != nil {
+		t.Fatalf("decode saved validation report: %v", err)
+	}
+	if report.ContainsOAuthToken || report.ContainsRefreshToken {
+		t.Fatalf("saved report should be token-free: %#v", report)
+	}
+	if report.Account == nil || report.Account.ID != "account-1" || report.Summary.ScopeChecks == 0 || len(report.APIChecks) == 0 {
+		t.Fatalf("saved report missing generated validation data: %#v", report)
+	}
+
+	items, err := oauthSvc.ListValidationReportArchives(context.Background(), 10)
+	if err != nil {
+		t.Fatalf("ListValidationReportArchives: %v", err)
+	}
+	if len(items) != 1 || items[0].ReportID != saved.ReportID {
+		t.Fatalf("archive was not stored in SQLite: %#v", items)
+	}
+}
+
 func TestCFTunnelCreateCanSaveAndActivateLocalProfile(t *testing.T) {
 	api := newFakeOAuthCloudflareServer(t)
 	defer api.Close()

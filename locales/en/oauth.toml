@@ -130,6 +130,33 @@ other = "Copy report"
 [oauth_validation_copy_report_title]
 other = "Copy the current OAuth validation report. OAuth tokens are not included."
 
+[oauth_validation_archive_save]
+other = "Save snapshot"
+
+[oauth_validation_archive_save_title]
+other = "Generate the current OAuth validation report and save it to local SQLite. OAuth tokens are not included."
+
+[oauth_validation_archive_saved]
+other = "OAuth validation snapshot saved."
+
+[oauth_validation_archive_title]
+other = "Validation history"
+
+[oauth_validation_archive_loading]
+other = "Loading validation history..."
+
+[oauth_validation_archive_meta]
+other = "{{ .scopes }} missing scopes, {{ .apis }} API issues, {{ .actions }} action items"
+
+[oauth_validation_archive_deleted]
+other = "OAuth validation snapshot deleted."
+
+[oauth_validation_archive_delete_title]
+other = "Delete validation snapshot?"
+
+[oauth_validation_archive_delete_message]
+other = "Delete this local OAuth validation snapshot? This will not affect your Cloudflare account or current sign-in."
+
 [oauth_validation_running]
 other = "Checking current OAuth scopes and Cloudflare API availability..."
 

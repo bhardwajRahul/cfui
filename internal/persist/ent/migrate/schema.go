@@ -167,6 +167,30 @@ var (
 		Columns:    OauthStatesColumns,
 		PrimaryKey: []*schema.Column{OauthStatesColumns[0]},
 	}
+	// OauthValidationReportsColumns holds the columns for the "oauth_validation_reports" table.
+	OauthValidationReportsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "report_id", Type: field.TypeString, Unique: true},
+		{Name: "session_id", Type: field.TypeString, Default: ""},
+		{Name: "session_label", Type: field.TypeString, Default: ""},
+		{Name: "account_id", Type: field.TypeString, Default: ""},
+		{Name: "account_name", Type: field.TypeString, Default: ""},
+		{Name: "zone_id", Type: field.TypeString, Default: ""},
+		{Name: "zone_name", Type: field.TypeString, Default: ""},
+		{Name: "generated_at", Type: field.TypeTime},
+		{Name: "saved_at", Type: field.TypeTime},
+		{Name: "scope_missing", Type: field.TypeInt, Default: 0},
+		{Name: "api_unavailable", Type: field.TypeInt, Default: 0},
+		{Name: "api_missing_scope", Type: field.TypeInt, Default: 0},
+		{Name: "action_items", Type: field.TypeInt, Default: 0},
+		{Name: "report_body", Type: field.TypeString, Size: 2147483647},
+	}
+	// OauthValidationReportsTable holds the schema information for the "oauth_validation_reports" table.
+	OauthValidationReportsTable = &schema.Table{
+		Name:       "oauth_validation_reports",
+		Columns:    OauthValidationReportsColumns,
+		PrimaryKey: []*schema.Column{OauthValidationReportsColumns[0]},
+	}
 	// S3WebdavSettingsColumns holds the columns for the "s3_webdav_settings" table.
 	S3WebdavSettingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -278,6 +302,7 @@ var (
 		McpTokensTable,
 		OauthSessionsTable,
 		OauthStatesTable,
+		OauthValidationReportsTable,
 		S3WebdavSettingsTable,
 		TunnelManagementsTable,
 		TunnelProfilesTable,

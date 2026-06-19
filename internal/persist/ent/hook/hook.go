@@ -92,6 +92,18 @@ func (f OAuthStateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OAuthStateMutation", m)
 }
 
+// The OAuthValidationReportFunc type is an adapter to allow the use of ordinary
+// function as OAuthValidationReport mutator.
+type OAuthValidationReportFunc func(context.Context, *ent.OAuthValidationReportMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OAuthValidationReportFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OAuthValidationReportMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OAuthValidationReportMutation", m)
+}
+
 // The S3WebDAVSettingFunc type is an adapter to allow the use of ordinary
 // function as S3WebDAVSetting mutator.
 type S3WebDAVSettingFunc func(context.Context, *ent.S3WebDAVSettingMutation) (ent.Value, error)

@@ -22,6 +22,7 @@ require (
 	golang.org/x/crypto v0.53.0
 	golang.org/x/net v0.56.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
+	nhooyr.io/websocket v1.8.7
 )
 
 require (
@@ -135,7 +136,6 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.52.0 // indirect
-	nhooyr.io/websocket v1.8.7 // indirect
 	zombiezen.com/go/capnproto2 v2.18.0+incompatible // indirect
 )
 
