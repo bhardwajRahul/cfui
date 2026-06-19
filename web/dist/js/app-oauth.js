@@ -1803,14 +1803,20 @@
 
     async function loadOAuthAnalytics() {
         if (!state.oauth.selectedZoneId) return;
+        state.oauth.zoneAnalyticsLoading = true;
+        state.oauth.zoneAnalyticsError = '';
         try {
             const params = new URLSearchParams({
                 zone_id: state.oauth.selectedZoneId,
                 range: state.oauth.analyticsRange || '24h',
             });
             state.oauth.zoneAnalytics = await apiGet('/cf/analytics/zone?' + params.toString());
+            state.oauth.zoneAnalyticsError = '';
         } catch (err) {
-            renderOAuthError(err.message);
+            state.oauth.zoneAnalytics = null;
+            state.oauth.zoneAnalyticsError = err.message;
+        } finally {
+            state.oauth.zoneAnalyticsLoading = false;
         }
     }
 
@@ -6353,6 +6359,18 @@
             return;
         }
         body.appendChild(analyticsActionBar());
+        if (!canRead('analytics')) {
+            body.appendChild(empty(t('oauth_analytics_scope_required')));
+            return;
+        }
+        if (state.oauth.zoneAnalyticsLoading) {
+            body.appendChild(empty(t('oauth_analytics_loading')));
+            return;
+        }
+        if (state.oauth.zoneAnalyticsError) {
+            body.appendChild(empty(state.oauth.zoneAnalyticsError));
+            return;
+        }
         const analytics = state.oauth.zoneAnalytics;
         if (!analytics) {
             body.appendChild(empty(t('oauth_no_analytics')));
@@ -6873,10 +6891,87 @@
         actions.className = 'oauth-config-actions';
         const copySummary = smallButton(t('oauth_analytics_copy_summary'), 'btn btn--sm btn--ghost', () => copyOAuthText(analyticsSummaryText()));
         copySummary.disabled = !state.oauth.zoneAnalytics;
-        actions.append(select, copySummary);
+        const diagnostics = smallButton(t('oauth_analytics_copy_diagnostics'), 'btn btn--sm btn--ghost', () => copyOAuthText(analyticsDiagnosticsText()));
+        diagnostics.title = t('oauth_analytics_copy_diagnostics_title');
+        diagnostics.setAttribute('aria-label', t('oauth_analytics_copy_diagnostics_title'));
+        actions.append(select, copySummary, diagnostics);
 
         bar.append(copy, actions);
         return bar;
+    }
+
+    function analyticsDiagnosticsText() {
+        const status = state.oauth.status || {};
+        const analytics = state.oauth.zoneAnalytics || null;
+        const session = analytics?.session || status.current || {};
+        const totals = analytics?.totals || {};
+        const points = Array.isArray(analytics?.timeseries) ? analytics.timeseries : [];
+        return JSON.stringify({
+            type: 'cfui_oauth_zone_analytics_diagnostics',
+            version: 1,
+            generated_at: new Date().toISOString(),
+            browser_origin: window.location.origin,
+            browser_path: window.location.pathname,
+            contains_oauth_token: false,
+            contains_refresh_token: false,
+            sensitive_fields_omitted: [
+                'oauth_access_token',
+                'oauth_refresh_token',
+            ],
+            selected: {
+                account_id: state.oauth.selectedAccountId || '',
+                account_name: selectedAccountName(),
+                zone_id: state.oauth.selectedZoneId || '',
+                zone_name: selectedZoneName(),
+            },
+            identity: {
+                label: session.label || '',
+                expires_at: session.expires_at || '',
+                scopes: Array.isArray(session.scopes) ? session.scopes : [],
+            },
+            capability: {
+                analytics_read: canRead('analytics'),
+            },
+            state: {
+                loaded: !!analytics,
+                loading: !!state.oauth.zoneAnalyticsLoading,
+                error: state.oauth.zoneAnalyticsError || '',
+                scope_ready: canRead('analytics'),
+            },
+            period: analytics ? {
+                range: analytics.range || state.oauth.analyticsRange || '',
+                range_label: analyticsRangeLabel(analytics.range || state.oauth.analyticsRange),
+                since: analytics.since || '',
+                until: analytics.until || '',
+            } : {
+                range: state.oauth.analyticsRange || '',
+                range_label: analyticsRangeLabel(state.oauth.analyticsRange),
+                since: '',
+                until: '',
+            },
+            totals: analytics ? analyticsPointDiagnostics(totals) : null,
+            timeseries: {
+                count: points.length,
+                points: points.map(analyticsPointDiagnostics),
+            },
+            capabilities: oauthCapabilityDiagnostics(analytics?.capabilities || status.capabilities || {}),
+        }, null, 2);
+    }
+
+    function analyticsPointDiagnostics(point) {
+        return {
+            since: point?.since || '',
+            until: point?.until || '',
+            requests: Number(point?.requests || 0),
+            cached_requests: Number(point?.cached_requests || 0),
+            uncached_requests: Number(point?.uncached_requests || 0),
+            bytes: Number(point?.bytes || 0),
+            cached_bytes: Number(point?.cached_bytes || 0),
+            threats: Number(point?.threats || 0),
+            pageviews: Number(point?.pageviews || 0),
+            uniques: Number(point?.uniques || 0),
+            cache_hit_rate_percent: cacheHitRate(point),
+        };
     }
 
     function analyticsSummaryText() {
@@ -8192,6 +8287,8 @@
 
     function resetAnalyticsDetail() {
         state.oauth.zoneAnalytics = null;
+        state.oauth.zoneAnalyticsError = '';
+        state.oauth.zoneAnalyticsLoading = false;
     }
 
     function resetUsageDetail() {

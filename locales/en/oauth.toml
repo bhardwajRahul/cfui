@@ -820,6 +820,12 @@ other = "Keys"
 [oauth_no_analytics]
 other = "No analytics data loaded for this zone."
 
+[oauth_analytics_loading]
+other = "Loading analytics data..."
+
+[oauth_analytics_scope_required]
+other = "Grant analytics.read or account-analytics.read to view zone analytics."
+
 [oauth_no_analytics_timeseries]
 other = "No analytics time series returned for this range."
 
@@ -828,6 +834,12 @@ other = "Summary"
 
 [oauth_analytics_copy_summary]
 other = "Copy summary"
+
+[oauth_analytics_copy_diagnostics]
+other = "Copy diagnostics"
+
+[oauth_analytics_copy_diagnostics_title]
+other = "Copy current zone analytics diagnostics. OAuth tokens and refresh tokens are not included."
 
 [oauth_analytics_zone]
 other = "Zone"

@@ -119,6 +119,8 @@
 	            wafManagedRuleset: null,
 	            wafManagedOverrideRuleset: null,
 	            zoneAnalytics: null,
+	            zoneAnalyticsError: '',
+	            zoneAnalyticsLoading: false,
             zoneSettings: [],
             permissionDraft: null,
             permissionDraftSource: '',

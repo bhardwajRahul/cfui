@@ -820,6 +820,12 @@ other = "Key 数"
 [oauth_no_analytics]
 other = "该域名还没有加载 Analytics 数据。"
 
+[oauth_analytics_loading]
+other = "正在加载 Analytics 数据..."
+
+[oauth_analytics_scope_required]
+other = "授权 analytics.read 或 account-analytics.read 后可查看域名 Analytics。"
+
 [oauth_no_analytics_timeseries]
 other = "当前时间范围没有返回 Analytics 时间序列。"
 
@@ -828,6 +834,12 @@ other = "汇总"
 
 [oauth_analytics_copy_summary]
 other = "复制摘要"
+
+[oauth_analytics_copy_diagnostics]
+other = "复制诊断"
+
+[oauth_analytics_copy_diagnostics_title]
+other = "复制当前域名 Analytics 诊断信息，不包含 OAuth token 或 refresh token。"
 
 [oauth_analytics_zone]
 other = "域名"
