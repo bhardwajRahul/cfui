@@ -2352,15 +2352,12 @@
         helperText.className = 'oauth-relay-helper-text';
         helperText.id = 'oauth-relay-callback-help';
         helperText.textContent = t('oauth_relay_config_hint');
-        const assistText = document.createElement('span');
-        assistText.className = 'oauth-relay-assist-text';
-        assistText.textContent = t('oauth_relay_assist_text');
-        helperCopy.append(helperText, assistText);
+        helperCopy.appendChild(helperText);
         const assistActions = document.createElement('span');
         assistActions.className = 'oauth-relay-assist-actions';
         const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--xs btn--text oauth-relay-inline-action oauth-relay-text-action', (event) => {
             input.value = defaultOAuthRelayCallbackURL;
-            if (configuredRelay === defaultOAuthRelayCallbackURL) {
+            if (savedRelay === defaultOAuthRelayCallbackURL) {
                 input.focus();
                 input.select();
                 return;

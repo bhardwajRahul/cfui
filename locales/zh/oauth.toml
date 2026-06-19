@@ -44,13 +44,13 @@ other = "请输入中转回调 URL。"
 other = "中转回调已保存。"
 
 [oauth_relay_config_hint]
-other = "Cloudflare OAuth 客户端的 Redirect callback URL 只填这里保存的地址。"
+other = "保存后的地址就是 Cloudflare OAuth 客户端的 Redirect callback URL。"
 
 [oauth_relay_assist_text]
 other = "个人部署可直接用提供的默认域名；要自控域名时再自建 Worker。"
 
 [oauth_relay_use_default]
-other = "默认域名"
+other = "使用默认"
 
 [oauth_relay_use_default_title]
 other = "填入提供的默认中转回调地址"
@@ -899,7 +899,7 @@ other = "设置 OAuth 中转回调"
 other = "上方输入框就是 Cloudflare OAuth 客户端要填写的 Redirect callback URL。"
 
 [oauth_setup_relay_input_note]
-other = "这里只处理一件事：把输入框里的 URL 作为 Cloudflare OAuth 客户端的 Redirect callback URL。点“默认域名”会填入提供的中转地址；点“自建 Worker”会打开脚本和部署步骤。"
+other = "这里只处理一件事：把输入框里的 URL 作为 Cloudflare OAuth 客户端的 Redirect callback URL。点“使用默认”会填入并保存提供的中转地址；点“自建 Worker”会打开脚本和部署步骤。"
 
 [oauth_setup_oauth_app_title]
 other = "填写 Cloudflare OAuth 客户端表单"
@@ -974,13 +974,13 @@ other = "Cloudflare OAuth Worker 脚本"
 other = "默认中转地址可以直接使用；只有想完全自己掌控域名和 Worker 时才需要部署这个脚本。"
 
 [oauth_worker_self_host_summary]
-other = "如果只是个人使用，可以直接用提供的中转地址；只有想使用自己的域名或 Worker 时，才需要按下面步骤自建。"
+other = "如果只是个人使用，关闭弹窗后在输入框下方点“使用默认”即可。只有想使用自己的域名或 Worker 时，才需要按下面步骤自建。"
 
 [oauth_worker_default_relay_label]
 other = "提供的中转"
 
 [oauth_worker_default_relay_desc]
-other = "不需要部署 Worker，在 Cloudflare OAuth 客户端和 cfui 输入框都使用这个地址。"
+other = "不自建时，在 Cloudflare OAuth 客户端和 cfui 输入框都使用这个地址。"
 
 [oauth_worker_self_host_relay_label]
 other = "自建中转"

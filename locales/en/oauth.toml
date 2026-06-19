@@ -44,13 +44,13 @@ other = "Enter a relay callback URL."
 other = "Relay callback saved."
 
 [oauth_relay_config_hint]
-other = "Use the saved address here as the Cloudflare OAuth client's Redirect callback URL."
+other = "The saved address is the Cloudflare OAuth client's Redirect callback URL."
 
 [oauth_relay_assist_text]
 other = "For personal deployments, use the provided default domain; self-host the Worker only when you need your own domain."
 
 [oauth_relay_use_default]
-other = "Default domain"
+other = "Use default"
 
 [oauth_relay_use_default_title]
 other = "Fill in the provided default relay callback address"
@@ -899,7 +899,7 @@ other = "Set the OAuth relay callback"
 other = "The input above is the Redirect callback URL to register in the Cloudflare OAuth client."
 
 [oauth_setup_relay_input_note]
-other = "This section does one thing: use the URL in the input as the Cloudflare OAuth client's Redirect callback URL. \"Default domain\" fills in the provided relay address; \"Self-host Worker\" opens the script and deployment steps."
+other = "This section does one thing: use the URL in the input as the Cloudflare OAuth client's Redirect callback URL. \"Use default\" fills and saves the provided relay address; \"Self-host Worker\" opens the script and deployment steps."
 
 [oauth_setup_oauth_app_title]
 other = "Fill the Cloudflare OAuth client form"
@@ -974,13 +974,13 @@ other = "Cloudflare OAuth Worker script"
 other = "The default relay address can be used directly; deploy this script only when you want full control of the relay domain and Worker."
 
 [oauth_worker_self_host_summary]
-other = "For personal use, the provided relay address is enough. Follow the steps below only when you want your own domain or Worker."
+other = "For personal use, close this dialog and click \"Use default\" under the input. Follow the steps below only when you want your own domain or Worker."
 
 [oauth_worker_default_relay_label]
 other = "Provided relay"
 
 [oauth_worker_default_relay_desc]
-other = "No Worker deployment required. Use this address in both the Cloudflare OAuth client and the cfui input."
+other = "When not self-hosting, use this address in both the Cloudflare OAuth client and the cfui input."
 
 [oauth_worker_self_host_relay_label]
 other = "Self-hosted relay"
