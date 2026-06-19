@@ -493,6 +493,12 @@ other = "Worker detail"
 [oauth_worker_loading]
 other = "Loading Worker detail..."
 
+[oauth_worker_copy_diagnostics]
+other = "Copy diagnostics"
+
+[oauth_worker_copy_diagnostics_title]
+other = "Copy current Worker detail, metrics, and Tail state diagnostics. OAuth tokens, script content, and Tail event text are not included."
+
 [oauth_worker_metadata]
 other = "Metadata"
 

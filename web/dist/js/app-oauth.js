@@ -3997,6 +3997,138 @@
         body.appendChild(workerScriptSection(detail.content || {}));
     }
 
+    function workerDiagnosticsText() {
+        const status = state.oauth.status || {};
+        const detail = state.oauth.workerDetail || null;
+        const metrics = state.oauth.workerMetrics || null;
+        const session = detail?.session || metrics?.session || status.current || {};
+        const worker = detail?.worker || {};
+        const settings = detail?.settings || {};
+        const content = detail?.content || {};
+        return JSON.stringify({
+            type: 'cfui_oauth_worker_diagnostics',
+            version: 1,
+            generated_at: new Date().toISOString(),
+            browser_origin: window.location.origin,
+            browser_path: window.location.pathname,
+            contains_oauth_token: false,
+            contains_refresh_token: false,
+            contains_worker_script: false,
+            contains_tail_events: false,
+            sensitive_fields_omitted: [
+                'oauth_access_token',
+                'oauth_refresh_token',
+                'worker_script_content',
+                'worker_tail_websocket_url',
+                'tail_event_text',
+            ],
+            selected: {
+                account_id: state.oauth.selectedAccountId || '',
+                account_name: selectedAccountName(),
+                script_name: state.oauth.selectedWorkerId || worker.id || '',
+            },
+            identity: {
+                label: session.label || '',
+                expires_at: session.expires_at || '',
+                scopes: Array.isArray(session.scopes) ? session.scopes : [],
+            },
+            capability: {
+                workers_read: canRead('workers'),
+                analytics_read: canRead('analytics'),
+                workers_tail_read: canRead('workers_tail'),
+            },
+            detail_state: {
+                loaded: !!detail,
+            },
+            worker: detail ? {
+                id: worker.id || '',
+                size: Number(worker.size || 0),
+                created_on: worker.created_on || '',
+                modified_on: worker.modified_on || '',
+                logpush: worker.logpush == null ? null : !!worker.logpush,
+                last_deployed_from: worker.last_deployed_from || '',
+                deployment_id: worker.deployment_id || '',
+            } : null,
+            settings: detail ? {
+                etag: settings.etag || '',
+                logpush: settings.logpush == null ? null : !!settings.logpush,
+                placement_mode: settings.placement_mode || '',
+                placement_status: settings.placement_status || '',
+                tail_consumers: workerTailConsumersDiagnostics(settings.tail_consumers),
+            } : null,
+            script_preview: detail ? {
+                encoding: content.encoding || '',
+                bytes: Number(content.bytes || 0),
+                truncated: !!content.truncated,
+                value_included: false,
+            } : null,
+            metrics_state: {
+                loaded: !!metrics,
+                loading: !!state.oauth.workerMetricsLoading,
+                error: state.oauth.workerMetricsError || '',
+                range: state.oauth.workerMetricsRange || '',
+                scope_ready: canRead('analytics'),
+            },
+            metrics: metrics ? workerMetricsDiagnostics(metrics) : null,
+            tail_state: workerTailDiagnostics(),
+            capabilities: oauthCapabilityDiagnostics(detail?.capabilities || metrics?.capabilities || status.capabilities || {}),
+        }, null, 2);
+    }
+
+    function workerTailConsumersDiagnostics(consumers) {
+        return (Array.isArray(consumers) ? consumers : []).map((consumer) => ({
+            service: consumer?.service || '',
+            environment: consumer?.environment || '',
+            namespace: consumer?.namespace || '',
+        }));
+    }
+
+    function workerMetricsDiagnostics(metrics) {
+        const summary = metrics?.summary || {};
+        return {
+            range: metrics?.range || '',
+            since: metrics?.since || '',
+            until: metrics?.until || '',
+            summary: {
+                requests: Number(summary.requests || 0),
+                errors: Number(summary.errors || 0),
+                subrequests: Number(summary.subrequests || 0),
+                cpu_time_us: summary.cpu_time_us == null ? null : Number(summary.cpu_time_us),
+                cpu_time_p50_us: summary.cpu_time_p50_us == null ? null : Number(summary.cpu_time_p50_us),
+                cpu_time_p99_us: summary.cpu_time_p99_us == null ? null : Number(summary.cpu_time_p99_us),
+            },
+            status_breakdown: (Array.isArray(metrics?.status_breakdown) ? metrics.status_breakdown : []).map((item) => ({
+                status: item?.status || '',
+                status_label: workerStatusLabel(item?.status || ''),
+                requests: Number(item?.requests || 0),
+            })),
+            series: (Array.isArray(metrics?.series) ? metrics.series : []).map((point) => ({
+                time: point?.time || '',
+                requests: Number(point?.requests || 0),
+                errors: Number(point?.errors || 0),
+            })),
+        };
+    }
+
+    function workerTailDiagnostics() {
+        const lines = Array.isArray(state.oauth.workerTailLines) ? state.oauth.workerTailLines : [];
+        const levels = {};
+        for (const line of lines) {
+            const level = String(line?.level || 'info');
+            levels[level] = (levels[level] || 0) + 1;
+        }
+        return {
+            can_read: canRead('workers_tail'),
+            connecting: !!state.oauth.workerTailConnecting,
+            connected: !!state.oauth.workerTailConnected,
+            paused: !!state.oauth.workerTailPaused,
+            line_count: lines.length,
+            levels,
+            last_event_at: lines.length ? new Date(lines[lines.length - 1].ts || Date.now()).toISOString() : '',
+            event_text_included: false,
+        };
+    }
+
     function workerBackHeader(title, metaText) {
         const bar = document.createElement('div');
         bar.className = 'oauth-action-bar';
@@ -4008,11 +4140,17 @@
         meta.className = 'oauth-action-meta mono';
         meta.textContent = metaText || '';
         copy.append(label, meta);
+        const actions = document.createElement('div');
+        actions.className = 'oauth-row-actions';
+        const diagnostics = smallButton(t('oauth_worker_copy_diagnostics'), 'btn btn--sm btn--ghost', () => copyOAuthText(workerDiagnosticsText()));
+        diagnostics.title = t('oauth_worker_copy_diagnostics_title');
+        diagnostics.setAttribute('aria-label', t('oauth_worker_copy_diagnostics_title'));
         const back = smallButton(t('back'), 'btn btn--sm btn--ghost', () => {
             resetWorkerDetail();
             renderOAuthResource();
         });
-        bar.append(copy, back);
+        actions.append(diagnostics, back);
+        bar.append(copy, actions);
         return bar;
     }
 
@@ -6633,7 +6771,7 @@
             r2: usage ? usageR2Diagnostics(usage.r2 || {}) : null,
             d1: usage?.d1 ? usageD1Diagnostics(usage.d1) : null,
             kv: usage?.kv ? usageKVDiagnostics(usage.kv) : null,
-            capabilities: usageCapabilityDiagnostics(usage?.capabilities || status.capabilities || {}),
+            capabilities: oauthCapabilityDiagnostics(usage?.capabilities || status.capabilities || {}),
         }, null, 2);
     }
 
@@ -6705,7 +6843,7 @@
         };
     }
 
-    function usageCapabilityDiagnostics(capabilities) {
+    function oauthCapabilityDiagnostics(capabilities) {
         const rows = {};
         Object.keys(capabilities || {}).sort().forEach((key) => {
             const capability = capabilities[key] || {};

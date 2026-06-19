@@ -493,6 +493,12 @@ other = "Worker 详情"
 [oauth_worker_loading]
 other = "正在加载 Worker 详情..."
 
+[oauth_worker_copy_diagnostics]
+other = "复制诊断"
+
+[oauth_worker_copy_diagnostics_title]
+other = "复制当前 Worker 详情、指标和 Tail 状态诊断信息，不包含 OAuth token、脚本正文或 Tail 事件原文。"
+
 [oauth_worker_metadata]
 other = "元数据"
 
