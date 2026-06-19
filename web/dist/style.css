@@ -4400,9 +4400,24 @@ details.disclosure > .body {
     flex: 0 0 auto;
 }
 
-.oauth-relay-check,
 .oauth-relay-save {
-    min-width: 72px;
+    min-width: 64px;
+}
+
+.oauth-relay-save:disabled {
+    border-color: var(--border);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    box-shadow: none;
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+.oauth-relay-save.is-dirty {
+    border-color: var(--cf-orange-strong);
+    background: linear-gradient(180deg, #FA8E2E 0%, var(--cf-orange) 100%);
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(224, 112, 16, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .oauth-relay-feedback-line {
@@ -4428,6 +4443,20 @@ details.disclosure > .body {
 
 .oauth-relay-feedback-separator {
     color: var(--text-subtle);
+}
+
+.oauth-relay-status-action {
+    min-height: 24px;
+    padding: 0 2px;
+    border: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    font-weight: 650;
+}
+
+.oauth-relay-status-action:hover {
+    color: var(--text);
+    background: transparent;
 }
 
 .oauth-relay-source-pill[data-source="default"] {
@@ -4468,7 +4497,7 @@ details.disclosure > .body {
 .oauth-relay-helper {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 10px;
+    gap: 4px 10px;
     align-items: center;
     justify-content: space-between;
     color: var(--text-muted);
@@ -4486,7 +4515,7 @@ details.disclosure > .body {
 .oauth-relay-assist-actions {
     display: inline-flex;
     flex-wrap: wrap;
-    gap: 2px;
+    gap: 6px;
     align-items: center;
     justify-content: flex-end;
     min-height: 28px;
@@ -4494,7 +4523,7 @@ details.disclosure > .body {
 
 .oauth-relay-inline-action {
     min-height: 26px;
-    padding: 0 6px;
+    padding: 0 2px;
 }
 
 .oauth-relay-default-action,
@@ -4503,6 +4532,9 @@ details.disclosure > .body {
     color: var(--text-muted);
     font-size: var(--fs-xs);
     font-weight: 650;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 34%, transparent);
+    text-underline-offset: 3px;
 }
 
 .oauth-relay-default-action:hover,
@@ -4512,9 +4544,8 @@ details.disclosure > .body {
 }
 
 .oauth-relay-self-host-action {
-    margin-left: 2px;
-    padding-left: 10px;
-    border-left: 1px solid var(--border);
+    margin-left: 0;
+    padding-left: 0;
 }
 
 .oauth-setup-guide {
@@ -4653,7 +4684,8 @@ details.disclosure > .body {
 }
 
 .oauth-worker-default-note,
-.oauth-worker-self-host-target {
+.oauth-worker-self-host-target,
+.oauth-worker-callback-format {
     display: grid;
     gap: 4px;
     padding: 7px 10px;
@@ -4675,17 +4707,26 @@ details.disclosure > .body {
 }
 
 .oauth-worker-default-note span:first-child,
-.oauth-worker-self-host-target span:first-child {
+.oauth-worker-self-host-target span:first-child,
+.oauth-worker-callback-format span:first-child {
     color: var(--text);
     font-weight: 700;
 }
 
 .oauth-worker-default-note code,
-.oauth-worker-self-host-target code {
+.oauth-worker-self-host-target code,
+.oauth-worker-callback-format code {
     min-width: 0;
     color: var(--text);
     overflow-wrap: anywhere;
     white-space: normal;
+}
+
+.oauth-worker-default-note small,
+.oauth-worker-self-host-target small {
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    line-height: 1.35;
 }
 
 .oauth-worker-steps {
@@ -5870,7 +5911,6 @@ details.oauth-form-section > summary {
         justify-content: flex-start;
     }
 
-    .oauth-relay-check,
     .oauth-relay-save {
         flex: 1 1 0;
         min-width: 0;
@@ -5892,7 +5932,9 @@ details.oauth-form-section > summary {
 
     .oauth-worker-guide {
         grid-template-columns: 1fr;
+        min-height: auto;
         max-height: none;
+        overflow: visible;
         border-right: 0;
         border-bottom: 1px solid var(--border);
     }
@@ -5906,10 +5948,12 @@ details.oauth-form-section > summary {
 
     .oauth-worker-script-body {
         grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(320px, 1fr);
+        overflow: auto;
     }
 
     .oauth-worker-script-code {
-        min-height: 360px;
+        min-height: 320px;
     }
 
     .oauth-analytics-trend-meta {

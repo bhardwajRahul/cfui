@@ -41,24 +41,18 @@
             input.setAttribute('aria-describedby', 'oauth-relay-callback-help oauth-relay-callback-status');
             input.value = configuredRelay;
             const sourceLine = relaySourceNode(input.value, configuredRelay);
-            input.addEventListener('input', () => updateRelaySourceLine(sourceLine, input.value, configuredRelay));
+            input.addEventListener('input', () => {
+                updateRelaySourceLine(sourceLine, input.value, configuredRelay);
+                updateSaveState(save, input.value, configuredRelay);
+            });
             const primaryActions = document.createElement('span');
             primaryActions.className = 'oauth-relay-primary-actions';
             const copy = iconButton(t('oauth_relay_copy_title'), iconCopySVG(), () => copyOAuthText(input.value.trim()));
             copy.classList.add('oauth-relay-copy');
-            const check = smallButton(t('oauth_relay_check'), 'btn btn--sm btn--ghost oauth-relay-check', async (event) => {
-                const relayURL = input.value.trim();
-                if (relayURL !== configuredRelay) {
-                    const saved = await saveOAuthRelayCallback(relayURL, event.currentTarget);
-                    if (!saved) return;
-                }
-                await checkOAuthRelayCallback(event.currentTarget);
-            });
-            check.title = t('oauth_relay_check_title');
-            check.setAttribute('aria-label', t('oauth_relay_check_title'));
             const save = smallButton(t('save'), 'btn btn--sm btn--primary oauth-relay-save');
             save.type = 'submit';
-            primaryActions.append(copy, check, save);
+            updateSaveState(save, input.value, configuredRelay);
+            primaryActions.append(copy, save);
             inputRow.append(input, primaryActions);
 
             const helper = document.createElement('div');
@@ -72,6 +66,7 @@
             const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--text oauth-relay-inline-action oauth-relay-default-action', (event) => {
                 input.value = defaultOAuthRelayCallbackURL;
                 updateRelaySourceLine(sourceLine, input.value, configuredRelay);
+                updateSaveState(save, input.value, configuredRelay);
                 if (savedRelay === defaultOAuthRelayCallbackURL) {
                     input.focus();
                     input.select();
@@ -87,7 +82,15 @@
             assistActions.append(useDefault, selfHost);
             helper.append(helperText, assistActions);
 
-            const feedbackLine = relayFeedbackLine(sourceLine);
+            const checkRelay = async (event) => {
+                const relayURL = input.value.trim();
+                if (relayURL !== configuredRelay) {
+                    const saved = await saveOAuthRelayCallback(relayURL, event.currentTarget);
+                    if (!saved) return;
+                }
+                await checkOAuthRelayCallback(event.currentTarget);
+            };
+            const feedbackLine = relayFeedbackLine(sourceLine, checkRelay);
             field.append(inputRow, helper, feedbackLine);
             form.appendChild(field);
             form.addEventListener('submit', (event) => {
@@ -95,6 +98,13 @@
                 saveOAuthRelayCallback(input.value, save);
             });
             return form;
+        }
+
+        function updateSaveState(save, relayURL, configuredRelay) {
+            if (!save) return;
+            const dirty = String(relayURL || '').trim() !== String(configuredRelay || '').trim();
+            save.disabled = !dirty;
+            save.classList.toggle('is-dirty', dirty);
         }
 
         function relaySourceNode(relayURL, configuredRelay) {
@@ -131,7 +141,7 @@
             line.append(badge, detail);
         }
 
-        function relayFeedbackLine(sourceLine) {
+        function relayFeedbackLine(sourceLine, onCheck) {
             const line = document.createElement('div');
             line.className = 'oauth-relay-feedback-line';
             line.id = 'oauth-relay-callback-status';
@@ -144,9 +154,13 @@
                 const separator = document.createElement('span');
                 separator.className = 'oauth-relay-feedback-separator';
                 separator.setAttribute('aria-hidden', 'true');
-                separator.textContent = '/';
+                separator.textContent = '·';
                 line.append(separator, check);
             }
+            const checkAction = smallButton(t('oauth_relay_check'), 'btn btn--text oauth-relay-status-action', onCheck);
+            checkAction.title = t('oauth_relay_check_title');
+            checkAction.setAttribute('aria-label', t('oauth_relay_check_title'));
+            line.appendChild(checkAction);
             return line;
         }
 

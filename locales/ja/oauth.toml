@@ -50,7 +50,7 @@ other = "中継 callback URL をコピー"
 other = "このアドレスは Cloudflare OAuth クライアントの Redirect callback URL と完全に一致している必要があります。"
 
 [oauth_relay_assist_text]
-other = "Cloudflare OAuth クライアントの Redirect callback URL には、この値だけを入力します。cfui_callback_url は追加しません。"
+other = "Cloudflare OAuth クライアントの Redirect callback URL にはこの値だけを入力し、追加パラメーターは付けません。"
 
 [oauth_relay_use_default]
 other = "提供済みドメインを使用"
@@ -59,7 +59,7 @@ other = "提供済みドメインを使用"
 other = "提供済みの既定 OAuth relay ドメインを使用"
 
 [oauth_relay_self_host]
-other = "自前運用..."
+other = "自前 Worker"
 
 [oauth_relay_self_host_title]
 other = "Cloudflare OAuth relay を自前運用するための Worker スクリプトと手順を表示"
@@ -80,7 +80,7 @@ other = "保存済み。Cloudflare にもこの提供済みドメインを使い
 other = "保存済み。Cloudflare にもこのカスタムドメインを使います。"
 
 [oauth_relay_status_unsaved]
-other = "未保存の変更があります。Cloudflare に入力する前に保存してください。"
+other = "未保存です。Cloudflare に入力する前に保存してください。"
 
 [oauth_local_callback]
 other = "ローカル callback"
@@ -923,7 +923,7 @@ other = "OAuth 中継 callback を設定"
 other = "上の入力欄が Cloudflare OAuth クライアントに登録する唯一の Redirect callback URL です。"
 
 [oauth_setup_relay_input_note]
-other = "通常は「提供済みドメインを使用」を押します。自分のドメインで中継したい場合だけ、「自前運用...」から Worker スクリプトと手順を確認します。"
+other = "通常は「提供済みドメインを使用」を押します。自分のドメインで中継したい場合だけ、「自前 Worker」からスクリプトと手順を確認します。"
 
 [oauth_setup_oauth_app_title]
 other = "Cloudflare OAuth クライアントフォームを入力"
