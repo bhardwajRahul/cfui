@@ -2235,7 +2235,8 @@
     }
 
     function oauthRelayCallbackNode(status) {
-        const configuredRelay = status?.config?.relay_callback_url || defaultOAuthRelayCallbackURL;
+        const savedRelay = status?.config?.relay_callback_url || '';
+        const configuredRelay = savedRelay || defaultOAuthRelayCallbackURL;
         const isDefaultRelay = configuredRelay === defaultOAuthRelayCallbackURL;
         const form = document.createElement('form');
         form.className = 'oauth-relay-editor';
@@ -2253,11 +2254,13 @@
         input.autocomplete = 'off';
         input.placeholder = defaultOAuthRelayCallbackURL;
         input.setAttribute('aria-label', t('oauth_relay_callback'));
+        input.setAttribute('aria-describedby', 'oauth-relay-callback-help');
         input.value = configuredRelay;
         const hint = document.createElement('div');
         hint.className = 'oauth-config-hint';
+        hint.id = 'oauth-relay-callback-help';
         hint.textContent = t('oauth_relay_config_hint');
-        const save = smallButton(t('save'), 'btn btn--sm btn--primary');
+        const save = smallButton(t('save'), 'btn btn--sm btn--primary oauth-relay-save');
         save.type = 'submit';
         inputRow.append(input, save);
 
@@ -2276,11 +2279,16 @@
         assistActions.className = 'oauth-relay-assist-actions';
         const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--xs btn--text oauth-relay-inline-action', (event) => {
             input.value = defaultOAuthRelayCallbackURL;
+            if (savedRelay === defaultOAuthRelayCallbackURL) {
+                input.focus();
+                input.select();
+                return;
+            }
             saveOAuthRelayCallback(input.value, event.currentTarget);
         });
-        useDefault.disabled = isDefaultRelay;
         useDefault.title = t('oauth_relay_use_default_title');
         useDefault.setAttribute('aria-label', t('oauth_relay_use_default_title'));
+        if (isDefaultRelay) useDefault.classList.add('is-active');
         const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--xs btn--text oauth-relay-inline-action', () => openOAuthWorkerScriptDialog());
         selfHost.title = t('oauth_relay_self_host_title');
         selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
@@ -2290,8 +2298,7 @@
             (event) => checkOAuthRelay(event.currentTarget),
         );
         check.disabled = state.oauth.relayCheckLoading;
-        if (!isDefaultRelay) assistActions.appendChild(useDefault);
-        assistActions.append(selfHost, check);
+        assistActions.append(useDefault, selfHost, check);
         helper.append(stateLine, assistActions);
 
         const relayCheck = relayCheckStatusNode();

@@ -1320,6 +1320,10 @@
             <div class="modal-body oauth-worker-script-body">
                 <div class="oauth-worker-guide">
                     <p data-i18n="oauth_worker_self_host_summary">Deploy this Worker only if you want to self-host the OAuth relay.</p>
+                    <div class="oauth-worker-callback-example">
+                        <span data-i18n="oauth_worker_callback_format">Callback URL format</span>
+                        <code class="mono">https://&lt;your-worker-domain&gt;/oauth/callback</code>
+                    </div>
                     <ol>
                         <li data-i18n="oauth_worker_self_host_step_deploy">Create a Cloudflare Worker and paste the script below.</li>
                         <li data-i18n="oauth_worker_self_host_step_callback">Use your Worker HTTPS URL plus /oauth/callback as the Cloudflare OAuth Redirect callback URL.</li>

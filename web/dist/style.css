@@ -4366,11 +4366,10 @@ details.disclosure > .body {
 }
 
 .oauth-relay-helper {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
     align-items: center;
-    justify-content: space-between;
     color: var(--text-muted);
     font-size: var(--fs-xs);
     line-height: 1.45;
@@ -4381,6 +4380,11 @@ details.disclosure > .body {
     min-width: 0;
     gap: 6px;
     align-items: center;
+}
+
+.oauth-relay-state span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .oauth-relay-badge {
@@ -4413,6 +4417,7 @@ details.disclosure > .body {
     flex-wrap: wrap;
     gap: 4px;
     align-items: center;
+    justify-content: flex-end;
 }
 
 .oauth-relay-inline-action {
@@ -4420,8 +4425,9 @@ details.disclosure > .body {
     padding: 0 4px;
 }
 
-.oauth-relay-inline-action:disabled {
-    text-decoration: none;
+.oauth-relay-inline-action.is-active {
+    color: var(--text);
+    font-weight: 650;
 }
 
 .oauth-setup-guide {
@@ -4540,6 +4546,30 @@ details.disclosure > .body {
 
 .oauth-worker-guide li + li {
     margin-top: 4px;
+}
+
+.oauth-worker-callback-example {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    margin: 8px 0 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    background: var(--surface-2);
+}
+
+.oauth-worker-callback-example span {
+    color: var(--text);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+}
+
+.oauth-worker-callback-example code {
+    color: var(--text);
+    font-size: var(--fs-xs);
+    overflow-wrap: anywhere;
 }
 
 .oauth-worker-script-code {
@@ -5687,12 +5717,19 @@ details.oauth-form-section > summary {
     }
 
     .oauth-relay-helper {
-        align-items: flex-start;
-        flex-direction: column;
+        grid-template-columns: 1fr;
     }
 
     .oauth-relay-inline-action {
         min-height: var(--tap);
+    }
+
+    .oauth-relay-assist-actions {
+        justify-content: flex-start;
+    }
+
+    .oauth-worker-callback-example {
+        grid-template-columns: 1fr;
     }
 
     .oauth-analytics-trend-meta {
