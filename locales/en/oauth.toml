@@ -148,6 +148,9 @@ other = "Loading validation history..."
 [oauth_validation_archive_meta]
 other = "{{ .scopes }} missing scopes, {{ .apis }} API issues, {{ .actions }} action items"
 
+[oauth_validation_archive_scope_meta]
+other = "requested {{ .requested }} scopes #{{ .requested_hash }}, granted {{ .granted }} #{{ .granted_hash }}"
+
 [oauth_validation_archive_deleted]
 other = "OAuth validation snapshot deleted."
 

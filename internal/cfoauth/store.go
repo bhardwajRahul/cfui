@@ -2,6 +2,8 @@ package cfoauth
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -91,6 +93,10 @@ type ValidationReportArchiveSummary struct {
 	APIUnavailable  int       `json:"api_unavailable"`
 	APIMissingScope int       `json:"api_missing_scope"`
 	ActionItems     int       `json:"action_items"`
+	RequestedScopes int       `json:"requested_scopes"`
+	GrantedScopes   int       `json:"granted_scopes"`
+	RequestedHash   string    `json:"requested_scope_hash"`
+	GrantedHash     string    `json:"granted_scope_hash"`
 }
 
 type ValidationReportArchiveDetail struct {
@@ -498,6 +504,7 @@ func (s *Store) ensureCurrentSession(ctx context.Context) error {
 }
 
 func validationReportArchiveSummary(row *ent.OAuthValidationReport) ValidationReportArchiveSummary {
+	scopeSummary := validationReportScopeSummary([]byte(row.ReportBody))
 	return ValidationReportArchiveSummary{
 		ReportID:        row.ReportID,
 		SessionID:       row.SessionID,
@@ -512,6 +519,10 @@ func validationReportArchiveSummary(row *ent.OAuthValidationReport) ValidationRe
 		APIUnavailable:  row.APIUnavailable,
 		APIMissingScope: row.APIMissingScope,
 		ActionItems:     row.ActionItems,
+		RequestedScopes: scopeSummary.RequestedCount,
+		GrantedScopes:   scopeSummary.GrantedCount,
+		RequestedHash:   scopeSummary.RequestedHash,
+		GrantedHash:     scopeSummary.GrantedHash,
 	}
 }
 
@@ -527,6 +538,59 @@ func nonNegative(value int) int {
 		return 0
 	}
 	return value
+}
+
+type validationScopeSummary struct {
+	RequestedCount int
+	GrantedCount   int
+	RequestedHash  string
+	GrantedHash    string
+}
+
+func validationReportScopeSummary(body []byte) validationScopeSummary {
+	var report struct {
+		RequestedTemplateScopes []string `json:"requested_template_scopes"`
+		Session                 struct {
+			Scopes []string `json:"scopes"`
+		} `json:"session"`
+	}
+	if err := json.Unmarshal(body, &report); err != nil {
+		return validationScopeSummary{}
+	}
+	requested := normalizeScopeList(report.RequestedTemplateScopes)
+	granted := normalizeScopeList(report.Session.Scopes)
+	return validationScopeSummary{
+		RequestedCount: len(requested),
+		GrantedCount:   len(granted),
+		RequestedHash:  scopeFingerprint(requested),
+		GrantedHash:    scopeFingerprint(granted),
+	}
+}
+
+func normalizeScopeList(scopes []string) []string {
+	seen := make(map[string]struct{}, len(scopes))
+	out := make([]string, 0, len(scopes))
+	for _, scope := range scopes {
+		scope = strings.ToLower(strings.TrimSpace(scope))
+		if scope == "" {
+			continue
+		}
+		if _, ok := seen[scope]; ok {
+			continue
+		}
+		seen[scope] = struct{}{}
+		out = append(out, scope)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func scopeFingerprint(scopes []string) string {
+	if len(scopes) == 0 {
+		return ""
+	}
+	sum := sha256.Sum256([]byte(strings.Join(scopes, "\n")))
+	return hex.EncodeToString(sum[:])[:12]
 }
 
 func validationReportBodyHasSensitiveKeys(body []byte) bool {

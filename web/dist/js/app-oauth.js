@@ -348,11 +348,11 @@
     async function deleteOAuthValidationArchive(reportID, button) {
         reportID = String(reportID || '').trim();
         if (!reportID || state.oauth.validationArchiveDeletingId) return;
-		const ok = await window.cfui.confirm({
-			title: t('oauth_validation_archive_delete_title'),
-			message: t('oauth_validation_archive_delete_message'),
-			okText: t('delete'),
-		});
+        const ok = await window.cfui.confirm({
+            title: t('oauth_validation_archive_delete_title'),
+            message: t('oauth_validation_archive_delete_message'),
+            okText: t('delete'),
+        });
         if (!ok) return;
         state.oauth.validationArchiveDeletingId = reportID;
         setBusy(button, true, t('delete'));
@@ -3229,15 +3229,29 @@
     }
 
     function validationArchiveMeta(report) {
+        const scopeMeta = validationArchiveScopeMeta(report);
         return [
             formatDate(report?.saved_at),
             report?.session_label || '',
+            scopeMeta,
             t('oauth_validation_archive_meta', {
                 scopes: report?.scope_missing || 0,
                 apis: (report?.api_unavailable || 0) + (report?.api_missing_scope || 0),
                 actions: report?.action_items || 0,
             }),
         ].filter(Boolean).join(' · ');
+    }
+
+    function validationArchiveScopeMeta(report) {
+        const requested = Number(report?.requested_scopes || 0);
+        const granted = Number(report?.granted_scopes || 0);
+        if (!requested && !granted) return '';
+        return t('oauth_validation_archive_scope_meta', {
+            requested,
+            granted,
+            requested_hash: report?.requested_scope_hash || '-',
+            granted_hash: report?.granted_scope_hash || '-',
+        });
     }
 
     function validationActionItemsNode(report) {

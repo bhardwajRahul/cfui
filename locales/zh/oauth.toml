@@ -148,6 +148,9 @@ other = "正在加载校验历史..."
 [oauth_validation_archive_meta]
 other = "{{ .scopes }} 个 scope 缺失，{{ .apis }} 个 API 问题，{{ .actions }} 条建议"
 
+[oauth_validation_archive_scope_meta]
+other = "请求 {{ .requested }} 个 scope #{{ .requested_hash }}，授权 {{ .granted }} 个 #{{ .granted_hash }}"
+
 [oauth_validation_archive_deleted]
 other = "OAuth 校验快照已删除。"
 

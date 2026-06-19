@@ -239,7 +239,10 @@
         let s = state.translations[key] || key;
         if (params) {
             for (const [k, v] of Object.entries(params)) {
-                s = s.split(`{${k}}`).join(String(v ?? ''));
+                const value = String(v ?? '');
+                s = s.split(`{${k}}`).join(value);
+                s = s.split(`{{ .${k} }}`).join(value);
+                s = s.split(`{{.${k}}}`).join(value);
             }
         }
         return s;

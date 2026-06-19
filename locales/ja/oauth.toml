@@ -148,6 +148,9 @@ other = "検証履歴を読み込み中..."
 [oauth_validation_archive_meta]
 other = "scope 不足 {{ .scopes }} 件、API 問題 {{ .apis }} 件、対応項目 {{ .actions }} 件"
 
+[oauth_validation_archive_scope_meta]
+other = "要求 {{ .requested }} scopes #{{ .requested_hash }}、許可 {{ .granted }} #{{ .granted_hash }}"
+
 [oauth_validation_archive_deleted]
 other = "OAuth 検証スナップショットを削除しました。"
 

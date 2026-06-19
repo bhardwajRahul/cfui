@@ -262,7 +262,7 @@ func TestStoreValidationReportArchivesPersistSanitizedSnapshots(t *testing.T) {
 	t.Cleanup(func() { closeStore(t, store) })
 
 	generatedAt := time.Date(2026, 6, 19, 10, 30, 0, 0, time.UTC)
-	reportBody := []byte(`{"version":1,"generated_at":"2026-06-19T10:30:00Z","contains_oauth_token":false,"contains_refresh_token":false,"summary":{"scope_missing":2,"api_unavailable":1}}`)
+	reportBody := []byte(`{"version":1,"generated_at":"2026-06-19T10:30:00Z","contains_oauth_token":false,"contains_refresh_token":false,"requested_template_scopes":["zone.read","dns.read","dns.read"],"session":{"scopes":["dns.read","zone.read","workers-r2.read"]},"summary":{"scope_missing":2,"api_unavailable":1}}`)
 	saved, err := store.SaveValidationReportArchive(ctx, ValidationReportArchiveInput{
 		SessionID:       "session-1",
 		SessionLabel:    "Production",
@@ -286,6 +286,9 @@ func TestStoreValidationReportArchivesPersistSanitizedSnapshots(t *testing.T) {
 	if saved.APIMissingScope != 0 {
 		t.Fatalf("negative counters should be normalized, got %#v", saved)
 	}
+	if saved.RequestedScopes != 2 || saved.GrantedScopes != 3 || saved.RequestedHash == "" || saved.GrantedHash == "" || saved.RequestedHash == saved.GrantedHash {
+		t.Fatalf("unexpected scope summary: %#v", saved)
+	}
 	if string(saved.Report) != string(reportBody) {
 		t.Fatalf("saved report body mismatch: %s", saved.Report)
 	}
@@ -297,11 +300,14 @@ func TestStoreValidationReportArchivesPersistSanitizedSnapshots(t *testing.T) {
 	if len(items) != 1 || items[0].ReportID != saved.ReportID || items[0].ScopeMissing != 2 {
 		t.Fatalf("unexpected archive summaries: %#v", items)
 	}
+	if items[0].RequestedScopes != saved.RequestedScopes || items[0].GrantedScopes != saved.GrantedScopes || items[0].RequestedHash != saved.RequestedHash || items[0].GrantedHash != saved.GrantedHash {
+		t.Fatalf("archive list did not include stable scope summary: %#v", items[0])
+	}
 	publicList, err := json.Marshal(items)
 	if err != nil {
 		t.Fatalf("Marshal archive summaries: %v", err)
 	}
-	if strings.Contains(string(publicList), "contains_oauth_token") || strings.Contains(string(publicList), "summary") || strings.Contains(string(publicList), "access-token") || strings.Contains(string(publicList), "refresh-token") {
+	if strings.Contains(string(publicList), "contains_oauth_token") || strings.Contains(string(publicList), "requested_template_scopes") || strings.Contains(string(publicList), "workers-r2.read") || strings.Contains(string(publicList), "summary") || strings.Contains(string(publicList), "access-token") || strings.Contains(string(publicList), "refresh-token") {
 		t.Fatalf("archive summaries leaked report or token material: %s", publicList)
 	}
 
