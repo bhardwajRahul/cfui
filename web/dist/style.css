@@ -4369,13 +4369,13 @@ details.disclosure > .body {
 
 .oauth-relay-editor {
     display: grid;
-    gap: 8px;
+    gap: 6px;
     max-width: 980px;
 }
 
 .oauth-relay-field {
     display: grid;
-    gap: 8px;
+    gap: 6px;
     min-width: 0;
 }
 
@@ -4394,7 +4394,7 @@ details.disclosure > .body {
 
 .oauth-relay-primary-actions {
     display: inline-flex;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
     justify-content: flex-end;
     white-space: nowrap;
@@ -4530,11 +4530,10 @@ details.disclosure > .body {
 }
 
 .oauth-relay-helper {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 6px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 10px;
     align-items: center;
-    margin: -2px 0 0;
     color: var(--text-muted);
     font-size: var(--fs-xs);
     line-height: 1.45;
@@ -4550,16 +4549,16 @@ details.disclosure > .body {
 .oauth-relay-assist-actions {
     display: inline-flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
-    justify-content: flex-end;
-    min-height: 28px;
+    justify-content: flex-start;
+    min-height: 0;
     white-space: nowrap;
 }
 
 .oauth-relay-inline-action {
-    min-height: 30px;
-    padding: 0 2px;
+    min-height: var(--tap);
+    padding: 0 6px;
 }
 
 .oauth-relay-default-action,
@@ -4588,7 +4587,8 @@ details.disclosure > .body {
 
 .oauth-relay-self-host-action {
     margin-left: 0;
-    padding-left: 0;
+    padding-inline: 2px;
+    color: var(--text-muted);
 }
 
 .oauth-setup-guide {
@@ -6102,10 +6102,6 @@ details.oauth-form-section > summary {
 
     .oauth-relay-inline-action {
         min-height: var(--tap);
-    }
-
-    .oauth-relay-helper {
-        grid-template-columns: 1fr;
     }
 
     .oauth-relay-self-host-action {

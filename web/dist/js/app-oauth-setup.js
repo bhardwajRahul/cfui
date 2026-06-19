@@ -50,20 +50,6 @@
             primaryActions.className = 'oauth-relay-primary-actions';
             const copy = iconButton(t('oauth_relay_copy_title'), iconCopySVG(), () => copyOAuthText(input.value.trim()));
             copy.classList.add('oauth-relay-copy');
-            const save = smallButton(t('save'), 'btn btn--sm btn--primary oauth-relay-save');
-            save.type = 'submit';
-            updateSaveState(save, input.value, configuredRelay);
-            primaryActions.append(copy, save);
-            inputRow.append(input, primaryActions);
-
-            const helper = document.createElement('div');
-            helper.className = 'oauth-relay-helper';
-            const helperText = document.createElement('span');
-            helperText.className = 'oauth-relay-helper-text';
-            helperText.id = 'oauth-relay-callback-help';
-            helperText.textContent = t('oauth_relay_assist_text');
-            const assistActions = document.createElement('span');
-            assistActions.className = 'oauth-relay-assist-actions';
             const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--text oauth-relay-inline-action oauth-relay-default-action', async (event) => {
                 input.value = defaultOAuthRelayCallbackURL;
                 updateRelaySourceLine(sourceLine, input.value, configuredRelay);
@@ -77,13 +63,24 @@
             });
             useDefault.title = t('oauth_relay_use_default_title');
             useDefault.setAttribute('aria-label', t('oauth_relay_use_default_title'));
+            const save = smallButton(t('save'), 'btn btn--sm btn--primary oauth-relay-save');
+            save.type = 'submit';
+            updateSaveState(save, input.value, configuredRelay);
+            primaryActions.append(copy, useDefault, save);
+            inputRow.append(input, primaryActions);
+
+            const helper = document.createElement('div');
+            helper.className = 'oauth-relay-helper';
+            const helperText = document.createElement('span');
+            helperText.className = 'oauth-relay-helper-text';
+            helperText.id = 'oauth-relay-callback-help';
+            helperText.textContent = t('oauth_relay_assist_text');
+            const assistActions = document.createElement('span');
+            assistActions.className = 'oauth-relay-assist-actions';
             const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--text oauth-relay-inline-action oauth-relay-self-host-action', openWorkerScriptDialog);
             selfHost.title = t('oauth_relay_self_host_title');
             selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
-            const separator = document.createElement('span');
-            separator.className = 'oauth-relay-action-separator';
-            separator.textContent = t('oauth_relay_or');
-            assistActions.append(useDefault, separator, selfHost);
+            assistActions.append(selfHost);
             helper.append(helperText, assistActions);
 
             const checkRelay = async (event) => {

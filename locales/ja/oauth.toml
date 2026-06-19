@@ -50,19 +50,19 @@ other = "中継 callback URL をコピー"
 other = "このアドレスは Cloudflare OAuth クライアントの Redirect callback URL と完全に一致している必要があります。"
 
 [oauth_relay_assist_text]
-other = "Cloudflare OAuth クライアントの Redirect callback URL として使います。個人利用なら提供済みドメイン、自前運用なら Worker の /oauth/callback を入力します。"
+other = "このアドレスは Cloudflare OAuth アプリの Redirect callback URL と完全に一致している必要があります。"
 
 [oauth_relay_use_default]
-other = "提供 relay を使用"
+other = "既定"
 
 [oauth_relay_or]
 other = "または"
 
 [oauth_relay_use_default_title]
-other = "提供済み OAuth relay ドメインを入力して保存"
+other = "提供済み OAuth relay callback URL を入力して保存"
 
 [oauth_relay_self_host]
-other = "Worker を自前運用"
+other = "自前運用"
 
 [oauth_relay_self_host_title]
 other = "Cloudflare OAuth relay を自前運用するための Worker スクリプトと手順を表示"
@@ -1115,10 +1115,10 @@ other = "このページで完全な Worker スクリプトを表示"
 other = "OAuth relay Worker を自前運用"
 
 [oauth_worker_script_dialog_subtitle]
-other = "最短セットアップでは提供済み relay を使います。relay を自分の Cloudflare アカウント配下に置きたい場合だけ、この Worker をデプロイします。"
+other = "提供済みドメインをそのまま使えます。OAuth relay を自分の Cloudflare アカウント配下に置きたい場合だけ、この Worker をデプロイします。"
 
 [oauth_worker_self_host_summary]
-other = "OAuth アプリに設定する Redirect callback URL は 1 つだけです。提供済み relay URL か、自分の Worker /oauth/callback URL のどちらかを使います。"
+other = "OAuth アプリに必要な Redirect callback URL は 1 つだけです。スクリプト不要なら提供済みドメインを使い、自前運用ではこの Worker をデプロイして自分の Worker /oauth/callback URL に切り替えます。"
 
 [oauth_worker_self_host_target_label]
 other = "自前 relay URL"
@@ -1130,13 +1130,13 @@ other = "例のホストを自分の Worker HTTPS ドメインに置き換えま
 other = "提供済み relay"
 
 [oauth_worker_default_relay_desc]
-other = "このアドレスを Cloudflare OAuth アプリの Redirect callback URL と cfui 入力欄の両方に設定します。"
+other = "最初のセットアップではこのアドレスを推奨します。Cloudflare OAuth アプリの Redirect callback URL と cfui 入力欄の両方に設定します。"
 
 [oauth_worker_self_host_relay_label]
 other = "自前中継"
 
 [oauth_worker_self_host_relay_desc]
-other = "自分の Worker ドメインを使う場合、Cloudflare OAuth クライアントと cfui 入力欄には同じ /oauth/callback URL を設定します。"
+other = "自分の Worker ドメインを使う場合、Cloudflare OAuth アプリと cfui 入力欄には同じ /oauth/callback URL を設定します。"
 
 [oauth_worker_callback_format]
 other = "Callback URL 形式"
