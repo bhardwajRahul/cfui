@@ -4,6 +4,7 @@
 (() => {
     'use strict';
     const { state, $, $$, t, API_BASE, apiGet, apiSend, toast, setBusy, sleep } = window.cfui;
+    const defaultOAuthRelayCallbackURL = 'https://oauth.omarchy.qzz.io/oauth/callback';
 
     const {
         resourceDefinitions,
@@ -17,6 +18,7 @@
         maxR2ChunkedUploadBytes,
         r2ObjectUploadChunkBytes,
         maxR2InlinePreviewBytes,
+        maxKVValueUploadBytes,
         analyticsRanges,
         overviewMetricDefinitions,
         oauthPermissionDefinitions,
@@ -80,8 +82,6 @@
         try {
             const status = await apiSend('/oauth/config', 'PATCH', { relay_callback_url: relayURL });
             state.oauth.status = status;
-            state.oauth.relayEditing = false;
-            state.oauth.relayDraft = '';
             state.oauth.relayCheck = null;
             state.oauth.relayCheckError = '';
             renderOAuthStatus(status);
@@ -1348,6 +1348,50 @@
         }
     }
 
+    async function uploadKVValueFile(key, file, button) {
+        if (!state.oauth.selectedAccountId || !state.oauth.selectedKVNamespaceId) return;
+        if (!file) {
+            toast.err(t('oauth_kv_file_required'));
+            return;
+        }
+        key = (key || file.name || '').trim();
+        if (!key) {
+            toast.err(t('oauth_kv_key_required'));
+            return;
+        }
+        if (file.size > maxKVValueUploadBytes) {
+            toast.err(t('oauth_kv_upload_too_large', {
+                size: formatBytes(file.size),
+                max: formatBytes(maxKVValueUploadBytes),
+            }));
+            return;
+        }
+        const params = new URLSearchParams({
+            account_id: state.oauth.selectedAccountId,
+            namespace_id: state.oauth.selectedKVNamespaceId,
+            key,
+        });
+        setBusy(button, true, t('upload'));
+        try {
+            const res = await fetch(`${API_BASE}/cf/kv/value/upload?${params.toString()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/octet-stream' },
+                body: file,
+            });
+            if (!res.ok) throw new Error(await rawAPIError(res));
+            state.oauth.kvValue = await res.json();
+            state.oauth.selectedKVKey = key;
+            state.oauth.kvCreateOpen = false;
+            await loadKVKeys(state.oauth.selectedKVNamespaceId);
+            renderOAuthResource();
+            toast.ok(t('oauth_kv_uploaded'));
+        } catch (err) {
+            toast.err(err.message);
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
     async function deleteKVValue(key) {
         if (!state.oauth.selectedAccountId || !state.oauth.selectedKVNamespaceId || !key) return;
         const ok = await window.cfui.confirm({
@@ -2161,16 +2205,6 @@
             const callbackPath = status?.config?.local_callback_path || '/oauth/callback';
             localCallback.textContent = window.location.origin + callbackPath;
         }
-        const relayChoice = $('oauth-relay-choice');
-        if (relayChoice) {
-            const configured = !!status?.config?.configured;
-            relayChoice.hidden = !configured;
-            if (configured) {
-                renderOAuthRelayChoice(relayChoice, status);
-            } else {
-                relayChoice.innerHTML = '';
-            }
-        }
         const login = $('oauth-login');
         const logout = $('oauth-logout');
         if (login) {
@@ -2200,200 +2234,49 @@
     }
 
     function oauthRelayCallbackNode(status) {
-        const configuredRelay = status?.config?.relay_callback_url || '';
-        if (state.oauth.relayEditing) {
-            const form = document.createElement('form');
-            form.className = 'oauth-relay-editor';
-            const inputWrap = document.createElement('div');
-            inputWrap.className = 'oauth-relay-editor-main';
-            const input = document.createElement('input');
-            input.className = 'input oauth-relay-input mono';
-            input.type = 'url';
-            input.required = true;
-            input.spellcheck = false;
-            input.autocomplete = 'off';
-            input.placeholder = 'https://oauth.example.com/oauth/callback';
-            input.setAttribute('aria-label', t('oauth_relay_callback'));
-            input.value = state.oauth.relayDraft || configuredRelay;
-            const hint = document.createElement('div');
-            hint.className = 'oauth-config-hint';
-            hint.textContent = t('oauth_relay_config_hint');
-            inputWrap.append(input, hint);
+        const configuredRelay = status?.config?.relay_callback_url || defaultOAuthRelayCallbackURL;
+        const form = document.createElement('form');
+        form.className = 'oauth-relay-editor';
+        const inputWrap = document.createElement('div');
+        inputWrap.className = 'oauth-relay-editor-main';
+        const input = document.createElement('input');
+        input.className = 'input oauth-relay-input mono';
+        input.type = 'url';
+        input.required = true;
+        input.spellcheck = false;
+        input.autocomplete = 'off';
+        input.placeholder = defaultOAuthRelayCallbackURL;
+        input.setAttribute('aria-label', t('oauth_relay_callback'));
+        input.value = configuredRelay;
+        const hint = document.createElement('div');
+        hint.className = 'oauth-config-hint';
+        hint.textContent = t('oauth_relay_config_hint');
+        inputWrap.append(input, hint);
 
-            const actions = document.createElement('div');
-            actions.className = 'oauth-relay-editor-actions';
-            const cancel = smallButton(t('cancel'), 'btn btn--sm btn--ghost', () => {
-                state.oauth.relayEditing = false;
-                state.oauth.relayDraft = '';
-                renderOAuthStatus(status);
-            });
-            const save = smallButton(t('save'), 'btn btn--sm btn--primary');
-            save.type = 'submit';
-            actions.append(cancel, save);
-            form.append(inputWrap, actions);
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
-                saveOAuthRelayCallback(input.value, save);
-            });
-            requestAnimationFrame(() => input.focus());
-            return form;
-        }
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'oauth-config-value';
-        const text = document.createElement('span');
-        text.className = 'oauth-config-text mono';
-        text.textContent = configuredRelay;
-        text.title = configuredRelay;
-        const edit = smallButton(t('oauth_relay_configure'), 'btn btn--sm btn--ghost oauth-config-edit', () => openOAuthRelayEditor(status));
-        edit.title = t('oauth_relay_edit');
-        edit.setAttribute('aria-label', t('oauth_relay_edit'));
-        wrapper.append(text, edit);
-        return wrapper;
+        const actions = document.createElement('div');
+        actions.className = 'oauth-relay-editor-actions';
+        const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--sm btn--text', (event) => {
+            input.value = defaultOAuthRelayCallbackURL;
+            saveOAuthRelayCallback(input.value, event.currentTarget);
+        });
+        useDefault.title = t('oauth_relay_use_default_title');
+        useDefault.setAttribute('aria-label', t('oauth_relay_use_default_title'));
+        const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--sm btn--ghost', () => openOAuthWorkerScriptDialog());
+        selfHost.title = t('oauth_relay_self_host_title');
+        selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
+        const save = smallButton(t('save'), 'btn btn--sm btn--primary');
+        save.type = 'submit';
+        actions.append(useDefault, selfHost, save);
+        form.append(inputWrap, actions);
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            saveOAuthRelayCallback(input.value, save);
+        });
+        return form;
     }
 
     function oauthWorkerScriptURL() {
         return window.location.origin + '/cloudflare-oauth-worker.js';
-    }
-
-    function oauthWorkerScriptNode() {
-        const scriptURL = oauthWorkerScriptURL();
-        const wrapper = document.createElement('div');
-        wrapper.className = 'oauth-config-value';
-        const text = document.createElement('span');
-        text.className = 'oauth-config-text mono';
-        text.textContent = scriptURL;
-        text.title = scriptURL;
-        const actions = document.createElement('div');
-        actions.className = 'oauth-config-actions';
-        actions.append(
-            smallButton(t('oauth_worker_script_view'), 'btn btn--sm btn--ghost', () => openOAuthWorkerScriptDialog()),
-            smallButton(t('open'), 'btn btn--sm btn--ghost', () => openOAuthWorkerScript()),
-            smallButton(t('copy'), 'btn btn--sm btn--ghost', () => copyOAuthText(scriptURL)),
-        );
-        wrapper.append(text, actions);
-        return wrapper;
-    }
-
-    function renderOAuthRelayChoice(node, status) {
-        const relayURL = status?.config?.relay_callback_url || '';
-        const scriptURL = oauthWorkerScriptURL();
-        node.innerHTML = '';
-
-        const head = document.createElement('div');
-        head.className = 'oauth-relay-choice-head';
-        const title = document.createElement('div');
-        title.className = 'oauth-relay-choice-title';
-        title.textContent = t('oauth_relay_choice_title');
-        const note = document.createElement('p');
-        note.className = 'oauth-relay-choice-note';
-        note.textContent = t('oauth_relay_choice_note');
-        head.append(title, note);
-
-        const list = document.createElement('div');
-        list.className = 'oauth-relay-choice-list';
-        list.append(
-            oauthRelayChoiceRow({
-                kind: 'provided',
-                title: t('oauth_relay_choice_provided_title'),
-                badge: t('oauth_relay_choice_recommended'),
-                desc: t('oauth_relay_choice_provided_desc'),
-                label: t('oauth_relay_choice_cloudflare_value'),
-                value: relayURL || t('oauth_setup_relay_url_placeholder'),
-                actions: [
-                    {
-                        label: t('oauth_relay_check'),
-                        title: t('oauth_relay_check'),
-                        action: (event) => checkOAuthRelay(event.currentTarget),
-                    },
-                    {
-                        label: t('oauth_relay_configure'),
-                        title: t('oauth_relay_edit'),
-                        action: () => openOAuthRelayEditor(status),
-                    },
-                    {
-                        label: t('copy'),
-                        title: t('copy'),
-                        action: () => copyOAuthText(relayURL || ''),
-                        disabled: !relayURL,
-                    },
-                ],
-            }),
-            oauthRelayChoiceRow({
-                kind: 'self-host',
-                title: t('oauth_relay_choice_self_host_title'),
-                desc: t('oauth_relay_choice_self_host_desc'),
-                label: t('oauth_setup_worker_script'),
-                value: scriptURL,
-                actions: [
-                    {
-                        label: t('oauth_worker_script_view'),
-                        title: t('oauth_worker_script_view_title'),
-                        action: openOAuthWorkerScriptDialog,
-                    },
-                    {
-                        label: t('oauth_setup_worker_open'),
-                        title: t('oauth_setup_worker_open'),
-                        action: openOAuthWorkerScript,
-                    },
-                    {
-                        label: t('oauth_relay_configure'),
-                        title: t('oauth_relay_edit'),
-                        action: () => openOAuthRelayEditor(status),
-                    },
-                ],
-            }),
-        );
-
-        const foot = document.createElement('p');
-        foot.className = 'oauth-relay-choice-note oauth-relay-choice-foot';
-        foot.textContent = t('oauth_relay_choice_footer');
-        node.append(head, list, foot);
-    }
-
-    function oauthRelayChoiceRow({ kind, title, badge, desc, label, value, actions = [] }) {
-        const row = document.createElement('div');
-        row.className = 'oauth-relay-choice-row';
-        if (kind) row.dataset.kind = kind;
-
-        const body = document.createElement('div');
-        body.className = 'oauth-relay-choice-main';
-        const heading = document.createElement('div');
-        heading.className = 'oauth-relay-choice-heading';
-        const titleNode = document.createElement('span');
-        titleNode.textContent = title;
-        heading.appendChild(titleNode);
-        if (badge) {
-            const badgeNode = document.createElement('span');
-            badgeNode.className = 'oauth-relay-choice-badge';
-            badgeNode.textContent = badge;
-            heading.appendChild(badgeNode);
-        }
-        const descNode = document.createElement('p');
-        descNode.className = 'oauth-relay-choice-desc';
-        descNode.textContent = desc;
-        const labelNode = document.createElement('div');
-        labelNode.className = 'oauth-relay-choice-label';
-        labelNode.textContent = label;
-        const code = document.createElement('code');
-        code.className = 'oauth-relay-choice-code mono';
-        code.textContent = value || '';
-        body.append(heading, descNode, labelNode, code);
-
-        const actionNode = document.createElement('div');
-        actionNode.className = 'oauth-relay-choice-actions';
-        for (const item of actions) {
-            const action = smallButton(item.label, 'btn btn--sm btn--ghost', item.action);
-            action.disabled = !!item.disabled;
-            if (item.title) {
-                action.title = item.title;
-                action.setAttribute('aria-label', item.title);
-            }
-            actionNode.appendChild(action);
-        }
-
-        row.append(body, actionNode);
-        return row;
     }
 
     function openOAuthWorkerScript() {
@@ -2444,10 +2327,11 @@
         if (copy) copy.disabled = !state.oauth.workerScriptContent;
     }
 
-    function openOAuthRelayEditor(status) {
-        state.oauth.relayEditing = true;
-        state.oauth.relayDraft = status?.config?.relay_callback_url || '';
-        renderOAuthStatus(status);
+    function focusOAuthRelayInput() {
+        const input = $('oauth-relay-url')?.querySelector('input');
+        if (!input) return;
+        input.focus();
+        input.select();
     }
 
     function setOAuthStatus(kind, text) {
@@ -2466,10 +2350,7 @@
         guide.hidden = configured;
         if (configured) return;
 
-        const callbackPath = status?.config?.local_callback_path || '/oauth/callback';
         const relayURL = status?.config?.relay_callback_url || '';
-        const localCallbackURL = window.location.origin + callbackPath;
-        const workerScriptURL = oauthWorkerScriptURL();
         const minimumScopeList = oauthMinimumSetupScopes.join(' ');
         const fullConsoleScopeList = oauthFullConsoleSetupScopes.join(' ');
         const envSnippet = [
@@ -2494,20 +2375,8 @@
                 t('oauth_setup_relay_title'),
                 t('oauth_setup_relay_desc'),
                 [
-                    setupGuideCodeRow(t('oauth_relay_choice_cloudflare_value'), relayURL || t('oauth_setup_relay_url_placeholder'), {
-                        actions: [
-                            { label: t('oauth_relay_check'), title: t('oauth_relay_check'), action: (event) => checkOAuthRelay(event.currentTarget) },
-                            { label: t('oauth_relay_configure'), title: t('oauth_relay_edit'), action: () => openOAuthRelayEditor(status) },
-                        ],
-                    }),
-                    setupGuideNote(t('oauth_setup_relay_provided_note')),
-                    setupGuideCodeRow(t('oauth_worker_script_entry'), workerScriptURL, {
-                        actions: [
-                            { label: t('oauth_worker_script_view'), title: t('oauth_worker_script_view_title'), action: openOAuthWorkerScriptDialog },
-                            { label: t('open'), title: t('oauth_setup_worker_open'), action: openOAuthWorkerScript },
-                        ],
-                    }),
-                    setupGuideNote(t('oauth_setup_relay_self_host_note')),
+                    setupGuideNote(t('oauth_setup_relay_input_note')),
+                    setupGuideRelayCheckNode(),
                 ]
             ),
             setupGuideStep(
@@ -2520,10 +2389,10 @@
                     setupGuideCodeRow(t('oauth_setup_response_type'), t('oauth_setup_response_type_value'), { copy: false }),
                     setupGuideCodeRow(t('oauth_setup_grant_type'), t('oauth_setup_grant_type_value'), { copy: false }),
                     setupGuideCodeRow(t('oauth_setup_token_auth_method'), t('oauth_setup_token_auth_method_value'), { copy: false }),
-                    setupGuideCodeRow(t('oauth_setup_redirect_uri'), relayURL, {
+                    setupGuideCodeRow(t('oauth_setup_redirect_uri'), relayURL || defaultOAuthRelayCallbackURL, {
                         actionLabel: t('oauth_relay_configure'),
                         actionTitle: t('oauth_relay_edit'),
-                        action: () => openOAuthRelayEditor(status),
+                        action: focusOAuthRelayInput,
                     }),
                     setupGuideNote(t('oauth_setup_redirect_uri_note')),
                     setupGuideCodeRow(t('oauth_setup_client_url'), t('oauth_setup_client_url_value'), { copy: false }),
@@ -2543,19 +2412,6 @@
             ),
             setupGuideStep(
                 '4',
-                t('oauth_setup_worker_title'),
-                t('oauth_setup_worker_desc'),
-                [
-                    setupGuideCodeRow(t('oauth_setup_worker_deploy_path'), t('oauth_setup_worker_deploy_path_value'), { copy: false }),
-                    setupGuideCodeRow(t('oauth_setup_worker_callback_var'), `CFUI_CALLBACK_URL=${localCallbackURL}`),
-                    setupGuideCodeRow(t('oauth_setup_worker_allowlist_var'), `CFUI_ALLOWED_CALLBACK_ORIGINS=${window.location.origin}`),
-                    setupGuideNote(t('oauth_setup_internal_dns_note')),
-                    setupGuideNote(t('oauth_setup_dynamic_callback_note')),
-                    setupGuideRelayCheckNode(),
-                ]
-            ),
-            setupGuideStep(
-                '5',
                 t('oauth_setup_env_title'),
                 t('oauth_setup_env_desc'),
                 [setupGuideCodeRow(t('oauth_setup_env_vars'), envSnippet)]
@@ -6692,6 +6548,7 @@
             }));
         }
         if (canWrite('kv')) {
+            actions.appendChild(kvUploadControl(() => keyInput.value.trim()));
             const saveButton = smallButton(t('save'), 'btn btn--sm btn--primary');
             saveButton.type = 'submit';
             actions.appendChild(saveButton);
@@ -6701,7 +6558,27 @@
             });
         }
         form.appendChild(actions);
+        if (canWrite('kv')) {
+            const hint = document.createElement('div');
+            hint.className = 'help-text';
+            hint.textContent = t('oauth_kv_upload_limit', { max: formatBytes(maxKVValueUploadBytes) });
+            form.appendChild(hint);
+        }
         return form;
+    }
+
+    function kvUploadControl(resolveKey) {
+        const wrapper = document.createElement('span');
+        wrapper.className = 'oauth-inline-upload';
+        const input = document.createElement('input');
+        input.type = 'file';
+        const button = smallButton(t('oauth_kv_upload_file'), 'btn btn--sm btn--ghost', () => input.click());
+        input.addEventListener('change', async () => {
+            await uploadKVValueFile(resolveKey(), input.files?.[0], button);
+            input.value = '';
+        });
+        wrapper.append(button, input);
+        return wrapper;
     }
 
     function kvNamespaceFormNode(titleValue, creating, namespaceID = '') {
@@ -7126,6 +7003,7 @@
         download.disabled = !kvValueDownloadURL(key);
         actions.appendChild(download);
         if (canWrite('kv')) {
+            actions.appendChild(kvUploadControl(() => key));
             actions.appendChild(smallButton(t('delete'), 'btn btn--sm btn--danger', () => deleteKVValue(key)));
         }
         return actions;

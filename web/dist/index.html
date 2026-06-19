@@ -138,14 +138,13 @@
                             <div class="oauth-config-grid">
                                 <div>
                                     <div class="meta-label" data-i18n="oauth_relay_callback">Relay callback</div>
-                                    <div id="oauth-relay-url" class="mono oauth-code"></div>
+                                    <div id="oauth-relay-url" class="oauth-relay-control"></div>
                                 </div>
                                 <div>
                                     <div class="meta-label" data-i18n="oauth_local_callback">Local callback</div>
                                     <div id="oauth-local-callback-url" class="mono oauth-code"></div>
                                 </div>
                             </div>
-                            <div id="oauth-relay-choice" class="oauth-relay-choice" hidden></div>
                             <div id="oauth-setup-guide" class="oauth-setup-guide" hidden></div>
                             <div id="oauth-scope-list" class="oauth-scope-list" aria-label="Granted scopes"></div>
                         </div>
@@ -1319,6 +1318,15 @@
                 </button>
             </div>
             <div class="modal-body oauth-worker-script-body">
+                <div class="oauth-worker-guide">
+                    <p data-i18n="oauth_worker_self_host_summary">Deploy this Worker only if you want to self-host the OAuth relay.</p>
+                    <ol>
+                        <li data-i18n="oauth_worker_self_host_step_deploy">Create a Cloudflare Worker and paste the script below.</li>
+                        <li data-i18n="oauth_worker_self_host_step_callback">Use your Worker HTTPS URL plus /oauth/callback as the Cloudflare OAuth Redirect callback URL.</li>
+                        <li data-i18n="oauth_worker_self_host_step_cfui">Paste the same /oauth/callback URL into cfui's relay callback input and save it.</li>
+                        <li data-i18n="oauth_worker_self_host_step_allowlist">If the Worker serves public cfui domains, configure CFUI_ALLOWED_CALLBACK_ORIGINS on the Worker.</li>
+                    </ol>
+                </div>
                 <pre id="oauth-worker-script-content" class="oauth-worker-script-code mono"></pre>
             </div>
             <div class="modal-foot">

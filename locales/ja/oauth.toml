@@ -44,7 +44,19 @@ other = "Relay callback URL を入力してください。"
 other = "Relay callback を保存しました。"
 
 [oauth_relay_config_hint]
-other = "Worker の /oauth/callback URL で、Cloudflare OAuth クライアントの Redirect callback URL と完全一致している必要があります。保存したデータベース値は CFUI_OAUTH_RELAY_URL を上書きします。"
+other = "Cloudflare OAuth クライアントの Redirect callback URL と完全一致している必要があります。個人利用では既定 relay アドレスを使い、自前運用では自分の Worker /oauth/callback URL を入力します。"
+
+[oauth_relay_use_default]
+other = "既定"
+
+[oauth_relay_use_default_title]
+other = "提供済みの既定 relay ドメインを使用"
+
+[oauth_relay_self_host]
+other = "自前運用"
+
+[oauth_relay_self_host_title]
+other = "Cloudflare OAuth relay の自前運用手順を表示"
 
 [oauth_local_callback]
 other = "Local callback"
@@ -827,19 +839,16 @@ other = "CFUI_OAUTH_CLIENT_ID を設定してください。"
 other = "OAuth 設定ガイド"
 
 [oauth_setup_subtitle]
-other = "まず Cloudflare OAuth クライアントに登録する Redirect callback URL を決めます。提供済みの relay アドレスをそのまま使うか、内蔵 worker.js で Cloudflare Worker relay を自前運用できます。その後 Cloudflare OAuth クライアントを作成し、client ID で cfui を再起動します。"
+other = "上の relay callback を確認してから Cloudflare OAuth クライアントを作成し、client ID で cfui を再起動します。"
 
 [oauth_setup_relay_title]
-other = "OAuth relay callback を選択"
+other = "OAuth relay callback を設定"
 
 [oauth_setup_relay_desc]
-other = "Cloudflare OAuth app には固定 callback URL だけを登録できます。個人利用なら提供済みの relay アドレスを登録します。自前で relay を運用したい場合だけ、内蔵 worker.js をデプロイしてください。"
+other = "上の入力欄が Cloudflare OAuth クライアントに登録する Redirect callback URL です。"
 
-[oauth_setup_relay_provided_note]
-other = "提供済みの relay アドレスを使う場合、worker.js のデプロイは不要です。Cloudflare OAuth はこの relay に戻り、relay が OAuth state に基づいて現在の cfui インスタンスへ戻します。"
-
-[oauth_setup_relay_self_host_note]
-other = "Cloudflare OAuth relay を自前運用する場合は、この worker.js を開いて自分の Cloudflare Workers にデプロイし、その Worker の /oauth/callback URL を relay callback として保存して Cloudflare OAuth クライアントにも登録してください。"
+[oauth_setup_relay_input_note]
+other = "個人利用では「既定」で提供済み relay ドメインを使えます。完全に自前運用する場合は「自前運用」を押し、ダイアログの Worker をデプロイしてから自分の /oauth/callback URL をここに入力します。"
 
 [oauth_setup_oauth_app_title]
 other = "Cloudflare OAuth クライアントフォームを入力"
@@ -898,33 +907,6 @@ other = "内蔵 Worker ファイル"
 [oauth_worker_script_entry]
 other = "自前 relay 用 Worker"
 
-[oauth_relay_choice_title]
-other = "OAuth relay callback の選び方"
-
-[oauth_relay_choice_note]
-other = "選択肢は 2 つです。多くの個人利用では提供済みの relay アドレスをそのまま使えます。Cloudflare OAuth relay を自前運用したい場合だけ、内蔵 worker.js を開いてデプロイしてください。"
-
-[oauth_relay_choice_provided_title]
-other = "提供済みの relay アドレスを使う"
-
-[oauth_relay_choice_recommended]
-other = "推奨"
-
-[oauth_relay_choice_provided_desc]
-other = "下の URL を Cloudflare OAuth クライアントのリダイレクト callback URL として登録します。cfui は現在のインスタンスのローカル callback を OAuth state で渡します。"
-
-[oauth_relay_choice_cloudflare_value]
-other = "Cloudflare に入力するリダイレクト URL"
-
-[oauth_relay_choice_self_host_title]
-other = "Cloudflare Worker relay を自前で運用"
-
-[oauth_relay_choice_self_host_desc]
-other = "これは自前運用の選択肢で、必須手順ではありません。内蔵 worker.js を開いて自分の Cloudflare Workers にデプロイし、その /oauth/callback URL を relay callback として保存してください。"
-
-[oauth_relay_choice_footer]
-other = "Cloudflare OAuth クライアントの Redirect callback URL には 1 つだけ登録します。提供 relay を使う場合は上の relay アドレス、自前運用の場合は自分の Worker /oauth/callback を入力してください。cfui_callback_url は追加しません。"
-
 [oauth_setup_worker_open]
 other = "完全な Worker スクリプトを開く"
 
@@ -938,7 +920,22 @@ other = "このページで完全な Worker スクリプトを表示"
 other = "Cloudflare OAuth Worker スクリプト"
 
 [oauth_worker_script_dialog_subtitle]
-other = "このスクリプトは OAuth relay を自前運用する場合だけデプロイします。提供済みの relay アドレスを使う場合は不要です。"
+other = "このスクリプトは OAuth relay を自前運用する場合だけデプロイします。既定 relay アドレスを使う場合は不要です。"
+
+[oauth_worker_self_host_summary]
+other = "Cloudflare OAuth relay を自前運用したい場合だけ、この Worker をデプロイします。"
+
+[oauth_worker_self_host_step_deploy]
+other = "Cloudflare Worker を作成し、下の完全なスクリプトを貼り付けてデプロイします。"
+
+[oauth_worker_self_host_step_callback]
+other = "自分の Worker HTTPS ドメインに /oauth/callback を付けた URL を Cloudflare OAuth クライアントの Redirect callback URL に設定します。"
+
+[oauth_worker_self_host_step_cfui]
+other = "同じ /oauth/callback URL を cfui の relay callback 入力欄に戻して保存します。"
+
+[oauth_worker_self_host_step_allowlist]
+other = "この Worker で公開 cfui ドメインを扱う場合は、Worker 変数 CFUI_ALLOWED_CALLBACK_ORIGINS を設定します。"
 
 [oauth_worker_script_loading]
 other = "Worker スクリプトを読み込み中..."
@@ -2257,6 +2254,9 @@ other = "key を作成"
 [oauth_kv_key_name]
 other = "Key"
 
+[oauth_kv_key_required]
+other = "KV key は必須です。"
+
 [oauth_kv_value]
 other = "Value"
 
@@ -2275,8 +2275,23 @@ other = "First {bytes}"
 [oauth_kv_value_too_large]
 other = "Value is too large for the text editor ({bytes})."
 
+[oauth_kv_upload_file]
+other = "ファイルをアップロード"
+
+[oauth_kv_file_required]
+other = "アップロードするファイルを選択してください。"
+
+[oauth_kv_upload_limit]
+other = "ファイルのバイト列でこの値を置き換えることもできます。1 つの KV value は最大 {max} です。"
+
+[oauth_kv_upload_too_large]
+other = "選択したファイルは {size} で、現在の KV value 上限 {max} を超えています。"
+
 [oauth_kv_saved]
 other = "KV value を保存しました。"
+
+[oauth_kv_uploaded]
+other = "KV file value をアップロードしました。"
 
 [oauth_kv_deleted]
 other = "KV key を削除しました。"

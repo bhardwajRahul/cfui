@@ -508,6 +508,42 @@ func TestKVValueDownloadReturnsRawBytes(t *testing.T) {
 	}
 }
 
+func TestWriteKVValueBytesWritesRawBytes(t *testing.T) {
+	ctx := context.Background()
+	payload := []byte{0x00, 0x01, 0x02, 'K', 'V', 0xff}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/accounts/account-1/storage/kv/namespaces/namespace-1/values/folder%2Fkey", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		if r.Method != http.MethodPut {
+			t.Fatalf("method = %s, want PUT", r.Method)
+		}
+		if got := r.Header.Get("Content-Type"); got != "application/octet-stream" {
+			t.Fatalf("Content-Type = %q, want application/octet-stream", got)
+		}
+		raw, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read body: %v", err)
+		}
+		if !bytes.Equal(raw, payload) {
+			t.Fatalf("body = %v, want %v", raw, payload)
+		}
+		_, _ = w.Write([]byte(`{"success":true,"errors":[],"messages":[],"result":null}`))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewService(testOAuthServiceWithScopes(t, "workers-kv-storage.write"))
+	svc.restEndpoint = server.URL + "/client/v4"
+
+	resp, err := svc.WriteKVValueBytes(ctx, "account-1", "namespace-1", "folder/key", payload)
+	if err != nil {
+		t.Fatalf("WriteKVValueBytes: %v", err)
+	}
+	if resp.Encoding != "binary" || resp.Value != "" || resp.Bytes != len(payload) || resp.BinaryPreview == nil {
+		t.Fatalf("unexpected binary write response: %#v", resp)
+	}
+}
+
 func TestSplitStatusComponents(t *testing.T) {
 	components := []StatusPageComponent{
 		{ID: "services", Name: "Cloudflare Sites and Services", Status: "degraded_performance", Group: true},

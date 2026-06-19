@@ -1474,6 +1474,31 @@ func (s *Server) handleCFKVValueDownload(w http.ResponseWriter, r *http.Request)
 	_, _ = io.Copy(w, resp.Body)
 }
 
+func (s *Server) handleCFKVValueUpload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	body := http.MaxBytesReader(w, r.Body, cfaccount.MaxKVRawValueBytes+1)
+	data, err := io.ReadAll(body)
+	if err != nil {
+		writeAPIError(w, http.StatusRequestEntityTooLarge, err)
+		return
+	}
+	if len(data) > cfaccount.MaxKVRawValueBytes {
+		writeAPIError(w, http.StatusRequestEntityTooLarge, fmt.Errorf("kv value is too large"))
+		return
+	}
+	resp, err := s.ensureCFService().WriteKVValueBytes(
+		r.Context(),
+		r.URL.Query().Get("account_id"),
+		r.URL.Query().Get("namespace_id"),
+		r.URL.Query().Get("key"),
+		data,
+	)
+	writeCFResponse(w, resp, err)
+}
+
 func (s *Server) handleCFSnippets(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:

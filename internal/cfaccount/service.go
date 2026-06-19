@@ -44,6 +44,7 @@ const (
 	defaultStatusPageEndpoint     = "https://www.cloudflarestatus.com/api/v2"
 	maxStatusPageResponseBytes    = 4 << 20
 	maxKVTextValueBytes           = 1024 * 1024
+	maxKVRawValueBytes            = 25 * 1024 * 1024
 	maxR2ObjectKeyBytes           = 1024
 	maxR2ObjectTextValueBytes     = 1024 * 1024
 	maxR2ObjectBinaryPreviewBytes = 1024
@@ -71,6 +72,8 @@ const (
 	maxTunnelNameLen              = 128
 	overviewDNSZoneCountLimit     = 50
 )
+
+const MaxKVRawValueBytes = maxKVRawValueBytes
 
 type Account struct {
 	ID   string `json:"id"`
@@ -2578,18 +2581,7 @@ func (s *Service) KVValue(ctx context.Context, accountID, namespaceID, key strin
 	if err != nil {
 		return KVValue{}, err
 	}
-	value := KVValue{Key: key, Bytes: len(data)}
-	switch {
-	case len(data) > maxKVTextValueBytes:
-		value.Encoding = "too_large"
-	case utf8.Valid(data):
-		value.Encoding = "text"
-		value.Value = string(data)
-	default:
-		value.Encoding = "binary"
-		value.BinaryPreview = r2BinaryPreview(data, false)
-	}
-	return value, nil
+	return mapKVValue(key, data), nil
 }
 
 func (s *Service) WriteKVValue(ctx context.Context, accountID, namespaceID, key string, req KVValueRequest) (KVValue, error) {
@@ -2611,7 +2603,29 @@ func (s *Service) WriteKVValue(ctx context.Context, accountID, namespaceID, key 
 	}); err != nil {
 		return KVValue{}, err
 	}
-	return KVValue{Key: key, Value: req.Value, Encoding: "text", Bytes: len(req.Value)}, nil
+	return mapKVValue(key, []byte(req.Value)), nil
+}
+
+func (s *Service) WriteKVValueBytes(ctx context.Context, accountID, namespaceID, key string, data []byte) (KVValue, error) {
+	client, _, err := s.currentClient(ctx)
+	if err != nil {
+		return KVValue{}, err
+	}
+	accountID, namespaceID, key, err = normalizeKVValueTarget(accountID, namespaceID, key)
+	if err != nil {
+		return KVValue{}, err
+	}
+	if len(data) > maxKVRawValueBytes {
+		return KVValue{}, validationError("kv value is too large")
+	}
+	if _, err := client.WriteWorkersKVEntry(ctx, cloudflare.AccountIdentifier(accountID), cloudflare.WriteWorkersKVEntryParams{
+		NamespaceID: namespaceID,
+		Key:         key,
+		Value:       data,
+	}); err != nil {
+		return KVValue{}, err
+	}
+	return mapKVValue(key, data), nil
 }
 
 func (s *Service) KVValueDownload(ctx context.Context, accountID, namespaceID, key string) (KVValueDownload, error) {
@@ -2636,6 +2650,21 @@ func (s *Service) KVValueDownload(ctx context.Context, accountID, namespaceID, k
 		ContentType:   "application/octet-stream",
 		ContentLength: int64(len(data)),
 	}, nil
+}
+
+func mapKVValue(key string, data []byte) KVValue {
+	value := KVValue{Key: key, Bytes: len(data)}
+	switch {
+	case len(data) > maxKVTextValueBytes:
+		value.Encoding = "too_large"
+	case utf8.Valid(data):
+		value.Encoding = "text"
+		value.Value = string(data)
+	default:
+		value.Encoding = "binary"
+		value.BinaryPreview = r2BinaryPreview(data, false)
+	}
+	return value
 }
 
 func (s *Service) DeleteKVValue(ctx context.Context, accountID, namespaceID, key string) error {

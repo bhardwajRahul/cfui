@@ -44,7 +44,19 @@ other = "请输入中转回调 URL。"
 other = "中转回调已保存。"
 
 [oauth_relay_config_hint]
-other = "必须是 Worker 的 /oauth/callback 地址，并且要和 Cloudflare OAuth 客户端里的 Redirect callback URL 完全一致；保存到数据库后会覆盖 CFUI_OAUTH_RELAY_URL。"
+other = "这个地址必须和 Cloudflare OAuth 客户端里的 Redirect callback URL 完全一致。个人使用可直接使用默认中转地址；自建时填你自己的 Worker /oauth/callback。"
+
+[oauth_relay_use_default]
+other = "默认"
+
+[oauth_relay_use_default_title]
+other = "使用提供的默认中转域名"
+
+[oauth_relay_self_host]
+other = "自建"
+
+[oauth_relay_self_host_title]
+other = "查看自建 Cloudflare OAuth relay 的步骤"
 
 [oauth_local_callback]
 other = "本地回调"
@@ -827,19 +839,16 @@ other = "请先设置 CFUI_OAUTH_CLIENT_ID。"
 other = "OAuth 配置引导"
 
 [oauth_setup_subtitle]
-other = "先确定 Cloudflare OAuth 客户端要填写的 Redirect callback URL：可以直接使用提供的中转地址，也可以用内置 worker.js 自建 Cloudflare Worker relay。然后创建 Cloudflare OAuth 客户端并用 client ID 重启 cfui。"
+other = "先确认上方中转回调地址，再创建 Cloudflare OAuth 客户端并用 client ID 重启 cfui。"
 
 [oauth_setup_relay_title]
-other = "选择 OAuth 中转地址"
+other = "设置 OAuth 中转回调"
 
 [oauth_setup_relay_desc]
-other = "Cloudflare OAuth app 只能登记固定回调地址。个人使用可以直接填提供的中转地址；只有想完全自建中转服务时，才需要部署内置 worker.js。"
+other = "上方输入框就是 Cloudflare OAuth 客户端要填写的 Redirect callback URL。"
 
-[oauth_setup_relay_provided_note]
-other = "使用提供的中转地址时，不需要部署 worker.js。Cloudflare OAuth 回到这个地址后，relay 会根据 OAuth state 跳回当前 cfui 实例。"
-
-[oauth_setup_relay_self_host_note]
-other = "如果你想自建 Cloudflare OAuth relay，打开这里的 worker.js 部署到自己的 Cloudflare Workers，然后把你 Worker 的 /oauth/callback 地址保存为中转回调，并填入 Cloudflare OAuth 客户端。"
+[oauth_setup_relay_input_note]
+other = "个人部署可以点“默认”直接使用提供的中转域名；需要完全自建时点“自建”，按弹窗部署 Worker 后再把自己的 /oauth/callback 地址填回这里。"
 
 [oauth_setup_oauth_app_title]
 other = "填写 Cloudflare OAuth 客户端表单"
@@ -898,33 +907,6 @@ other = "内置 Worker 文件"
 [oauth_worker_script_entry]
 other = "自建 Worker 脚本"
 
-[oauth_relay_choice_title]
-other = "OAuth 中转地址怎么选"
-
-[oauth_relay_choice_note]
-other = "这里有两条路：多数个人部署直接使用提供的中转地址；只有想完全自建 Cloudflare OAuth relay 时，才打开内置 worker.js 并部署到自己的 Cloudflare 账号。"
-
-[oauth_relay_choice_provided_title]
-other = "使用提供的中转地址"
-
-[oauth_relay_choice_recommended]
-other = "推荐"
-
-[oauth_relay_choice_provided_desc]
-other = "把下面这个地址填到 Cloudflare OAuth 客户端的重定向回调 URL。cfui 会通过 OAuth state 带上当前实例的本地回调地址。"
-
-[oauth_relay_choice_cloudflare_value]
-other = "Cloudflare 里填写这个重定向 URL"
-
-[oauth_relay_choice_self_host_title]
-other = "自建 Cloudflare Worker relay"
-
-[oauth_relay_choice_self_host_desc]
-other = "这是自建方案，不是必选步骤。打开内置 worker.js 部署到自己的 Cloudflare Workers 后，再把你的 /oauth/callback 地址保存为中转回调。"
-
-[oauth_relay_choice_footer]
-other = "Cloudflare OAuth 客户端里的 Redirect callback URL 只填一个地址：使用提供 relay 时填上面的中转地址；自建 relay 时填你自己的 Worker /oauth/callback。不要追加 cfui_callback_url。"
-
 [oauth_setup_worker_open]
 other = "打开完整 Worker 脚本"
 
@@ -938,7 +920,22 @@ other = "在页面里查看完整 Worker 脚本"
 other = "Cloudflare OAuth Worker 脚本"
 
 [oauth_worker_script_dialog_subtitle]
-other = "只有自建 OAuth 中转服务时才需要部署这个脚本。使用提供的中转地址时不需要部署。"
+other = "只有自建 OAuth 中转服务时才需要部署这个脚本。使用默认中转地址时不需要部署。"
+
+[oauth_worker_self_host_summary]
+other = "只在你想自建 Cloudflare OAuth relay 时部署这个 Worker。"
+
+[oauth_worker_self_host_step_deploy]
+other = "在 Cloudflare Workers 创建 Worker，并粘贴下面完整脚本后部署。"
+
+[oauth_worker_self_host_step_callback]
+other = "把你的 Worker HTTPS 域名加 /oauth/callback 填到 Cloudflare OAuth 客户端的 Redirect callback URL。"
+
+[oauth_worker_self_host_step_cfui]
+other = "把同一个 /oauth/callback 地址填回 cfui 的中转回调输入框并保存。"
+
+[oauth_worker_self_host_step_allowlist]
+other = "如果这个 Worker 要服务公网 cfui 域名，在 Worker 变量里配置 CFUI_ALLOWED_CALLBACK_ORIGINS。"
 
 [oauth_worker_script_loading]
 other = "正在加载 Worker 脚本..."
@@ -2257,6 +2254,9 @@ other = "创建 key"
 [oauth_kv_key_name]
 other = "Key"
 
+[oauth_kv_key_required]
+other = "KV key 必填。"
+
 [oauth_kv_value]
 other = "值"
 
@@ -2275,8 +2275,23 @@ other = "前 {bytes}"
 [oauth_kv_value_too_large]
 other = "该值过大，无法在文本编辑器中打开（{bytes}）。"
 
+[oauth_kv_upload_file]
+other = "上传文件"
+
+[oauth_kv_file_required]
+other = "请选择要上传的文件。"
+
+[oauth_kv_upload_limit]
+other = "也可以上传文件字节覆盖该值，单个 KV value 最高 {max}。"
+
+[oauth_kv_upload_too_large]
+other = "已选文件大小为 {size}，超过当前 {max} 的 KV value 上限。"
+
 [oauth_kv_saved]
 other = "KV 值已保存。"
+
+[oauth_kv_uploaded]
+other = "KV 文件值已上传。"
 
 [oauth_kv_deleted]
 other = "KV key 已删除。"

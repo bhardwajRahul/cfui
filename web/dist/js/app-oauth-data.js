@@ -42,6 +42,7 @@
     const maxR2ChunkedUploadBytes = 5 * 1024 * 1024 * 1024;
     const r2ObjectUploadChunkBytes = 8 * 1024 * 1024;
     const maxR2InlinePreviewBytes = 50 * 1024 * 1024;
+    const maxKVValueUploadBytes = 25 * 1024 * 1024;
     const analyticsRanges = ['24h', '7d', '30d'];
     const overviewMetricDefinitions = [
         ['accounts', 'oauth_overview_metric_accounts'],
@@ -245,6 +246,7 @@
         maxR2ChunkedUploadBytes,
         r2ObjectUploadChunkBytes,
         maxR2InlinePreviewBytes,
+        maxKVValueUploadBytes,
         analyticsRanges,
         overviewMetricDefinitions,
         oauthPermissionDefinitions,
