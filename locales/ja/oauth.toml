@@ -1256,19 +1256,25 @@ other = "KV namespace がありません。"
 other = "Snippets がありません。"
 
 [oauth_snippets_readonly]
-other = "Current token can read Snippets. Grant snippets.write to create snippets or manage rules."
+other = "現在の token は Snippets の読み取りのみ可能です。snippet の作成やルール管理には snippets.write を許可してください。"
+
+[oauth_snippet_copy_diagnostics]
+other = "診断をコピー"
+
+[oauth_snippet_copy_diagnostics_title]
+other = "現在の Snippets 診断情報をコピーします。OAuth token、Snippet code、draft code、rule expression、rule description は含めません。"
 
 [oauth_snippet_create]
-other = "Create Snippet"
+other = "Snippet を作成"
 
 [oauth_snippet_name]
-other = "Name"
+other = "名前"
 
 [oauth_snippet_main_file]
-other = "Main file"
+other = "メインファイル"
 
 [oauth_snippet_code]
-other = "Code"
+other = "コード"
 
 [oauth_snippet_content]
 other = "Snippet code"
@@ -1301,25 +1307,25 @@ other = "Snippet を削除"
 other = "{name} を削除しますか？trigger rules も削除されます。"
 
 [oauth_snippet_rule_count]
-other = "{n} trigger rules"
+other = "{n} 件のトリガールール"
 
 [oauth_snippet_rules]
-other = "Trigger rules"
+other = "トリガールール"
 
 [oauth_snippet_no_rules]
-other = "No trigger rules for this Snippet."
+other = "この Snippet にはトリガールールがありません。"
 
 [oauth_snippet_rule_add]
-other = "Add rule"
+other = "ルールを追加"
 
 [oauth_snippet_rule_expression]
-other = "Expression"
+other = "式"
 
 [oauth_snippet_rule_description]
-other = "Description"
+other = "説明"
 
 [oauth_snippet_rule_enabled]
-other = "Enabled"
+other = "有効"
 
 [oauth_snippet_rule_saved]
 other = "Snippet rule を保存しました。"

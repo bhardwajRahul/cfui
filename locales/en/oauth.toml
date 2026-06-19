@@ -1258,6 +1258,12 @@ other = "No Snippets available."
 [oauth_snippets_readonly]
 other = "Current token can read Snippets. Grant snippets.write to create snippets or manage rules."
 
+[oauth_snippet_copy_diagnostics]
+other = "Copy diagnostics"
+
+[oauth_snippet_copy_diagnostics_title]
+other = "Copy current Snippets diagnostics. OAuth tokens, Snippet code, draft code, rule expressions, and rule descriptions are not included."
+
 [oauth_snippet_create]
 other = "Create Snippet"
 

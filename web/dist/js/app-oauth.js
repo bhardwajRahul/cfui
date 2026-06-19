@@ -1700,9 +1700,12 @@
 
     async function loadOAuthSnippets() {
         if (!state.oauth.selectedZoneId) return;
+        state.oauth.snippetsError = '';
         try {
             const resp = await apiGet('/cf/snippets?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId));
             state.oauth.snippets = Array.isArray(resp.data) ? resp.data : [];
+            state.oauth.snippetSession = resp.session || state.oauth.snippetSession || null;
+            state.oauth.snippetCapabilities = resp.capabilities || state.oauth.snippetCapabilities || null;
             if (state.oauth.selectedSnippetName && !state.oauth.snippets.some((snippet) => snippet.name === state.oauth.selectedSnippetName)) {
                 resetSnippetDetail();
             }
@@ -1713,13 +1716,15 @@
                 ]);
             }
         } catch (err) {
-            renderOAuthError(err.message);
+            state.oauth.snippetsError = err.message || String(err);
+            state.oauth.snippets = [];
         }
     }
 
     async function createSnippet(payload, button) {
         if (!state.oauth.selectedZoneId) return;
         setBusy(button, true, t('saving'));
+        state.oauth.snippetMutationError = '';
         try {
             await apiSend('/cf/snippets?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId), 'POST', payload);
             state.oauth.snippetCreateOpen = false;
@@ -1739,6 +1744,7 @@
             renderOAuthResource();
             toast.ok(t('oauth_snippet_saved'));
         } catch (err) {
+            state.oauth.snippetMutationError = err.message || String(err);
             toast.err(err.message);
         } finally {
             setBusy(button, false);
@@ -1753,6 +1759,7 @@
             okText: t('delete'),
         });
         if (!ok) return;
+        state.oauth.snippetMutationError = '';
         try {
             await apiSend(`/cf/snippets/${encodeURIComponent(snippetName)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'DELETE');
             resetSnippetDetail();
@@ -1760,6 +1767,7 @@
             renderOAuthResource();
             toast.ok(t('oauth_snippet_deleted'));
         } catch (err) {
+            state.oauth.snippetMutationError = err.message || String(err);
             toast.err(err.message);
         }
     }
@@ -1770,11 +1778,15 @@
             zone_id: state.oauth.selectedZoneId,
             snippet_name: snippetName,
         });
+        state.oauth.snippetRulesError = '';
         try {
             const resp = await apiGet('/cf/snippets/rules?' + params.toString());
             state.oauth.snippetRules = Array.isArray(resp.data) ? resp.data : [];
+            state.oauth.snippetSession = resp.session || state.oauth.snippetSession || null;
+            state.oauth.snippetCapabilities = resp.capabilities || state.oauth.snippetCapabilities || null;
         } catch (err) {
-            toast.err(err.message);
+            state.oauth.snippetRulesError = err.message || String(err);
+            state.oauth.snippetRules = [];
         }
     }
 
@@ -1788,6 +1800,8 @@
             const content = await apiGet(`/cf/snippets/${encodeURIComponent(snippetName)}/content?${params.toString()}`);
             if (state.oauth.selectedSnippetName !== snippetName) return;
             state.oauth.snippetContent = content;
+            state.oauth.snippetSession = content.session || state.oauth.snippetSession || null;
+            state.oauth.snippetCapabilities = content.capabilities || state.oauth.snippetCapabilities || null;
             state.oauth.snippetContentDraft = content.value || '';
             state.oauth.snippetContentMainFile = content.main_file || 'snippet.js';
         } catch (err) {
@@ -1808,12 +1822,15 @@
         const snippetName = state.oauth.selectedSnippetName;
         setBusy(button, true, t('saving'));
         const params = new URLSearchParams({ zone_id: state.oauth.selectedZoneId });
+        state.oauth.snippetMutationError = '';
         try {
             const content = await apiSend(`/cf/snippets/${encodeURIComponent(snippetName)}/content?${params.toString()}`, 'PUT', {
                 main_file: mainFile,
                 code,
             });
             state.oauth.snippetContent = content;
+            state.oauth.snippetSession = content.session || state.oauth.snippetSession || null;
+            state.oauth.snippetCapabilities = content.capabilities || state.oauth.snippetCapabilities || null;
             state.oauth.snippetContentDraft = content.value || code || '';
             state.oauth.snippetContentMainFile = content.main_file || mainFile || 'snippet.js';
             state.oauth.snippetContentError = '';
@@ -1821,6 +1838,7 @@
             renderOAuthResource();
             toast.ok(t('oauth_snippet_content_saved'));
         } catch (err) {
+            state.oauth.snippetMutationError = err.message || String(err);
             toast.err(err.message);
         } finally {
             setBusy(button, false);
@@ -1830,14 +1848,19 @@
     async function createSnippetRule(payload, button) {
         if (!state.oauth.selectedZoneId || !state.oauth.selectedSnippetName) return;
         setBusy(button, true, t('saving'));
+        state.oauth.snippetMutationError = '';
         try {
-            await apiSend('/cf/snippets/rules?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId), 'POST', payload);
+            const resp = await apiSend('/cf/snippets/rules?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId), 'POST', payload);
+            state.oauth.snippetRules = Array.isArray(resp.data) ? resp.data : state.oauth.snippetRules;
+            state.oauth.snippetSession = resp.session || state.oauth.snippetSession || null;
+            state.oauth.snippetCapabilities = resp.capabilities || state.oauth.snippetCapabilities || null;
             state.oauth.snippetRuleCreateOpen = false;
             await loadOAuthSnippets();
             await loadSnippetRules(state.oauth.selectedSnippetName);
             renderOAuthResource();
             toast.ok(t('oauth_snippet_rule_saved'));
         } catch (err) {
+            state.oauth.snippetMutationError = err.message || String(err);
             toast.err(err.message);
         } finally {
             setBusy(button, false);
@@ -1847,12 +1870,17 @@
     async function setSnippetRuleEnabled(rule, enabled, control) {
         if (!state.oauth.selectedZoneId || !rule?.id) return;
         if (control) control.disabled = true;
+        state.oauth.snippetMutationError = '';
         try {
-            await apiSend(`/cf/snippets/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', { enabled });
+            const resp = await apiSend(`/cf/snippets/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'PATCH', { enabled });
+            state.oauth.snippetRules = Array.isArray(resp.data) ? resp.data : state.oauth.snippetRules;
+            state.oauth.snippetSession = resp.session || state.oauth.snippetSession || null;
+            state.oauth.snippetCapabilities = resp.capabilities || state.oauth.snippetCapabilities || null;
             await loadOAuthSnippets();
             await loadSnippetRules(state.oauth.selectedSnippetName);
             renderOAuthResource();
         } catch (err) {
+            state.oauth.snippetMutationError = err.message || String(err);
             toast.err(err.message);
             if (control) control.checked = !enabled;
         } finally {
@@ -1868,13 +1896,18 @@
             okText: t('delete'),
         });
         if (!ok) return;
+        state.oauth.snippetMutationError = '';
         try {
-            await apiSend(`/cf/snippets/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'DELETE');
+            const resp = await apiSend(`/cf/snippets/rules/${encodeURIComponent(rule.id)}?zone_id=${encodeURIComponent(state.oauth.selectedZoneId)}`, 'DELETE');
+            state.oauth.snippetRules = Array.isArray(resp.data) ? resp.data : state.oauth.snippetRules;
+            state.oauth.snippetSession = resp.session || state.oauth.snippetSession || null;
+            state.oauth.snippetCapabilities = resp.capabilities || state.oauth.snippetCapabilities || null;
             await loadOAuthSnippets();
             await loadSnippetRules(state.oauth.selectedSnippetName);
             renderOAuthResource();
             toast.ok(t('oauth_snippet_rule_deleted'));
         } catch (err) {
+            state.oauth.snippetMutationError = err.message || String(err);
             toast.err(err.message);
         }
     }
@@ -5610,21 +5643,143 @@
         return form;
     }
 
+    function snippetDiagnosticsText() {
+        const status = state.oauth.status || {};
+        const session = state.oauth.snippetSession || state.oauth.snippetContent?.session || status.current || {};
+        const selectedSnippet = state.oauth.snippets.find((item) => item.name === state.oauth.selectedSnippetName) || null;
+        const content = state.oauth.snippetContent || null;
+        return JSON.stringify({
+            type: 'cfui_oauth_snippet_diagnostics',
+            version: 1,
+            generated_at: new Date().toISOString(),
+            browser_origin: window.location.origin,
+            browser_path: window.location.pathname,
+            contains_oauth_token: false,
+            contains_refresh_token: false,
+            contains_snippet_code: false,
+            contains_draft_code: false,
+            contains_rule_expression: false,
+            contains_rule_description: false,
+            sensitive_fields_omitted: [
+                'oauth_access_token',
+                'oauth_refresh_token',
+                'snippet_code',
+                'snippet_draft_code',
+                'snippet_rule_expression',
+                'snippet_rule_description',
+            ],
+            selected: {
+                account_id: state.oauth.selectedAccountId || '',
+                account_name: selectedAccountName(),
+                zone_id: state.oauth.selectedZoneId || '',
+                zone_name: selectedZoneName(),
+                snippet_name: state.oauth.selectedSnippetName || '',
+                resource: state.oauth.resource || '',
+            },
+            identity: {
+                label: session.label || '',
+                expires_at: session.expires_at || '',
+                scopes: Array.isArray(session.scopes) ? session.scopes : [],
+            },
+            capability: {
+                snippets_read: canRead('snippets'),
+                snippets_write: canWrite('snippets'),
+            },
+            state: {
+                snippet_count: state.oauth.snippets.length,
+                snippets_error: state.oauth.snippetsError || '',
+                rules_loaded: state.oauth.snippetRules.length,
+                rules_error: state.oauth.snippetRulesError || '',
+                mutation_error: state.oauth.snippetMutationError || '',
+                create_open: !!state.oauth.snippetCreateOpen,
+                rule_create_open: !!state.oauth.snippetRuleCreateOpen,
+                content_loading: !!state.oauth.snippetContentLoading,
+                content_error: state.oauth.snippetContentError || '',
+                content_loaded: !!content,
+                scope_ready: canRead('snippets'),
+            },
+            snippets: {
+                loaded_count: state.oauth.snippets.length,
+                items: state.oauth.snippets.map(snippetListDiagnostics),
+            },
+            selected_snippet: selectedSnippet ? snippetListDiagnostics(selectedSnippet) : null,
+            selected_content: content ? snippetContentDiagnostics(content) : null,
+            rules: {
+                loaded_count: state.oauth.snippetRules.length,
+                items: state.oauth.snippetRules.map(snippetRuleDiagnostics),
+            },
+            capabilities: oauthCapabilityDiagnostics(state.oauth.snippetCapabilities || content?.capabilities || status.capabilities || {}),
+        }, null, 2);
+    }
+
+    function snippetListDiagnostics(snippet) {
+        return {
+            name: snippet?.name || '',
+            created_on: snippet?.created_on || '',
+            modified_on: snippet?.modified_on || '',
+            rule_count: Number(snippet?.rule_count || 0),
+        };
+    }
+
+    function snippetContentDiagnostics(content) {
+        const draft = state.oauth.snippetContentDraft || '';
+        const value = content?.value || '';
+        return {
+            name: content?.name || state.oauth.selectedSnippetName || '',
+            main_file: content?.main_file || state.oauth.snippetContentMainFile || '',
+            encoding: content?.encoding || '',
+            bytes: content?.bytes == null ? null : Number(content.bytes),
+            truncated: !!content?.truncated,
+            code_included: false,
+            code_length: value.length,
+            draft_code_included: false,
+            draft_code_length: draft.length,
+        };
+    }
+
+    function snippetRuleDiagnostics(rule) {
+        return {
+            id: rule?.id || '',
+            snippet_name: rule?.snippet_name || '',
+            enabled: !!rule?.enabled,
+            expression_included: false,
+            expression_length: String(rule?.expression || '').length,
+            description_included: false,
+            description_present: !!rule?.description,
+            description_length: String(rule?.description || '').length,
+        };
+    }
+
     function renderSnippets(body) {
         if (!state.oauth.selectedZoneId) {
             body.appendChild(empty(t('oauth_select_zone')));
             return;
         }
-        body.appendChild(resourceActionBar(t('oauth_snippets'), canWrite('snippets') ? {
-            text: state.oauth.snippetCreateOpen ? t('cancel') : t('oauth_snippet_create'),
-            className: state.oauth.snippetCreateOpen ? 'btn btn--sm btn--ghost' : 'btn btn--sm',
-            onClick: () => {
-                state.oauth.snippetCreateOpen = !state.oauth.snippetCreateOpen;
-                renderOAuthResource();
-            },
-        } : null));
+        const actions = [];
+        if (canWrite('snippets')) {
+            actions.push({
+                text: state.oauth.snippetCreateOpen ? t('cancel') : t('oauth_snippet_create'),
+                className: state.oauth.snippetCreateOpen ? 'btn btn--sm btn--ghost' : 'btn btn--sm',
+                onClick: () => {
+                    state.oauth.snippetCreateOpen = !state.oauth.snippetCreateOpen;
+                    renderOAuthResource();
+                },
+            });
+        }
+        actions.push({
+            text: t('oauth_snippet_copy_diagnostics'),
+            className: 'btn btn--sm btn--ghost',
+            title: t('oauth_snippet_copy_diagnostics_title'),
+            onClick: () => copyOAuthText(snippetDiagnosticsText()),
+        });
+        body.appendChild(resourceActionBar(t('oauth_snippets'), actions));
         if (!canWrite('snippets')) body.appendChild(empty(t('oauth_snippets_readonly')));
+        if (state.oauth.snippetMutationError) body.appendChild(empty(state.oauth.snippetMutationError));
         if (state.oauth.snippetCreateOpen) body.appendChild(snippetCreateFormNode());
+        if (state.oauth.snippetsError) {
+            body.appendChild(empty(state.oauth.snippetsError));
+            return;
+        }
         if (!state.oauth.snippets.length) {
             body.appendChild(empty(t('oauth_no_snippets')));
             return;
@@ -5719,6 +5874,10 @@
         header.appendChild(copy);
         const actions = document.createElement('div');
         actions.className = 'oauth-row-actions';
+        const diagnostics = smallButton(t('oauth_snippet_copy_diagnostics'), 'btn btn--sm btn--ghost', () => copyOAuthText(snippetDiagnosticsText()));
+        diagnostics.title = t('oauth_snippet_copy_diagnostics_title');
+        diagnostics.setAttribute('aria-label', t('oauth_snippet_copy_diagnostics_title'));
+        actions.appendChild(diagnostics);
         if (canWrite('snippets')) {
             actions.appendChild(smallButton(state.oauth.snippetRuleCreateOpen ? t('cancel') : t('oauth_snippet_rule_add'), 'btn btn--sm btn--ghost', () => {
                 state.oauth.snippetRuleCreateOpen = !state.oauth.snippetRuleCreateOpen;
@@ -5732,6 +5891,10 @@
         section.appendChild(snippetContentNode());
 
         if (state.oauth.snippetRuleCreateOpen) section.appendChild(snippetRuleFormNode());
+        if (state.oauth.snippetRulesError) {
+            section.appendChild(empty(state.oauth.snippetRulesError));
+            return section;
+        }
         if (!state.oauth.snippetRules.length) {
             section.appendChild(empty(t('oauth_snippet_no_rules')));
             return section;
@@ -8857,6 +9020,9 @@
         state.oauth.kvSession = null;
         state.oauth.kvCapabilities = null;
         state.oauth.snippets = [];
+        state.oauth.snippetSession = null;
+        state.oauth.snippetCapabilities = null;
+        state.oauth.snippetsError = '';
         state.oauth.zoneSettings = [];
         state.oauth.selectedAccountId = '';
         state.oauth.selectedZoneId = '';
@@ -8964,6 +9130,10 @@
         state.oauth.dnsFormMode = '';
         state.oauth.dnsEditingId = '';
         state.oauth.dnsFilter = '';
+        state.oauth.snippets = [];
+        state.oauth.snippetSession = null;
+        state.oauth.snippetCapabilities = null;
+        state.oauth.snippetsError = '';
         resetSnippetDetail();
         resetWAFDetail();
         resetAnalyticsDetail();
@@ -8983,6 +9153,8 @@
     function resetSnippetDetail() {
         state.oauth.selectedSnippetName = '';
         state.oauth.snippetRules = [];
+        state.oauth.snippetRulesError = '';
+        state.oauth.snippetMutationError = '';
         state.oauth.snippetCreateOpen = false;
         state.oauth.snippetRuleCreateOpen = false;
         resetSnippetContent();

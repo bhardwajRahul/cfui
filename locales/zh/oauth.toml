@@ -1258,6 +1258,12 @@ other = "没有 Snippets。"
 [oauth_snippets_readonly]
 other = "当前 token 只能读取 Snippets。授权 snippets.write 后可创建 snippet 或管理规则。"
 
+[oauth_snippet_copy_diagnostics]
+other = "复制诊断"
+
+[oauth_snippet_copy_diagnostics_title]
+other = "复制当前 Snippets 诊断信息，不包含 OAuth token、Snippet 代码、草稿代码、规则表达式和规则描述。"
+
 [oauth_snippet_create]
 other = "创建 Snippet"
 
