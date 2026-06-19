@@ -164,7 +164,7 @@
             renderOAuthStatus(status);
             renderOAuthAccounts();
             renderOAuthResource();
-            if (status?.logged_in) await loadOAuthOverview();
+            await loadOAuthOverview();
             toast.ok(t('oauth_identity_removed'));
         } catch (err) {
             toast.err(err.message);
@@ -227,7 +227,7 @@
             renderOAuthStatus(status);
             renderOAuthAccounts();
             renderOAuthResource();
-            if (status?.logged_in && previousCurrentID !== nextCurrentID) await loadOAuthOverview();
+            if (previousCurrentID !== nextCurrentID || previousCurrentID === sessionID) await loadOAuthOverview();
             toast.ok(t('oauth_identity_removed'));
         } catch (err) {
             toast.err(err.message);
@@ -235,8 +235,14 @@
     }
 
     async function loadOAuthOverview() {
-        if (!state.features?.oauth_enabled || !state.oauth.status?.logged_in) {
+        if (!state.features?.oauth_enabled) {
             renderOAuthAccounts();
+            renderOAuthResource();
+            return;
+        }
+        if (!state.oauth.status?.logged_in) {
+            renderOAuthAccounts();
+            await loadOAuthValidationArchives({ render: false });
             renderOAuthResource();
             return;
         }
@@ -244,7 +250,7 @@
         if (canRead('zones')) await loadOAuthZones();
         ensureVisibleResource();
         await loadOAuthCurrentResource();
-        loadOAuthValidationArchives();
+        loadOAuthValidationArchives({ render: false });
         renderOAuthResource();
     }
 
@@ -290,8 +296,7 @@
         }
     }
 
-    async function loadOAuthValidationArchives() {
-        if (!state.oauth.status?.logged_in) return;
+    async function loadOAuthValidationArchives(options = {}) {
         state.oauth.validationReportsLoading = true;
         state.oauth.validationReportsError = '';
         try {
@@ -302,7 +307,7 @@
             state.oauth.validationReportsError = err.message || String(err);
         } finally {
             state.oauth.validationReportsLoading = false;
-            renderOAuthResource();
+            if (options.render !== false) renderOAuthResource();
         }
     }
 
@@ -2979,6 +2984,10 @@
         }
         if (!state.oauth.status?.logged_in) {
             body.appendChild(empty(t('oauth_login_required')));
+            if (state.oauth.resource === 'overview') {
+                const validationArchives = overviewValidationArchivesNode();
+                if (validationArchives) body.appendChild(validationArchives);
+            }
             return;
         }
         if (state.oauth.resource === 'overview') renderOverview(body);
