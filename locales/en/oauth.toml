@@ -208,6 +208,18 @@ other = "Save as a local tunnel profile"
 [oauth_tunnel_activate_local_profile]
 other = "Use as the current local tunnel"
 
+[oauth_tunnel_activate_local_profile_action]
+other = "Use locally"
+
+[oauth_tunnel_activate_local_profile_action_hint]
+other = "Make this linked local profile the current cfui tunnel profile. This does not start cloudflared."
+
+[oauth_tunnel_local_profile_activated_toast]
+other = "Local profile {name} is now current."
+
+[oauth_tunnel_local_profile_activate_failed]
+other = "Failed to activate local profile: {error}"
+
 [oauth_tunnel_create_hint]
 other = "Creates a remote-managed Cloudflare Tunnel and, if selected, stores its connector token in the local SQLite config."
 

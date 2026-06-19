@@ -208,6 +208,18 @@ other = "保存为本地隧道配置"
 [oauth_tunnel_activate_local_profile]
 other = "设为当前本地隧道"
 
+[oauth_tunnel_activate_local_profile_action]
+other = "设为当前"
+
+[oauth_tunnel_activate_local_profile_action_hint]
+other = "将此关联的本地配置设为当前 cfui 隧道配置；不会自动启动 cloudflared。"
+
+[oauth_tunnel_local_profile_activated_toast]
+other = "本地配置 {name} 已设为当前。"
+
+[oauth_tunnel_local_profile_activate_failed]
+other = "激活本地配置失败：{error}"
+
 [oauth_tunnel_create_hint]
 other = "会创建远程管理的 Cloudflare Tunnel；勾选后只把 connector token 写入本地 SQLite 配置。"
 

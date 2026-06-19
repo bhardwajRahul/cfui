@@ -208,6 +208,18 @@ other = "ローカル Tunnel プロファイルとして保存"
 [oauth_tunnel_activate_local_profile]
 other = "現在のローカル Tunnel として使用"
 
+[oauth_tunnel_activate_local_profile_action]
+other = "ローカルで使用"
+
+[oauth_tunnel_activate_local_profile_action_hint]
+other = "関連付け済みのローカルプロファイルを現在の cfui Tunnel プロファイルにします。cloudflared は自動起動しません。"
+
+[oauth_tunnel_local_profile_activated_toast]
+other = "ローカルプロファイル {name} を現在の設定にしました。"
+
+[oauth_tunnel_local_profile_activate_failed]
+other = "ローカルプロファイルを有効にできませんでした: {error}"
+
 [oauth_tunnel_create_hint]
 other = "リモート管理の Cloudflare Tunnel を作成します。選択した場合、connector token はローカル SQLite 設定にのみ保存されます。"
 

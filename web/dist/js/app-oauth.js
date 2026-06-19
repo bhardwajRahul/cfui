@@ -351,6 +351,47 @@
         }
     }
 
+    async function activateOAuthLocalTunnelProfile(profile, button) {
+        const key = String(profile?.key || '').trim();
+        if (!key) return;
+        try {
+            setBusy(button, true, t('saving'));
+            const resp = await apiSend('/tunnels/' + encodeURIComponent(key) + '/activate-local', 'POST');
+            const activeKey = applyOAuthLocalTunnelActivation(resp, key);
+            await window.cfui.fetchConfig?.();
+            syncOAuthLocalTunnelActiveState(state.config?.active_tunnel_key || activeKey);
+            renderOAuthResource();
+            toast.ok(t('oauth_tunnel_local_profile_activated_toast', { name: profile.name || key }));
+        } catch (err) {
+            toast.err(t('oauth_tunnel_local_profile_activate_failed', { error: err.message }));
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
+    function applyOAuthLocalTunnelActivation(resp, fallbackKey) {
+        const activeKey = String(resp?.active_tunnel_key || fallbackKey || '').trim();
+        if (resp && typeof resp === 'object') {
+            state.config = { ...(state.config || {}) };
+            if (Array.isArray(resp.tunnels)) state.config.tunnels = resp.tunnels;
+            if (activeKey) state.config.active_tunnel_key = activeKey;
+            if (activeKey) state.selectedTunnelKey = activeKey;
+        }
+        syncOAuthLocalTunnelActiveState(activeKey);
+        window.cfui.renderTunnelProfileSelector?.();
+        window.cfui.updateTunnelProfileUI?.();
+        return activeKey;
+    }
+
+    function syncOAuthLocalTunnelActiveState(activeKey) {
+        activeKey = String(activeKey || '').trim();
+        if (!activeKey) return;
+        state.oauth.localTunnelProfiles = (state.oauth.localTunnelProfiles || []).map((profile) => ({
+            ...profile,
+            active: String(profile?.key || '').trim() === activeKey,
+        }));
+    }
+
     async function deleteOAuthTunnel(tunnel, localProfile, button) {
         const tunnelID = String(tunnel?.id || '').trim();
         if (!state.oauth.selectedAccountId || !tunnelID) return;
@@ -2724,9 +2765,18 @@
         }
         for (const tunnel of state.oauth.tunnels) {
             const localProfile = localProfileForTunnel(tunnel);
-            const actions = canCreate ? [
-                iconButton(t('delete'), iconTrashSVG(), (event) => deleteOAuthTunnel(tunnel, localProfile, event.currentTarget), 'oauth-icon-action--danger'),
-            ] : [];
+            const actions = [];
+            if (localProfile && !localProfile.active) {
+                const activate = smallButton(t('oauth_tunnel_activate_local_profile_action'), 'btn btn--sm btn--ghost', (event) => {
+                    activateOAuthLocalTunnelProfile(localProfile, event.currentTarget);
+                });
+                activate.title = t('oauth_tunnel_activate_local_profile_action_hint');
+                activate.setAttribute('aria-label', t('oauth_tunnel_activate_local_profile_action_hint'));
+                actions.push(activate);
+            }
+            if (canCreate) {
+                actions.push(iconButton(t('delete'), iconTrashSVG(), (event) => deleteOAuthTunnel(tunnel, localProfile, event.currentTarget), 'oauth-icon-action--danger'));
+            }
             const connectionCount = tunnelConnectionCount(tunnel);
             const meta = [
                 tunnelStatusLabel(tunnel.status),
