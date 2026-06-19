@@ -50,7 +50,7 @@ other = "Copy relay callback URL"
 other = "This address must exactly match the Redirect callback URL in the Cloudflare OAuth client."
 
 [oauth_relay_assist_text]
-other = "Enter this exact value as the Cloudflare OAuth client's Redirect callback URL. Do not append any parameters."
+other = "Use the provided domain by default; self-host a Worker only when you want your own relay domain. Cloudflare uses exactly this URL."
 
 [oauth_relay_use_default]
 other = "Use provided domain"
@@ -74,10 +74,10 @@ other = "Custom"
 other = "Unsaved"
 
 [oauth_relay_status_default]
-other = "Saved; use this provided domain in Cloudflare too."
+other = "Saved; use this URL in Cloudflare too."
 
 [oauth_relay_status_custom]
-other = "Saved; use this custom domain in Cloudflare too."
+other = "Saved; use the same URL in Cloudflare too."
 
 [oauth_relay_status_unsaved]
 other = "Unsaved; save it before entering it in Cloudflare."
@@ -914,7 +914,7 @@ other = "Set CFUI_OAUTH_CLIENT_ID before signing in."
 other = "OAuth setup"
 
 [oauth_setup_subtitle]
-other = "Save the relay callback, create the Cloudflare OAuth client, then restart cfui with the client ID."
+other = "Confirm the relay callback, create the Cloudflare OAuth client, then restart cfui with the client ID."
 
 [oauth_setup_relay_title]
 other = "Set the OAuth relay callback"
@@ -923,7 +923,7 @@ other = "Set the OAuth relay callback"
 other = "The input above is the only Redirect callback URL to register in the Cloudflare OAuth client."
 
 [oauth_setup_relay_input_note]
-other = "Use \"Use provided domain\" by default. Open \"Self-host Worker\" only when you want your own relay domain and need the script."
+other = "For private use, \"Use provided domain\" is enough. Open \"Self-host Worker\" only when you want the relay address to use your own domain."
 
 [oauth_setup_oauth_app_title]
 other = "Fill the Cloudflare OAuth client form"

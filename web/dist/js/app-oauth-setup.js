@@ -79,7 +79,11 @@
             const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--text oauth-relay-inline-action oauth-relay-self-host-action', () => openWorkerScriptDialog());
             selfHost.title = t('oauth_relay_self_host_title');
             selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
-            assistActions.append(useDefault, selfHost);
+            const actionSeparator = document.createElement('span');
+            actionSeparator.className = 'oauth-relay-action-separator';
+            actionSeparator.setAttribute('aria-hidden', 'true');
+            actionSeparator.textContent = '·';
+            assistActions.append(useDefault, actionSeparator, selfHost);
             helper.append(helperText, assistActions);
 
             const checkRelay = async (event) => {
@@ -297,6 +301,14 @@
             steps.append(
                 setupGuideStep(
                     '1',
+                    t('oauth_setup_relay_title'),
+                    t('oauth_setup_relay_desc'),
+                    [
+                        setupGuideNote(t('oauth_setup_relay_input_note')),
+                    ]
+                ),
+                setupGuideStep(
+                    '2',
                     t('oauth_setup_oauth_app_title'),
                     t('oauth_setup_oauth_app_desc'),
                     [
@@ -319,7 +331,7 @@
                     ]
                 ),
                 setupGuideStep(
-                    '2',
+                    '3',
                     t('oauth_setup_permissions_title'),
                     t('oauth_setup_permissions_desc'),
                     [
@@ -331,7 +343,7 @@
                     ]
                 ),
                 setupGuideStep(
-                    '3',
+                    '4',
                     t('oauth_setup_env_title'),
                     t('oauth_setup_env_desc'),
                     [setupGuideCodeRow(t('oauth_setup_env_vars'), envSnippet)]

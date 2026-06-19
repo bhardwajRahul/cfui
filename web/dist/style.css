@@ -4365,13 +4365,13 @@ details.disclosure > .body {
 
 .oauth-relay-editor {
     display: grid;
-    gap: 8px;
-    max-width: 920px;
+    gap: 6px;
+    max-width: 960px;
 }
 
 .oauth-relay-field {
     display: grid;
-    gap: 6px;
+    gap: 7px;
     min-width: 0;
 }
 
@@ -4398,6 +4398,8 @@ details.disclosure > .body {
 
 .oauth-relay-copy {
     flex: 0 0 auto;
+    width: var(--tap);
+    height: var(--tap);
 }
 
 .oauth-relay-save {
@@ -4425,7 +4427,7 @@ details.disclosure > .body {
     flex-wrap: wrap;
     gap: 6px 8px;
     align-items: center;
-    min-height: 24px;
+    min-height: 22px;
     color: var(--text-muted);
     font-size: var(--fs-xs);
     line-height: 1.45;
@@ -4497,9 +4499,9 @@ details.disclosure > .body {
 .oauth-relay-helper {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 10px;
+    gap: 4px 12px;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     color: var(--text-muted);
     font-size: var(--fs-xs);
     line-height: 1.45;
@@ -4507,7 +4509,7 @@ details.disclosure > .body {
 
 .oauth-relay-helper-text {
     display: block;
-    flex: 1 1 360px;
+    flex: 0 1 auto;
     min-width: 0;
     overflow-wrap: anywhere;
 }
@@ -4517,8 +4519,13 @@ details.disclosure > .body {
     flex-wrap: wrap;
     gap: 6px;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     min-height: 28px;
+}
+
+.oauth-relay-action-separator {
+    color: var(--text-subtle);
+    font-size: var(--fs-xs);
 }
 
 .oauth-relay-inline-action {
