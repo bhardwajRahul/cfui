@@ -30,6 +30,25 @@
         browserCacheTTLs,
         writableZoneSettings,
     } = window.cfui.oauthData;
+    const d1JurisdictionOptions = [
+        ['', 'oauth_d1_jurisdiction_none'],
+        ['eu', 'oauth_d1_jurisdiction_eu'],
+        ['fedramp', 'oauth_d1_jurisdiction_fedramp'],
+    ];
+    const d1LocationHintOptions = [
+        ['', 'oauth_d1_location_default'],
+        ['wnam', 'oauth_d1_location_wnam'],
+        ['enam', 'oauth_d1_location_enam'],
+        ['weur', 'oauth_d1_location_weur'],
+        ['eeur', 'oauth_d1_location_eeur'],
+        ['apac', 'oauth_d1_location_apac'],
+        ['oc', 'oauth_d1_location_oc'],
+    ];
+    const d1ReadReplicationOptions = [
+        ['', 'oauth_d1_read_replication_default'],
+        ['auto', 'oauth_d1_read_replication_auto'],
+        ['disabled', 'oauth_d1_read_replication_disabled'],
+    ];
     const oauthSetup = window.cfui.oauthSetup.create({
         state,
         $,
@@ -4702,7 +4721,11 @@
             } else {
                 if (state.oauth.d1DetailsError) body.appendChild(empty(state.oauth.d1DetailsError));
                 rendered += renderSection(body, t('oauth_d1_databases'), state.oauth.d1Databases, (database) => {
-                    const meta = [`${database.num_tables || 0} ${t('oauth_tables')}`, formatBytes(database.file_size || 0)].join(' · ');
+                    const meta = [
+                        `${database.num_tables || 0} ${t('oauth_tables')}`,
+                        formatBytes(database.file_size || 0),
+                        d1PlacementSummary(database),
+                    ].filter(Boolean).join(' · ');
                     const actions = canWrite('d1') ? [
                         smallButton(t('delete'), 'btn btn--sm btn--danger', (event) => deleteD1Database(database, event.currentTarget)),
                     ] : [];
@@ -5086,6 +5109,9 @@
             num_tables: Number(database?.num_tables || 0),
             file_size: Number(database?.file_size || 0),
             created_at: database?.created_at || '',
+            jurisdiction: database?.jurisdiction || '',
+            running_in_region: database?.running_in_region || '',
+            read_replication_mode: database?.read_replication?.mode || '',
         };
     }
 
@@ -5538,9 +5564,35 @@
             metricNode(t('oauth_d1_file_size'), formatBytes(database.file_size || 0)),
             metricNode(t('oauth_d1_version'), database.version || t('oauth_d1_unavailable')),
             metricNode(t('oauth_d1_created'), formatDate(database.created_at) || t('oauth_d1_unavailable')),
+            metricNode(t('oauth_d1_jurisdiction'), d1JurisdictionLabel(database.jurisdiction) || t('oauth_d1_unavailable')),
+            metricNode(t('oauth_d1_running_region'), database.running_in_region || t('oauth_d1_unavailable')),
+            metricNode(t('oauth_d1_read_replication'), d1ReadReplicationLabel(database.read_replication) || t('oauth_d1_unavailable')),
         );
         section.appendChild(grid);
         return section;
+    }
+
+    function d1PlacementSummary(database) {
+        const parts = [
+            d1JurisdictionLabel(database?.jurisdiction),
+            database?.running_in_region ? `${t('oauth_d1_running_region_short')} ${database.running_in_region}` : '',
+            d1ReadReplicationLabel(database?.read_replication),
+        ].filter(Boolean);
+        return parts.join(' · ');
+    }
+
+    function d1JurisdictionLabel(value) {
+        value = String(value || '').trim().toLowerCase();
+        if (!value) return '';
+        const found = d1JurisdictionOptions.find(([optionValue]) => optionValue === value);
+        return found ? t(found[1]) : value;
+    }
+
+    function d1ReadReplicationLabel(readReplication) {
+        const mode = String(readReplication?.mode || '').trim().toLowerCase();
+        if (!mode) return '';
+        const found = d1ReadReplicationOptions.find(([optionValue]) => optionValue === mode);
+        return found ? t(found[1]) : mode;
     }
 
     function d1TablesSectionNode() {
@@ -8744,11 +8796,24 @@
         nameInput.maxLength = 512;
         nameInput.placeholder = t('oauth_d1_database_name_placeholder');
         grid.appendChild(formField(t('oauth_d1_database_name'), nameInput));
+        const jurisdictionSelect = optionSelect(d1JurisdictionOptions);
+        grid.appendChild(formField(t('oauth_d1_jurisdiction'), jurisdictionSelect));
+        const locationSelect = optionSelect(d1LocationHintOptions);
+        grid.appendChild(formField(t('oauth_d1_primary_location_hint'), locationSelect));
+        const replicationSelect = optionSelect(d1ReadReplicationOptions);
+        grid.appendChild(formField(t('oauth_d1_read_replication'), replicationSelect));
+        const syncLocationState = () => {
+            const hasJurisdiction = !!jurisdictionSelect.value;
+            if (hasJurisdiction) locationSelect.value = '';
+            locationSelect.disabled = hasJurisdiction;
+        };
+        jurisdictionSelect.addEventListener('change', syncLocationState);
+        syncLocationState();
         form.appendChild(grid);
 
         const hint = document.createElement('div');
         hint.className = 'oauth-row-meta';
-        hint.textContent = t('oauth_d1_create_database_hint');
+        hint.textContent = t('oauth_d1_create_database_hint') + ' ' + t('oauth_d1_placement_hint');
         form.appendChild(hint);
 
         const actions = document.createElement('div');
@@ -8764,7 +8829,11 @@
 
         form.addEventListener('submit', (event) => {
             event.preventDefault();
-            createD1Database({ name: nameInput.value.trim() }, submitBtn);
+            const payload = { name: nameInput.value.trim() };
+            if (jurisdictionSelect.value) payload.jurisdiction = jurisdictionSelect.value;
+            if (locationSelect.value) payload.primary_location_hint = locationSelect.value;
+            if (replicationSelect.value) payload.read_replication = { mode: replicationSelect.value };
+            createD1Database(payload, submitBtn);
         });
         requestAnimationFrame(() => nameInput.focus());
         return form;
@@ -9373,6 +9442,19 @@
         span.textContent = labelText;
         label.append(span, control);
         return label;
+    }
+
+    function optionSelect(options, value = '') {
+        const select = document.createElement('select');
+        select.className = 'form-select';
+        for (const [optionValue, labelKey] of options) {
+            const option = document.createElement('option');
+            option.value = optionValue;
+            option.textContent = t(labelKey);
+            select.appendChild(option);
+        }
+        select.value = value;
+        return select;
     }
 
     function toggleOption(labelText, checked = false) {

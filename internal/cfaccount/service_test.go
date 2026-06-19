@@ -407,6 +407,112 @@ func TestD1DatabaseLifecycleUsesCloudflareSDK(t *testing.T) {
 	}
 }
 
+func TestD1DatabaseRESTPlacementFields(t *testing.T) {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	createdAt := "2026-06-18T09:00:00Z"
+	mux.HandleFunc("/client/v4/accounts/account-1/d1/database", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		if r.Method != http.MethodPost {
+			t.Fatalf("d1 create method = %s, want POST", r.Method)
+		}
+		var req D1DatabaseCreateRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode create d1 request: %v", err)
+		}
+		if req.Name != "prod-db" || req.Jurisdiction != "eu" || req.PrimaryLocationHint != "wnam" {
+			t.Fatalf("unexpected create d1 request: %#v", req)
+		}
+		if req.ReadReplication == nil || req.ReadReplication.Mode != "auto" {
+			t.Fatalf("unexpected read replication request: %#v", req.ReadReplication)
+		}
+		writeCFEnvelope(w, `{"uuid":"database-1","name":"prod-db","num_tables":1,"file_size":4096,"version":"alpha","created_at":"`+createdAt+`","jurisdiction":"eu","running_in_region":"WEUR","read_replication":{"mode":"auto"}}`, nil)
+	})
+	mux.HandleFunc("/client/v4/accounts/account-1/d1/database/database-1", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		if r.Method != http.MethodGet {
+			t.Fatalf("d1 detail method = %s, want GET", r.Method)
+		}
+		writeCFEnvelope(w, `{"uuid":"database-1","name":"prod-db","num_tables":2,"file_size":8192,"version":"alpha","created_at":"`+createdAt+`","jurisdiction":"eu","running_in_region":"WEUR","read_replication":{"mode":"disabled"}}`, nil)
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewService(testOAuthServiceWithScopes(t, "d1.read d1.write"))
+	svc.restEndpoint = server.URL + "/client/v4"
+
+	created, err := svc.CreateD1Database(ctx, "account-1", D1DatabaseCreateRequest{
+		Name:                " prod-db ",
+		Jurisdiction:        " EU ",
+		PrimaryLocationHint: " WNAM ",
+		ReadReplication:     &D1ReadReplication{Mode: " AUTO "},
+	})
+	if err != nil {
+		t.Fatalf("CreateD1Database: %v", err)
+	}
+	if created.Database.Jurisdiction != "eu" || created.Database.RunningInRegion != "WEUR" {
+		t.Fatalf("unexpected created placement fields: %#v", created.Database)
+	}
+	if created.Database.ReadReplication == nil || created.Database.ReadReplication.Mode != "auto" {
+		t.Fatalf("unexpected created read replication: %#v", created.Database.ReadReplication)
+	}
+
+	detail, err := svc.D1Database(ctx, "account-1", "database-1")
+	if err != nil {
+		t.Fatalf("D1Database: %v", err)
+	}
+	if detail.Database.NumTables != 2 || detail.Database.FileSize != 8192 {
+		t.Fatalf("unexpected detail database: %#v", detail.Database)
+	}
+	if detail.Database.Jurisdiction != "eu" || detail.Database.RunningInRegion != "WEUR" {
+		t.Fatalf("unexpected detail placement fields: %#v", detail.Database)
+	}
+	if detail.Database.ReadReplication == nil || detail.Database.ReadReplication.Mode != "disabled" {
+		t.Fatalf("unexpected detail read replication: %#v", detail.Database.ReadReplication)
+	}
+}
+
+func TestNormalizeD1DatabaseCreateRequest(t *testing.T) {
+	req, err := normalizeD1DatabaseCreateRequest(D1DatabaseCreateRequest{
+		Name:                " prod-db ",
+		Jurisdiction:        " EU ",
+		PrimaryLocationHint: " WNAM ",
+		ReadReplication:     &D1ReadReplication{Mode: " AUTO "},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if req.Name != "prod-db" || req.Jurisdiction != "eu" || req.PrimaryLocationHint != "wnam" {
+		t.Fatalf("unexpected normalized request: %#v", req)
+	}
+	if req.ReadReplication == nil || req.ReadReplication.Mode != "auto" {
+		t.Fatalf("unexpected normalized read replication: %#v", req.ReadReplication)
+	}
+
+	tests := []struct {
+		name string
+		req  D1DatabaseCreateRequest
+	}{
+		{name: "empty name", req: D1DatabaseCreateRequest{Name: " "}},
+		{name: "too long name", req: D1DatabaseCreateRequest{Name: strings.Repeat("x", maxD1IdentifierLen+1)}},
+		{name: "bad jurisdiction", req: D1DatabaseCreateRequest{Name: "prod-db", Jurisdiction: "global"}},
+		{name: "bad location hint", req: D1DatabaseCreateRequest{Name: "prod-db", PrimaryLocationHint: "mars"}},
+		{name: "bad read replication", req: D1DatabaseCreateRequest{Name: "prod-db", ReadReplication: &D1ReadReplication{Mode: "always"}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := normalizeD1DatabaseCreateRequest(tt.req); err == nil {
+				t.Fatalf("expected error")
+			} else {
+				var validationErr ValidationError
+				if !errors.As(err, &validationErr) {
+					t.Fatalf("expected ValidationError, got %T", err)
+				}
+			}
+		})
+	}
+}
+
 func TestKVNamespaceLifecycleUsesCloudflareSDK(t *testing.T) {
 	ctx := context.Background()
 	mux := http.NewServeMux()

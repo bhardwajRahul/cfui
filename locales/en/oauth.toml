@@ -2104,6 +2104,9 @@ other = "prod-db"
 [oauth_d1_create_database_hint]
 other = "Creates a Cloudflare D1 database in the selected account."
 
+[oauth_d1_placement_hint]
+other = "Jurisdiction is a create-time option; when set, Cloudflare ignores the primary location hint."
+
 [oauth_d1_database_created]
 other = "D1 database created."
 
@@ -2127,6 +2130,60 @@ other = "Version"
 
 [oauth_d1_created]
 other = "Created"
+
+[oauth_d1_jurisdiction]
+other = "Jurisdiction"
+
+[oauth_d1_jurisdiction_none]
+other = "Default jurisdiction"
+
+[oauth_d1_jurisdiction_eu]
+other = "EU"
+
+[oauth_d1_jurisdiction_fedramp]
+other = "FedRAMP"
+
+[oauth_d1_primary_location_hint]
+other = "Primary location hint"
+
+[oauth_d1_location_default]
+other = "Cloudflare default"
+
+[oauth_d1_location_wnam]
+other = "Western North America (WNAM)"
+
+[oauth_d1_location_enam]
+other = "Eastern North America (ENAM)"
+
+[oauth_d1_location_weur]
+other = "Western Europe (WEUR)"
+
+[oauth_d1_location_eeur]
+other = "Eastern Europe (EEUR)"
+
+[oauth_d1_location_apac]
+other = "Asia-Pacific (APAC)"
+
+[oauth_d1_location_oc]
+other = "Oceania (OC)"
+
+[oauth_d1_running_region]
+other = "Running region"
+
+[oauth_d1_running_region_short]
+other = "Region"
+
+[oauth_d1_read_replication]
+other = "Read replication"
+
+[oauth_d1_read_replication_default]
+other = "Cloudflare default"
+
+[oauth_d1_read_replication_auto]
+other = "Auto"
+
+[oauth_d1_read_replication_disabled]
+other = "Disabled"
 
 [oauth_d1_unavailable]
 other = "Unavailable"

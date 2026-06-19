@@ -2104,6 +2104,9 @@ other = "prod-db"
 [oauth_d1_create_database_hint]
 other = "在当前选中的 Cloudflare 账号下创建一个 D1 数据库。"
 
+[oauth_d1_placement_hint]
+other = "Jurisdiction 是创建时选项；设置后 Cloudflare 会忽略主位置提示。"
+
 [oauth_d1_database_created]
 other = "D1 数据库已创建。"
 
@@ -2127,6 +2130,60 @@ other = "版本"
 
 [oauth_d1_created]
 other = "创建时间"
+
+[oauth_d1_jurisdiction]
+other = "Jurisdiction"
+
+[oauth_d1_jurisdiction_none]
+other = "默认 jurisdiction"
+
+[oauth_d1_jurisdiction_eu]
+other = "EU"
+
+[oauth_d1_jurisdiction_fedramp]
+other = "FedRAMP"
+
+[oauth_d1_primary_location_hint]
+other = "主位置提示"
+
+[oauth_d1_location_default]
+other = "Cloudflare 默认"
+
+[oauth_d1_location_wnam]
+other = "北美西部 (WNAM)"
+
+[oauth_d1_location_enam]
+other = "北美东部 (ENAM)"
+
+[oauth_d1_location_weur]
+other = "西欧 (WEUR)"
+
+[oauth_d1_location_eeur]
+other = "东欧 (EEUR)"
+
+[oauth_d1_location_apac]
+other = "亚太 (APAC)"
+
+[oauth_d1_location_oc]
+other = "大洋洲 (OC)"
+
+[oauth_d1_running_region]
+other = "运行区域"
+
+[oauth_d1_running_region_short]
+other = "区域"
+
+[oauth_d1_read_replication]
+other = "读副本"
+
+[oauth_d1_read_replication_default]
+other = "Cloudflare 默认"
+
+[oauth_d1_read_replication_auto]
+other = "自动"
+
+[oauth_d1_read_replication_disabled]
+other = "禁用"
 
 [oauth_d1_unavailable]
 other = "不可用"

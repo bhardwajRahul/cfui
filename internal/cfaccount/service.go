@@ -56,6 +56,7 @@ const (
 	maxD1TableLimit               = 100
 	maxD1CellValueBytes           = 64 * 1024
 	maxD1IdentifierLen            = 512
+	maxD1PlacementValueLen        = 32
 	maxKVNamespaceTitleBytes      = 512
 	maxKVBulkDeleteKeys           = 1000
 	d1RowIDDefaultKey             = "_cfui_rowid_"
@@ -574,22 +575,32 @@ type R2ObjectDownload struct {
 }
 
 type D1Database struct {
-	UUID      string     `json:"uuid"`
-	Name      string     `json:"name"`
-	Version   string     `json:"version,omitempty"`
-	NumTables int        `json:"num_tables"`
-	FileSize  int64      `json:"file_size"`
-	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UUID            string             `json:"uuid"`
+	Name            string             `json:"name"`
+	Version         string             `json:"version,omitempty"`
+	NumTables       int                `json:"num_tables"`
+	FileSize        int64              `json:"file_size"`
+	CreatedAt       *time.Time         `json:"created_at,omitempty"`
+	Jurisdiction    string             `json:"jurisdiction,omitempty"`
+	RunningInRegion string             `json:"running_in_region,omitempty"`
+	ReadReplication *D1ReadReplication `json:"read_replication,omitempty"`
 }
 
 type D1DatabaseCreateRequest struct {
-	Name string `json:"name"`
+	Name                string             `json:"name"`
+	Jurisdiction        string             `json:"jurisdiction,omitempty"`
+	PrimaryLocationHint string             `json:"primary_location_hint,omitempty"`
+	ReadReplication     *D1ReadReplication `json:"read_replication,omitempty"`
 }
 
 type D1DatabaseDetailResponse struct {
 	Database     D1Database               `json:"database"`
 	Session      cfoauth.SessionSummary   `json:"session"`
 	Capabilities cfoauth.CapabilityMatrix `json:"capabilities"`
+}
+
+type D1ReadReplication struct {
+	Mode string `json:"mode,omitempty"`
 }
 
 type KVNamespace struct {
@@ -2387,22 +2398,41 @@ func (s *Service) D1Databases(ctx context.Context, accountID string) (ListRespon
 }
 
 func (s *Service) CreateD1Database(ctx context.Context, accountID string, req D1DatabaseCreateRequest) (D1DatabaseDetailResponse, error) {
-	client, session, err := s.currentClient(ctx)
+	token, session, err := s.auth.CurrentAccessToken(ctx)
 	if err != nil {
 		return D1DatabaseDetailResponse{}, err
+	}
+	client, err := cloudflare.NewWithAPIToken(token)
+	if err != nil {
+		return D1DatabaseDetailResponse{}, err
+	}
+	if endpoint := strings.TrimRight(strings.TrimSpace(s.restEndpoint), "/"); endpoint != "" {
+		client.BaseURL = endpoint
 	}
 	accountID = strings.TrimSpace(accountID)
 	if accountID == "" {
 		return D1DatabaseDetailResponse{}, validationError("account_id is required")
 	}
-	name := strings.TrimSpace(req.Name)
-	if name == "" {
-		return D1DatabaseDetailResponse{}, validationError("database name is required")
+	req, err = normalizeD1DatabaseCreateRequest(req)
+	if err != nil {
+		return D1DatabaseDetailResponse{}, err
 	}
-	if len(name) > maxD1IdentifierLen {
-		return D1DatabaseDetailResponse{}, validationError("database name is too long")
+	if d1CreateUsesREST(req) {
+		body, err := json.Marshal(req)
+		if err != nil {
+			return D1DatabaseDetailResponse{}, err
+		}
+		var database D1Database
+		if _, err := s.cfAPI(ctx, token, http.MethodPost, d1DatabasesPath(accountID), nil, "application/json", bytes.NewReader(body), &database); err != nil {
+			return D1DatabaseDetailResponse{}, err
+		}
+		return D1DatabaseDetailResponse{
+			Database:     normalizeD1DatabaseREST(database),
+			Session:      session,
+			Capabilities: session.Capabilities,
+		}, nil
 	}
-	database, err := client.CreateD1Database(ctx, cloudflare.AccountIdentifier(accountID), cloudflare.CreateD1DatabaseParams{Name: name})
+	database, err := client.CreateD1Database(ctx, cloudflare.AccountIdentifier(accountID), cloudflare.CreateD1DatabaseParams{Name: req.Name})
 	if err != nil {
 		return D1DatabaseDetailResponse{}, err
 	}
@@ -2414,7 +2444,7 @@ func (s *Service) CreateD1Database(ctx context.Context, accountID string, req D1
 }
 
 func (s *Service) D1Database(ctx context.Context, accountID, databaseID string) (D1DatabaseDetailResponse, error) {
-	client, session, err := s.currentClient(ctx)
+	token, session, err := s.auth.CurrentAccessToken(ctx)
 	if err != nil {
 		return D1DatabaseDetailResponse{}, err
 	}
@@ -2422,12 +2452,12 @@ func (s *Service) D1Database(ctx context.Context, accountID, databaseID string) 
 	if err != nil {
 		return D1DatabaseDetailResponse{}, err
 	}
-	database, err := client.GetD1Database(ctx, cloudflare.AccountIdentifier(accountID), databaseID)
-	if err != nil {
+	var database D1Database
+	if _, err := s.cfAPI(ctx, token, http.MethodGet, d1DatabasePath(accountID, databaseID), nil, "", nil, &database); err != nil {
 		return D1DatabaseDetailResponse{}, err
 	}
 	return D1DatabaseDetailResponse{
-		Database:     mapD1Database(database),
+		Database:     normalizeD1DatabaseREST(database),
 		Session:      session,
 		Capabilities: session.Capabilities,
 	}, nil
@@ -3754,6 +3784,14 @@ func r2ObjectPath(accountID, bucketName, key string) string {
 	return r2ObjectsPath(accountID, bucketName) + "/" + url.PathEscape(key)
 }
 
+func d1DatabasesPath(accountID string) string {
+	return "/accounts/" + url.PathEscape(accountID) + "/d1/database"
+}
+
+func d1DatabasePath(accountID, databaseID string) string {
+	return d1DatabasesPath(accountID) + "/" + url.PathEscape(databaseID)
+}
+
 func intFromContentLength(contentLength int64) int {
 	if contentLength <= 0 {
 		return 0
@@ -4591,6 +4629,89 @@ func normalizeD1QueryRequest(req D1QueryRequest) (D1QueryRequest, error) {
 		}
 	}
 	return req, nil
+}
+
+func normalizeD1DatabaseCreateRequest(req D1DatabaseCreateRequest) (D1DatabaseCreateRequest, error) {
+	req.Name = strings.TrimSpace(req.Name)
+	if req.Name == "" {
+		return D1DatabaseCreateRequest{}, validationError("database name is required")
+	}
+	if len(req.Name) > maxD1IdentifierLen {
+		return D1DatabaseCreateRequest{}, validationError("database name is too long")
+	}
+	var err error
+	req.Jurisdiction, err = normalizeD1Jurisdiction(req.Jurisdiction)
+	if err != nil {
+		return D1DatabaseCreateRequest{}, err
+	}
+	req.PrimaryLocationHint, err = normalizeD1PrimaryLocationHint(req.PrimaryLocationHint)
+	if err != nil {
+		return D1DatabaseCreateRequest{}, err
+	}
+	if req.ReadReplication != nil {
+		mode, err := normalizeD1ReadReplicationMode(req.ReadReplication.Mode)
+		if err != nil {
+			return D1DatabaseCreateRequest{}, err
+		}
+		if mode == "" {
+			req.ReadReplication = nil
+		} else {
+			req.ReadReplication = &D1ReadReplication{Mode: mode}
+		}
+	}
+	return req, nil
+}
+
+func d1CreateUsesREST(req D1DatabaseCreateRequest) bool {
+	return req.Jurisdiction != "" || req.PrimaryLocationHint != "" || req.ReadReplication != nil
+}
+
+func normalizeD1Jurisdiction(value string) (string, error) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "" {
+		return "", nil
+	}
+	if len(value) > maxD1PlacementValueLen {
+		return "", validationError("jurisdiction is too long")
+	}
+	switch value {
+	case "eu", "fedramp":
+		return value, nil
+	default:
+		return "", validationError("jurisdiction must be eu or fedramp")
+	}
+}
+
+func normalizeD1PrimaryLocationHint(value string) (string, error) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "" {
+		return "", nil
+	}
+	if len(value) > maxD1PlacementValueLen {
+		return "", validationError("primary_location_hint is too long")
+	}
+	switch value {
+	case "wnam", "enam", "weur", "eeur", "apac", "oc":
+		return value, nil
+	default:
+		return "", validationError("primary_location_hint is invalid")
+	}
+}
+
+func normalizeD1ReadReplicationMode(value string) (string, error) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "" {
+		return "", nil
+	}
+	if len(value) > maxD1PlacementValueLen {
+		return "", validationError("read_replication mode is too long")
+	}
+	switch value {
+	case "auto", "disabled":
+		return value, nil
+	default:
+		return "", validationError("read_replication mode must be auto or disabled")
+	}
 }
 
 func normalizeD1Target(accountID, databaseID string) (string, string, error) {
@@ -6535,6 +6656,23 @@ func mapD1Database(database cloudflare.D1Database) D1Database {
 		FileSize:  database.FileSize,
 		CreatedAt: database.CreatedAt,
 	}
+}
+
+func normalizeD1DatabaseREST(database D1Database) D1Database {
+	database.UUID = strings.TrimSpace(database.UUID)
+	database.Name = strings.TrimSpace(database.Name)
+	database.Version = strings.TrimSpace(database.Version)
+	database.Jurisdiction = strings.TrimSpace(database.Jurisdiction)
+	database.RunningInRegion = strings.TrimSpace(database.RunningInRegion)
+	if database.ReadReplication != nil {
+		mode := strings.TrimSpace(database.ReadReplication.Mode)
+		if mode == "" {
+			database.ReadReplication = nil
+		} else {
+			database.ReadReplication = &D1ReadReplication{Mode: mode}
+		}
+	}
+	return database
 }
 
 func mapKVNamespace(namespace cloudflare.WorkersKVNamespace) KVNamespace {

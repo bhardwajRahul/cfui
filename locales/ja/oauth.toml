@@ -2104,6 +2104,9 @@ other = "prod-db"
 [oauth_d1_create_database_hint]
 other = "選択中の Cloudflare アカウントに D1 データベースを作成します。"
 
+[oauth_d1_placement_hint]
+other = "Jurisdiction は作成時のみのオプションです。設定すると Cloudflare は主ロケーションヒントを無視します。"
+
 [oauth_d1_database_created]
 other = "D1 データベースを作成しました。"
 
@@ -2127,6 +2130,60 @@ other = "バージョン"
 
 [oauth_d1_created]
 other = "作成日時"
+
+[oauth_d1_jurisdiction]
+other = "Jurisdiction"
+
+[oauth_d1_jurisdiction_none]
+other = "既定 jurisdiction"
+
+[oauth_d1_jurisdiction_eu]
+other = "EU"
+
+[oauth_d1_jurisdiction_fedramp]
+other = "FedRAMP"
+
+[oauth_d1_primary_location_hint]
+other = "主ロケーションヒント"
+
+[oauth_d1_location_default]
+other = "Cloudflare 既定"
+
+[oauth_d1_location_wnam]
+other = "北米西部 (WNAM)"
+
+[oauth_d1_location_enam]
+other = "北米東部 (ENAM)"
+
+[oauth_d1_location_weur]
+other = "西ヨーロッパ (WEUR)"
+
+[oauth_d1_location_eeur]
+other = "東ヨーロッパ (EEUR)"
+
+[oauth_d1_location_apac]
+other = "アジア太平洋 (APAC)"
+
+[oauth_d1_location_oc]
+other = "オセアニア (OC)"
+
+[oauth_d1_running_region]
+other = "実行リージョン"
+
+[oauth_d1_running_region_short]
+other = "リージョン"
+
+[oauth_d1_read_replication]
+other = "読み取りレプリケーション"
+
+[oauth_d1_read_replication_default]
+other = "Cloudflare 既定"
+
+[oauth_d1_read_replication_auto]
+other = "自動"
+
+[oauth_d1_read_replication_disabled]
+other = "無効"
 
 [oauth_d1_unavailable]
 other = "利用不可"
