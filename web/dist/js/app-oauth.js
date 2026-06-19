@@ -3271,8 +3271,52 @@
             [t('oauth_zone_paused'), zone.paused ? t('yes') : t('no')],
         ].filter(([, value]) => value);
         for (const [label, value] of rows) section.appendChild(rowNode(label, value));
+        const tools = zoneToolsNode();
+        if (tools) section.appendChild(tools);
         const quickActions = zoneQuickActionsNode();
         if (quickActions) section.appendChild(quickActions);
+        return section;
+    }
+
+    function zoneToolsNode() {
+        const actions = [
+            { resource: 'dns', label: t('oauth_dns'), meta: () => zoneDNSCountText() },
+            { resource: 'analytics', label: t('oauth_analytics'), meta: () => t('oauth_zone_tool_open') },
+            { resource: 'waf', label: t('oauth_waf'), meta: () => t('oauth_zone_tool_open') },
+            { resource: 'snippets', label: t('oauth_snippets'), meta: () => t('oauth_zone_tool_open') },
+            { resource: 'settings', label: t('oauth_zone_settings'), meta: () => t('oauth_zone_tool_open') },
+        ];
+        const wrap = document.createElement('div');
+        wrap.className = 'oauth-overview-actions oauth-zone-tools-grid';
+        for (const action of actions) {
+            const resourceDef = resourceDefinitions.find((definition) => definition.id === action.resource);
+            if (!resourceDef || !canSeeResource(resourceDef)) continue;
+            const disabledReason = resourceDef.needsZone && !state.oauth.selectedZoneId ? t('oauth_overview_action_select_zone') : '';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'oauth-overview-action';
+            button.disabled = !!disabledReason;
+            if (disabledReason) button.title = disabledReason;
+            button.addEventListener('click', async () => {
+                await switchOAuthResource(action.resource);
+            });
+            const title = document.createElement('span');
+            title.className = 'oauth-overview-action-title';
+            title.textContent = action.label;
+            const meta = document.createElement('span');
+            meta.className = 'oauth-overview-action-meta';
+            meta.textContent = disabledReason || action.meta();
+            button.append(title, meta);
+            wrap.appendChild(button);
+        }
+        if (!wrap.childElementCount) return null;
+
+        const section = document.createElement('section');
+        section.className = 'oauth-section oauth-zone-tools';
+        const heading = document.createElement('h4');
+        heading.className = 'oauth-section-title';
+        heading.textContent = t('oauth_zone_tools');
+        section.append(heading, wrap);
         return section;
     }
 

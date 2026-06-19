@@ -205,6 +205,12 @@ other = "复制当前域名列表和所选域名详情诊断信息，不包含 O
 [oauth_zone_overview]
 other = "域名概览"
 
+[oauth_zone_tools]
+other = "域名工具"
+
+[oauth_zone_tool_open]
+other = "打开"
+
 [oauth_zone_loading]
 other = "正在加载域名详情..."
 

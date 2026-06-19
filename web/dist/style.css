@@ -5225,6 +5225,15 @@ details.disclosure > .body {
     overflow-wrap: anywhere;
 }
 
+.oauth-zone-tools {
+    gap: 8px;
+    padding-top: 8px;
+}
+
+.oauth-zone-tools-grid {
+    grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+}
+
 .oauth-analytics-series {
     display: grid;
     gap: 8px;

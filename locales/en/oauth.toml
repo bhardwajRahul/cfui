@@ -205,6 +205,12 @@ other = "Copy current zone list and selected zone detail diagnostics. OAuth toke
 [oauth_zone_overview]
 other = "Zone overview"
 
+[oauth_zone_tools]
+other = "Zone tools"
+
+[oauth_zone_tool_open]
+other = "Open"
+
 [oauth_zone_loading]
 other = "Loading zone detail..."
 
