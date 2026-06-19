@@ -43,6 +43,9 @@ other = "请输入中转回调 URL。"
 [oauth_relay_saved]
 other = "中转回调已保存。"
 
+[oauth_relay_copy_title]
+other = "复制中转回调 URL"
+
 [oauth_relay_config_hint]
 other = "Cloudflare OAuth 客户端的 Redirect callback URL 只填这个地址。"
 
@@ -1051,14 +1054,17 @@ other = "<你的 Worker relay 回调 URL>"
 [oauth_relay_check]
 other = "检测"
 
+[oauth_relay_check_title]
+other = "保存当前输入并检测 relay 是否可用"
+
 [oauth_relay_checking]
 other = "正在检查 relay..."
 
 [oauth_relay_check_ok]
-other = "中继服务可访问，且支持 state 回调"
+other = "Relay 可用，支持 state 回调"
 
 [oauth_relay_check_outdated]
-other = "中继服务可访问，但需要更新 Worker"
+other = "Relay 可访问，但 Worker 需更新"
 
 [oauth_relay_check_outdated_hint]
 other = "请重新部署内置 Worker，OAuth state 回调才会生效"

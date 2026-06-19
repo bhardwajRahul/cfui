@@ -43,6 +43,9 @@ other = "Enter a relay callback URL."
 [oauth_relay_saved]
 other = "Relay callback saved."
 
+[oauth_relay_copy_title]
+other = "Copy relay callback URL"
+
 [oauth_relay_config_hint]
 other = "Use this exact address as the Cloudflare OAuth client's Redirect callback URL."
 
@@ -1051,11 +1054,14 @@ other = "<your Worker relay callback URL>"
 [oauth_relay_check]
 other = "Check"
 
+[oauth_relay_check_title]
+other = "Save the current input and check whether the relay works"
+
 [oauth_relay_checking]
 other = "Checking relay..."
 
 [oauth_relay_check_ok]
-other = "Relay is reachable and supports state callbacks"
+other = "Relay works and supports state callbacks"
 
 [oauth_relay_check_outdated]
 other = "Relay is reachable but needs the latest Worker"

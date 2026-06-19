@@ -217,7 +217,7 @@ R2 object 详情视图还会提供复制 key、复制对象和移动对象操作
 
 1. 创建 Cloudflare OAuth app，并把 redirect URI 设置为 Worker relay 地址。
 2. 设置 `CFUI_OAUTH_CLIENT_ID` 为 OAuth client ID。
-3. `CFUI_OAUTH_RELAY_URL` 可以保持默认 relay（`https://oauth.omarchy.qzz.io/oauth/callback`），也可以换成你自己的 Worker relay；OAuth setup 页面里保存的 SQLite 值会覆盖环境变量默认值。
+3. `CFUI_OAUTH_RELAY_URL` 可以保持默认 relay（`https://oauth.omarchy.qzz.io/oauth/callback`），也可以换成你自己的 Worker relay；OAuth setup 页面里保存的 SQLite 值会覆盖环境变量默认值。页面会提供复制、保存和检测动作，检测会确认 relay `/health` 是否支持 `state-v1` 回调。
 4. 可以使用默认 Worker relay，也可以部署 `docs/cloudflare-oauth-worker.js`。Cloudflare OAuth app 的 redirect URI 只填写 Worker 的公网 HTTPS 回调 URL，例如 `https://oauth.omarchy.qzz.io/oauth/callback`，不要追加 `cfui_callback_url`。cfui 发起登录时会把当前浏览器访问到的 `/oauth/callback` URL 编码进 OAuth `state`，Worker 从 state 中读取目标后把 `code`、`state` 或 OAuth 错误转发回对应 cfui 实例。一个 Worker 服务公网 cfui 域名时，配置 Worker 变量 `CFUI_ALLOWED_CALLBACK_ORIGINS` 为逗号分隔的 origin 白名单，或明确设置 `*` 作为多用户 relay；loopback、私有/局域网 IP、`.local`、`.internal`、`.lan`、`.home.arpa` 和 `.test` 回调主机默认放行。`CFUI_CALLBACK_URL` 仅作为可选 fallback。Worker 会暴露带 `state-v1` 标记的 `/health`，cfui 可在 OAuth setup 页面或通过 `GET /api/oauth/relay-check` 检查它。
 
 Zone 概览会用 `GET /api/cf/dns/count` 读取 DNS 记录总数，避免为了计数加载全部记录。D1 会先加载数据库列表，再 best-effort 调用 `GET /api/cf/d1/databases/{database_id}` 回填每个数据库的表数量和文件大小，使展示口径与 Cloudflare 详情端点一致。详情回填失败不会阻塞数据库列表、SQL 控制台或表浏览。

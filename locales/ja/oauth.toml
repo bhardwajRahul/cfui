@@ -43,6 +43,9 @@ other = "Relay callback URL を入力してください。"
 [oauth_relay_saved]
 other = "Relay callback を保存しました。"
 
+[oauth_relay_copy_title]
+other = "Relay callback URL をコピー"
+
 [oauth_relay_config_hint]
 other = "Cloudflare OAuth クライアントの Redirect callback URL にはこのアドレスだけを入力します。"
 
@@ -1051,14 +1054,17 @@ other = "<Worker relay callback URL>"
 [oauth_relay_check]
 other = "確認"
 
+[oauth_relay_check_title]
+other = "現在の入力を保存し、relay が利用可能か確認"
+
 [oauth_relay_checking]
 other = "Relay を確認中..."
 
 [oauth_relay_check_ok]
-other = "Relay に到達でき、state callback に対応しています"
+other = "Relay は利用可能で state callback に対応しています"
 
 [oauth_relay_check_outdated]
-other = "Relay には到達できますが、最新 Worker が必要です"
+other = "Relay には到達できますが Worker の更新が必要です"
 
 [oauth_relay_check_outdated_hint]
 other = "OAuth state callback を使うには内蔵 Worker を再デプロイしてください"

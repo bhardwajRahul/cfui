@@ -4372,7 +4372,7 @@ details.disclosure > .body {
 
 .oauth-relay-input-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(84px, auto);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
     align-items: center;
 }
@@ -4381,6 +4381,57 @@ details.disclosure > .body {
     width: 100%;
     min-height: var(--tap);
     font-size: 0.8rem;
+}
+
+.oauth-relay-primary-actions {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-end;
+    white-space: nowrap;
+}
+
+.oauth-relay-copy {
+    flex: 0 0 auto;
+}
+
+.oauth-relay-check,
+.oauth-relay-save {
+    min-width: 72px;
+}
+
+.oauth-relay-status-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    align-items: center;
+    min-height: 28px;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+}
+
+.oauth-relay-status-message {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.oauth-relay-check-status {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-width: 0;
+}
+
+.oauth-relay-check-pill {
+    max-width: min(100%, 420px);
+}
+
+.oauth-relay-check-detail {
+    min-width: 0;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
 }
 
 .oauth-relay-helper {
@@ -5733,6 +5784,17 @@ details.oauth-form-section > summary {
 
     .oauth-relay-input-row {
         grid-template-columns: 1fr;
+    }
+
+    .oauth-relay-primary-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .oauth-relay-check,
+    .oauth-relay-save {
+        flex: 1 1 0;
+        min-width: 0;
     }
 
     .oauth-relay-inline-action {

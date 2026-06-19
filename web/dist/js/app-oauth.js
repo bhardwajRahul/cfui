@@ -54,7 +54,7 @@
         relayURL = String(relayURL || '').trim();
         if (!relayURL) {
             toast.err(t('oauth_relay_required'));
-            return;
+            return null;
         }
         setBusy(button, true, t('saving'));
         try {
@@ -64,10 +64,37 @@
             state.oauth.relayCheckError = '';
             renderOAuthStatus(status);
             toast.ok(t('oauth_relay_saved'));
+            return status;
         } catch (err) {
             toast.err(err.message);
+            return null;
         } finally {
             setBusy(button, false);
+        }
+    }
+
+    async function checkOAuthRelayCallback(button) {
+        state.oauth.relayCheckLoading = true;
+        state.oauth.relayCheckError = '';
+        setBusy(button, true, t('oauth_relay_checking'));
+        try {
+            const check = await apiGet('/oauth/relay-check');
+            state.oauth.relayCheck = check;
+            if (check?.reachable && check?.supports_state_callback) {
+                toast.ok(t('oauth_relay_check_ok'));
+            } else if (check?.reachable) {
+                toast.warn(t('oauth_relay_check_outdated'));
+            } else {
+                toast.err(t('oauth_relay_check_failed'));
+            }
+        } catch (err) {
+            state.oauth.relayCheck = null;
+            state.oauth.relayCheckError = err.message || String(err);
+            toast.err(t('oauth_relay_check_failed'));
+        } finally {
+            state.oauth.relayCheckLoading = false;
+            setBusy(button, false);
+            renderOAuthStatus(state.oauth.status);
         }
     }
 
@@ -2426,11 +2453,28 @@
         input.autocomplete = 'off';
         input.placeholder = defaultOAuthRelayCallbackURL;
         input.setAttribute('aria-label', t('oauth_relay_callback'));
-        input.setAttribute('aria-describedby', 'oauth-relay-callback-help oauth-relay-callback-assist');
+        input.setAttribute('aria-describedby', 'oauth-relay-callback-help oauth-relay-callback-status oauth-relay-callback-assist');
         input.value = configuredRelay;
+        const primaryActions = document.createElement('span');
+        primaryActions.className = 'oauth-relay-primary-actions';
+        const copy = iconButton(t('oauth_relay_copy_title'), iconCopySVG(), () => copyOAuthText(input.value.trim()));
+        copy.classList.add('oauth-relay-copy');
+        const check = smallButton(t('oauth_relay_check'), 'btn btn--sm btn--ghost oauth-relay-check', async (event) => {
+            const relayURL = input.value.trim();
+            if (relayURL !== configuredRelay) {
+                const saved = await saveOAuthRelayCallback(relayURL, event.currentTarget);
+                if (!saved) return;
+            }
+            await checkOAuthRelayCallback(event.currentTarget);
+        });
+        check.title = t('oauth_relay_check_title');
+        check.setAttribute('aria-label', t('oauth_relay_check_title'));
         const save = smallButton(t('save'), 'btn btn--sm btn--primary oauth-relay-save');
         save.type = 'submit';
-        inputRow.append(input, save);
+        primaryActions.append(copy, check, save);
+        inputRow.append(input, primaryActions);
+
+        const statusLine = oauthRelayStatusLine(isDefaultRelay);
 
         const helper = document.createElement('div');
         helper.className = 'oauth-relay-helper';
@@ -2464,13 +2508,84 @@
         assistActions.append(useDefault, selfHost);
         helper.append(helperCopy, assistActions);
 
-        field.append(inputRow, helper);
+        field.append(inputRow, statusLine, helper);
         form.appendChild(field);
         form.addEventListener('submit', (event) => {
             event.preventDefault();
             saveOAuthRelayCallback(input.value, save);
         });
         return form;
+    }
+
+    function oauthRelayStatusLine(isDefaultRelay) {
+        const line = document.createElement('div');
+        line.className = 'oauth-relay-status-line';
+        line.id = 'oauth-relay-callback-status';
+        line.setAttribute('role', 'status');
+        line.setAttribute('aria-live', 'polite');
+
+        const source = document.createElement('span');
+        source.className = 'pill oauth-relay-source-pill';
+        source.dataset.state = isDefaultRelay ? 'ok' : 'info';
+        const sourceDot = document.createElement('span');
+        sourceDot.className = 'dot';
+        const sourceText = document.createElement('span');
+        sourceText.className = 'text';
+        sourceText.textContent = isDefaultRelay ? t('oauth_relay_badge_default') : t('oauth_relay_badge_custom');
+        source.append(sourceDot, sourceText);
+
+        const message = document.createElement('span');
+        message.className = 'oauth-relay-status-message';
+        message.textContent = isDefaultRelay ? t('oauth_relay_status_default') : t('oauth_relay_status_custom');
+
+        line.append(source, message);
+        const check = oauthRelayCheckStatusNode();
+        if (check) line.appendChild(check);
+        return line;
+    }
+
+    function oauthRelayCheckStatusNode() {
+        const check = state.oauth.relayCheck;
+        const loading = state.oauth.relayCheckLoading;
+        const error = state.oauth.relayCheckError;
+        if (!loading && !error && !check) return null;
+
+        const wrap = document.createElement('span');
+        wrap.className = 'oauth-relay-check-status';
+
+        const pill = document.createElement('span');
+        pill.className = 'pill oauth-relay-check-pill';
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        const text = document.createElement('span');
+        text.className = 'text';
+
+        const detail = document.createElement('span');
+        detail.className = 'oauth-relay-check-detail';
+        if (loading) {
+            pill.dataset.state = 'loading';
+            text.textContent = t('oauth_relay_checking');
+        } else if (error) {
+            pill.dataset.state = 'error';
+            text.textContent = t('oauth_relay_check_failed');
+            detail.textContent = error;
+        } else if (check?.reachable && check?.supports_state_callback) {
+            pill.dataset.state = 'ok';
+            text.textContent = t('oauth_relay_check_ok');
+        } else if (check?.reachable) {
+            pill.dataset.state = 'warn';
+            text.textContent = t('oauth_relay_check_outdated');
+            detail.textContent = t('oauth_relay_check_outdated_hint');
+        } else {
+            pill.dataset.state = 'error';
+            text.textContent = t('oauth_relay_check_failed');
+            detail.textContent = check?.message || '';
+        }
+
+        pill.append(dot, text);
+        wrap.appendChild(pill);
+        if (detail.textContent) wrap.appendChild(detail);
+        return wrap;
     }
 
     function oauthWorkerScriptURL() {
@@ -10046,6 +10161,10 @@
 
     function iconEditSVG() {
         return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5z"></path></svg>';
+    }
+
+    function iconCopySVG() {
+        return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
     }
 
     function iconTrashSVG() {
