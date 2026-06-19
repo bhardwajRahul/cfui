@@ -97,6 +97,12 @@ other = "No overview data yet."
 [oauth_overview_context]
 other = "Context"
 
+[oauth_overview_copy_diagnostics]
+other = "Copy diagnostics"
+
+[oauth_overview_copy_diagnostics_title]
+other = "Copy current OAuth overview diagnostics. OAuth tokens are not included."
+
 [oauth_overview_no_context]
 other = "Select an account to load account-scoped resources."
 

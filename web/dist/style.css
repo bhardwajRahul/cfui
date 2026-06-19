@@ -5047,6 +5047,14 @@ details.disclosure > .body {
     text-transform: uppercase;
 }
 
+.oauth-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .oauth-overview-actions {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));

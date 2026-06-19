@@ -97,6 +97,12 @@ other = "概要データはまだありません。"
 [oauth_overview_context]
 other = "コンテキスト"
 
+[oauth_overview_copy_diagnostics]
+other = "診断をコピー"
+
+[oauth_overview_copy_diagnostics_title]
+other = "現在の OAuth 概要診断情報をコピーします。OAuth token は含まれません。"
+
 [oauth_overview_no_context]
 other = "アカウントを選択するとアカウントスコープのリソースを読み込みます。"
 

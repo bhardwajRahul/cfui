@@ -2888,12 +2888,18 @@
         const metrics = new Map((Array.isArray(overview.metrics) ? overview.metrics : []).map((metric) => [metric.id, metric]));
         const context = document.createElement('section');
         context.className = 'oauth-section';
+        const contextHead = document.createElement('div');
+        contextHead.className = 'oauth-section-head';
         const heading = document.createElement('h4');
         heading.className = 'oauth-section-title';
         heading.textContent = t('oauth_overview_context');
+        const diagnostics = smallButton(t('oauth_overview_copy_diagnostics'), 'btn btn--sm btn--ghost', () => copyOAuthText(overviewDiagnosticsText(overview, metrics)));
+        diagnostics.title = t('oauth_overview_copy_diagnostics_title');
+        diagnostics.setAttribute('aria-label', t('oauth_overview_copy_diagnostics_title'));
+        contextHead.append(heading, diagnostics);
         const account = overview.account || {};
         const zone = overview.zone || {};
-        context.appendChild(heading);
+        context.appendChild(contextHead);
         context.appendChild(rowNode(
             account.name || selectedAccountName() || account.id || t('oauth_account'),
             [
@@ -3012,6 +3018,62 @@
             if (parts.length) return parts.join(' · ');
         }
         return '';
+    }
+
+    function overviewDiagnosticsText(overview, metrics) {
+        const status = state.oauth.status || {};
+        const current = overview?.session || status.current || {};
+        const selectedAccount = selectedAccountName();
+        const selectedZone = selectedZoneName();
+        const metricRows = {};
+        for (const [id, labelKey] of overviewMetricDefinitions) {
+            const metric = metrics.get(id) || {};
+            metricRows[id] = {
+                label: t(labelKey),
+                feature: metric.feature || '',
+                available: !!metric.available,
+                value: metric.available ? Number(metric.value || 0) : null,
+                error: metric.available ? '' : (metric.error || 'unavailable'),
+                error_label: metric.available ? '' : overviewMetricErrorLabel(metric.error),
+                limited: !!metric.limited,
+                limit: metric.limit || 0,
+            };
+        }
+        const capabilities = {};
+        Object.keys(overview?.capabilities || status.capabilities || {}).sort().forEach((key) => {
+            const capability = overview?.capabilities?.[key] || status.capabilities?.[key] || {};
+            capabilities[key] = { read: !!capability.read, write: !!capability.write };
+        });
+        return JSON.stringify({
+            type: 'cfui_oauth_overview_diagnostics',
+            version: 1,
+            generated_at: new Date().toISOString(),
+            browser_origin: window.location.origin,
+            relay_callback_url: status.config?.relay_callback_url || '',
+            oauth_configured: !!status.config?.configured,
+            identity: {
+                label: current.label || '',
+                expires_at: current.expires_at || '',
+                scopes: Array.isArray(current.scopes) ? current.scopes : [],
+            },
+            selected: {
+                account_id: state.oauth.selectedAccountId || '',
+                account_name: selectedAccount,
+                zone_id: state.oauth.selectedZoneId || '',
+                zone_name: selectedZone,
+            },
+            overview_context: {
+                fetched_at: overview?.fetched_at || '',
+                account_id: overview?.account?.id || '',
+                account_name: overview?.account?.name || '',
+                zone_id: overview?.zone?.id || '',
+                zone_name: overview?.zone?.name || '',
+                cloudflare_status_indicator: overview?.status?.indicator || '',
+                cloudflare_status_description: overview?.status?.description || '',
+            },
+            capabilities,
+            metrics: metricRows,
+        }, null, 2);
     }
 
     function renderZones(body) {

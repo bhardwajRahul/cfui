@@ -97,6 +97,12 @@ other = "暂无总览数据。"
 [oauth_overview_context]
 other = "上下文"
 
+[oauth_overview_copy_diagnostics]
+other = "复制诊断"
+
+[oauth_overview_copy_diagnostics_title]
+other = "复制当前 OAuth 总览诊断信息，不包含 OAuth token。"
+
 [oauth_overview_no_context]
 other = "选择账号后加载账号级资源。"
 
