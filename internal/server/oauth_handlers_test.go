@@ -84,6 +84,7 @@ func TestOAuthCloudflareResourceHandlersRequireLogin(t *testing.T) {
 		{name: "kv keys", method: http.MethodGet, target: "/api/cf/kv/keys?account_id=account-1&namespace_id=namespace-1", handler: s.handleCFKVKeys},
 		{name: "kv keys bulk delete", method: http.MethodPost, target: "/api/cf/kv/keys/bulk-delete?account_id=account-1&namespace_id=namespace-1", body: strings.NewReader(`{"keys":["a","b"]}`), handler: s.handleCFKVKeysBulkDelete},
 		{name: "kv value get", method: http.MethodGet, target: "/api/cf/kv/value?account_id=account-1&namespace_id=namespace-1&key=a%2Fb", handler: s.handleCFKVValue},
+		{name: "kv value download", method: http.MethodGet, target: "/api/cf/kv/value/download?account_id=account-1&namespace_id=namespace-1&key=a%2Fb", handler: s.handleCFKVValueDownload},
 		{name: "kv value put", method: http.MethodPut, target: "/api/cf/kv/value?account_id=account-1&namespace_id=namespace-1&key=a%2Fb", body: strings.NewReader(`{"value":"hello"}`), handler: s.handleCFKVValue},
 		{name: "kv value delete", method: http.MethodDelete, target: "/api/cf/kv/value?account_id=account-1&namespace_id=namespace-1&key=a%2Fb", handler: s.handleCFKVValue},
 		{name: "snippets", method: http.MethodGet, target: "/api/cf/snippets?zone_id=zone-1", handler: s.handleCFSnippets},

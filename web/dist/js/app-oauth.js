@@ -1088,6 +1088,27 @@
         link.remove();
     }
 
+    function kvValueDownloadURL(key = state.oauth.selectedKVKey) {
+        if (!state.oauth.selectedAccountId || !state.oauth.selectedKVNamespaceId || !key) return '';
+        const params = new URLSearchParams({
+            account_id: state.oauth.selectedAccountId,
+            namespace_id: state.oauth.selectedKVNamespaceId,
+            key,
+        });
+        return `${API_BASE}/cf/kv/value/download?${params.toString()}`;
+    }
+
+    function downloadKVValue(key = state.oauth.selectedKVKey) {
+        const url = kvValueDownloadURL(key);
+        if (!url) return;
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = key.split('/').filter(Boolean).pop() || 'kv-value.bin';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
     function suggestedR2CopyKey(key) {
         const value = String(key || '').trim();
         if (!value) return '';
@@ -2142,7 +2163,13 @@
         }
         const relayChoice = $('oauth-relay-choice');
         if (relayChoice) {
-            renderOAuthRelayChoice(relayChoice, status);
+            const configured = !!status?.config?.configured;
+            relayChoice.hidden = !configured;
+            if (configured) {
+                renderOAuthRelayChoice(relayChoice, status);
+            } else {
+                relayChoice.innerHTML = '';
+            }
         }
         const login = $('oauth-login');
         const logout = $('oauth-logout');
@@ -2318,7 +2345,10 @@
             }),
         );
 
-        node.append(head, list);
+        const foot = document.createElement('p');
+        foot.className = 'oauth-relay-choice-note oauth-relay-choice-foot';
+        foot.textContent = t('oauth_relay_choice_footer');
+        node.append(head, list, foot);
     }
 
     function oauthRelayChoiceRow({ kind, title, badge, desc, label, value, actions = [] }) {
@@ -2461,6 +2491,27 @@
         steps.append(
             setupGuideStep(
                 '1',
+                t('oauth_setup_relay_title'),
+                t('oauth_setup_relay_desc'),
+                [
+                    setupGuideCodeRow(t('oauth_relay_choice_cloudflare_value'), relayURL || t('oauth_setup_relay_url_placeholder'), {
+                        actions: [
+                            { label: t('oauth_relay_check'), title: t('oauth_relay_check'), action: (event) => checkOAuthRelay(event.currentTarget) },
+                            { label: t('oauth_relay_configure'), title: t('oauth_relay_edit'), action: () => openOAuthRelayEditor(status) },
+                        ],
+                    }),
+                    setupGuideNote(t('oauth_setup_relay_provided_note')),
+                    setupGuideCodeRow(t('oauth_worker_script_entry'), workerScriptURL, {
+                        actions: [
+                            { label: t('oauth_worker_script_view'), title: t('oauth_worker_script_view_title'), action: openOAuthWorkerScriptDialog },
+                            { label: t('open'), title: t('oauth_setup_worker_open'), action: openOAuthWorkerScript },
+                        ],
+                    }),
+                    setupGuideNote(t('oauth_setup_relay_self_host_note')),
+                ]
+            ),
+            setupGuideStep(
+                '2',
                 t('oauth_setup_oauth_app_title'),
                 t('oauth_setup_oauth_app_desc'),
                 [
@@ -2479,7 +2530,7 @@
                 ]
             ),
             setupGuideStep(
-                '2',
+                '3',
                 t('oauth_setup_permissions_title'),
                 t('oauth_setup_permissions_desc'),
                 [
@@ -2491,16 +2542,10 @@
                 ]
             ),
             setupGuideStep(
-                '3',
+                '4',
                 t('oauth_setup_worker_title'),
                 t('oauth_setup_worker_desc'),
                 [
-                    setupGuideCodeRow(t('oauth_setup_worker_script'), workerScriptURL, {
-                        actions: [
-                            { label: t('oauth_worker_script_view'), title: t('oauth_worker_script_view_title'), action: openOAuthWorkerScriptDialog },
-                            { label: t('open'), title: t('oauth_setup_worker_open'), action: openOAuthWorkerScript },
-                        ],
-                    }),
                     setupGuideCodeRow(t('oauth_setup_worker_deploy_path'), t('oauth_setup_worker_deploy_path_value'), { copy: false }),
                     setupGuideCodeRow(t('oauth_setup_worker_callback_var'), `CFUI_CALLBACK_URL=${localCallbackURL}`),
                     setupGuideCodeRow(t('oauth_setup_worker_allowlist_var'), `CFUI_ALLOWED_CALLBACK_ORIGINS=${window.location.origin}`),
@@ -2510,7 +2555,7 @@
                 ]
             ),
             setupGuideStep(
-                '4',
+                '5',
                 t('oauth_setup_env_title'),
                 t('oauth_setup_env_desc'),
                 [setupGuideCodeRow(t('oauth_setup_env_vars'), envSnippet)]
@@ -7061,19 +7106,29 @@
             section.appendChild(empty(t('oauth_kv_value_binary', { bytes: formatBytes(value.bytes || 0) })));
             const preview = kvBinaryPreviewNode(value);
             if (preview) section.appendChild(preview);
-            if (canWrite('kv')) section.appendChild(smallButton(t('delete'), 'btn btn--sm btn--danger', () => deleteKVValue(value.key || state.oauth.selectedKVKey)));
+            section.appendChild(kvValueActionButtons(value.key || state.oauth.selectedKVKey));
             return section;
         }
         if (value.encoding === 'too_large') {
             section.appendChild(empty(t('oauth_kv_value_too_large', { bytes: formatBytes(value.bytes || 0) })));
-            if (canWrite('kv')) section.appendChild(smallButton(t('delete'), 'btn btn--sm btn--danger', () => deleteKVValue(value.key || state.oauth.selectedKVKey)));
+            section.appendChild(kvValueActionButtons(value.key || state.oauth.selectedKVKey));
             return section;
         }
         section.appendChild(kvValueFormNode(value.key || state.oauth.selectedKVKey, value.value || '', false));
-        if (canWrite('kv')) {
-            section.appendChild(smallButton(t('delete'), 'btn btn--sm btn--danger', () => deleteKVValue(value.key || state.oauth.selectedKVKey)));
-        }
+        section.appendChild(kvValueActionButtons(value.key || state.oauth.selectedKVKey));
         return section;
+    }
+
+    function kvValueActionButtons(key) {
+        const actions = document.createElement('div');
+        actions.className = 'oauth-form-actions oauth-value-actions';
+        const download = smallButton(t('download'), 'btn btn--sm btn--ghost', () => downloadKVValue(key));
+        download.disabled = !kvValueDownloadURL(key);
+        actions.appendChild(download);
+        if (canWrite('kv')) {
+            actions.appendChild(smallButton(t('delete'), 'btn btn--sm btn--danger', () => deleteKVValue(key)));
+        }
+        return actions;
     }
 
     function d1ResultNode(result, index, total) {

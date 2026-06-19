@@ -477,6 +477,37 @@ func TestKVValueIncludesBinaryPreview(t *testing.T) {
 	}
 }
 
+func TestKVValueDownloadReturnsRawBytes(t *testing.T) {
+	ctx := context.Background()
+	payload := []byte{0x00, 0x01, 0x02, 'K', 'V', 0xff}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/accounts/account-1/storage/kv/namespaces/namespace-1/values/folder%2Fkey", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		_, _ = w.Write(payload)
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewService(testOAuthServiceWithScopes(t, "workers-kv-storage.read"))
+	svc.restEndpoint = server.URL + "/client/v4"
+
+	resp, err := svc.KVValueDownload(ctx, "account-1", "namespace-1", "folder/key")
+	if err != nil {
+		t.Fatalf("KVValueDownload: %v", err)
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read body: %v", err)
+	}
+	if !bytes.Equal(raw, payload) || resp.Key != "folder/key" || resp.ContentType != "application/octet-stream" || resp.ContentLength != int64(len(payload)) {
+		t.Fatalf("unexpected download response: raw=%v resp=%#v", raw, resp)
+	}
+}
+
 func TestSplitStatusComponents(t *testing.T) {
 	components := []StatusPageComponent{
 		{ID: "services", Name: "Cloudflare Sites and Services", Status: "degraded_performance", Group: true},

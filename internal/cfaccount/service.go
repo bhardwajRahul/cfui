@@ -617,6 +617,13 @@ type KVValue struct {
 	BinaryPreview *R2BinaryPreview `json:"binary_preview,omitempty"`
 }
 
+type KVValueDownload struct {
+	Key           string
+	Body          io.ReadCloser
+	ContentType   string
+	ContentLength int64
+}
+
 type KVKeysResponse struct {
 	Data         []KVKey                  `json:"data"`
 	Cursor       string                   `json:"cursor,omitempty"`
@@ -2605,6 +2612,30 @@ func (s *Service) WriteKVValue(ctx context.Context, accountID, namespaceID, key 
 		return KVValue{}, err
 	}
 	return KVValue{Key: key, Value: req.Value, Encoding: "text", Bytes: len(req.Value)}, nil
+}
+
+func (s *Service) KVValueDownload(ctx context.Context, accountID, namespaceID, key string) (KVValueDownload, error) {
+	client, _, err := s.currentClient(ctx)
+	if err != nil {
+		return KVValueDownload{}, err
+	}
+	accountID, namespaceID, key, err = normalizeKVValueTarget(accountID, namespaceID, key)
+	if err != nil {
+		return KVValueDownload{}, err
+	}
+	data, err := client.GetWorkersKV(ctx, cloudflare.AccountIdentifier(accountID), cloudflare.GetWorkersKVParams{
+		NamespaceID: namespaceID,
+		Key:         key,
+	})
+	if err != nil {
+		return KVValueDownload{}, err
+	}
+	return KVValueDownload{
+		Key:           key,
+		Body:          io.NopCloser(bytes.NewReader(data)),
+		ContentType:   "application/octet-stream",
+		ContentLength: int64(len(data)),
+	}, nil
 }
 
 func (s *Service) DeleteKVValue(ctx context.Context, accountID, namespaceID, key string) error {

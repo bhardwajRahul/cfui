@@ -827,7 +827,19 @@ other = "CFUI_OAUTH_CLIENT_ID を設定してください。"
 other = "OAuth 設定ガイド"
 
 [oauth_setup_subtitle]
-other = "まず OAuth relay を選択します。提供済みの relay アドレスをそのまま使うか、内蔵 worker.js で Cloudflare Worker relay を自前運用できます。その後 Cloudflare OAuth クライアントを作成し、client ID で cfui を再起動します。"
+other = "まず Cloudflare OAuth クライアントに登録する Redirect callback URL を決めます。提供済みの relay アドレスをそのまま使うか、内蔵 worker.js で Cloudflare Worker relay を自前運用できます。その後 Cloudflare OAuth クライアントを作成し、client ID で cfui を再起動します。"
+
+[oauth_setup_relay_title]
+other = "OAuth relay callback を選択"
+
+[oauth_setup_relay_desc]
+other = "Cloudflare OAuth app には固定 callback URL だけを登録できます。個人利用なら提供済みの relay アドレスを登録します。自前で relay を運用したい場合だけ、内蔵 worker.js をデプロイしてください。"
+
+[oauth_setup_relay_provided_note]
+other = "提供済みの relay アドレスを使う場合、worker.js のデプロイは不要です。Cloudflare OAuth はこの relay に戻り、relay が OAuth state に基づいて現在の cfui インスタンスへ戻します。"
+
+[oauth_setup_relay_self_host_note]
+other = "Cloudflare OAuth relay を自前運用する場合は、この worker.js を開いて自分の Cloudflare Workers にデプロイし、その Worker の /oauth/callback URL を relay callback として保存して Cloudflare OAuth クライアントにも登録してください。"
 
 [oauth_setup_oauth_app_title]
 other = "Cloudflare OAuth クライアントフォームを入力"
@@ -890,7 +902,7 @@ other = "自前 relay 用 Worker"
 other = "OAuth relay callback の選び方"
 
 [oauth_relay_choice_note]
-other = "まず提供済みの relay アドレスを使うのがおすすめです。worker.js のデプロイは不要です。Cloudflare OAuth relay を完全に自前運用したい場合だけ、内蔵 Worker スクリプトを開いてデプロイしてください。"
+other = "選択肢は 2 つです。多くの個人利用では提供済みの relay アドレスをそのまま使えます。Cloudflare OAuth relay を自前運用したい場合だけ、内蔵 worker.js を開いてデプロイしてください。"
 
 [oauth_relay_choice_provided_title]
 other = "提供済みの relay アドレスを使う"
@@ -908,7 +920,10 @@ other = "Cloudflare に入力するリダイレクト URL"
 other = "Cloudflare Worker relay を自前で運用"
 
 [oauth_relay_choice_self_host_desc]
-other = "既定の relay を使わない場合は、内蔵 worker.js を開いて自分の Cloudflare Workers にデプロイし、その /oauth/callback URL を relay callback として保存してください。"
+other = "これは自前運用の選択肢で、必須手順ではありません。内蔵 worker.js を開いて自分の Cloudflare Workers にデプロイし、その /oauth/callback URL を relay callback として保存してください。"
+
+[oauth_relay_choice_footer]
+other = "Cloudflare OAuth クライアントの Redirect callback URL には 1 つだけ登録します。提供 relay を使う場合は上の relay アドレス、自前運用の場合は自分の Worker /oauth/callback を入力してください。cfui_callback_url は追加しません。"
 
 [oauth_setup_worker_open]
 other = "完全な Worker スクリプトを開く"

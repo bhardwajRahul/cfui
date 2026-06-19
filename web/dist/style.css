@@ -4388,6 +4388,10 @@ details.disclosure > .body {
     justify-content: flex-end;
 }
 
+.oauth-relay-choice-foot {
+    margin-top: -2px;
+}
+
 .oauth-config-hint {
     margin-top: 6px;
     color: var(--text-muted);
@@ -5425,6 +5429,10 @@ details.disclosure > .body {
 
 .oauth-form-actions {
     justify-content: flex-end;
+}
+
+.oauth-value-actions {
+    justify-content: flex-start;
 }
 
 .oauth-form-section {

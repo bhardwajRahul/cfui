@@ -1445,6 +1445,35 @@ func (s *Server) handleCFKVValue(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handleCFKVValueDownload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	resp, err := s.ensureCFService().KVValueDownload(
+		r.Context(),
+		r.URL.Query().Get("account_id"),
+		r.URL.Query().Get("namespace_id"),
+		r.URL.Query().Get("key"),
+	)
+	if err != nil {
+		writeCFResponse(w, nil, err)
+		return
+	}
+	defer resp.Body.Close()
+	filename := path.Base(resp.Key)
+	if filename == "." || filename == "/" || filename == "" {
+		filename = "kv-value.bin"
+	}
+	w.Header().Set("Content-Type", resp.ContentType)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Disposition", r2ObjectContentDisposition(resp.ContentType, filename, false))
+	if resp.ContentLength >= 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(resp.ContentLength, 10))
+	}
+	_, _ = io.Copy(w, resp.Body)
+}
+
 func (s *Server) handleCFSnippets(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:

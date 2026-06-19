@@ -263,6 +263,7 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/cf/kv/namespaces/", s.handleCFKVNamespace)
 	mux.HandleFunc("/api/cf/kv/keys/bulk-delete", s.handleCFKVKeysBulkDelete)
 	mux.HandleFunc("/api/cf/kv/keys", s.handleCFKVKeys)
+	mux.HandleFunc("/api/cf/kv/value/download", s.handleCFKVValueDownload)
 	mux.HandleFunc("/api/cf/kv/value", s.handleCFKVValue)
 	mux.HandleFunc("/api/cf/snippets", s.handleCFSnippets)
 	mux.HandleFunc("/api/cf/snippets/rules", s.handleCFSnippetRules)

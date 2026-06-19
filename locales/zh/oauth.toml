@@ -827,7 +827,19 @@ other = "请先设置 CFUI_OAUTH_CLIENT_ID。"
 other = "OAuth 配置引导"
 
 [oauth_setup_subtitle]
-other = "先选择 OAuth 中转方式：可以直接使用提供的中转地址，也可以用内置 worker.js 自建 Cloudflare Worker relay。然后创建 Cloudflare OAuth 客户端并用 client ID 重启 cfui。"
+other = "先确定 Cloudflare OAuth 客户端要填写的 Redirect callback URL：可以直接使用提供的中转地址，也可以用内置 worker.js 自建 Cloudflare Worker relay。然后创建 Cloudflare OAuth 客户端并用 client ID 重启 cfui。"
+
+[oauth_setup_relay_title]
+other = "选择 OAuth 中转地址"
+
+[oauth_setup_relay_desc]
+other = "Cloudflare OAuth app 只能登记固定回调地址。个人使用可以直接填提供的中转地址；只有想完全自建中转服务时，才需要部署内置 worker.js。"
+
+[oauth_setup_relay_provided_note]
+other = "使用提供的中转地址时，不需要部署 worker.js。Cloudflare OAuth 回到这个地址后，relay 会根据 OAuth state 跳回当前 cfui 实例。"
+
+[oauth_setup_relay_self_host_note]
+other = "如果你想自建 Cloudflare OAuth relay，打开这里的 worker.js 部署到自己的 Cloudflare Workers，然后把你 Worker 的 /oauth/callback 地址保存为中转回调，并填入 Cloudflare OAuth 客户端。"
 
 [oauth_setup_oauth_app_title]
 other = "填写 Cloudflare OAuth 客户端表单"
@@ -890,7 +902,7 @@ other = "自建 Worker 脚本"
 other = "OAuth 中转地址怎么选"
 
 [oauth_relay_choice_note]
-other = "推荐先直接使用提供的中转地址，它不需要部署 worker.js。只有想完全自建 Cloudflare OAuth relay 时，才需要打开内置 Worker 脚本并部署到自己的 Cloudflare 账号。"
+other = "这里有两条路：多数个人部署直接使用提供的中转地址；只有想完全自建 Cloudflare OAuth relay 时，才打开内置 worker.js 并部署到自己的 Cloudflare 账号。"
 
 [oauth_relay_choice_provided_title]
 other = "使用提供的中转地址"
@@ -908,7 +920,10 @@ other = "Cloudflare 里填写这个重定向 URL"
 other = "自建 Cloudflare Worker relay"
 
 [oauth_relay_choice_self_host_desc]
-other = "如果不想使用默认中转，可以打开内置 worker.js 部署到自己的 Cloudflare Workers，再把你的 /oauth/callback 地址保存为中转回调。"
+other = "这是自建方案，不是必选步骤。打开内置 worker.js 部署到自己的 Cloudflare Workers 后，再把你的 /oauth/callback 地址保存为中转回调。"
+
+[oauth_relay_choice_footer]
+other = "Cloudflare OAuth 客户端里的 Redirect callback URL 只填一个地址：使用提供 relay 时填上面的中转地址；自建 relay 时填你自己的 Worker /oauth/callback。不要追加 cfui_callback_url。"
 
 [oauth_setup_worker_open]
 other = "打开完整 Worker 脚本"
