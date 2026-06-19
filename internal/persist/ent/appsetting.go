@@ -59,6 +59,8 @@ type AppSetting struct {
 	ActiveTunnelKey string `json:"active_tunnel_key,omitempty"`
 	// McpEnabled holds the value of the "mcp_enabled" field.
 	McpEnabled bool `json:"mcp_enabled,omitempty"`
+	// OauthRelayCallbackURL holds the value of the "oauth_relay_callback_url" field.
+	OauthRelayCallbackURL string `json:"oauth_relay_callback_url,omitempty"`
 	// S3WebdavEnabled holds the value of the "s3_webdav_enabled" field.
 	S3WebdavEnabled bool `json:"s3_webdav_enabled,omitempty"`
 	// S3WebdavActiveKey holds the value of the "s3_webdav_active_key" field.
@@ -93,7 +95,7 @@ func (*AppSetting) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case appsetting.FieldID, appsetting.FieldRetries, appsetting.FieldMetricsPort, appsetting.FieldS3WebdavDedicatedPort:
 			values[i] = new(sql.NullInt64)
-		case appsetting.FieldKey, appsetting.FieldCustomTag, appsetting.FieldSoftwareName, appsetting.FieldProtocol, appsetting.FieldGracePeriod, appsetting.FieldRegion, appsetting.FieldLogLevel, appsetting.FieldLogFile, appsetting.FieldEdgeIPVersion, appsetting.FieldEdgeBindAddress, appsetting.FieldExtraArgs, appsetting.FieldActiveTunnelKey, appsetting.FieldS3WebdavActiveKey, appsetting.FieldS3WebdavAccessMode, appsetting.FieldS3WebdavDedicatedBindHost, appsetting.FieldS3WebdavDedicatedDomainMode, appsetting.FieldS3WebdavDedicatedCustomDomain, appsetting.FieldS3WebdavDedicatedTunnelHostname:
+		case appsetting.FieldKey, appsetting.FieldCustomTag, appsetting.FieldSoftwareName, appsetting.FieldProtocol, appsetting.FieldGracePeriod, appsetting.FieldRegion, appsetting.FieldLogLevel, appsetting.FieldLogFile, appsetting.FieldEdgeIPVersion, appsetting.FieldEdgeBindAddress, appsetting.FieldExtraArgs, appsetting.FieldActiveTunnelKey, appsetting.FieldOauthRelayCallbackURL, appsetting.FieldS3WebdavActiveKey, appsetting.FieldS3WebdavAccessMode, appsetting.FieldS3WebdavDedicatedBindHost, appsetting.FieldS3WebdavDedicatedDomainMode, appsetting.FieldS3WebdavDedicatedCustomDomain, appsetting.FieldS3WebdavDedicatedTunnelHostname:
 			values[i] = new(sql.NullString)
 		case appsetting.FieldCreatedAt, appsetting.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -243,6 +245,12 @@ func (_m *AppSetting) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field mcp_enabled", values[i])
 			} else if value.Valid {
 				_m.McpEnabled = value.Bool
+			}
+		case appsetting.FieldOauthRelayCallbackURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field oauth_relay_callback_url", values[i])
+			} else if value.Valid {
+				_m.OauthRelayCallbackURL = value.String
 			}
 		case appsetting.FieldS3WebdavEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -408,6 +416,9 @@ func (_m *AppSetting) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("mcp_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.McpEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("oauth_relay_callback_url=")
+	builder.WriteString(_m.OauthRelayCallbackURL)
 	builder.WriteString(", ")
 	builder.WriteString("s3_webdav_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.S3WebdavEnabled))

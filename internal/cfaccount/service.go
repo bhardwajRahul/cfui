@@ -48,7 +48,7 @@ const (
 	maxR2ObjectTextValueBytes     = 1024 * 1024
 	maxR2ObjectBinaryPreviewBytes = 1024
 	maxR2ObjectWriteBytes         = 1024 * 1024
-	maxR2ObjectUploadBytes        = 128 * 1024 * 1024
+	maxR2ObjectUploadBytes        = 5 * 1024 * 1024 * 1024
 	maxD1SQLBytes                 = 64 * 1024
 	maxD1Parameters               = 100
 	defaultD1TableLimit           = 50
@@ -2222,7 +2222,7 @@ func (s *Service) WriteR2ObjectStream(ctx context.Context, accountID, bucketName
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
-	if _, err := s.cfAPI(ctx, token, http.MethodPut, r2ObjectPath(accountID, bucketName, key), nil, contentType, body, nil); err != nil {
+	if _, err := s.cfAPIWithContentLength(ctx, token, http.MethodPut, r2ObjectPath(accountID, bucketName, key), nil, contentType, contentLength, body, nil); err != nil {
 		return R2ObjectValue{}, err
 	}
 	return R2ObjectValue{
@@ -5766,7 +5766,11 @@ func (e *cfAPIStatusError) Error() string {
 }
 
 func (s *Service) cfAPI(ctx context.Context, accessToken, method, path string, query url.Values, contentType string, body io.Reader, target any) (*cfResultInfo, error) {
-	resp, err := s.cfAPIRaw(ctx, accessToken, method, path, query, contentType, body)
+	return s.cfAPIWithContentLength(ctx, accessToken, method, path, query, contentType, -1, body, target)
+}
+
+func (s *Service) cfAPIWithContentLength(ctx context.Context, accessToken, method, path string, query url.Values, contentType string, contentLength int64, body io.Reader, target any) (*cfResultInfo, error) {
+	resp, err := s.cfAPIRawWithContentLength(ctx, accessToken, method, path, query, contentType, contentLength, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5796,6 +5800,10 @@ func (s *Service) cfAPI(ctx context.Context, accessToken, method, path string, q
 }
 
 func (s *Service) cfAPIRaw(ctx context.Context, accessToken, method, path string, query url.Values, contentType string, body io.Reader) (*http.Response, error) {
+	return s.cfAPIRawWithContentLength(ctx, accessToken, method, path, query, contentType, -1, body)
+}
+
+func (s *Service) cfAPIRawWithContentLength(ctx context.Context, accessToken, method, path string, query url.Values, contentType string, contentLength int64, body io.Reader) (*http.Response, error) {
 	accessToken = strings.TrimSpace(accessToken)
 	if accessToken == "" {
 		return nil, cfoauth.ErrNotLoggedIn
@@ -5818,6 +5826,9 @@ func (s *Service) cfAPIRaw(ctx context.Context, accessToken, method, path string
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	if body != nil && strings.TrimSpace(contentType) != "" {
 		req.Header.Set("Content-Type", strings.TrimSpace(contentType))
+	}
+	if body != nil && contentLength >= 0 {
+		req.ContentLength = contentLength
 	}
 	client := s.httpClient
 	if client == nil {

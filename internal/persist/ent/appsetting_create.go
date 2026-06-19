@@ -306,6 +306,20 @@ func (_c *AppSettingCreate) SetNillableMcpEnabled(v *bool) *AppSettingCreate {
 	return _c
 }
 
+// SetOauthRelayCallbackURL sets the "oauth_relay_callback_url" field.
+func (_c *AppSettingCreate) SetOauthRelayCallbackURL(v string) *AppSettingCreate {
+	_c.mutation.SetOauthRelayCallbackURL(v)
+	return _c
+}
+
+// SetNillableOauthRelayCallbackURL sets the "oauth_relay_callback_url" field if the given value is not nil.
+func (_c *AppSettingCreate) SetNillableOauthRelayCallbackURL(v *string) *AppSettingCreate {
+	if v != nil {
+		_c.SetOauthRelayCallbackURL(*v)
+	}
+	return _c
+}
+
 // SetS3WebdavEnabled sets the "s3_webdav_enabled" field.
 func (_c *AppSettingCreate) SetS3WebdavEnabled(v bool) *AppSettingCreate {
 	_c.mutation.SetS3WebdavEnabled(v)
@@ -575,6 +589,10 @@ func (_c *AppSettingCreate) defaults() {
 		v := appsetting.DefaultMcpEnabled
 		_c.mutation.SetMcpEnabled(v)
 	}
+	if _, ok := _c.mutation.OauthRelayCallbackURL(); !ok {
+		v := appsetting.DefaultOauthRelayCallbackURL
+		_c.mutation.SetOauthRelayCallbackURL(v)
+	}
 	if _, ok := _c.mutation.S3WebdavEnabled(); !ok {
 		v := appsetting.DefaultS3WebdavEnabled
 		_c.mutation.SetS3WebdavEnabled(v)
@@ -690,6 +708,9 @@ func (_c *AppSettingCreate) check() error {
 	}
 	if _, ok := _c.mutation.McpEnabled(); !ok {
 		return &ValidationError{Name: "mcp_enabled", err: errors.New(`ent: missing required field "AppSetting.mcp_enabled"`)}
+	}
+	if _, ok := _c.mutation.OauthRelayCallbackURL(); !ok {
+		return &ValidationError{Name: "oauth_relay_callback_url", err: errors.New(`ent: missing required field "AppSetting.oauth_relay_callback_url"`)}
 	}
 	if _, ok := _c.mutation.S3WebdavEnabled(); !ok {
 		return &ValidationError{Name: "s3_webdav_enabled", err: errors.New(`ent: missing required field "AppSetting.s3_webdav_enabled"`)}
@@ -833,6 +854,10 @@ func (_c *AppSettingCreate) createSpec() (*AppSetting, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
 		_node.McpEnabled = value
+	}
+	if value, ok := _c.mutation.OauthRelayCallbackURL(); ok {
+		_spec.SetField(appsetting.FieldOauthRelayCallbackURL, field.TypeString, value)
+		_node.OauthRelayCallbackURL = value
 	}
 	if value, ok := _c.mutation.S3WebdavEnabled(); ok {
 		_spec.SetField(appsetting.FieldS3WebdavEnabled, field.TypeBool, value)

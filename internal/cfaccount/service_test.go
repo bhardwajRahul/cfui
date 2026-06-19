@@ -1506,6 +1506,45 @@ func TestR2BinaryPreviewTruncatesLargeSamples(t *testing.T) {
 	}
 }
 
+func TestWriteR2ObjectStreamSetsContentLength(t *testing.T) {
+	ctx := context.Background()
+	var gotContentLength int64
+	var gotBody string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/accounts/account-1/r2/buckets/bucket-one/objects/folder%2Ffile.bin", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		if r.Method != http.MethodPut {
+			t.Fatalf("method = %s, want PUT", r.Method)
+		}
+		gotContentLength = r.ContentLength
+		raw, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read body: %v", err)
+		}
+		gotBody = string(raw)
+		writeCFEnvelope(w, `null`, nil)
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewServiceWithEndpoints(testOAuthServiceWithScopes(t, "workers-r2.write"), EndpointOverrides{
+		REST: server.URL + "/client/v4",
+	})
+	resp, err := svc.WriteR2ObjectStream(ctx, "account-1", "bucket-one", "folder/file.bin", "application/octet-stream", 11, strings.NewReader("hello world"))
+	if err != nil {
+		t.Fatalf("WriteR2ObjectStream: %v", err)
+	}
+	if resp.Bytes != 11 || resp.Key != "folder/file.bin" {
+		t.Fatalf("unexpected response: %#v", resp)
+	}
+	if gotContentLength != 11 {
+		t.Fatalf("content length = %d, want 11", gotContentLength)
+	}
+	if gotBody != "hello world" {
+		t.Fatalf("body = %q", gotBody)
+	}
+}
+
 func TestCopyR2ObjectStreamsSourceToDestination(t *testing.T) {
 	ctx := context.Background()
 	const sourceKey = "folder/source.txt"

@@ -84,6 +84,10 @@ type Config struct {
 
 	// S3WebDAV exposes S3-compatible bucket paths through WebDAV.
 	S3WebDAV S3WebDAVConfig `json:"s3_webdav"`
+
+	// OAuthRelayCallbackURL overrides CFUI_OAUTH_RELAY_URL for the Cloudflare
+	// OAuth workspace. It is not secret and is safe to persist with app settings.
+	OAuthRelayCallbackURL string `json:"oauth_relay_callback_url"`
 }
 
 // DDNSConfig stores settings for the built-in DDNS client.

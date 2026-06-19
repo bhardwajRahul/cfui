@@ -31,6 +31,18 @@ other = "Checking OAuth status..."
 [oauth_relay_callback]
 other = "Relay callback"
 
+[oauth_relay_edit]
+other = "Edit relay callback"
+
+[oauth_relay_required]
+other = "Enter a relay callback URL."
+
+[oauth_relay_saved]
+other = "Relay callback saved."
+
+[oauth_relay_config_hint]
+other = "Must be the Worker's /oauth/callback URL and must exactly match the Redirect callback URL in the Cloudflare OAuth client. The saved database value overrides CFUI_OAUTH_RELAY_URL."
+
 [oauth_local_callback]
 other = "Local callback"
 
@@ -860,7 +872,7 @@ other = "Relay check failed"
 other = "Set cfui environment"
 
 [oauth_setup_env_desc]
-other = "Set the OAuth client ID and relay URL, then restart cfui. The relay URL must match the redirect URI registered in Cloudflare."
+other = "Set the OAuth client ID, then restart cfui. You can edit and save the relay callback above; the saved database value overrides CFUI_OAUTH_RELAY_URL and must match the Redirect callback URL registered in Cloudflare."
 
 [oauth_setup_env_vars]
 other = "Environment"
@@ -1700,13 +1712,34 @@ other = "File"
 other = "Choose a file to upload."
 
 [oauth_r2_object_upload_limit]
-other = "Single upload limit: {max}."
+other = "Direct upload up to {direct}; larger files use chunked upload up to {max}."
 
 [oauth_r2_object_upload_selected]
-other = "Selected file: {size}. Single upload limit: {max}."
+other = "Selected file: {size}. Upload mode: {mode}."
 
 [oauth_r2_object_upload_too_large]
-other = "Selected file is {size}, above the current single upload limit of {max}."
+other = "Selected file is {size}, above the chunked upload limit of {max}."
+
+[oauth_r2_object_upload_mode_direct]
+other = "direct"
+
+[oauth_r2_object_upload_mode_chunked]
+other = "chunked"
+
+[oauth_r2_object_uploading_chunked]
+other = "Uploading chunks..."
+
+[oauth_r2_object_upload_session_missing]
+other = "Upload session was not created."
+
+[oauth_r2_object_upload_failed]
+other = "Upload failed."
+
+[oauth_r2_object_upload_progress_title]
+other = "Uploading {name}"
+
+[oauth_r2_object_upload_progress]
+other = "{uploaded} / {total}"
 
 [oauth_r2_object_content_type]
 other = "Content-Type"

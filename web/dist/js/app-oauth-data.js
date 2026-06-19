@@ -39,6 +39,8 @@
         ['http_request_firewall_managed', 'oauth_waf_skip_phase_managed_waf'],
     ];
     const maxR2ObjectUploadBytes = 128 * 1024 * 1024;
+    const maxR2ChunkedUploadBytes = 5 * 1024 * 1024 * 1024;
+    const r2ObjectUploadChunkBytes = 8 * 1024 * 1024;
     const maxR2InlinePreviewBytes = 50 * 1024 * 1024;
     const analyticsRanges = ['24h', '7d', '30d'];
     const overviewMetricDefinitions = [
@@ -240,6 +242,8 @@
         wafSkipProducts,
         wafSkipPhases,
         maxR2ObjectUploadBytes,
+        maxR2ChunkedUploadBytes,
+        r2ObjectUploadChunkBytes,
         maxR2InlinePreviewBytes,
         analyticsRanges,
         overviewMetricDefinitions,

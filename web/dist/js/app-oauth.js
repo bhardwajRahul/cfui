@@ -3,7 +3,7 @@
    ========================================================================= */
 (() => {
     'use strict';
-    const { state, $, $$, t, API_BASE, apiGet, apiSend, toast, setBusy } = window.cfui;
+    const { state, $, $$, t, API_BASE, apiGet, apiSend, toast, setBusy, sleep } = window.cfui;
 
     const {
         resourceDefinitions,
@@ -14,6 +14,8 @@
         wafSkipProducts,
         wafSkipPhases,
         maxR2ObjectUploadBytes,
+        maxR2ChunkedUploadBytes,
+        r2ObjectUploadChunkBytes,
         maxR2InlinePreviewBytes,
         analyticsRanges,
         overviewMetricDefinitions,
@@ -65,6 +67,29 @@
             state.oauth.relayCheckLoading = false;
             setBusy(button, false);
             renderOAuthSetupGuide(state.oauth.status);
+        }
+    }
+
+    async function saveOAuthRelayCallback(relayURL, button) {
+        relayURL = String(relayURL || '').trim();
+        if (!relayURL) {
+            toast.err(t('oauth_relay_required'));
+            return;
+        }
+        setBusy(button, true, t('saving'));
+        try {
+            const status = await apiSend('/oauth/config', 'PATCH', { relay_callback_url: relayURL });
+            state.oauth.status = status;
+            state.oauth.relayEditing = false;
+            state.oauth.relayDraft = '';
+            state.oauth.relayCheck = null;
+            state.oauth.relayCheckError = '';
+            renderOAuthStatus(status);
+            toast.ok(t('oauth_relay_saved'));
+        } catch (err) {
+            toast.err(err.message);
+        } finally {
+            setBusy(button, false);
         }
     }
 
@@ -779,10 +804,10 @@
             toast.err(t('oauth_r2_object_key_required'));
             return;
         }
-        if (file.size > maxR2ObjectUploadBytes) {
+        if (file.size > maxR2ChunkedUploadBytes) {
             toast.err(t('oauth_r2_object_upload_too_large', {
                 size: formatBytes(file.size),
-                max: formatBytes(maxR2ObjectUploadBytes),
+                max: formatBytes(maxR2ChunkedUploadBytes),
             }));
             return;
         }
@@ -791,24 +816,136 @@
             bucket: state.oauth.selectedR2BucketName,
             key,
         });
-        setBusy(button, true, t('upload'));
+        const chunked = file.size > maxR2ObjectUploadBytes;
+        setBusy(button, true, t(chunked ? 'oauth_r2_object_uploading_chunked' : 'upload'));
         try {
-            const res = await fetch(`${API_BASE}/cf/r2/object/upload?${params.toString()}`, {
-                method: 'POST',
-                headers: { 'Content-Type': contentType || file.type || 'application/octet-stream' },
-                body: file,
-            });
-            if (!res.ok) throw new Error(await rawAPIError(res));
-            state.oauth.r2ObjectValue = await res.json();
+            if (chunked) {
+                state.oauth.r2ObjectValue = await uploadR2ObjectFileChunked(key, file, contentType || file.type || 'application/octet-stream');
+            } else {
+                setR2UploadProgress({
+                    fileName: file.name || key,
+                    uploaded: 0,
+                    total: file.size,
+                    chunkIndex: 0,
+                    totalChunks: 1,
+                    mode: t('oauth_r2_object_upload_mode_direct'),
+                });
+                const res = await fetch(`${API_BASE}/cf/r2/object/upload?${params.toString()}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': contentType || file.type || 'application/octet-stream' },
+                    body: file,
+                });
+                if (!res.ok) throw new Error(await rawAPIError(res));
+                state.oauth.r2ObjectValue = await res.json();
+            }
             state.oauth.selectedR2ObjectKey = key;
             state.oauth.r2ObjectCreateOpen = false;
             await loadR2Objects(state.oauth.selectedR2BucketName);
+            state.oauth.r2UploadProgress = null;
             renderOAuthResource();
             toast.ok(t('oauth_r2_object_uploaded'));
         } catch (err) {
             toast.err(err.message);
         } finally {
+            state.oauth.r2UploadProgress = null;
+            updateR2UploadProgressNode();
             setBusy(button, false);
+        }
+    }
+
+    async function uploadR2ObjectFileChunked(key, file, contentType) {
+        const start = await apiSend('/cf/r2/object/upload-session', 'POST', {
+            account_id: state.oauth.selectedAccountId,
+            bucket: state.oauth.selectedR2BucketName,
+            key,
+            content_type: contentType || 'application/octet-stream',
+            size: file.size,
+            chunk_size: r2ObjectUploadChunkBytes,
+        });
+        const uploadID = start.upload_id;
+        if (!uploadID) throw new Error(t('oauth_r2_object_upload_session_missing'));
+        const totalChunks = start.total_chunks || Math.max(1, Math.ceil(file.size / r2ObjectUploadChunkBytes));
+        let uploaded = 0;
+        setR2UploadProgress({
+            fileName: file.name || key,
+            uploaded,
+            total: file.size,
+            chunkIndex: 0,
+            totalChunks,
+            mode: t('oauth_r2_object_upload_mode_chunked'),
+        });
+        try {
+            for (let index = 0; index < totalChunks; index += 1) {
+                const offset = index * r2ObjectUploadChunkBytes;
+                const chunk = file.slice(offset, Math.min(file.size, offset + r2ObjectUploadChunkBytes));
+                const status = await uploadR2ChunkWithRetry(uploadID, index, chunk);
+                uploaded = status.received_bytes ?? Math.min(file.size, uploaded + chunk.size);
+                setR2UploadProgress({
+                    fileName: file.name || key,
+                    uploaded,
+                    total: file.size,
+                    chunkIndex: index + 1,
+                    totalChunks,
+                    mode: t('oauth_r2_object_upload_mode_chunked'),
+                });
+            }
+            const complete = await fetch(`${API_BASE}/cf/r2/object/upload-session/${encodeURIComponent(uploadID)}/complete`, { method: 'POST' });
+            if (!complete.ok) throw new Error(await rawAPIError(complete));
+            return await complete.json();
+        } catch (err) {
+            fetch(`${API_BASE}/cf/r2/object/upload-session/${encodeURIComponent(uploadID)}`, { method: 'DELETE' }).catch(() => {});
+            throw err;
+        }
+    }
+
+    async function uploadR2ChunkWithRetry(uploadID, index, chunk) {
+        let lastError = null;
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+            try {
+                const res = await fetch(`${API_BASE}/cf/r2/object/upload-session/${encodeURIComponent(uploadID)}/chunks/${index}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/octet-stream' },
+                    body: chunk,
+                });
+                if (!res.ok) throw new Error(await rawAPIError(res));
+                return await res.json();
+            } catch (err) {
+                lastError = err;
+                if (attempt < 2) await sleep(400 * (attempt + 1));
+            }
+        }
+        throw lastError || new Error(t('oauth_r2_object_upload_failed'));
+    }
+
+    function setR2UploadProgress(progress) {
+        state.oauth.r2UploadProgress = progress;
+        updateR2UploadProgressNode();
+    }
+
+    function updateR2UploadProgressNode() {
+        const node = $('oauth-r2-upload-progress');
+        if (!node) return;
+        const progress = state.oauth.r2UploadProgress;
+        node.hidden = !progress;
+        if (!progress) return;
+        const title = node.querySelector('[data-role="title"]');
+        const percent = node.querySelector('[data-role="percent"]');
+        const bar = node.querySelector('[data-role="bar"]');
+        const bytes = node.querySelector('[data-role="bytes"]');
+        const ratio = progress.total > 0 ? Math.min(1, progress.uploaded / progress.total) : 1;
+        const percentText = `${Math.round(ratio * 100)}%`;
+        if (title) title.textContent = t('oauth_r2_object_upload_progress_title', { name: progress.fileName || progress.mode || '' });
+        if (percent) percent.textContent = percentText;
+        if (bar) bar.style.width = percentText;
+        if (bytes) {
+            bytes.textContent = [
+                progress.mode || '',
+                t('oauth_r2_object_upload_progress', {
+                    uploaded: formatBytes(progress.uploaded || 0),
+                    total: formatBytes(progress.total || 0),
+                }),
+                progress.totalChunks ? `${progress.chunkIndex || 0}/${progress.totalChunks}` : '',
+            ].filter(Boolean).join(' · ');
         }
     }
 
@@ -1755,7 +1892,10 @@
 
     function renderOAuthStatus(status) {
         const relay = $('oauth-relay-url');
-        if (relay) relay.textContent = status?.config?.relay_callback_url || '';
+        if (relay) {
+            relay.innerHTML = '';
+            relay.appendChild(oauthRelayCallbackNode(status));
+        }
         const localCallback = $('oauth-local-callback-url');
         if (localCallback) {
             const callbackPath = status?.config?.local_callback_path || '/oauth/callback';
@@ -1787,6 +1927,61 @@
         renderOAuthScopePanel(status);
         renderOAuthIdentities(status);
         updateOAuthResourceTabs();
+    }
+
+    function oauthRelayCallbackNode(status) {
+        const configuredRelay = status?.config?.relay_callback_url || '';
+        if (state.oauth.relayEditing) {
+            const form = document.createElement('form');
+            form.className = 'oauth-relay-editor';
+            const inputWrap = document.createElement('div');
+            inputWrap.className = 'oauth-relay-editor-main';
+            const input = document.createElement('input');
+            input.className = 'input oauth-relay-input mono';
+            input.type = 'url';
+            input.required = true;
+            input.spellcheck = false;
+            input.autocomplete = 'off';
+            input.placeholder = 'https://oauth.example.com/oauth/callback';
+            input.setAttribute('aria-label', t('oauth_relay_callback'));
+            input.value = state.oauth.relayDraft || configuredRelay;
+            const hint = document.createElement('div');
+            hint.className = 'oauth-config-hint';
+            hint.textContent = t('oauth_relay_config_hint');
+            inputWrap.append(input, hint);
+
+            const actions = document.createElement('div');
+            actions.className = 'oauth-relay-editor-actions';
+            const cancel = smallButton(t('cancel'), 'btn btn--sm btn--ghost', () => {
+                state.oauth.relayEditing = false;
+                state.oauth.relayDraft = '';
+                renderOAuthStatus(status);
+            });
+            const save = smallButton(t('save'), 'btn btn--sm btn--primary');
+            save.type = 'submit';
+            actions.append(cancel, save);
+            form.append(inputWrap, actions);
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                saveOAuthRelayCallback(input.value, save);
+            });
+            requestAnimationFrame(() => input.focus());
+            return form;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'oauth-config-value';
+        const text = document.createElement('span');
+        text.className = 'oauth-config-text mono';
+        text.textContent = configuredRelay;
+        text.title = configuredRelay;
+        const edit = iconButton(t('oauth_relay_edit'), iconEditSVG(), () => {
+            state.oauth.relayEditing = true;
+            state.oauth.relayDraft = configuredRelay;
+            renderOAuthStatus(status);
+        }, 'oauth-config-edit');
+        wrapper.append(text, edit);
+        return wrapper;
     }
 
     function setOAuthStatus(kind, text) {
@@ -5704,11 +5899,17 @@
         const contentTypeInput = textInput('application/octet-stream', 'text');
         const fileState = document.createElement('p');
         fileState.className = 'help-text';
-        fileState.textContent = t('oauth_r2_object_upload_limit', { max: formatBytes(maxR2ObjectUploadBytes) });
+        fileState.textContent = t('oauth_r2_object_upload_limit', {
+            direct: formatBytes(maxR2ObjectUploadBytes),
+            max: formatBytes(maxR2ChunkedUploadBytes),
+        });
         fileInput.addEventListener('change', () => {
             const file = fileInput.files?.[0];
             if (!file) {
-                fileState.textContent = t('oauth_r2_object_upload_limit', { max: formatBytes(maxR2ObjectUploadBytes) });
+                fileState.textContent = t('oauth_r2_object_upload_limit', {
+                    direct: formatBytes(maxR2ObjectUploadBytes),
+                    max: formatBytes(maxR2ChunkedUploadBytes),
+                });
                 fileState.removeAttribute('data-state');
                 uploadButton.disabled = false;
                 uploadButton.removeAttribute('title');
@@ -5716,16 +5917,17 @@
             }
             if (!keyInput.value.trim()) keyInput.value = file.name;
             contentTypeInput.value = file.type || 'application/octet-stream';
-            const tooLarge = file.size > maxR2ObjectUploadBytes;
+            const tooLarge = file.size > maxR2ChunkedUploadBytes;
+            const chunked = file.size > maxR2ObjectUploadBytes;
             fileState.textContent = t('oauth_r2_object_upload_selected', {
                 size: formatBytes(file.size),
-                max: formatBytes(maxR2ObjectUploadBytes),
+                mode: t(chunked ? 'oauth_r2_object_upload_mode_chunked' : 'oauth_r2_object_upload_mode_direct'),
             });
             fileState.setAttribute('data-state', tooLarge ? 'error' : 'ok');
             uploadButton.disabled = tooLarge;
             if (tooLarge) uploadButton.title = t('oauth_r2_object_upload_too_large', {
                 size: formatBytes(file.size),
-                max: formatBytes(maxR2ObjectUploadBytes),
+                max: formatBytes(maxR2ChunkedUploadBytes),
             });
             else uploadButton.removeAttribute('title');
         });
@@ -5736,6 +5938,7 @@
         );
         form.appendChild(grid);
         form.appendChild(fileState);
+        form.appendChild(r2UploadProgressNode());
 
         const actions = document.createElement('div');
         actions.className = 'oauth-form-actions';
@@ -5749,6 +5952,32 @@
             uploadR2ObjectFile(keyInput.value.trim(), fileInput.files?.[0], contentTypeInput.value.trim(), uploadButton);
         });
         return form;
+    }
+
+    function r2UploadProgressNode() {
+        const progress = state.oauth.r2UploadProgress;
+        const node = document.createElement('div');
+        node.id = 'oauth-r2-upload-progress';
+        node.className = 's3-upload-progress';
+        node.hidden = !progress;
+        const head = document.createElement('div');
+        head.className = 's3-upload-progress__head';
+        const title = document.createElement('span');
+        title.dataset.role = 'title';
+        const percent = document.createElement('span');
+        percent.dataset.role = 'percent';
+        head.append(title, percent);
+        const barWrap = document.createElement('div');
+        barWrap.className = 's3-upload-progress__bar';
+        const bar = document.createElement('span');
+        bar.dataset.role = 'bar';
+        barWrap.appendChild(bar);
+        const bytes = document.createElement('div');
+        bytes.className = 's3-upload-progress__bytes';
+        bytes.dataset.role = 'bytes';
+        node.append(head, barWrap, bytes);
+        queueMicrotask(updateR2UploadProgressNode);
+        return node;
     }
 
     function r2ObjectPanelNode() {

@@ -336,6 +336,20 @@ func (_u *AppSettingUpdate) SetNillableMcpEnabled(v *bool) *AppSettingUpdate {
 	return _u
 }
 
+// SetOauthRelayCallbackURL sets the "oauth_relay_callback_url" field.
+func (_u *AppSettingUpdate) SetOauthRelayCallbackURL(v string) *AppSettingUpdate {
+	_u.mutation.SetOauthRelayCallbackURL(v)
+	return _u
+}
+
+// SetNillableOauthRelayCallbackURL sets the "oauth_relay_callback_url" field if the given value is not nil.
+func (_u *AppSettingUpdate) SetNillableOauthRelayCallbackURL(v *string) *AppSettingUpdate {
+	if v != nil {
+		_u.SetOauthRelayCallbackURL(*v)
+	}
+	return _u
+}
+
 // SetS3WebdavEnabled sets the "s3_webdav_enabled" field.
 func (_u *AppSettingUpdate) SetS3WebdavEnabled(v bool) *AppSettingUpdate {
 	_u.mutation.SetS3WebdavEnabled(v)
@@ -606,6 +620,9 @@ func (_u *AppSettingUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.OauthRelayCallbackURL(); ok {
+		_spec.SetField(appsetting.FieldOauthRelayCallbackURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.S3WebdavEnabled(); ok {
 		_spec.SetField(appsetting.FieldS3WebdavEnabled, field.TypeBool, value)
@@ -968,6 +985,20 @@ func (_u *AppSettingUpdateOne) SetNillableMcpEnabled(v *bool) *AppSettingUpdateO
 	return _u
 }
 
+// SetOauthRelayCallbackURL sets the "oauth_relay_callback_url" field.
+func (_u *AppSettingUpdateOne) SetOauthRelayCallbackURL(v string) *AppSettingUpdateOne {
+	_u.mutation.SetOauthRelayCallbackURL(v)
+	return _u
+}
+
+// SetNillableOauthRelayCallbackURL sets the "oauth_relay_callback_url" field if the given value is not nil.
+func (_u *AppSettingUpdateOne) SetNillableOauthRelayCallbackURL(v *string) *AppSettingUpdateOne {
+	if v != nil {
+		_u.SetOauthRelayCallbackURL(*v)
+	}
+	return _u
+}
+
 // SetS3WebdavEnabled sets the "s3_webdav_enabled" field.
 func (_u *AppSettingUpdateOne) SetS3WebdavEnabled(v bool) *AppSettingUpdateOne {
 	_u.mutation.SetS3WebdavEnabled(v)
@@ -1268,6 +1299,9 @@ func (_u *AppSettingUpdateOne) sqlSave(ctx context.Context) (_node *AppSetting, 
 	}
 	if value, ok := _u.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.OauthRelayCallbackURL(); ok {
+		_spec.SetField(appsetting.FieldOauthRelayCallbackURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.S3WebdavEnabled(); ok {
 		_spec.SetField(appsetting.FieldS3WebdavEnabled, field.TypeBool, value)

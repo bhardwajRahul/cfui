@@ -31,6 +31,18 @@ other = "OAuth 状態を確認中..."
 [oauth_relay_callback]
 other = "Relay callback"
 
+[oauth_relay_edit]
+other = "Relay callback を編集"
+
+[oauth_relay_required]
+other = "Relay callback URL を入力してください。"
+
+[oauth_relay_saved]
+other = "Relay callback を保存しました。"
+
+[oauth_relay_config_hint]
+other = "Worker の /oauth/callback URL で、Cloudflare OAuth クライアントの Redirect callback URL と完全一致している必要があります。保存したデータベース値は CFUI_OAUTH_RELAY_URL を上書きします。"
+
 [oauth_local_callback]
 other = "Local callback"
 
@@ -860,7 +872,7 @@ other = "Relay の確認に失敗しました"
 other = "cfui 環境変数を設定"
 
 [oauth_setup_env_desc]
-other = "OAuth client ID と relay URL を設定して cfui を再起動します。Relay URL は Cloudflare に登録した redirect URI と一致している必要があります。"
+other = "OAuth client ID を設定して cfui を再起動します。Relay callback は上で編集してデータベースに保存できます。保存値は CFUI_OAUTH_RELAY_URL を上書きし、Cloudflare に登録した Redirect callback URL と一致している必要があります。"
 
 [oauth_setup_env_vars]
 other = "環境変数"
@@ -1700,13 +1712,34 @@ other = "File"
 other = "アップロードするファイルを選択してください。"
 
 [oauth_r2_object_upload_limit]
-other = "1 回のアップロード上限: {max}。"
+other = "直接アップロードは {direct} まで。それ以上は {max} まで分割アップロードします。"
 
 [oauth_r2_object_upload_selected]
-other = "選択したファイル: {size}。1 回のアップロード上限: {max}。"
+other = "選択したファイル: {size}。アップロード方式: {mode}。"
 
 [oauth_r2_object_upload_too_large]
-other = "選択したファイルは {size} で、現在の 1 回のアップロード上限 {max} を超えています。"
+other = "選択したファイルは {size} で、分割アップロード上限 {max} を超えています。"
+
+[oauth_r2_object_upload_mode_direct]
+other = "直接"
+
+[oauth_r2_object_upload_mode_chunked]
+other = "分割"
+
+[oauth_r2_object_uploading_chunked]
+other = "分割アップロード中..."
+
+[oauth_r2_object_upload_session_missing]
+other = "アップロードセッションが作成されませんでした。"
+
+[oauth_r2_object_upload_failed]
+other = "アップロードに失敗しました。"
+
+[oauth_r2_object_upload_progress_title]
+other = "{name} をアップロード中"
+
+[oauth_r2_object_upload_progress]
+other = "{uploaded} / {total}"
 
 [oauth_r2_object_content_type]
 other = "Content-Type"

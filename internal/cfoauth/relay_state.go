@@ -13,6 +13,7 @@ const (
 	defaultLocalCallback   = "http://127.0.0.1:14333/oauth/callback"
 	defaultCallbackPath    = "/oauth/callback"
 	maxRelayStateURLLength = 2048
+	maxRelayCallbackLength = 2048
 )
 
 type relayStatePayload struct {
@@ -99,11 +100,38 @@ func normalizeLocalCallbackURL(raw, callbackPath string) (string, error) {
 }
 
 func normalizeRelayCallbackURL(raw string) string {
-	u, err := url.Parse(strings.TrimSpace(raw))
-	if err != nil || u.Scheme == "" || u.Host == "" {
+	normalized, err := NormalizeRelayCallbackURL(raw)
+	if err != nil {
 		return strings.TrimSpace(raw)
+	}
+	return normalized
+}
+
+func NormalizeRelayCallbackURL(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", fmt.Errorf("oauth relay callback URL is required")
+	}
+	if len(raw) > maxRelayCallbackLength {
+		return "", fmt.Errorf("oauth relay callback URL is too long")
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("invalid oauth relay callback URL: %w", err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return "", fmt.Errorf("oauth relay callback URL must use http or https")
+	}
+	if u.Host == "" {
+		return "", fmt.Errorf("oauth relay callback URL must include a host")
+	}
+	if u.User != nil {
+		return "", fmt.Errorf("oauth relay callback URL must not include credentials")
+	}
+	if u.Path != defaultCallbackPath {
+		return "", fmt.Errorf("oauth relay callback URL path must be %s", defaultCallbackPath)
 	}
 	u.RawQuery = ""
 	u.Fragment = ""
-	return u.String()
+	return u.String(), nil
 }

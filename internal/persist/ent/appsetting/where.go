@@ -159,6 +159,11 @@ func McpEnabled(v bool) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldMcpEnabled, v))
 }
 
+// OauthRelayCallbackURL applies equality check predicate on the "oauth_relay_callback_url" field. It's identical to OauthRelayCallbackURLEQ.
+func OauthRelayCallbackURL(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldOauthRelayCallbackURL, v))
+}
+
 // S3WebdavEnabled applies equality check predicate on the "s3_webdav_enabled" field. It's identical to S3WebdavEnabledEQ.
 func S3WebdavEnabled(v bool) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldS3WebdavEnabled, v))
@@ -1142,6 +1147,71 @@ func McpEnabledEQ(v bool) predicate.AppSetting {
 // McpEnabledNEQ applies the NEQ predicate on the "mcp_enabled" field.
 func McpEnabledNEQ(v bool) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldNEQ(FieldMcpEnabled, v))
+}
+
+// OauthRelayCallbackURLEQ applies the EQ predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLNEQ applies the NEQ predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLNEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNEQ(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLIn applies the In predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldIn(FieldOauthRelayCallbackURL, vs...))
+}
+
+// OauthRelayCallbackURLNotIn applies the NotIn predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLNotIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNotIn(FieldOauthRelayCallbackURL, vs...))
+}
+
+// OauthRelayCallbackURLGT applies the GT predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLGT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGT(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLGTE applies the GTE predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLGTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGTE(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLLT applies the LT predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLLT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLT(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLLTE applies the LTE predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLLTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLTE(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLContains applies the Contains predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLContains(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContains(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLHasPrefix applies the HasPrefix predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLHasPrefix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasPrefix(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLHasSuffix applies the HasSuffix predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLHasSuffix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasSuffix(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLEqualFold applies the EqualFold predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLEqualFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEqualFold(FieldOauthRelayCallbackURL, v))
+}
+
+// OauthRelayCallbackURLContainsFold applies the ContainsFold predicate on the "oauth_relay_callback_url" field.
+func OauthRelayCallbackURLContainsFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContainsFold(FieldOauthRelayCallbackURL, v))
 }
 
 // S3WebdavEnabledEQ applies the EQ predicate on the "s3_webdav_enabled" field.

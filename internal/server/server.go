@@ -110,6 +110,7 @@ type Server struct {
 	runMode   config.RunMode
 	oauthSvc  *cfoauth.Service
 	cfSvc     *cfaccount.Service
+	r2Uploads *r2UploadManager
 	assets    embed.FS
 	locales   fs.FS
 
@@ -128,7 +129,7 @@ func NewServerWithMode(cfgMgr *config.Manager, runner *service.Runner, assets em
 	tokenStore := mcpbridge.NewTokenStore(cfgMgr.Dir())
 	ddnsSvc := ddns.NewService(cfgMgr)
 	s3Svc := s3dav.NewService(cfgMgr)
-	oauthSvc := cfoauth.NewService(cfoauth.ConfigFromEnv(), cfoauth.NewStore(cfgMgr.Dir()))
+	oauthSvc := newOAuthService(cfgMgr)
 	return &Server{
 		cfgMgr:    cfgMgr,
 		runner:    runner,
@@ -140,6 +141,7 @@ func NewServerWithMode(cfgMgr *config.Manager, runner *service.Runner, assets em
 		runMode:   runMode,
 		oauthSvc:  oauthSvc,
 		cfSvc:     cfaccount.NewService(oauthSvc),
+		r2Uploads: newR2UploadManager(),
 		assets:    assets,
 		locales:   locales,
 		shutdownC: make(chan struct{}),
@@ -159,12 +161,33 @@ func (s *Server) PrepareShutdown() {
 
 func (s *Server) ensureOAuthService() *cfoauth.Service {
 	if s.oauthSvc == nil {
-		s.oauthSvc = cfoauth.NewService(cfoauth.ConfigFromEnv(), cfoauth.NewStore(s.cfgMgr.Dir()))
+		s.oauthSvc = newOAuthService(s.cfgMgr)
 	}
 	if s.cfSvc == nil {
 		s.cfSvc = cfaccount.NewService(s.oauthSvc)
 	}
 	return s.oauthSvc
+}
+
+func (s *Server) resetOAuthService() *cfoauth.Service {
+	s.oauthSvc = newOAuthService(s.cfgMgr)
+	s.cfSvc = cfaccount.NewService(s.oauthSvc)
+	return s.oauthSvc
+}
+
+func newOAuthService(cfgMgr *config.Manager) *cfoauth.Service {
+	return cfoauth.NewService(oauthConfigFromManager(cfgMgr), cfoauth.NewStore(cfgMgr.Dir()))
+}
+
+func oauthConfigFromManager(cfgMgr *config.Manager) cfoauth.Config {
+	cfg := cfoauth.ConfigFromEnv()
+	if cfgMgr != nil {
+		if relay := strings.TrimSpace(cfgMgr.Get().OAuthRelayCallbackURL); relay != "" {
+			cfg.RelayCallbackURL = relay
+		}
+	}
+	cfg.Configured = strings.TrimSpace(cfg.ClientID) != "" && strings.TrimSpace(cfg.RelayCallbackURL) != ""
+	return cfg
 }
 
 func (s *Server) effectiveRunMode() config.RunMode {
@@ -202,6 +225,7 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/features", s.handleFeatures)
 	mux.HandleFunc("/api/oauth/status", s.handleOAuthStatus)
 	mux.HandleFunc("/api/oauth/relay-check", s.handleOAuthRelayCheck)
+	mux.HandleFunc("/api/oauth/config", s.handleOAuthConfig)
 	mux.HandleFunc("/api/oauth/login", s.handleOAuthLogin)
 	mux.HandleFunc("/api/oauth/logout", s.handleOAuthLogout)
 	mux.HandleFunc("/api/oauth/session", s.handleOAuthSession)
@@ -225,6 +249,8 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/cf/r2/buckets/", s.handleCFR2Bucket)
 	mux.HandleFunc("/api/cf/r2/objects", s.handleCFR2Objects)
 	mux.HandleFunc("/api/cf/r2/object/copy", s.handleCFR2ObjectCopy)
+	mux.HandleFunc("/api/cf/r2/object/upload-session", s.handleCFR2ObjectUploadSession)
+	mux.HandleFunc("/api/cf/r2/object/upload-session/", s.handleCFR2ObjectUploadSessionItem)
 	mux.HandleFunc("/api/cf/r2/object/upload", s.handleCFR2ObjectUpload)
 	mux.HandleFunc("/api/cf/r2/object/download", s.handleCFR2ObjectDownload)
 	mux.HandleFunc("/api/cf/r2/object", s.handleCFR2Object)

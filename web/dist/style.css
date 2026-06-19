@@ -4255,6 +4255,49 @@ details.disclosure > .body {
     font-size: 0.82rem;
 }
 
+.oauth-config-value {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.oauth-config-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.oauth-config-hint {
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+}
+
+.oauth-relay-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: start;
+}
+
+.oauth-relay-editor-main {
+    min-width: 0;
+}
+
+.oauth-relay-input {
+    width: 100%;
+    min-height: 32px;
+    font-size: 0.8rem;
+}
+
+.oauth-relay-editor-actions {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
 .oauth-setup-guide {
     display: grid;
     gap: 12px;
@@ -5266,6 +5309,7 @@ details.oauth-form-section > summary {
     .oauth-row,
     .oauth-ingress-rule,
     .oauth-identity-item,
+    .oauth-relay-editor,
     .oauth-permission-row,
     .oauth-permission-header {
         grid-template-columns: 1fr;
@@ -5276,6 +5320,7 @@ details.oauth-form-section > summary {
     }
 
     .oauth-row-actions,
+    .oauth-relay-editor-actions,
     .oauth-form-actions {
         justify-content: flex-start;
     }

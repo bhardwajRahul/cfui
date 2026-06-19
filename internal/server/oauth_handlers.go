@@ -49,6 +49,37 @@ func (s *Server) handleOAuthRelayCheck(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, check)
 }
 
+func (s *Server) handleOAuthConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		RelayCallbackURL string `json:"relay_callback_url"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&req); err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	relayURL, err := cfoauth.NormalizeRelayCallbackURL(req.RelayCallbackURL)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	cfg := s.cfgMgr.Get()
+	cfg.OAuthRelayCallbackURL = relayURL
+	if err := s.cfgMgr.Save(cfg); err != nil {
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+	status, err := s.resetOAuthService().Status(r.Context())
+	if err != nil {
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, status)
+}
+
 func (s *Server) handleOAuthLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -1005,6 +1036,99 @@ func (s *Server) handleCFR2ObjectUpload(w http.ResponseWriter, r *http.Request) 
 		r.Body,
 	)
 	writeCFResponse(w, resp, err)
+}
+
+func (s *Server) handleCFR2ObjectUploadSession(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	_, session, err := s.ensureOAuthService().CurrentAccessToken(r.Context())
+	if err != nil {
+		writeCFResponse(w, nil, err)
+		return
+	}
+	if !session.Capabilities["r2"].Write {
+		writeAPIError(w, http.StatusForbidden, fmt.Errorf("workers-r2.write scope is required"))
+		return
+	}
+	var req r2UploadStartRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	status, err := s.ensureR2UploadManager().start(req)
+	if err != nil {
+		writeR2UploadError(w, err)
+		return
+	}
+	writeJSON(w, status)
+}
+
+func (s *Server) handleCFR2ObjectUploadSessionItem(w http.ResponseWriter, r *http.Request) {
+	rest := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/cf/r2/object/upload-session/"), "/")
+	if rest == "" {
+		writeAPIError(w, http.StatusNotFound, fmt.Errorf("r2 upload session not found"))
+		return
+	}
+	parts := strings.Split(rest, "/")
+	uploadID := parts[0]
+	switch {
+	case r.Method == http.MethodDelete && len(parts) == 1:
+		status, err := s.ensureR2UploadManager().abort(uploadID)
+		if err != nil {
+			writeR2UploadError(w, err)
+			return
+		}
+		writeJSON(w, status)
+	case r.Method == http.MethodPut && len(parts) == 3 && parts[1] == "chunks":
+		index, err := strconv.Atoi(parts[2])
+		if err != nil {
+			writeAPIError(w, http.StatusBadRequest, fmt.Errorf("r2 upload chunk index is invalid"))
+			return
+		}
+		status, err := s.ensureR2UploadManager().writeChunk(uploadID, index, r.ContentLength, r.Body)
+		if err != nil {
+			writeR2UploadError(w, err)
+			return
+		}
+		writeJSON(w, status)
+	case r.Method == http.MethodPost && len(parts) == 2 && parts[1] == "complete":
+		resp, err := s.ensureR2UploadManager().complete(r.Context(), uploadID, s.ensureCFService())
+		if err != nil {
+			if isR2UploadManagerError(err) {
+				writeR2UploadError(w, err)
+				return
+			}
+			writeCFResponse(w, nil, err)
+			return
+		}
+		writeJSON(w, resp)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func writeR2UploadError(w http.ResponseWriter, err error) {
+	status := http.StatusBadRequest
+	message := err.Error()
+	switch {
+	case strings.Contains(message, "not found"):
+		status = http.StatusNotFound
+	case strings.Contains(message, "too large"):
+		status = http.StatusRequestEntityTooLarge
+	case strings.Contains(message, "completing"):
+		status = http.StatusConflict
+	}
+	writeAPIError(w, status, err)
+}
+
+func isR2UploadManagerError(err error) bool {
+	if err == nil {
+		return false
+	}
+	message := err.Error()
+	return strings.HasPrefix(message, "r2 upload") || strings.Contains(message, "chunk size") || strings.Contains(message, "cloudflare service is not configured")
 }
 
 func (s *Server) handleCFR2ObjectCopy(w http.ResponseWriter, r *http.Request) {

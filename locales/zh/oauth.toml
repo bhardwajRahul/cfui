@@ -31,6 +31,18 @@ other = "正在检查 OAuth 状态..."
 [oauth_relay_callback]
 other = "中转回调"
 
+[oauth_relay_edit]
+other = "编辑中转回调"
+
+[oauth_relay_required]
+other = "请输入中转回调 URL。"
+
+[oauth_relay_saved]
+other = "中转回调已保存。"
+
+[oauth_relay_config_hint]
+other = "必须是 Worker 的 /oauth/callback 地址，并且要和 Cloudflare OAuth 客户端里的 Redirect callback URL 完全一致；保存到数据库后会覆盖 CFUI_OAUTH_RELAY_URL。"
+
 [oauth_local_callback]
 other = "本地回调"
 
@@ -860,7 +872,7 @@ other = "中继服务检查失败"
 other = "设置 cfui 环境变量"
 
 [oauth_setup_env_desc]
-other = "设置 OAuth 客户端 ID 和 relay URL 后重启 cfui。relay URL 必须和 Cloudflare OAuth 客户端里登记的重定向 URI 一致。"
+other = "设置 OAuth 客户端 ID 后重启 cfui。中转回调可以在上方编辑并保存到数据库；保存值会覆盖 CFUI_OAUTH_RELAY_URL，且必须和 Cloudflare OAuth 客户端里登记的 Redirect callback URL 一致。"
 
 [oauth_setup_env_vars]
 other = "环境变量"
@@ -1700,13 +1712,34 @@ other = "文件"
 other = "请选择要上传的文件。"
 
 [oauth_r2_object_upload_limit]
-other = "单次上传上限：{max}。"
+other = "直接上传支持到 {direct}；更大的文件会使用分片上传，最高 {max}。"
 
 [oauth_r2_object_upload_selected]
-other = "已选文件：{size}。单次上传上限：{max}。"
+other = "已选文件：{size}。上传方式：{mode}。"
 
 [oauth_r2_object_upload_too_large]
-other = "已选文件大小为 {size}，超过当前 {max} 的单次上传上限。"
+other = "已选文件大小为 {size}，超过当前 {max} 的分片上传上限。"
+
+[oauth_r2_object_upload_mode_direct]
+other = "直接上传"
+
+[oauth_r2_object_upload_mode_chunked]
+other = "分片上传"
+
+[oauth_r2_object_uploading_chunked]
+other = "正在上传分片..."
+
+[oauth_r2_object_upload_session_missing]
+other = "上传会话未创建。"
+
+[oauth_r2_object_upload_failed]
+other = "上传失败。"
+
+[oauth_r2_object_upload_progress_title]
+other = "正在上传 {name}"
+
+[oauth_r2_object_upload_progress]
+other = "{uploaded} / {total}"
 
 [oauth_r2_object_content_type]
 other = "Content-Type"

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -62,6 +64,7 @@ func TestOAuthCloudflareResourceHandlersRequireLogin(t *testing.T) {
 		{name: "r2 object get", method: http.MethodGet, target: "/api/cf/r2/object?account_id=account-1&bucket=bucket-one&key=a%2Fb.txt", handler: s.handleCFR2Object},
 		{name: "r2 object put", method: http.MethodPut, target: "/api/cf/r2/object?account_id=account-1&bucket=bucket-one&key=a%2Fb.txt", body: strings.NewReader(`{"value":"hello"}`), handler: s.handleCFR2Object},
 		{name: "r2 object upload", method: http.MethodPost, target: "/api/cf/r2/object/upload?account_id=account-1&bucket=bucket-one&key=a%2Fb.bin", body: strings.NewReader("binary"), handler: s.handleCFR2ObjectUpload},
+		{name: "r2 object chunked upload start", method: http.MethodPost, target: "/api/cf/r2/object/upload-session", body: strings.NewReader(`{"account_id":"account-1","bucket":"bucket-one","key":"a/b.bin","size":6}`), handler: s.handleCFR2ObjectUploadSession},
 		{name: "r2 object copy", method: http.MethodPost, target: "/api/cf/r2/object/copy?account_id=account-1&bucket=bucket-one", body: strings.NewReader(`{"source_key":"a/b.txt","destination_key":"a/c.txt"}`), handler: s.handleCFR2ObjectCopy},
 		{name: "r2 object download", method: http.MethodGet, target: "/api/cf/r2/object/download?account_id=account-1&bucket=bucket-one&key=a%2Fb.bin", handler: s.handleCFR2ObjectDownload},
 		{name: "r2 object delete", method: http.MethodDelete, target: "/api/cf/r2/object?account_id=account-1&bucket=bucket-one&key=a%2Fb.txt", handler: s.handleCFR2Object},
@@ -764,6 +767,182 @@ func TestOAuthRelayCheckHandler(t *testing.T) {
 	}
 	if !check.Reachable || !check.SupportsStateCallback || check.StatusCode != http.StatusOK || check.HealthURL != relay.URL+"/health" || check.Message != "ok state-v1" {
 		t.Fatalf("unexpected relay check: %#v", check)
+	}
+}
+
+func TestOAuthConfigPatchPersistsRelayCallbackAndLoginUsesIt(t *testing.T) {
+	t.Setenv("CFUI_OAUTH_CLIENT_ID", "client-id")
+	t.Setenv("CFUI_OAUTH_AUTH_URL", "https://dash.example.test/oauth2/auth")
+
+	s := newServerTestServer(t)
+	req := httptest.NewRequest(http.MethodPatch, "/api/oauth/config", strings.NewReader(`{"relay_callback_url":"https://relay.example.test/oauth/callback?cfui_callback_url=http%3A%2F%2F127.0.0.1%3A14333%2Foauth%2Fcallback#ignored"}`))
+	rec := httptest.NewRecorder()
+	s.handleOAuthConfig(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("config patch status %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var status cfoauth.Status
+	if err := json.NewDecoder(rec.Body).Decode(&status); err != nil {
+		t.Fatalf("decode oauth status: %v", err)
+	}
+	const wantRelay = "https://relay.example.test/oauth/callback"
+	if status.Config.RelayCallbackURL != wantRelay {
+		t.Fatalf("relay callback = %q, want %q", status.Config.RelayCallbackURL, wantRelay)
+	}
+	if got := s.cfgMgr.Get().OAuthRelayCallbackURL; got != wantRelay {
+		t.Fatalf("stored relay callback = %q, want %q", got, wantRelay)
+	}
+
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/oauth/login", strings.NewReader(`{"scope":"zone.read"}`))
+	loginReq.Host = "cfui.example.internal"
+	loginReq.Header.Set("X-Forwarded-Proto", "https")
+	loginRec := httptest.NewRecorder()
+	s.handleOAuthLogin(loginRec, loginReq)
+	if loginRec.Code != http.StatusOK {
+		t.Fatalf("login status %d: %s", loginRec.Code, loginRec.Body.String())
+	}
+	var loginResp struct {
+		URL string `json:"url"`
+	}
+	if err := json.NewDecoder(loginRec.Body).Decode(&loginResp); err != nil {
+		t.Fatalf("decode login response: %v", err)
+	}
+	startURL, err := url.Parse(loginResp.URL)
+	if err != nil {
+		t.Fatalf("parse login url: %v", err)
+	}
+	if got := startURL.Query().Get("redirect_uri"); got != wantRelay {
+		t.Fatalf("redirect_uri = %q, want %q", got, wantRelay)
+	}
+}
+
+func TestOAuthConfigPatchRejectsInvalidRelayPath(t *testing.T) {
+	t.Setenv("CFUI_OAUTH_CLIENT_ID", "client-id")
+	s := newServerTestServer(t)
+	req := httptest.NewRequest(http.MethodPatch, "/api/oauth/config", strings.NewReader(`{"relay_callback_url":"https://relay.example.test/callback"}`))
+	rec := httptest.NewRecorder()
+
+	s.handleOAuthConfig(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid relay path, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestR2ChunkedUploadSessionCompletesToCloudflare(t *testing.T) {
+	const chunkSize = 1024 * 1024
+	payload := append(bytes.Repeat([]byte("a"), chunkSize), []byte("tail")...)
+	var sawPut bool
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/accounts/account-1/r2/buckets/assets/objects/big.bin", func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "Bearer access-token" {
+			t.Fatalf("unexpected authorization header: %q", got)
+		}
+		if r.Method != http.MethodPut {
+			t.Fatalf("method = %s, want PUT", r.Method)
+		}
+		if got := r.Header.Get("Content-Type"); got != "text/plain" {
+			t.Fatalf("content type = %q, want text/plain", got)
+		}
+		if r.ContentLength != int64(len(payload)) {
+			t.Fatalf("content length = %d, want %d", r.ContentLength, len(payload))
+		}
+		raw, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read upload body: %v", err)
+		}
+		if !bytes.Equal(raw, payload) {
+			t.Fatalf("uploaded payload mismatch")
+		}
+		sawPut = true
+		writeServerCFEnvelope(w, `null`, nil)
+	})
+	api := httptest.NewServer(mux)
+	t.Cleanup(api.Close)
+
+	s := newServerTestServer(t)
+	store := cfoauth.NewStore(s.cfgMgr.Dir())
+	if err := store.SaveSession(context.Background(), cfoauth.Session{
+		ID:           "session-1",
+		Label:        "me@example.com",
+		AccessToken:  "access-token",
+		RefreshToken: "refresh-token",
+		ExpiresAt:    time.Now().UTC().Add(time.Hour),
+		Scope:        "workers-r2.write",
+		Current:      true,
+	}); err != nil {
+		t.Fatalf("SaveSession: %v", err)
+	}
+	oauthSvc := cfoauth.NewService(cfoauth.Config{Configured: true}, store)
+	s.oauthSvc = oauthSvc
+	s.cfSvc = cfaccount.NewServiceWithEndpoints(oauthSvc, cfaccount.EndpointOverrides{
+		REST: api.URL + "/client/v4",
+	})
+
+	startBody := strings.NewReader(`{"account_id":"account-1","bucket":"assets","key":"big.bin","content_type":"text/plain","size":1048580,"chunk_size":1048576}`)
+	startReq := httptest.NewRequest(http.MethodPost, "/api/cf/r2/object/upload-session", startBody)
+	startRec := httptest.NewRecorder()
+	s.handleCFR2ObjectUploadSession(startRec, startReq)
+	if startRec.Code != http.StatusOK {
+		t.Fatalf("start status %d: %s", startRec.Code, startRec.Body.String())
+	}
+	var start r2UploadStatus
+	if err := json.NewDecoder(startRec.Body).Decode(&start); err != nil {
+		t.Fatalf("decode start: %v", err)
+	}
+	if start.UploadID == "" || start.TotalChunks != 2 || start.ChunkSize != chunkSize {
+		t.Fatalf("unexpected start status: %#v", start)
+	}
+
+	chunks := [][]byte{payload[:chunkSize], payload[chunkSize:]}
+	for i, chunk := range chunks {
+		req := httptest.NewRequest(http.MethodPut, "/api/cf/r2/object/upload-session/"+start.UploadID+"/chunks/"+strconv.Itoa(i), bytes.NewReader(chunk))
+		rec := httptest.NewRecorder()
+		s.handleCFR2ObjectUploadSessionItem(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("chunk %d status %d: %s", i, rec.Code, rec.Body.String())
+		}
+	}
+
+	completeReq := httptest.NewRequest(http.MethodPost, "/api/cf/r2/object/upload-session/"+start.UploadID+"/complete", nil)
+	completeRec := httptest.NewRecorder()
+	s.handleCFR2ObjectUploadSessionItem(completeRec, completeReq)
+	if completeRec.Code != http.StatusOK {
+		t.Fatalf("complete status %d: %s", completeRec.Code, completeRec.Body.String())
+	}
+	if !sawPut {
+		t.Fatal("expected upload to Cloudflare")
+	}
+	var object cfaccount.R2ObjectValue
+	if err := json.NewDecoder(completeRec.Body).Decode(&object); err != nil {
+		t.Fatalf("decode complete: %v", err)
+	}
+	if object.Key != "big.bin" || object.Bytes != len(payload) || object.ContentType != "text/plain" {
+		t.Fatalf("unexpected object response: %#v", object)
+	}
+}
+
+func TestR2ChunkedUploadSessionRequiresWriteScope(t *testing.T) {
+	s := newServerTestServer(t)
+	store := cfoauth.NewStore(s.cfgMgr.Dir())
+	if err := store.SaveSession(context.Background(), cfoauth.Session{
+		ID:           "session-1",
+		Label:        "me@example.com",
+		AccessToken:  "access-token",
+		RefreshToken: "refresh-token",
+		ExpiresAt:    time.Now().UTC().Add(time.Hour),
+		Scope:        "workers-r2.read",
+		Current:      true,
+	}); err != nil {
+		t.Fatalf("SaveSession: %v", err)
+	}
+	s.oauthSvc = cfoauth.NewService(cfoauth.Config{Configured: true}, store)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/cf/r2/object/upload-session", strings.NewReader(`{"account_id":"account-1","bucket":"assets","key":"big.bin","size":6}`))
+	rec := httptest.NewRecorder()
+	s.handleCFR2ObjectUploadSession(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
 

@@ -55,6 +55,8 @@ const (
 	FieldActiveTunnelKey = "active_tunnel_key"
 	// FieldMcpEnabled holds the string denoting the mcp_enabled field in the database.
 	FieldMcpEnabled = "mcp_enabled"
+	// FieldOauthRelayCallbackURL holds the string denoting the oauth_relay_callback_url field in the database.
+	FieldOauthRelayCallbackURL = "oauth_relay_callback_url"
 	// FieldS3WebdavEnabled holds the string denoting the s3_webdav_enabled field in the database.
 	FieldS3WebdavEnabled = "s3_webdav_enabled"
 	// FieldS3WebdavActiveKey holds the string denoting the s3_webdav_active_key field in the database.
@@ -105,6 +107,7 @@ var Columns = []string{
 	FieldExtraArgs,
 	FieldActiveTunnelKey,
 	FieldMcpEnabled,
+	FieldOauthRelayCallbackURL,
 	FieldS3WebdavEnabled,
 	FieldS3WebdavActiveKey,
 	FieldS3WebdavAccessMode,
@@ -171,6 +174,8 @@ var (
 	DefaultActiveTunnelKey string
 	// DefaultMcpEnabled holds the default value on creation for the "mcp_enabled" field.
 	DefaultMcpEnabled bool
+	// DefaultOauthRelayCallbackURL holds the default value on creation for the "oauth_relay_callback_url" field.
+	DefaultOauthRelayCallbackURL string
 	// DefaultS3WebdavEnabled holds the default value on creation for the "s3_webdav_enabled" field.
 	DefaultS3WebdavEnabled bool
 	// DefaultS3WebdavActiveKey holds the default value on creation for the "s3_webdav_active_key" field.
@@ -308,6 +313,11 @@ func ByActiveTunnelKey(opts ...sql.OrderTermOption) OrderOption {
 // ByMcpEnabled orders the results by the mcp_enabled field.
 func ByMcpEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMcpEnabled, opts...).ToFunc()
+}
+
+// ByOauthRelayCallbackURL orders the results by the oauth_relay_callback_url field.
+func ByOauthRelayCallbackURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOauthRelayCallbackURL, opts...).ToFunc()
 }
 
 // ByS3WebdavEnabled orders the results by the s3_webdav_enabled field.
