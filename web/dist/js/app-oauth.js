@@ -6571,12 +6571,147 @@
         meta.className = 'oauth-action-meta mono';
         meta.textContent = selectedAccountName();
         copy.append(label, meta);
-        bar.appendChild(copy);
-        bar.appendChild(smallButton(t('refresh'), 'btn btn--sm btn--ghost', async () => {
+        const actions = document.createElement('div');
+        actions.className = 'oauth-row-actions';
+        const diagnostics = smallButton(t('oauth_usage_copy_diagnostics'), 'btn btn--sm btn--ghost', () => copyOAuthText(usageDiagnosticsText()));
+        diagnostics.title = t('oauth_usage_copy_diagnostics_title');
+        diagnostics.setAttribute('aria-label', t('oauth_usage_copy_diagnostics_title'));
+        const refresh = smallButton(t('refresh'), 'btn btn--sm btn--ghost', async () => {
             await loadOAuthAccountUsage();
             renderOAuthResource();
-        }));
+        });
+        actions.append(diagnostics, refresh);
+        bar.append(copy, actions);
         return bar;
+    }
+
+    function usageDiagnosticsText() {
+        const status = state.oauth.status || {};
+        const usage = state.oauth.accountUsage || null;
+        const session = usage?.session || status.current || {};
+        return JSON.stringify({
+            type: 'cfui_oauth_account_usage_diagnostics',
+            version: 1,
+            generated_at: new Date().toISOString(),
+            browser_origin: window.location.origin,
+            browser_path: window.location.pathname,
+            contains_oauth_token: false,
+            contains_refresh_token: false,
+            sensitive_fields_omitted: [
+                'oauth_access_token',
+                'oauth_refresh_token',
+                'subscription_id',
+            ],
+            selected: {
+                account_id: state.oauth.selectedAccountId || '',
+                account_name: selectedAccountName(),
+            },
+            identity: {
+                label: session.label || '',
+                expires_at: session.expires_at || '',
+                scopes: Array.isArray(session.scopes) ? session.scopes : [],
+            },
+            capability: {
+                analytics_read: canRead('analytics'),
+                r2_read: canRead('r2'),
+                d1_read: canRead('d1'),
+                kv_read: canRead('kv'),
+            },
+            state: {
+                loaded: !!usage,
+                loading: !!state.oauth.accountUsageLoading,
+                error: state.oauth.accountUsageError || '',
+                scope_ready: canRead('analytics'),
+            },
+            period: usage ? {
+                period_start: usage.period_start || '',
+                today_start: usage.today_start || '',
+                now: usage.now || '',
+            } : null,
+            billing: usage ? usageBillingDiagnostics(usage.billing || {}) : null,
+            workers: usage ? usageWorkersDiagnostics(usage.workers || {}) : null,
+            r2: usage ? usageR2Diagnostics(usage.r2 || {}) : null,
+            d1: usage?.d1 ? usageD1Diagnostics(usage.d1) : null,
+            kv: usage?.kv ? usageKVDiagnostics(usage.kv) : null,
+            capabilities: usageCapabilityDiagnostics(usage?.capabilities || status.capabilities || {}),
+        }, null, 2);
+    }
+
+    function usageBillingDiagnostics(billing) {
+        const subscriptions = Array.isArray(billing?.subscriptions) ? billing.subscriptions : [];
+        return {
+            available: !!billing?.available,
+            reason: billing?.reason || '',
+            reason_label: billing?.available ? '' : billingReasonLabel(billing?.reason),
+            workers_paid: !!billing?.workers_paid,
+            r2_paid: !!billing?.r2_paid,
+            period_start: billing?.period_start || '',
+            period_end: billing?.period_end || '',
+            subscription_count: subscriptions.length,
+            subscriptions: subscriptions.map((subscription) => ({
+                state: subscription?.state || '',
+                frequency: subscription?.frequency || '',
+                rate_plan_id: subscription?.rate_plan_id || '',
+                rate_plan_name: subscription?.rate_plan_name || '',
+                active: !!subscription?.active,
+                current_period_start: subscription?.current_period_start || '',
+                current_period_end: subscription?.current_period_end || '',
+            })),
+        };
+    }
+
+    function usageWorkersDiagnostics(workers) {
+        return {
+            requests_today: Number(workers?.requests_today || 0),
+            requests_period: Number(workers?.requests_period || 0),
+            errors_period: Number(workers?.errors_period || 0),
+            errors_last_hour: workers?.errors_last_hour == null ? null : Number(workers.errors_last_hour),
+            subrequests: Number(workers?.subrequests || 0),
+            cpu_time_period_us: workers?.cpu_time_period_us == null ? null : Number(workers.cpu_time_period_us),
+            cpu_time_today_us: workers?.cpu_time_today_us == null ? null : Number(workers.cpu_time_today_us),
+            cpu_time_p50_us: workers?.cpu_time_p50_us == null ? null : Number(workers.cpu_time_p50_us),
+            cpu_time_p99_us: workers?.cpu_time_p99_us == null ? null : Number(workers.cpu_time_p99_us),
+        };
+    }
+
+    function usageR2Diagnostics(r2) {
+        return {
+            class_a_operations: Number(r2?.class_a_operations || 0),
+            class_b_operations: Number(r2?.class_b_operations || 0),
+            storage_bytes: Number(r2?.storage_bytes || 0),
+            object_count: Number(r2?.object_count || 0),
+        };
+    }
+
+    function usageD1Diagnostics(d1) {
+        return {
+            rows_read_today: Number(d1?.rows_read_today || 0),
+            rows_written_today: Number(d1?.rows_written_today || 0),
+            rows_read_period: Number(d1?.rows_read_period || 0),
+            rows_written_period: Number(d1?.rows_written_period || 0),
+            read_queries_period: Number(d1?.read_queries_period || 0),
+            write_queries_period: Number(d1?.write_queries_period || 0),
+        };
+    }
+
+    function usageKVDiagnostics(kv) {
+        return {
+            reads_today: Number(kv?.reads_today || 0),
+            writes_today: Number(kv?.writes_today || 0),
+            reads_period: Number(kv?.reads_period || 0),
+            writes_period: Number(kv?.writes_period || 0),
+            storage_bytes: Number(kv?.storage_bytes || 0),
+            key_count: Number(kv?.key_count || 0),
+        };
+    }
+
+    function usageCapabilityDiagnostics(capabilities) {
+        const rows = {};
+        Object.keys(capabilities || {}).sort().forEach((key) => {
+            const capability = capabilities[key] || {};
+            rows[key] = { read: !!capability.read, write: !!capability.write };
+        });
+        return rows;
     }
 
     function usageMetricSection(title, items) {

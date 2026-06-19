@@ -676,6 +676,12 @@ other = "还没有加载账号用量。"
 [oauth_usage_scope_required]
 other = "授权 analytics.read 或 account-analytics.read 后可查看账号用量。"
 
+[oauth_usage_copy_diagnostics]
+other = "复制诊断"
+
+[oauth_usage_copy_diagnostics_title]
+other = "复制当前账号用量诊断信息，不包含 OAuth token 或 refresh token。"
+
 [oauth_usage_period]
 other = "用量周期"
 

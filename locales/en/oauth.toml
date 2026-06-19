@@ -676,6 +676,12 @@ other = "No account usage loaded."
 [oauth_usage_scope_required]
 other = "Grant analytics.read or account-analytics.read to view account usage."
 
+[oauth_usage_copy_diagnostics]
+other = "Copy diagnostics"
+
+[oauth_usage_copy_diagnostics_title]
+other = "Copy current account usage diagnostics. OAuth tokens and refresh tokens are not included."
+
 [oauth_usage_period]
 other = "Usage period"
 
