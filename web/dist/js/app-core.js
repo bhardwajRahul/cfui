@@ -134,6 +134,8 @@
             r2CreateOpen: false,
             r2ObjectCreateOpen: false,
             d1CreateOpen: false,
+            kvNamespaceCreateOpen: false,
+            kvNamespaceEditingId: '',
             kvCreateOpen: false,
             tunnelCreateOpen: false,
             snippetCreateOpen: false,

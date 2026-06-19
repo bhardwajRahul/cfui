@@ -4278,6 +4278,13 @@ details.disclosure > .body {
     white-space: nowrap;
 }
 
+.oauth-config-note {
+    margin: 10px 0 0;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+}
+
 .oauth-config-hint {
     margin-top: 6px;
     color: var(--text-muted);

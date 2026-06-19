@@ -333,6 +333,74 @@ func TestD1DatabaseLifecycleUsesCloudflareSDK(t *testing.T) {
 	}
 }
 
+func TestKVNamespaceLifecycleUsesCloudflareSDK(t *testing.T) {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/client/v4/accounts/account-1/storage/kv/namespaces", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		switch r.Method {
+		case http.MethodPost:
+			var req cloudflare.CreateWorkersKVNamespaceParams
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode create kv namespace request: %v", err)
+			}
+			if req.Title != "cache" {
+				t.Fatalf("create kv namespace title = %q, want cache", req.Title)
+			}
+			writeCFEnvelope(w, `{"id":"namespace-1","title":"cache"}`, nil)
+		default:
+			t.Fatalf("unexpected kv namespace collection method = %s", r.Method)
+		}
+	})
+	mux.HandleFunc("/client/v4/accounts/account-1/storage/kv/namespaces/namespace-1", func(w http.ResponseWriter, r *http.Request) {
+		assertBearer(t, r)
+		switch r.Method {
+		case http.MethodPut:
+			var req cloudflare.UpdateWorkersKVNamespaceParams
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				t.Fatalf("decode update kv namespace request: %v", err)
+			}
+			if req.Title != "cache-renamed" {
+				t.Fatalf("update kv namespace title = %q, want cache-renamed", req.Title)
+			}
+			writeCFEnvelope(w, `{}`, nil)
+		case http.MethodDelete:
+			writeCFEnvelope(w, `{}`, nil)
+		default:
+			t.Fatalf("unexpected kv namespace item method = %s", r.Method)
+		}
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	svc := NewService(testOAuthServiceWithScopes(t, "workers-kv-storage.read workers-kv-storage.write"))
+	svc.restEndpoint = server.URL + "/client/v4"
+
+	created, err := svc.CreateKVNamespace(ctx, "account-1", KVNamespaceRequest{Title: " cache "})
+	if err != nil {
+		t.Fatalf("CreateKVNamespace: %v", err)
+	}
+	if created.Namespace.ID != "namespace-1" || created.Namespace.Title != "cache" || created.Session.ID != "session-1" {
+		t.Fatalf("unexpected created kv namespace response: %#v", created)
+	}
+
+	updated, err := svc.UpdateKVNamespace(ctx, "account-1", "namespace-1", KVNamespaceRequest{Title: " cache-renamed "})
+	if err != nil {
+		t.Fatalf("UpdateKVNamespace: %v", err)
+	}
+	if updated.Namespace.ID != "namespace-1" || updated.Namespace.Title != "cache-renamed" || updated.Session.ID != "session-1" {
+		t.Fatalf("unexpected updated kv namespace response: %#v", updated)
+	}
+
+	deleted, err := svc.DeleteKVNamespace(ctx, "account-1", "namespace-1")
+	if err != nil {
+		t.Fatalf("DeleteKVNamespace: %v", err)
+	}
+	if deleted.Namespace.ID != "namespace-1" || deleted.Session.ID != "session-1" {
+		t.Fatalf("unexpected delete kv namespace response: %#v", deleted)
+	}
+}
+
 func TestSplitStatusComponents(t *testing.T) {
 	components := []StatusPageComponent{
 		{ID: "services", Name: "Cloudflare Sites and Services", Status: "degraded_performance", Group: true},

@@ -260,6 +260,7 @@ func (s *Server) GetHandler() http.Handler {
 	mux.HandleFunc("/api/cf/d1/tables", s.handleCFD1Tables)
 	mux.HandleFunc("/api/cf/d1/table", s.handleCFD1Table)
 	mux.HandleFunc("/api/cf/kv/namespaces", s.handleCFKVNamespaces)
+	mux.HandleFunc("/api/cf/kv/namespaces/", s.handleCFKVNamespace)
 	mux.HandleFunc("/api/cf/kv/keys", s.handleCFKVKeys)
 	mux.HandleFunc("/api/cf/kv/value", s.handleCFKVValue)
 	mux.HandleFunc("/api/cf/snippets", s.handleCFSnippets)

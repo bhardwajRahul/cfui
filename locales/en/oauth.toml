@@ -839,7 +839,10 @@ other = "The Worker decodes the cfui callback from OAuth state and forwards Clou
 other = "Built-in Worker file"
 
 [oauth_worker_script_entry]
-other = "Worker script"
+other = "Self-host Worker script"
+
+[oauth_relay_choice_note]
+other = "To use the provided relay, register the shown relay callback as the Cloudflare OAuth client's redirect callback URL. Only open and deploy the Worker script when you want to self-host the relay, then save your own Worker /oauth/callback URL as the relay callback."
 
 [oauth_setup_worker_open]
 other = "Open full Worker script"
@@ -971,7 +974,7 @@ other = "Browse R2 buckets and manage bucket objects."
 other = "Browse D1 databases, create/delete databases, and run SQL queries."
 
 [oauth_permission_kv_desc]
-other = "Browse KV namespaces and edit UTF-8 key values."
+other = "Browse, create, rename, and delete KV namespaces, and edit UTF-8 key/value pairs."
 
 [oauth_permission_tunnels_desc]
 other = "View Cloudflare Tunnel records and create remote-managed tunnels when write scope is enabled."
@@ -1851,6 +1854,39 @@ other = "Unavailable"
 
 [oauth_kv_namespaces]
 other = "KV namespaces"
+
+[oauth_kv_create_namespace]
+other = "Create namespace"
+
+[oauth_kv_rename_namespace]
+other = "Rename namespace"
+
+[oauth_kv_namespace_title]
+other = "Namespace title"
+
+[oauth_kv_namespace_title_placeholder]
+other = "app-cache"
+
+[oauth_kv_create_namespace_hint]
+other = "Creates a KV namespace in the selected Cloudflare account."
+
+[oauth_kv_rename_namespace_hint]
+other = "Only changes the namespace title. The namespace ID stays the same."
+
+[oauth_kv_namespace_created]
+other = "KV namespace created."
+
+[oauth_kv_namespace_renamed]
+other = "KV namespace renamed."
+
+[oauth_kv_namespace_deleted]
+other = "KV namespace deleted."
+
+[oauth_kv_delete_namespace_title]
+other = "Delete KV namespace"
+
+[oauth_kv_delete_namespace_message]
+other = "Delete KV namespace {title}? This deletes all keys in the namespace and cannot be undone."
 
 [oauth_tables]
 other = "tables"

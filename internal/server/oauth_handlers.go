@@ -1329,11 +1329,46 @@ func (s *Server) handleCFD1Table(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCFKVNamespaces(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	switch r.Method {
+	case http.MethodGet:
+		resp, err := s.ensureCFService().KVNamespaces(r.Context(), r.URL.Query().Get("account_id"))
+		writeCFResponse(w, resp, err)
+	case http.MethodPost:
+		var req cfaccount.KVNamespaceRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		resp, err := s.ensureCFService().CreateKVNamespace(r.Context(), r.URL.Query().Get("account_id"), req)
+		writeCFResponse(w, resp, err)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleCFKVNamespace(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut && r.Method != http.MethodDelete {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	resp, err := s.ensureCFService().KVNamespaces(r.Context(), r.URL.Query().Get("account_id"))
+	namespaceID := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/cf/kv/namespaces/"), "/")
+	if namespaceID == "" {
+		writeAPIError(w, http.StatusBadRequest, fmt.Errorf("namespace_id is required"))
+		return
+	}
+	var resp cfaccount.KVNamespaceResponse
+	var err error
+	if r.Method == http.MethodDelete {
+		resp, err = s.ensureCFService().DeleteKVNamespace(r.Context(), r.URL.Query().Get("account_id"), namespaceID)
+		writeCFResponse(w, resp, err)
+		return
+	}
+	var req cfaccount.KVNamespaceRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	resp, err = s.ensureCFService().UpdateKVNamespace(r.Context(), r.URL.Query().Get("account_id"), namespaceID, req)
 	writeCFResponse(w, resp, err)
 }
 

@@ -699,7 +699,7 @@
             loads.push(loadR2Metrics());
         }
         if (canRead('d1')) loads.push(loadD1Databases());
-        if (canRead('kv')) loads.push(apiGet('/cf/kv/namespaces?account_id=' + account).then((resp) => { state.oauth.kvNamespaces = Array.isArray(resp.data) ? resp.data : []; }));
+        if (canRead('kv')) loads.push(loadKVNamespaces());
         try {
             await Promise.all(loads);
         } catch (err) {
@@ -727,6 +727,13 @@
         if (details.size) {
             state.oauth.d1Databases = databases.map((database) => details.get(database.uuid) || database);
         }
+    }
+
+    async function loadKVNamespaces() {
+        if (!state.oauth.selectedAccountId || !canRead('kv')) return;
+        const account = encodeURIComponent(state.oauth.selectedAccountId);
+        const resp = await apiGet('/cf/kv/namespaces?account_id=' + account);
+        state.oauth.kvNamespaces = Array.isArray(resp.data) ? resp.data : [];
     }
 
     async function createD1Database(payload, button) {
@@ -1325,6 +1332,76 @@
             toast.ok(t('oauth_kv_deleted'));
         } catch (err) {
             toast.err(err.message);
+        }
+    }
+
+    async function createKVNamespace(payload, button) {
+        if (!state.oauth.selectedAccountId || !canWrite('kv')) return;
+        try {
+            setBusy(button, true, t('creating'));
+            const account = encodeURIComponent(state.oauth.selectedAccountId);
+            const resp = await apiSend('/cf/kv/namespaces?account_id=' + account, 'POST', payload);
+            state.oauth.kvNamespaceCreateOpen = false;
+            await loadKVNamespaces();
+            if (resp?.namespace?.id) {
+                state.oauth.storageView = 'kv';
+                state.oauth.selectedKVNamespaceId = resp.namespace.id;
+                state.oauth.selectedKVKey = '';
+                state.oauth.kvKeys = [];
+                state.oauth.kvCursor = '';
+                state.oauth.kvValue = null;
+                state.oauth.kvCreateOpen = false;
+                await loadKVKeys(resp.namespace.id);
+            }
+            renderOAuthResource();
+            toast.ok(t('oauth_kv_namespace_created'));
+        } catch (err) {
+            toast.err(err.message);
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
+    async function updateKVNamespace(namespaceID, payload, button) {
+        if (!state.oauth.selectedAccountId || !namespaceID || !canWrite('kv')) return;
+        try {
+            setBusy(button, true, t('saving'));
+            const account = encodeURIComponent(state.oauth.selectedAccountId);
+            await apiSend('/cf/kv/namespaces/' + encodeURIComponent(namespaceID) + '?account_id=' + account, 'PUT', payload);
+            state.oauth.kvNamespaceEditingId = '';
+            await loadKVNamespaces();
+            renderOAuthResource();
+            toast.ok(t('oauth_kv_namespace_renamed'));
+        } catch (err) {
+            toast.err(err.message);
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
+    async function deleteKVNamespace(namespace, button) {
+        const namespaceID = String(namespace?.id || '').trim();
+        if (!state.oauth.selectedAccountId || !namespaceID || !canWrite('kv')) return;
+        const title = namespace.title || namespaceID;
+        const ok = await window.cfui.confirm({
+            title: t('oauth_kv_delete_namespace_title'),
+            message: t('oauth_kv_delete_namespace_message', { title }),
+            okText: t('delete'),
+        });
+        if (!ok) return;
+        try {
+            setBusy(button, true, t('delete'));
+            const account = encodeURIComponent(state.oauth.selectedAccountId);
+            await apiSend('/cf/kv/namespaces/' + encodeURIComponent(namespaceID) + '?account_id=' + account, 'DELETE');
+            if (state.oauth.selectedKVNamespaceId === namespaceID) resetKVDetailSelection();
+            if (state.oauth.kvNamespaceEditingId === namespaceID) state.oauth.kvNamespaceEditingId = '';
+            await loadKVNamespaces();
+            renderOAuthResource();
+            toast.ok(t('oauth_kv_namespace_deleted'));
+        } catch (err) {
+            toast.err(err.message);
+        } finally {
+            setBusy(button, false);
         }
     }
 
@@ -3679,6 +3756,11 @@
                     className: state.oauth.r2CreateOpen ? 'btn btn--sm btn--ghost' : 'btn btn--sm',
                     onClick: () => {
                         state.oauth.r2CreateOpen = !state.oauth.r2CreateOpen;
+                        if (state.oauth.r2CreateOpen) {
+                            state.oauth.d1CreateOpen = false;
+                            state.oauth.kvNamespaceCreateOpen = false;
+                            state.oauth.kvNamespaceEditingId = '';
+                        }
                         renderOAuthResource();
                     },
                 }));
@@ -3712,6 +3794,11 @@
                     className: state.oauth.d1CreateOpen ? 'btn btn--sm btn--ghost' : 'btn btn--sm',
                     onClick: () => {
                         state.oauth.d1CreateOpen = !state.oauth.d1CreateOpen;
+                        if (state.oauth.d1CreateOpen) {
+                            state.oauth.r2CreateOpen = false;
+                            state.oauth.kvNamespaceCreateOpen = false;
+                            state.oauth.kvNamespaceEditingId = '';
+                        }
                         renderOAuthResource();
                     },
                 }));
@@ -3741,8 +3828,37 @@
             }, t('oauth_no_d1_databases'));
         }
         if (canRead('kv')) {
+            if (canWrite('kv')) {
+                body.appendChild(resourceActionBar(t('oauth_kv_namespaces'), {
+                    text: state.oauth.kvNamespaceCreateOpen ? t('cancel') : t('oauth_kv_create_namespace'),
+                    className: state.oauth.kvNamespaceCreateOpen ? 'btn btn--sm btn--ghost' : 'btn btn--sm',
+                    onClick: () => {
+                        state.oauth.kvNamespaceCreateOpen = !state.oauth.kvNamespaceCreateOpen;
+                        if (state.oauth.kvNamespaceCreateOpen) {
+                            state.oauth.r2CreateOpen = false;
+                            state.oauth.d1CreateOpen = false;
+                            state.oauth.kvNamespaceEditingId = '';
+                        }
+                        renderOAuthResource();
+                    },
+                }));
+                if (state.oauth.kvNamespaceCreateOpen) body.appendChild(kvNamespaceFormNode('', true));
+            }
             rendered += renderSection(body, t('oauth_kv_namespaces'), state.oauth.kvNamespaces, (namespace) => {
-                const row = rowNode(namespace.title || namespace.id, namespace.id);
+                if (state.oauth.kvNamespaceEditingId === namespace.id) {
+                    return kvNamespaceFormNode(namespace.title || '', false, namespace.id);
+                }
+                const actions = canWrite('kv') ? [
+                    smallButton(t('rename'), 'btn btn--sm btn--ghost', () => {
+                        state.oauth.kvNamespaceEditingId = namespace.id;
+                        state.oauth.kvNamespaceCreateOpen = false;
+                        state.oauth.r2CreateOpen = false;
+                        state.oauth.d1CreateOpen = false;
+                        renderOAuthResource();
+                    }),
+                    smallButton(t('delete'), 'btn btn--sm btn--danger', (event) => deleteKVNamespace(namespace, event.currentTarget)),
+                ] : [];
+                const row = rowNode(namespace.title || namespace.id, namespace.id, actions);
                 row.addEventListener('click', async () => {
                     state.oauth.storageView = 'kv';
                     state.oauth.selectedKVNamespaceId = namespace.id;
@@ -5986,6 +6102,50 @@
         return form;
     }
 
+    function kvNamespaceFormNode(titleValue, creating, namespaceID = '') {
+        const form = document.createElement('form');
+        form.className = 'oauth-form';
+        const title = document.createElement('h4');
+        title.className = 'oauth-section-title';
+        title.textContent = creating ? t('oauth_kv_create_namespace') : t('oauth_kv_rename_namespace');
+        form.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'oauth-form-grid oauth-form-grid--kv';
+        const titleInput = textInput(titleValue || '', 'text');
+        titleInput.required = true;
+        titleInput.maxLength = 512;
+        titleInput.placeholder = t('oauth_kv_namespace_title_placeholder');
+        grid.appendChild(formField(t('oauth_kv_namespace_title'), titleInput));
+        form.appendChild(grid);
+
+        const hint = document.createElement('div');
+        hint.className = 'oauth-row-meta';
+        hint.textContent = creating ? t('oauth_kv_create_namespace_hint') : t('oauth_kv_rename_namespace_hint');
+        form.appendChild(hint);
+
+        const actions = document.createElement('div');
+        actions.className = 'oauth-form-actions';
+        actions.appendChild(smallButton(t('cancel'), 'btn btn--sm btn--ghost', () => {
+            if (creating) state.oauth.kvNamespaceCreateOpen = false;
+            else state.oauth.kvNamespaceEditingId = '';
+            renderOAuthResource();
+        }));
+        const submitBtn = smallButton(creating ? t('oauth_kv_create_namespace') : t('save'), 'btn btn--sm btn--primary');
+        submitBtn.type = 'submit';
+        actions.appendChild(submitBtn);
+        form.appendChild(actions);
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const payload = { title: titleInput.value.trim() };
+            if (creating) createKVNamespace(payload, submitBtn);
+            else updateKVNamespace(namespaceID, payload, submitBtn);
+        });
+        requestAnimationFrame(() => titleInput.focus());
+        return form;
+    }
+
     function r2BucketFormNode() {
         const form = document.createElement('form');
         form.className = 'oauth-form';
@@ -6937,6 +7097,8 @@
         state.oauth.r2ObjectValue = null;
         state.oauth.r2ObjectFilter = '';
         state.oauth.r2MetricsError = '';
+        state.oauth.kvNamespaceCreateOpen = false;
+        state.oauth.kvNamespaceEditingId = '';
         state.oauth.selectedKVNamespaceId = '';
         state.oauth.selectedKVKey = '';
         state.oauth.kvKeys = [];
@@ -6953,6 +7115,17 @@
         state.oauth.d1TableHasMore = false;
         state.oauth.d1EditingRow = null;
         state.oauth.d1Results = [];
+    }
+
+    function resetKVDetailSelection() {
+        state.oauth.storageView = '';
+        state.oauth.selectedKVNamespaceId = '';
+        state.oauth.selectedKVKey = '';
+        state.oauth.kvKeys = [];
+        state.oauth.kvCursor = '';
+        state.oauth.kvValue = null;
+        state.oauth.kvCreateOpen = false;
+        state.oauth.kvNamespaceEditingId = '';
     }
 
     function resetTunnelDetail() {

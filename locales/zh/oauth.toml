@@ -839,7 +839,10 @@ other = "Worker 会从 OAuth state 里解析 cfui 回调地址，并把 Cloudfla
 other = "内置 Worker 文件"
 
 [oauth_worker_script_entry]
-other = "Worker 脚本"
+other = "自建 Worker 脚本"
+
+[oauth_relay_choice_note]
+other = "如果使用我提供的 relay，就把当前中转回调直接填到 Cloudflare OAuth 客户端的重定向回调 URL。只有想自建 relay 时，才需要打开下面的 Worker 脚本并部署，然后把你的 Worker /oauth/callback 地址保存为中转回调。"
 
 [oauth_setup_worker_open]
 other = "打开完整 Worker 脚本"
@@ -971,7 +974,7 @@ other = "浏览 R2 bucket 并管理 bucket 对象。"
 other = "浏览 D1 数据库、创建/删除数据库并执行 SQL 查询。"
 
 [oauth_permission_kv_desc]
-other = "浏览 KV namespace 并编辑 UTF-8 key value。"
+other = "浏览、创建、重命名、删除 KV namespace，并编辑 UTF-8 key/value。"
 
 [oauth_permission_tunnels_desc]
 other = "查看 Cloudflare Tunnel 记录；开启写权限后可创建远程管理的 Tunnel。"
@@ -1851,6 +1854,39 @@ other = "不可用"
 
 [oauth_kv_namespaces]
 other = "KV namespaces"
+
+[oauth_kv_create_namespace]
+other = "创建 namespace"
+
+[oauth_kv_rename_namespace]
+other = "重命名 namespace"
+
+[oauth_kv_namespace_title]
+other = "Namespace 名称"
+
+[oauth_kv_namespace_title_placeholder]
+other = "app-cache"
+
+[oauth_kv_create_namespace_hint]
+other = "在当前选中的 Cloudflare 账号下创建一个 KV namespace。"
+
+[oauth_kv_rename_namespace_hint]
+other = "只修改 namespace 名称，namespace ID 不会变化。"
+
+[oauth_kv_namespace_created]
+other = "KV namespace 已创建。"
+
+[oauth_kv_namespace_renamed]
+other = "KV namespace 已重命名。"
+
+[oauth_kv_namespace_deleted]
+other = "KV namespace 已删除。"
+
+[oauth_kv_delete_namespace_title]
+other = "删除 KV namespace"
+
+[oauth_kv_delete_namespace_message]
+other = "删除 KV namespace {title}？此操作会删除该 namespace 下的所有 key，且不可撤销。"
 
 [oauth_tables]
 other = "张表"

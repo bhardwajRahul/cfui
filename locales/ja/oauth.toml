@@ -839,7 +839,10 @@ other = "Worker は OAuth state から cfui callback を読み取り、Cloudflar
 other = "内蔵 Worker ファイル"
 
 [oauth_worker_script_entry]
-other = "Worker スクリプト"
+other = "自前 relay 用 Worker"
+
+[oauth_relay_choice_note]
+other = "提供済み relay を使う場合は、表示中の relay callback を Cloudflare OAuth クライアントのリダイレクト callback URL として登録します。自前で relay を運用したい場合だけ Worker スクリプトを開いてデプロイし、自分の Worker /oauth/callback URL を relay callback として保存してください。"
 
 [oauth_setup_worker_open]
 other = "完全な Worker スクリプトを開く"
@@ -971,7 +974,7 @@ other = "R2 バケットを参照し、オブジェクトを管理します。"
 other = "D1 データベースの参照、作成、削除、SQL クエリの実行を行います。"
 
 [oauth_permission_kv_desc]
-other = "KV namespace を参照し、UTF-8 key value を編集します。"
+other = "KV namespace の参照、作成、リネーム、削除と、UTF-8 key/value の編集を行います。"
 
 [oauth_permission_tunnels_desc]
 other = "Cloudflare Tunnel の記録を表示し、書き込み scope がある場合はリモート管理の Tunnel を作成します。"
@@ -1851,6 +1854,39 @@ other = "利用不可"
 
 [oauth_kv_namespaces]
 other = "KV namespaces"
+
+[oauth_kv_create_namespace]
+other = "namespace を作成"
+
+[oauth_kv_rename_namespace]
+other = "namespace をリネーム"
+
+[oauth_kv_namespace_title]
+other = "Namespace 名"
+
+[oauth_kv_namespace_title_placeholder]
+other = "app-cache"
+
+[oauth_kv_create_namespace_hint]
+other = "選択中の Cloudflare アカウントに KV namespace を作成します。"
+
+[oauth_kv_rename_namespace_hint]
+other = "namespace 名だけを変更します。namespace ID は変わりません。"
+
+[oauth_kv_namespace_created]
+other = "KV namespace を作成しました。"
+
+[oauth_kv_namespace_renamed]
+other = "KV namespace をリネームしました。"
+
+[oauth_kv_namespace_deleted]
+other = "KV namespace を削除しました。"
+
+[oauth_kv_delete_namespace_title]
+other = "KV namespace を削除"
+
+[oauth_kv_delete_namespace_message]
+other = "KV namespace {title} を削除しますか？namespace 内のすべての key が削除され、この操作は取り消せません。"
 
 [oauth_tables]
 other = "tables"

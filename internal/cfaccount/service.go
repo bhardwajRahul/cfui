@@ -55,6 +55,7 @@ const (
 	maxD1TableLimit               = 100
 	maxD1CellValueBytes           = 64 * 1024
 	maxD1IdentifierLen            = 512
+	maxKVNamespaceTitleBytes      = 512
 	d1RowIDDefaultKey             = "_cfui_rowid_"
 	maxSnippetNameLen             = 128
 	maxSnippetCodeBytes           = 512 * 1024
@@ -590,6 +591,16 @@ type D1DatabaseDetailResponse struct {
 type KVNamespace struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
+}
+
+type KVNamespaceRequest struct {
+	Title string `json:"title"`
+}
+
+type KVNamespaceResponse struct {
+	Namespace    KVNamespace              `json:"namespace"`
+	Session      cfoauth.SessionSummary   `json:"session"`
+	Capabilities cfoauth.CapabilityMatrix `json:"capabilities"`
 }
 
 type KVKey struct {
@@ -2427,9 +2438,75 @@ func (s *Service) KVNamespaces(ctx context.Context, accountID string) (ListRespo
 	}
 	data := make([]KVNamespace, 0, len(namespaces))
 	for _, namespace := range namespaces {
-		data = append(data, KVNamespace{ID: namespace.ID, Title: namespace.Title})
+		data = append(data, mapKVNamespace(namespace))
 	}
 	return ListResponse[KVNamespace]{Data: data, Session: session, Capabilities: session.Capabilities}, nil
+}
+
+func (s *Service) CreateKVNamespace(ctx context.Context, accountID string, req KVNamespaceRequest) (KVNamespaceResponse, error) {
+	client, session, err := s.currentClient(ctx)
+	if err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	accountID = strings.TrimSpace(accountID)
+	if accountID == "" {
+		return KVNamespaceResponse{}, validationError("account_id is required")
+	}
+	title, err := normalizeKVNamespaceTitle(req.Title)
+	if err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	resp, err := client.CreateWorkersKVNamespace(ctx, cloudflare.AccountIdentifier(accountID), cloudflare.CreateWorkersKVNamespaceParams{Title: title})
+	if err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	return KVNamespaceResponse{
+		Namespace:    mapKVNamespace(resp.Result),
+		Session:      session,
+		Capabilities: session.Capabilities,
+	}, nil
+}
+
+func (s *Service) UpdateKVNamespace(ctx context.Context, accountID, namespaceID string, req KVNamespaceRequest) (KVNamespaceResponse, error) {
+	client, session, err := s.currentClient(ctx)
+	if err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	accountID, namespaceID, err = normalizeKVNamespaceTarget(accountID, namespaceID)
+	if err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	title, err := normalizeKVNamespaceTitle(req.Title)
+	if err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	if _, err := client.UpdateWorkersKVNamespace(ctx, cloudflare.AccountIdentifier(accountID), cloudflare.UpdateWorkersKVNamespaceParams{NamespaceID: namespaceID, Title: title}); err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	return KVNamespaceResponse{
+		Namespace:    KVNamespace{ID: namespaceID, Title: title},
+		Session:      session,
+		Capabilities: session.Capabilities,
+	}, nil
+}
+
+func (s *Service) DeleteKVNamespace(ctx context.Context, accountID, namespaceID string) (KVNamespaceResponse, error) {
+	client, session, err := s.currentClient(ctx)
+	if err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	accountID, namespaceID, err = normalizeKVNamespaceTarget(accountID, namespaceID)
+	if err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	if _, err := client.DeleteWorkersKVNamespace(ctx, cloudflare.AccountIdentifier(accountID), namespaceID); err != nil {
+		return KVNamespaceResponse{}, err
+	}
+	return KVNamespaceResponse{
+		Namespace:    KVNamespace{ID: namespaceID},
+		Session:      session,
+		Capabilities: session.Capabilities,
+	}, nil
 }
 
 func (s *Service) KVKeys(ctx context.Context, accountID, namespaceID, prefix, cursor string, limit int) (KVKeysResponse, error) {
@@ -3584,6 +3661,26 @@ func normalizeKVValueTarget(accountID, namespaceID, key string) (string, string,
 		return "", "", "", validationError("account_id, namespace_id, and key are required")
 	}
 	return accountID, namespaceID, key, nil
+}
+
+func normalizeKVNamespaceTarget(accountID, namespaceID string) (string, string, error) {
+	accountID = strings.TrimSpace(accountID)
+	namespaceID = strings.TrimSpace(namespaceID)
+	if accountID == "" || namespaceID == "" {
+		return "", "", validationError("account_id and namespace_id are required")
+	}
+	return accountID, namespaceID, nil
+}
+
+func normalizeKVNamespaceTitle(title string) (string, error) {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return "", validationError("kv namespace title is required")
+	}
+	if len([]byte(title)) > maxKVNamespaceTitleBytes {
+		return "", validationError("kv namespace title is too long")
+	}
+	return title, nil
 }
 
 func normalizeZoneID(zoneID string) (string, error) {
@@ -6244,6 +6341,13 @@ func mapD1Database(database cloudflare.D1Database) D1Database {
 		NumTables: database.NumTables,
 		FileSize:  database.FileSize,
 		CreatedAt: database.CreatedAt,
+	}
+}
+
+func mapKVNamespace(namespace cloudflare.WorkersKVNamespace) KVNamespace {
+	return KVNamespace{
+		ID:    namespace.ID,
+		Title: namespace.Title,
 	}
 }
 
