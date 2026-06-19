@@ -5508,6 +5508,10 @@ details.disclosure > .body {
     background: var(--surface);
 }
 
+.oauth-zone-quick-actions {
+    margin-top: 10px;
+}
+
 .oauth-form-grid {
     display: grid;
     grid-template-columns: minmax(96px, 0.35fr) minmax(0, 1fr) minmax(0, 1.35fr);

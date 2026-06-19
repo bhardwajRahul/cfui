@@ -156,6 +156,7 @@
 	            zoneAnalyticsError: '',
 	            zoneAnalyticsLoading: false,
             zoneSettings: [],
+            zoneSettingsZoneId: '',
             zoneSettingsSession: null,
             zoneSettingsCapabilities: null,
             zoneSettingsError: '',

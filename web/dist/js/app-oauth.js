@@ -2216,18 +2216,28 @@
 		}
 	}
 
-	async function loadOAuthZoneSettings() {
+    async function loadOAuthZoneSettings() {
         if (!state.oauth.selectedZoneId) return;
+        const zoneID = state.oauth.selectedZoneId;
+        state.oauth.zoneSettingsZoneId = zoneID;
         state.oauth.zoneSettingsError = '';
         try {
-            const resp = await apiGet('/cf/zone-settings?zone_id=' + encodeURIComponent(state.oauth.selectedZoneId));
+            const resp = await apiGet('/cf/zone-settings?zone_id=' + encodeURIComponent(zoneID));
+            if (state.oauth.selectedZoneId !== zoneID) return;
             state.oauth.zoneSettings = Array.isArray(resp.data) ? resp.data : [];
             state.oauth.zoneSettingsSession = resp.session || state.oauth.zoneSettingsSession || null;
             state.oauth.zoneSettingsCapabilities = resp.capabilities || state.oauth.zoneSettingsCapabilities || null;
         } catch (err) {
+            if (state.oauth.selectedZoneId !== zoneID) return;
             state.oauth.zoneSettingsError = err.message || String(err);
             state.oauth.zoneSettings = [];
         }
+    }
+
+    async function ensureOAuthZoneSettingsForOverview() {
+        if (!state.oauth.selectedZoneId || !canRead('zone_settings') || !canWrite('zone_settings')) return;
+        if (state.oauth.zoneSettingsZoneId === state.oauth.selectedZoneId && (state.oauth.zoneSettings.length || state.oauth.zoneSettingsError)) return;
+        await loadOAuthZoneSettings();
     }
 
     async function submitDNSRecord(record, payload, button) {
@@ -2321,7 +2331,10 @@
         }
         if (!state.oauth.status?.logged_in) return;
         if (state.oauth.resource === 'overview') await loadOAuthOverviewSummary();
-        else if (state.oauth.resource === 'zones') await loadOAuthZoneDetail();
+        else if (state.oauth.resource === 'zones') {
+            await loadOAuthZoneDetail();
+            await ensureOAuthZoneSettingsForOverview();
+        }
         else if (state.oauth.resource === 'dns') await loadOAuthDNS();
         else if (state.oauth.resource === 'tunnels') await loadOAuthTunnels();
         else if (state.oauth.resource === 'workers') await loadOAuthWorkers();
@@ -3258,6 +3271,46 @@
             [t('oauth_zone_paused'), zone.paused ? t('yes') : t('no')],
         ].filter(([, value]) => value);
         for (const [label, value] of rows) section.appendChild(rowNode(label, value));
+        const quickActions = zoneQuickActionsNode();
+        if (quickActions) section.appendChild(quickActions);
+        return section;
+    }
+
+    function zoneQuickActionsNode() {
+        if (!state.oauth.selectedZoneId || (!canWrite('zone_settings') && !canWrite('cache_purge'))) return null;
+        const section = document.createElement('section');
+        section.className = 'oauth-settings-actions oauth-zone-quick-actions';
+        const heading = document.createElement('h4');
+        heading.className = 'oauth-section-title';
+        heading.textContent = t('oauth_zone_actions');
+        section.appendChild(heading);
+
+        let actionCount = 0;
+        if (state.oauth.zoneSettingsMutationError) section.appendChild(empty(state.oauth.zoneSettingsMutationError));
+        if (state.oauth.zoneCachePurgeError) section.appendChild(empty(state.oauth.zoneCachePurgeError));
+
+        if (canWrite('zone_settings')) {
+            if (state.oauth.zoneSettingsError) {
+                section.appendChild(empty(state.oauth.zoneSettingsError));
+            } else if (state.oauth.zoneSettingsZoneId === state.oauth.selectedZoneId && state.oauth.zoneSettings.length) {
+                const developmentMode = zoneSettingToggleNode('development_mode', 'oauth_development_mode');
+                if (developmentMode) {
+                    section.appendChild(developmentMode);
+                    actionCount += 1;
+                }
+                const beforeSecurity = section.childElementCount;
+                appendZoneSettingSelect(section, 'security_level', 'oauth_security_level', securityLevels, 'medium');
+                if (section.childElementCount > beforeSecurity) actionCount += 1;
+            }
+        }
+
+        if (canWrite('cache_purge')) {
+            const purgeButton = smallButton(t('oauth_cache_purge'), 'btn btn--sm btn--danger', () => purgeZoneCache(purgeButton));
+            section.appendChild(purgeButton);
+            actionCount += 1;
+        }
+
+        if (actionCount === 0 && !state.oauth.zoneSettingsError && !state.oauth.zoneSettingsMutationError && !state.oauth.zoneCachePurgeError) return null;
         return section;
     }
 
@@ -9479,6 +9532,7 @@
 
     function resetZoneSettingsDetail() {
         state.oauth.zoneSettings = [];
+        state.oauth.zoneSettingsZoneId = '';
         state.oauth.zoneSettingsSession = null;
         state.oauth.zoneSettingsCapabilities = null;
         state.oauth.zoneSettingsError = '';
