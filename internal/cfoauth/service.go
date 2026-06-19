@@ -502,9 +502,7 @@ func (s *Service) requestForm(ctx context.Context, target string, params map[str
 }
 
 func (s *Service) publicConfig() Config {
-	cfg := s.cfg
-	cfg.ClientID = ""
-	return cfg
+	return s.cfg
 }
 
 func IsAuthError(err error) bool {

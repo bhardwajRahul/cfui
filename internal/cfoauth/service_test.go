@@ -362,6 +362,44 @@ func TestUpdateSessionLabelValidatesAndReturnsPublicStatus(t *testing.T) {
 	}
 }
 
+func TestStatusIncludesPublicClientIDButNoTokenMaterial(t *testing.T) {
+	ctx := context.Background()
+	store := NewStore(t.TempDir())
+	t.Cleanup(func() { closeStore(t, store) })
+	if err := store.SaveSession(ctx, Session{
+		ID:           "session-1",
+		Label:        "Production",
+		AccessToken:  "access-token",
+		RefreshToken: "refresh-token",
+		ExpiresAt:    time.Now().UTC().Add(time.Hour),
+		Scope:        "zone.read",
+		Current:      true,
+	}); err != nil {
+		t.Fatalf("SaveSession: %v", err)
+	}
+	svc := NewService(Config{
+		ClientID:         "client-id",
+		RelayCallbackURL: "https://oauth.example.test/oauth/callback",
+		Scopes:           "zone.read",
+		Configured:       true,
+	}, store)
+
+	status, err := svc.Status(ctx)
+	if err != nil {
+		t.Fatalf("Status: %v", err)
+	}
+	if status.Config.ClientID != "client-id" || !status.Config.Configured {
+		t.Fatalf("status should expose public OAuth client metadata: %#v", status.Config)
+	}
+	body, err := json.Marshal(status)
+	if err != nil {
+		t.Fatalf("Marshal status: %v", err)
+	}
+	if strings.Contains(string(body), "access-token") || strings.Contains(string(body), "refresh-token") {
+		t.Fatalf("status response leaked OAuth token: %s", body)
+	}
+}
+
 func TestCheckRelayUsesHealthEndpoint(t *testing.T) {
 	ctx := context.Background()
 	store := NewStore(t.TempDir())
