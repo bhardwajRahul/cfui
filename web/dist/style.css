@@ -4369,28 +4369,48 @@ details.disclosure > .body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 6px 14px;
-    align-items: center;
+    align-items: start;
     color: var(--text-muted);
     font-size: var(--fs-xs);
     line-height: 1.45;
 }
 
-.oauth-relay-helper-text {
+.oauth-relay-helper-copy {
+    display: grid;
+    gap: 2px;
     min-width: 0;
+}
+
+.oauth-relay-helper-text {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.oauth-relay-assist-text {
+    display: block;
+    color: color-mix(in srgb, var(--text-muted) 78%, var(--text));
     overflow-wrap: anywhere;
 }
 
 .oauth-relay-assist-actions {
     display: inline-flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 8px;
     align-items: center;
     justify-content: flex-end;
+    min-height: 28px;
 }
 
 .oauth-relay-inline-action {
-    min-height: 28px;
-    padding: 0 4px;
+    min-height: 26px;
+    padding: 0 2px;
+}
+
+.oauth-relay-text-action {
+    border: 0;
+    color: var(--text-muted);
+    font-weight: 650;
 }
 
 .oauth-setup-guide {
@@ -4490,7 +4510,9 @@ details.disclosure > .body {
 }
 
 .oauth-worker-guide {
-    padding: 14px var(--gap-4);
+    display: grid;
+    gap: 12px;
+    padding: 16px var(--gap-4);
     border-bottom: 1px solid var(--border);
     background: var(--surface);
     color: var(--text-muted);
@@ -4499,7 +4521,13 @@ details.disclosure > .body {
 }
 
 .oauth-worker-guide p {
-    margin: 0 0 8px;
+    margin: 0;
+}
+
+.oauth-worker-summary {
+    max-width: 78ch;
+    color: var(--text);
+    font-weight: 550;
 }
 
 .oauth-worker-guide ol {
@@ -4515,16 +4543,22 @@ details.disclosure > .body {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    margin: 8px 0 10px;
 }
 
 .oauth-worker-choice {
     display: grid;
     gap: 6px;
-    padding: 8px 10px;
+    align-content: start;
+    min-height: 116px;
+    padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: var(--r-card);
     background: var(--surface-2);
+}
+
+.oauth-worker-choice[data-kind="default"] {
+    border-color: color-mix(in srgb, var(--state-ok) 35%, var(--border));
+    background: color-mix(in srgb, var(--state-ok) 5%, var(--surface-2));
 }
 
 .oauth-worker-choice-label {
@@ -4544,6 +4578,34 @@ details.disclosure > .body {
     color: var(--text-muted);
     font-size: var(--fs-xs);
     line-height: 1.45;
+}
+
+.oauth-worker-steps {
+    display: grid;
+    gap: 8px;
+    padding-top: 2px;
+}
+
+.oauth-worker-steps-title,
+.oauth-worker-script-heading {
+    color: var(--text);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+}
+
+.oauth-worker-script-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding-top: 2px;
+}
+
+.oauth-worker-script-heading code {
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    overflow-wrap: anywhere;
 }
 
 .oauth-worker-script-code {

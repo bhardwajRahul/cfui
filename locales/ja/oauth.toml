@@ -44,19 +44,19 @@ other = "Relay callback URL を入力してください。"
 other = "Relay callback を保存しました。"
 
 [oauth_relay_config_hint]
-other = "Cloudflare OAuth クライアントには、この relay callback URL だけを登録します。cfui_callback_url パラメータは追加しません。"
+other = "ここで保存したアドレスだけを Cloudflare OAuth クライアントの Redirect callback URL に使います。"
 
 [oauth_relay_assist_text]
-other = "個人利用では提供済み relay を使えます。完全に自分で管理したい場合だけ Worker を自前運用します。"
+other = "個人利用なら既定ドメインを使えます。自分のドメインが必要な場合だけ Worker を自前運用します。"
 
 [oauth_relay_use_default]
-other = "既定を使用"
+other = "既定ドメイン"
 
 [oauth_relay_use_default_title]
 other = "提供済みの既定 relay callback アドレスを入力"
 
 [oauth_relay_self_host]
-other = "自前運用"
+other = "Worker 自前運用"
 
 [oauth_relay_self_host_title]
 other = "Cloudflare OAuth relay を自前運用するための Worker スクリプトと手順を表示"
@@ -899,7 +899,7 @@ other = "OAuth relay callback を設定"
 other = "上の入力欄が Cloudflare OAuth クライアントに登録する Redirect callback URL です。"
 
 [oauth_setup_relay_input_note]
-other = "ここで行うことは 1 つだけです。入力欄の URL を Cloudflare OAuth クライアントの Redirect callback URL として使います。「既定を使用」で提供済み relay ドメインを入力し、「自前運用」で Worker スクリプトと手順を開きます。"
+other = "ここで行うことは 1 つだけです。入力欄の URL を Cloudflare OAuth クライアントの Redirect callback URL として使います。「既定ドメイン」で提供済み relay アドレスを入力し、「Worker 自前運用」でスクリプトと手順を開きます。"
 
 [oauth_setup_oauth_app_title]
 other = "Cloudflare OAuth クライアントフォームを入力"
@@ -974,22 +974,25 @@ other = "Cloudflare OAuth Worker スクリプト"
 other = "既定の relay アドレスはそのまま使えます。relay ドメインと Worker を完全に自分で管理したい場合だけ、このスクリプトをデプロイします。"
 
 [oauth_worker_self_host_summary]
-other = "Cloudflare OAuth クライアントに登録する relay callback URL は常に 1 つだけです。提供済みアドレスを使うか、下の Worker をデプロイして自分のアドレスを使います。"
+other = "個人利用では提供済み relay アドレスで十分です。自分のドメインまたは Worker を使いたい場合だけ、下の手順で自前運用します。"
 
 [oauth_worker_default_relay_label]
 other = "提供済み relay"
 
 [oauth_worker_default_relay_desc]
-other = "Worker をデプロイしない場合は、このアドレスをそのまま使います。"
+other = "Worker のデプロイは不要です。Cloudflare OAuth クライアントと cfui 入力欄の両方にこのアドレスを使います。"
 
 [oauth_worker_self_host_relay_label]
 other = "自前 relay"
 
 [oauth_worker_self_host_relay_desc]
-other = "下のスクリプトをデプロイしたあと、自分の Worker callback URL を Cloudflare と cfui の両方に設定します。"
+other = "自分の Worker ドメインを使います。Cloudflare OAuth クライアントと cfui 入力欄には同じ /oauth/callback URL を設定します。"
 
 [oauth_worker_callback_format]
 other = "Callback URL 形式"
+
+[oauth_worker_self_host_steps_title]
+other = "自前運用の手順"
 
 [oauth_worker_self_host_step_deploy]
 other = "Cloudflare Worker を作成し、下の完全なスクリプトを貼り付けてデプロイします。"

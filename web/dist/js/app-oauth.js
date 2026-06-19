@@ -2261,13 +2261,19 @@
 
         const helper = document.createElement('div');
         helper.className = 'oauth-relay-helper';
+        const helperCopy = document.createElement('div');
+        helperCopy.className = 'oauth-relay-helper-copy';
         const helperText = document.createElement('span');
         helperText.className = 'oauth-relay-helper-text';
         helperText.id = 'oauth-relay-callback-help';
         helperText.textContent = t('oauth_relay_config_hint');
+        const assistText = document.createElement('span');
+        assistText.className = 'oauth-relay-assist-text';
+        assistText.textContent = t('oauth_relay_assist_text');
+        helperCopy.append(helperText, assistText);
         const assistActions = document.createElement('span');
         assistActions.className = 'oauth-relay-assist-actions';
-        const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--xs btn--text oauth-relay-inline-action', (event) => {
+        const useDefault = smallButton(t('oauth_relay_use_default'), 'btn btn--xs btn--text oauth-relay-inline-action oauth-relay-text-action', (event) => {
             input.value = defaultOAuthRelayCallbackURL;
             if (configuredRelay === defaultOAuthRelayCallbackURL) {
                 input.focus();
@@ -2278,11 +2284,11 @@
         });
         useDefault.title = t('oauth_relay_use_default_title');
         useDefault.setAttribute('aria-label', t('oauth_relay_use_default_title'));
-        const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--xs btn--text oauth-relay-inline-action', () => openOAuthWorkerScriptDialog());
+        const selfHost = smallButton(t('oauth_relay_self_host'), 'btn btn--xs btn--text oauth-relay-inline-action oauth-relay-text-action', () => openOAuthWorkerScriptDialog());
         selfHost.title = t('oauth_relay_self_host_title');
         selfHost.setAttribute('aria-label', t('oauth_relay_self_host_title'));
         assistActions.append(useDefault, selfHost);
-        helper.append(helperText, assistActions);
+        helper.append(helperCopy, assistActions);
 
         field.append(inputRow, helper);
         form.appendChild(field);
@@ -2334,6 +2340,8 @@
     function renderOAuthWorkerScriptDialog() {
         const code = $('oauth-worker-script-content');
         if (!code) return;
+        const defaultRelay = $('oauth-worker-default-relay');
+        if (defaultRelay) defaultRelay.textContent = defaultOAuthRelayCallbackURL;
         if (state.oauth.workerScriptLoading) {
             code.textContent = t('oauth_worker_script_loading');
         } else if (state.oauth.workerScriptError) {
