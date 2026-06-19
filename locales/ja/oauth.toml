@@ -199,6 +199,12 @@ other = "Cloudflare 公開ステータス"
 [oauth_overview_quick_actions]
 other = "クイック操作"
 
+[oauth_overview_recent_zones]
+other = "最近のゾーン"
+
+[oauth_overview_recent_zones_empty]
+other = "現在のアカウントで表示できるゾーンはありません。"
+
 [oauth_overview_action_select_account]
 other = "先にアカウントを選択"
 

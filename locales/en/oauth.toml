@@ -199,6 +199,12 @@ other = "Cloudflare public status"
 [oauth_overview_quick_actions]
 other = "Quick actions"
 
+[oauth_overview_recent_zones]
+other = "Recent zones"
+
+[oauth_overview_recent_zones_empty]
+other = "No zones are available for the current account."
+
 [oauth_overview_action_select_account]
 other = "Select an account first"
 

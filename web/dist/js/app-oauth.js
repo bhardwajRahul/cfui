@@ -2995,6 +2995,9 @@
         const quickActions = overviewQuickActionsNode(metrics);
         if (quickActions) body.appendChild(quickActions);
 
+        const recentZones = overviewRecentZonesNode();
+        if (recentZones) body.appendChild(recentZones);
+
         const status = overview.status || null;
         if (status) {
             const statusNode = document.createElement('section');
@@ -3282,6 +3285,44 @@
         return section;
     }
 
+    function overviewRecentZonesNode() {
+        if (!canRead('zones')) return null;
+        const section = document.createElement('section');
+        section.className = 'oauth-section';
+        const heading = document.createElement('h4');
+        heading.className = 'oauth-section-title';
+        heading.textContent = t('oauth_overview_recent_zones');
+        section.appendChild(heading);
+
+        if (state.oauth.zonesError) {
+            section.appendChild(empty(state.oauth.zonesError));
+            return section;
+        }
+        if (!state.oauth.zones.length) {
+            section.appendChild(empty(t('oauth_overview_recent_zones_empty')));
+            return section;
+        }
+
+        for (const zone of state.oauth.zones.slice(0, 5)) {
+            const actions = [
+                smallButton(t('oauth_zone_tool_open'), 'btn btn--sm btn--ghost', () => openOAuthZoneResource(zone, 'zones')),
+            ];
+            if (canRead('dns')) {
+                actions.push(smallButton(t('oauth_dns'), 'btn btn--sm btn--ghost', () => openOAuthZoneResource(zone, 'dns')));
+            }
+            const meta = [
+                zone.status,
+                zone.plan?.name || zone.plan?.legacy_id,
+                zone.account?.name || zone.account_id,
+            ].filter(Boolean).join(' · ');
+            const row = rowNode(zone.name || zone.id, meta || zone.id, actions);
+            row.setAttribute('data-selected', String(zone.id === state.oauth.selectedZoneId));
+            row.addEventListener('click', () => openOAuthZoneResource(zone, 'zones'));
+            section.appendChild(row);
+        }
+        return section;
+    }
+
     function overviewQuickActionDisabledReason(resourceDef) {
         if (resourceDef.needsAccount && !state.oauth.selectedAccountId) return t('oauth_overview_action_select_account');
         if (resourceDef.needsZone && !state.oauth.selectedZoneId) return t('oauth_overview_action_select_zone');
@@ -3456,33 +3497,36 @@
         section.appendChild(heading);
         for (const zone of state.oauth.zones) {
             const actions = canRead('dns') ? [
-                smallButton(t('oauth_dns'), 'btn btn--sm btn--ghost', async () => {
-                    const changed = state.oauth.selectedZoneId !== zone.id;
-                    state.oauth.selectedZoneId = zone.id;
-                    state.oauth.resource = 'dns';
-                    if (changed) {
-                        resetZoneDetail();
-                        resetSelectedZoneResources();
-                    }
-                    await loadOAuthDNS();
-                    renderOAuthResource();
-                }),
+                smallButton(t('oauth_dns'), 'btn btn--sm btn--ghost', () => openOAuthZoneResource(zone, 'dns')),
             ] : [];
             const row = rowNode(zone.name, `${zone.status || ''} ${zone.id || ''}`.trim(), actions);
             row.setAttribute('data-selected', String(zone.id === state.oauth.selectedZoneId));
-            row.addEventListener('click', async () => {
-                const changed = state.oauth.selectedZoneId !== zone.id;
-                state.oauth.selectedZoneId = zone.id;
-                if (changed) {
-                    resetZoneDetail();
-                    resetSelectedZoneResources();
-                }
-                await loadOAuthZoneDetail(zone.id);
-                renderOAuthResource();
-            });
+            row.addEventListener('click', () => openOAuthZoneResource(zone, 'zones'));
             section.appendChild(row);
         }
         body.appendChild(section);
+    }
+
+    async function openOAuthZoneResource(zone, resource = 'zones') {
+        const zoneID = zone?.id || '';
+        if (!zoneID) return;
+        const changed = state.oauth.selectedZoneId !== zoneID;
+        state.oauth.selectedZoneId = zoneID;
+        state.oauth.resource = resource || 'zones';
+        resetOAuthResourceDetail(state.oauth.resource);
+        if (changed) {
+            resetZoneDetail();
+            resetSelectedZoneResources();
+        }
+        if (state.oauth.resource === 'dns') {
+            await loadOAuthDNS();
+        } else if (state.oauth.resource === 'zones') {
+            await loadOAuthZoneDetail(zoneID);
+            await ensureOAuthZoneSettingsForOverview();
+        } else {
+            await loadOAuthCurrentResource();
+        }
+        renderOAuthResource();
     }
 
     function zoneOverviewNode() {

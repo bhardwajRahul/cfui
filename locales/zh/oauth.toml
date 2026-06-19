@@ -199,6 +199,12 @@ other = "Cloudflare 公共状态"
 [oauth_overview_quick_actions]
 other = "快捷入口"
 
+[oauth_overview_recent_zones]
+other = "最近域名"
+
+[oauth_overview_recent_zones_empty]
+other = "当前账号没有可显示的域名。"
+
 [oauth_overview_action_select_account]
 other = "先选择账号"
 
