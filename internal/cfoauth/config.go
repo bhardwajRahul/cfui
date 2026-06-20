@@ -11,11 +11,12 @@ const (
 	defaultTokenURL         = "https://dash.cloudflare.com/oauth2/token"
 	defaultRevokeURL        = "https://dash.cloudflare.com/oauth2/revoke"
 	defaultUserInfoURL      = "https://dash.cloudflare.com/oauth2/userinfo"
-	defaultRelayCallbackURL = "https://oauth.omarchy.qzz.io/oauth/callback"
+	defaultRelayCallbackURL = "https://cfoauth.pushcat.eu.org/oauth/callback"
 )
 
 type Config struct {
 	ClientID          string `json:"client_id"`
+	ClientIDSource    string `json:"client_id_source,omitempty"`
 	RelayCallbackURL  string `json:"relay_callback_url"`
 	LocalCallbackPath string `json:"local_callback_path"`
 	AuthorizationURL  string `json:"authorization_url"`
@@ -28,8 +29,10 @@ type Config struct {
 }
 
 func ConfigFromEnv() Config {
+	clientID := strings.TrimSpace(os.Getenv("CFUI_OAUTH_CLIENT_ID"))
 	cfg := Config{
-		ClientID:          strings.TrimSpace(os.Getenv("CFUI_OAUTH_CLIENT_ID")),
+		ClientID:          clientID,
+		ClientIDSource:    clientIDSource(clientID),
 		RelayCallbackURL:  normalizeRelayCallbackURL(firstEnv("CFUI_OAUTH_RELAY_URL", "CFUI_OAUTH_REDIRECT_URI", defaultRelayCallbackURL)),
 		LocalCallbackPath: "/oauth/callback",
 		AuthorizationURL:  firstEnv("CFUI_OAUTH_AUTH_URL", defaultAuthorizationURL),
@@ -41,6 +44,41 @@ func ConfigFromEnv() Config {
 	}
 	cfg.Configured = cfg.ClientID != "" && cfg.RelayCallbackURL != ""
 	return cfg
+}
+
+func clientIDSource(clientID string) string {
+	if strings.TrimSpace(clientID) == "" {
+		return "unset"
+	}
+	return "env"
+}
+
+func NormalizeClientID(raw string) (string, error) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return "", nil
+	}
+	if len(value) > 256 {
+		return "", errInvalidClientID()
+	}
+	for _, r := range value {
+		if r <= 0x20 || r == 0x7f {
+			return "", errInvalidClientID()
+		}
+	}
+	return value, nil
+}
+
+func errInvalidClientID() error {
+	return &ConfigError{Message: "oauth client id must be a non-space value up to 256 bytes"}
+}
+
+type ConfigError struct {
+	Message string
+}
+
+func (e *ConfigError) Error() string {
+	return e.Message
 }
 
 func firstEnv(keysAndDefault ...string) string {

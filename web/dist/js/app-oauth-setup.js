@@ -4,7 +4,8 @@
 (() => {
     'use strict';
 
-    const defaultOAuthRelayCallbackURL = 'https://oauth.omarchy.qzz.io/oauth/callback';
+    const defaultOAuthRelayCallbackURL = 'https://cfoauth.pushcat.eu.org/oauth/callback';
+    const defaultOAuthClientID = '27efa323c59c87976675dc75bcad907b';
 
     function createOAuthSetup(deps) {
         const {
@@ -14,11 +15,109 @@
             smallButton,
             iconButton,
             copyOAuthText,
+            saveOAuthClientID,
+            saveOAuthDefaultConfig,
             saveOAuthRelayCallback,
             checkOAuthRelayCallback,
             minimumScopes,
             fullConsoleScopes,
         } = deps;
+
+        async function saveProvidedDefaults(status, button) {
+            if (status?.config?.client_id_source === 'env') {
+                return saveOAuthRelayCallback(defaultOAuthRelayCallbackURL, button);
+            }
+            return saveOAuthDefaultConfig({
+                clientID: defaultOAuthClientID,
+                relayCallbackURL: defaultOAuthRelayCallbackURL,
+            }, button);
+        }
+
+        function clientIDNode(status) {
+            const clientID = status?.config?.client_id || '';
+            const source = status?.config?.client_id_source || (clientID ? 'env' : 'unset');
+            const fromEnv = source === 'env';
+            const form = document.createElement('form');
+            form.className = 'oauth-relay-editor oauth-client-id-editor';
+            const field = document.createElement('div');
+            field.className = 'oauth-relay-field';
+            const inputRow = document.createElement('div');
+            inputRow.className = 'oauth-relay-input-row';
+            const input = document.createElement('input');
+            input.className = 'input oauth-relay-input oauth-client-id-input mono';
+            input.id = 'oauth-client-id-input';
+            input.name = 'oauth_client_id';
+            input.type = 'text';
+            input.required = true;
+            input.readOnly = fromEnv;
+            input.spellcheck = false;
+            input.autocomplete = 'off';
+            input.placeholder = t('oauth_setup_client_id_placeholder');
+            input.setAttribute('aria-label', t('oauth_client_id'));
+            input.setAttribute('aria-describedby', 'oauth-client-id-help oauth-client-id-status');
+            input.value = clientID;
+
+            const sourceLine = clientIDSourceNode(input.value, source);
+            const primaryActions = document.createElement('span');
+            primaryActions.className = 'oauth-relay-primary-actions';
+            const copy = iconButton(t('oauth_client_id_copy_title'), iconCopySVG(), () => copyOAuthText(input.value.trim()));
+            copy.classList.add('oauth-relay-copy');
+            const save = smallButton(t('save'), 'btn btn--sm btn--primary oauth-relay-save');
+            save.type = 'submit';
+            const updateState = () => {
+                const dirty = String(input.value || '').trim() !== String(clientID || '').trim();
+                copy.disabled = !input.value.trim();
+                save.disabled = fromEnv || !dirty;
+                save.hidden = fromEnv || !dirty;
+                save.classList.toggle('is-dirty', !fromEnv && dirty);
+                updateClientIDSourceLine(sourceLine, input.value, fromEnv ? 'env' : (dirty ? 'unsaved' : source));
+            };
+            input.addEventListener('input', updateState);
+            updateState();
+            primaryActions.append(copy, save);
+            inputRow.append(input, primaryActions);
+
+            const helper = document.createElement('div');
+            helper.className = 'oauth-relay-helper';
+            const helperText = document.createElement('span');
+            helperText.className = 'oauth-relay-helper-text';
+            helperText.id = 'oauth-client-id-help';
+            helperText.textContent = fromEnv ? t('oauth_client_id_env_locked') : t('oauth_client_id_helper');
+            helper.appendChild(helperText);
+            if (!fromEnv) {
+                const assistActions = document.createElement('span');
+                assistActions.className = 'oauth-relay-assist-actions';
+                const useDefaultClient = smallButton(t('oauth_client_id_use_default'), 'btn btn--text oauth-relay-inline-action oauth-client-id-default-action', async (event) => {
+                    input.value = defaultOAuthClientID;
+                    updateState();
+                    if (clientID === defaultOAuthClientID && (status?.config?.relay_callback_url || defaultOAuthRelayCallbackURL) === defaultOAuthRelayCallbackURL) {
+                        input.focus();
+                        input.select();
+                        return;
+                    }
+                    await saveProvidedDefaults(status, event.currentTarget);
+                });
+                useDefaultClient.title = t('oauth_client_id_use_default_title');
+                useDefaultClient.setAttribute('aria-label', t('oauth_client_id_use_default_title'));
+                assistActions.appendChild(useDefaultClient);
+                helper.appendChild(assistActions);
+            }
+
+            const feedbackLine = document.createElement('div');
+            feedbackLine.className = 'oauth-relay-feedback-line';
+            feedbackLine.id = 'oauth-client-id-status';
+            feedbackLine.setAttribute('role', 'status');
+            feedbackLine.setAttribute('aria-live', 'polite');
+            feedbackLine.appendChild(sourceLine);
+
+            field.append(inputRow, helper, feedbackLine);
+            form.appendChild(field);
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                saveOAuthClientID(input.value, save);
+            });
+            return form;
+        }
 
         function relayCallbackNode(status) {
             const savedRelay = status?.config?.relay_callback_url || '';
@@ -59,12 +158,13 @@
                 updateRelaySourceLine(sourceLine, input.value, configuredRelay);
                 updateSaveState(save, input.value, configuredRelay);
                 updateCopyState();
-                if (savedRelay === defaultOAuthRelayCallbackURL) {
+                const hasDefaultClient = status?.config?.client_id_source === 'env' || status?.config?.client_id === defaultOAuthClientID;
+                if (savedRelay === defaultOAuthRelayCallbackURL && hasDefaultClient) {
                     input.focus();
                     input.select();
                     return;
                 }
-                await saveOAuthRelayCallback(input.value, event.currentTarget);
+                await saveProvidedDefaults(status, event.currentTarget);
             });
             useDefault.title = t('oauth_relay_use_default_title');
             useDefault.setAttribute('aria-label', t('oauth_relay_use_default_title'));
@@ -120,6 +220,30 @@
             line.className = 'oauth-relay-source-line';
             updateRelaySourceLine(line, relayURL, configuredRelay);
             return line;
+        }
+
+        function clientIDSourceNode(clientID, source) {
+            const line = document.createElement('div');
+            line.className = 'oauth-relay-source-line oauth-client-id-source-line';
+            updateClientIDSourceLine(line, clientID, source);
+            return line;
+        }
+
+        function updateClientIDSourceLine(line, clientID, source) {
+            const value = String(clientID || '').trim();
+            const stateName = value ? source : 'unset';
+            line.innerHTML = '';
+            line.dataset.source = stateName;
+
+            const dot = document.createElement('span');
+            dot.className = 'oauth-relay-status-dot';
+            dot.setAttribute('aria-hidden', 'true');
+
+            const detail = document.createElement('span');
+            detail.className = 'oauth-relay-source-detail';
+            detail.textContent = t(`oauth_client_id_source_${stateName}`);
+
+            line.append(dot, detail);
         }
 
         function updateRelaySourceLine(line, relayURL, configuredRelay) {
@@ -258,6 +382,15 @@
         function focusRelayInput() {
             const input = $('oauth-relay-url')?.querySelector('input');
             if (!input) return;
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            input.focus();
+            input.select();
+        }
+
+        function focusClientIDInput() {
+            const input = $('oauth-client-id')?.querySelector('input');
+            if (!input) return;
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
             input.focus();
             input.select();
         }
@@ -267,29 +400,46 @@
             if (!guide) return;
             guide.innerHTML = '';
             const configured = !!status?.config?.configured;
-            guide.hidden = configured;
-            if (configured) return;
+            const expanded = configured ? !!state.oauth.setupGuideExpanded : state.oauth.setupGuideExpanded !== false;
+            guide.hidden = false;
 
             const relayURL = status?.config?.relay_callback_url || '';
             const effectiveRelayURL = relayURL || defaultOAuthRelayCallbackURL;
             const minimumScopeList = minimumScopes.join(' ');
             const fullConsoleScopeList = fullConsoleScopes.join(' ');
             const envSnippet = [
-                `CFUI_OAUTH_CLIENT_ID=${t('oauth_setup_client_id_placeholder')}`,
+                `CFUI_OAUTH_CLIENT_ID=${status?.config?.client_id || t('oauth_setup_client_id_placeholder')}`,
                 `CFUI_OAUTH_RELAY_URL=${effectiveRelayURL}`,
                 'CFUI_RUN_MODE=oauth',
             ].join('\n');
 
+            const header = document.createElement('div');
+            header.className = 'oauth-setup-header';
+            const headerText = document.createElement('div');
             const title = document.createElement('div');
             title.className = 'oauth-setup-title';
             title.textContent = t('oauth_setup_title');
             const subtitle = document.createElement('div');
             subtitle.className = 'oauth-setup-subtitle';
-            subtitle.textContent = t('oauth_setup_subtitle');
-            guide.append(title, subtitle);
+            subtitle.textContent = configured ? t('oauth_setup_configured_subtitle') : t('oauth_setup_subtitle');
+            headerText.append(title, subtitle);
+            const toggle = smallButton(
+                expanded ? t('oauth_setup_hide') : t('oauth_setup_show'),
+                'btn btn--sm btn--ghost oauth-setup-toggle',
+                () => {
+                    state.oauth.setupGuideExpanded = !expanded;
+                    renderSetupGuide(status);
+                },
+            );
+            toggle.setAttribute('aria-expanded', String(expanded));
+            toggle.setAttribute('aria-controls', 'oauth-setup-guide-body');
+            header.append(headerText, toggle);
+            guide.appendChild(header);
+            if (!expanded) return;
 
             const steps = document.createElement('div');
             steps.className = 'oauth-setup-steps';
+            steps.id = 'oauth-setup-guide-body';
             steps.append(
                 setupGuideStep(
                     '1',
@@ -301,6 +451,16 @@
                         setupGuideCodeRow(t('oauth_setup_response_type'), t('oauth_setup_response_type_value'), { copy: false }),
                         setupGuideCodeRow(t('oauth_setup_grant_type'), t('oauth_setup_grant_type_value'), { copy: false }),
                         setupGuideCodeRow(t('oauth_setup_token_auth_method'), t('oauth_setup_token_auth_method_value'), { copy: false }),
+                        setupGuideCodeRow(t('oauth_setup_default_client_id'), defaultOAuthClientID, {
+                            actions: [
+                                {
+                                    label: t('oauth_client_id_use_default'),
+                                    title: t('oauth_client_id_use_default_title'),
+                                    action: (event) => saveProvidedDefaults(status, event.currentTarget),
+                                },
+                            ],
+                        }),
+                        setupGuideNote(t('oauth_setup_default_client_id_note')),
                         setupGuideCodeRow(t('oauth_setup_redirect_uri'), effectiveRelayURL, {
                             actions: [
                                 {
@@ -402,6 +562,7 @@
         }
 
         return {
+            clientIDNode,
             relayCallbackNode,
             renderSetupGuide,
             loadWorkerScript,
@@ -409,6 +570,8 @@
             openWorkerScriptDialog,
             renderWorkerScriptDialog,
             workerScriptURL,
+            focusClientIDInput,
+            focusRelayInput,
         };
     }
 
@@ -418,6 +581,7 @@
 
     window.cfui.oauthSetup = {
         defaultOAuthRelayCallbackURL,
+        defaultOAuthClientID,
         create: createOAuthSetup,
     };
 })();

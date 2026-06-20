@@ -971,6 +971,96 @@ func TestOAuthConfigPatchPersistsRelayCallbackAndLoginUsesIt(t *testing.T) {
 	}
 }
 
+func TestOAuthConfigPatchPersistsClientIDWhenEnvUnset(t *testing.T) {
+	t.Setenv("CFUI_OAUTH_CLIENT_ID", "")
+	t.Setenv("CFUI_OAUTH_AUTH_URL", "https://dash.example.test/oauth2/auth")
+
+	s := newServerTestServer(t)
+	req := httptest.NewRequest(http.MethodPatch, "/api/oauth/config", strings.NewReader(`{"client_id":"saved-client"}`))
+	rec := httptest.NewRecorder()
+	s.handleOAuthConfig(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("config patch status %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var status cfoauth.Status
+	if err := json.NewDecoder(rec.Body).Decode(&status); err != nil {
+		t.Fatalf("decode oauth status: %v", err)
+	}
+	if status.Config.ClientID != "saved-client" || status.Config.ClientIDSource != "saved" || !status.Config.Configured {
+		t.Fatalf("unexpected oauth config: %#v", status.Config)
+	}
+	if got := s.cfgMgr.Get().OAuthClientID; got != "saved-client" {
+		t.Fatalf("stored client id = %q, want saved-client", got)
+	}
+
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/oauth/login", strings.NewReader(`{"scope":"zone.read"}`))
+	loginReq.Host = "cfui.example.internal"
+	loginReq.Header.Set("X-Forwarded-Proto", "https")
+	loginRec := httptest.NewRecorder()
+	s.handleOAuthLogin(loginRec, loginReq)
+	if loginRec.Code != http.StatusOK {
+		t.Fatalf("login status %d: %s", loginRec.Code, loginRec.Body.String())
+	}
+	var loginResp struct {
+		URL string `json:"url"`
+	}
+	if err := json.NewDecoder(loginRec.Body).Decode(&loginResp); err != nil {
+		t.Fatalf("decode login response: %v", err)
+	}
+	startURL, err := url.Parse(loginResp.URL)
+	if err != nil {
+		t.Fatalf("parse login url: %v", err)
+	}
+	if got := startURL.Query().Get("client_id"); got != "saved-client" {
+		t.Fatalf("client_id = %q, want saved-client", got)
+	}
+}
+
+func TestOAuthConfigPatchEnvClientIDTakesPrecedence(t *testing.T) {
+	t.Setenv("CFUI_OAUTH_CLIENT_ID", "env-client")
+	t.Setenv("CFUI_OAUTH_AUTH_URL", "https://dash.example.test/oauth2/auth")
+
+	s := newServerTestServer(t)
+	req := httptest.NewRequest(http.MethodPatch, "/api/oauth/config", strings.NewReader(`{"client_id":"saved-client"}`))
+	rec := httptest.NewRecorder()
+	s.handleOAuthConfig(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("config patch status %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var status cfoauth.Status
+	if err := json.NewDecoder(rec.Body).Decode(&status); err != nil {
+		t.Fatalf("decode oauth status: %v", err)
+	}
+	if status.Config.ClientID != "env-client" || status.Config.ClientIDSource != "env" {
+		t.Fatalf("env client id should take precedence: %#v", status.Config)
+	}
+	if got := s.cfgMgr.Get().OAuthClientID; got != "saved-client" {
+		t.Fatalf("stored client id = %q, want saved-client", got)
+	}
+
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/oauth/login", strings.NewReader(`{"scope":"zone.read"}`))
+	loginRec := httptest.NewRecorder()
+	s.handleOAuthLogin(loginRec, loginReq)
+	if loginRec.Code != http.StatusOK {
+		t.Fatalf("login status %d: %s", loginRec.Code, loginRec.Body.String())
+	}
+	var loginResp struct {
+		URL string `json:"url"`
+	}
+	if err := json.NewDecoder(loginRec.Body).Decode(&loginResp); err != nil {
+		t.Fatalf("decode login response: %v", err)
+	}
+	startURL, err := url.Parse(loginResp.URL)
+	if err != nil {
+		t.Fatalf("parse login url: %v", err)
+	}
+	if got := startURL.Query().Get("client_id"); got != "env-client" {
+		t.Fatalf("client_id = %q, want env-client", got)
+	}
+}
+
 func TestOAuthConfigPatchRejectsInvalidRelayPath(t *testing.T) {
 	t.Setenv("CFUI_OAUTH_CLIENT_ID", "client-id")
 	s := newServerTestServer(t)

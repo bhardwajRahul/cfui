@@ -336,6 +336,20 @@ func (_u *AppSettingUpdate) SetNillableMcpEnabled(v *bool) *AppSettingUpdate {
 	return _u
 }
 
+// SetOauthClientID sets the "oauth_client_id" field.
+func (_u *AppSettingUpdate) SetOauthClientID(v string) *AppSettingUpdate {
+	_u.mutation.SetOauthClientID(v)
+	return _u
+}
+
+// SetNillableOauthClientID sets the "oauth_client_id" field if the given value is not nil.
+func (_u *AppSettingUpdate) SetNillableOauthClientID(v *string) *AppSettingUpdate {
+	if v != nil {
+		_u.SetOauthClientID(*v)
+	}
+	return _u
+}
+
 // SetOauthRelayCallbackURL sets the "oauth_relay_callback_url" field.
 func (_u *AppSettingUpdate) SetOauthRelayCallbackURL(v string) *AppSettingUpdate {
 	_u.mutation.SetOauthRelayCallbackURL(v)
@@ -620,6 +634,9 @@ func (_u *AppSettingUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.OauthClientID(); ok {
+		_spec.SetField(appsetting.FieldOauthClientID, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.OauthRelayCallbackURL(); ok {
 		_spec.SetField(appsetting.FieldOauthRelayCallbackURL, field.TypeString, value)
@@ -985,6 +1002,20 @@ func (_u *AppSettingUpdateOne) SetNillableMcpEnabled(v *bool) *AppSettingUpdateO
 	return _u
 }
 
+// SetOauthClientID sets the "oauth_client_id" field.
+func (_u *AppSettingUpdateOne) SetOauthClientID(v string) *AppSettingUpdateOne {
+	_u.mutation.SetOauthClientID(v)
+	return _u
+}
+
+// SetNillableOauthClientID sets the "oauth_client_id" field if the given value is not nil.
+func (_u *AppSettingUpdateOne) SetNillableOauthClientID(v *string) *AppSettingUpdateOne {
+	if v != nil {
+		_u.SetOauthClientID(*v)
+	}
+	return _u
+}
+
 // SetOauthRelayCallbackURL sets the "oauth_relay_callback_url" field.
 func (_u *AppSettingUpdateOne) SetOauthRelayCallbackURL(v string) *AppSettingUpdateOne {
 	_u.mutation.SetOauthRelayCallbackURL(v)
@@ -1299,6 +1330,9 @@ func (_u *AppSettingUpdateOne) sqlSave(ctx context.Context) (_node *AppSetting, 
 	}
 	if value, ok := _u.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.OauthClientID(); ok {
+		_spec.SetField(appsetting.FieldOauthClientID, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.OauthRelayCallbackURL(); ok {
 		_spec.SetField(appsetting.FieldOauthRelayCallbackURL, field.TypeString, value)

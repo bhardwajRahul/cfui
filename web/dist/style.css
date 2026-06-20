@@ -4295,6 +4295,23 @@ details.disclosure > .body {
 .oauth-status[data-state="warn"] { color: var(--state-warn); }
 .oauth-status[data-state="error"] { color: var(--state-error); }
 
+.oauth-status-action {
+    min-height: 24px;
+    padding: 0 4px;
+    border: 0;
+    color: currentColor;
+    background: transparent;
+    font-size: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.oauth-status-action:hover {
+    background: transparent;
+    color: var(--text);
+}
+
 .oauth-config-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -4308,6 +4325,10 @@ details.disclosure > .body {
 
 .oauth-config-item--relay {
     grid-column: 1 / -1;
+}
+
+.oauth-config-item--client {
+    max-width: 720px;
 }
 
 .oauth-config-item--local {
@@ -4485,6 +4506,15 @@ details.disclosure > .body {
     background: var(--accent);
 }
 
+.oauth-relay-source-line[data-source="env"] .oauth-relay-status-dot,
+.oauth-relay-source-line[data-source="saved"] .oauth-relay-status-dot {
+    background: var(--state-ok);
+}
+
+.oauth-relay-source-line[data-source="unset"] .oauth-relay-status-dot {
+    background: var(--state-warn);
+}
+
 .oauth-relay-source-line[data-source="unsaved"] {
     color: var(--state-warn);
 }
@@ -4603,8 +4633,19 @@ details.disclosure > .body {
     background: color-mix(in srgb, var(--state-warn) 7%, var(--surface));
 }
 
+.oauth-setup-header {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
 .oauth-setup-title {
     font-weight: 700;
+}
+
+.oauth-setup-toggle {
+    flex: 0 0 auto;
 }
 
 .oauth-setup-subtitle,

@@ -159,6 +159,11 @@ func McpEnabled(v bool) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldMcpEnabled, v))
 }
 
+// OauthClientID applies equality check predicate on the "oauth_client_id" field. It's identical to OauthClientIDEQ.
+func OauthClientID(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldOauthClientID, v))
+}
+
 // OauthRelayCallbackURL applies equality check predicate on the "oauth_relay_callback_url" field. It's identical to OauthRelayCallbackURLEQ.
 func OauthRelayCallbackURL(v string) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldEQ(FieldOauthRelayCallbackURL, v))
@@ -1147,6 +1152,71 @@ func McpEnabledEQ(v bool) predicate.AppSetting {
 // McpEnabledNEQ applies the NEQ predicate on the "mcp_enabled" field.
 func McpEnabledNEQ(v bool) predicate.AppSetting {
 	return predicate.AppSetting(sql.FieldNEQ(FieldMcpEnabled, v))
+}
+
+// OauthClientIDEQ applies the EQ predicate on the "oauth_client_id" field.
+func OauthClientIDEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEQ(FieldOauthClientID, v))
+}
+
+// OauthClientIDNEQ applies the NEQ predicate on the "oauth_client_id" field.
+func OauthClientIDNEQ(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNEQ(FieldOauthClientID, v))
+}
+
+// OauthClientIDIn applies the In predicate on the "oauth_client_id" field.
+func OauthClientIDIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldIn(FieldOauthClientID, vs...))
+}
+
+// OauthClientIDNotIn applies the NotIn predicate on the "oauth_client_id" field.
+func OauthClientIDNotIn(vs ...string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldNotIn(FieldOauthClientID, vs...))
+}
+
+// OauthClientIDGT applies the GT predicate on the "oauth_client_id" field.
+func OauthClientIDGT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGT(FieldOauthClientID, v))
+}
+
+// OauthClientIDGTE applies the GTE predicate on the "oauth_client_id" field.
+func OauthClientIDGTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldGTE(FieldOauthClientID, v))
+}
+
+// OauthClientIDLT applies the LT predicate on the "oauth_client_id" field.
+func OauthClientIDLT(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLT(FieldOauthClientID, v))
+}
+
+// OauthClientIDLTE applies the LTE predicate on the "oauth_client_id" field.
+func OauthClientIDLTE(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldLTE(FieldOauthClientID, v))
+}
+
+// OauthClientIDContains applies the Contains predicate on the "oauth_client_id" field.
+func OauthClientIDContains(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContains(FieldOauthClientID, v))
+}
+
+// OauthClientIDHasPrefix applies the HasPrefix predicate on the "oauth_client_id" field.
+func OauthClientIDHasPrefix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasPrefix(FieldOauthClientID, v))
+}
+
+// OauthClientIDHasSuffix applies the HasSuffix predicate on the "oauth_client_id" field.
+func OauthClientIDHasSuffix(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldHasSuffix(FieldOauthClientID, v))
+}
+
+// OauthClientIDEqualFold applies the EqualFold predicate on the "oauth_client_id" field.
+func OauthClientIDEqualFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldEqualFold(FieldOauthClientID, v))
+}
+
+// OauthClientIDContainsFold applies the ContainsFold predicate on the "oauth_client_id" field.
+func OauthClientIDContainsFold(v string) predicate.AppSetting {
+	return predicate.AppSetting(sql.FieldContainsFold(FieldOauthClientID, v))
 }
 
 // OauthRelayCallbackURLEQ applies the EQ predicate on the "oauth_relay_callback_url" field.

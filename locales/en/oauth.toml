@@ -59,7 +59,7 @@ other = "Default"
 other = "or"
 
 [oauth_relay_use_default_title]
-other = "Fill and save the provided OAuth relay callback URL"
+other = "Fill and save the OAuth Client ID and relay address for the provided domain"
 
 [oauth_relay_self_host]
 other = "Self-host"
@@ -1097,13 +1097,64 @@ other = "Cache hit"
 other = "Settings"
 
 [oauth_not_configured]
-other = "Set CFUI_OAUTH_CLIENT_ID before signing in."
+other = "Enter the OAuth Client ID before signing in."
+
+[oauth_status_configure]
+other = "Configure"
+
+[oauth_client_id]
+other = "OAuth Client ID"
+
+[oauth_client_id_helper]
+other = "Use the default Client ID for the provided relay, or enter your own Client ID when you self-host a Cloudflare OAuth client."
+
+[oauth_client_id_env_locked]
+other = "This value comes from CFUI_OAUTH_CLIENT_ID. Update the Docker/Compose environment and restart cfui to change it."
+
+[oauth_client_id_use_default]
+other = "Default"
+
+[oauth_client_id_use_default_title]
+other = "Fill and save the OAuth Client ID and relay address for the provided domain"
+
+[oauth_client_id_required]
+other = "Enter the OAuth Client ID."
+
+[oauth_client_id_saved]
+other = "OAuth Client ID saved."
+
+[oauth_default_config_saved]
+other = "Default OAuth configuration saved."
+
+[oauth_client_id_copy_title]
+other = "Copy OAuth Client ID"
+
+[oauth_client_id_source_env]
+other = "Using environment variable"
+
+[oauth_client_id_source_saved]
+other = "Using saved setting"
+
+[oauth_client_id_source_unset]
+other = "Not set"
+
+[oauth_client_id_source_unsaved]
+other = "Unsaved change"
 
 [oauth_setup_title]
 other = "OAuth setup"
 
 [oauth_setup_subtitle]
-other = "Confirm the Redirect callback URL above, create the Cloudflare OAuth client with the choices below, then restart cfui with the client ID."
+other = "Confirm the Redirect callback URL above, create the Cloudflare OAuth client with the choices below, then save the client ID above or set the environment variable."
+
+[oauth_setup_configured_subtitle]
+other = "OAuth is configured. Expand this guide when you need to check the Cloudflare OAuth client choices."
+
+[oauth_setup_show]
+other = "Show guide"
+
+[oauth_setup_hide]
+other = "Hide"
 
 [oauth_setup_relay_title]
 other = "Set the OAuth relay callback"
@@ -1118,7 +1169,7 @@ other = "For private use, the provided domain is enough. To use your own domain,
 other = "Fill the Cloudflare OAuth client form"
 
 [oauth_setup_oauth_app_desc]
-other = "Use these choices in the Cloudflare OAuth client form. The Redirect callback URL is only the address shown in the input above: either the provided domain or your self-hosted Worker /oauth/callback. cfui uses Authorization Code, Refresh Token, and PKCE without a client secret."
+other = "For a quick start, use the provided Client ID and relay domain. When self-hosting, create your own Cloudflare OAuth client with these choices. cfui uses Authorization Code, Refresh Token, and PKCE without a client secret."
 
 [oauth_setup_cloudflare_path]
 other = "Cloudflare dashboard path"
@@ -1147,11 +1198,17 @@ other = "Token endpoint authentication method"
 [oauth_setup_token_auth_method_value]
 other = "None (PKCE)"
 
+[oauth_setup_default_client_id]
+other = "Client ID for the provided relay"
+
+[oauth_setup_default_client_id_note]
+other = "For the default path, clicking Default saves this Client ID together with https://cfoauth.pushcat.eu.org/oauth/callback. When self-hosting an OAuth client, replace it with your own Client ID."
+
 [oauth_setup_redirect_uri]
 other = "Redirect callback URL"
 
 [oauth_setup_redirect_uri_note]
-other = "Use only the HTTPS relay callback shown in the input above, for example https://oauth.omarchy.qzz.io/oauth/callback or your https://oauth.example.com/oauth/callback. Do not append cfui_callback_url."
+other = "Use only the HTTPS relay callback shown in the input above, for example https://cfoauth.pushcat.eu.org/oauth/callback or your https://oauth.example.com/oauth/callback. Do not append cfui_callback_url."
 
 [oauth_setup_client_url]
 other = "Client URL"
@@ -1199,7 +1256,7 @@ other = "Replace the sample host with your Worker HTTPS domain; use this URL in 
 other = "Provided relay"
 
 [oauth_worker_default_relay_desc]
-other = "Recommended for the first setup. Use this address in both the Cloudflare OAuth app Redirect callback URL and the cfui input."
+other = "Recommended for the first setup. Use this Client ID with the Redirect callback URL shown above."
 
 [oauth_worker_self_host_relay_label]
 other = "Self-hosted relay"
@@ -1283,7 +1340,7 @@ other = "Relay check failed"
 other = "Set cfui environment"
 
 [oauth_setup_env_desc]
-other = "Set the OAuth client ID, then restart cfui. The relay callback saved above overrides CFUI_OAUTH_RELAY_URL and must match the Redirect callback URL registered in Cloudflare."
+other = "Docker/Compose can still set environment variables. If CFUI_OAUTH_CLIENT_ID is not set, save the value in the WebUI above. Environment variables take precedence over saved WebUI values."
 
 [oauth_setup_env_vars]
 other = "Environment"

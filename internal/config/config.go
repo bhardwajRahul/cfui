@@ -88,6 +88,10 @@ type Config struct {
 	// OAuthRelayCallbackURL overrides CFUI_OAUTH_RELAY_URL for the Cloudflare
 	// OAuth workspace. It is not secret and is safe to persist with app settings.
 	OAuthRelayCallbackURL string `json:"oauth_relay_callback_url"`
+
+	// OAuthClientID overrides CFUI_OAUTH_CLIENT_ID when that environment
+	// variable is not set. Client IDs are public OAuth metadata, not secrets.
+	OAuthClientID string `json:"oauth_client_id"`
 }
 
 // DDNSConfig stores settings for the built-in DDNS client.

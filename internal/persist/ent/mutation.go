@@ -78,6 +78,7 @@ type AppSettingMutation struct {
 	extra_args                          *string
 	active_tunnel_key                   *string
 	mcp_enabled                         *bool
+	oauth_client_id                     *string
 	oauth_relay_callback_url            *string
 	s3_webdav_enabled                   *bool
 	s3_webdav_active_key                *string
@@ -991,6 +992,42 @@ func (m *AppSettingMutation) ResetMcpEnabled() {
 	m.mcp_enabled = nil
 }
 
+// SetOauthClientID sets the "oauth_client_id" field.
+func (m *AppSettingMutation) SetOauthClientID(s string) {
+	m.oauth_client_id = &s
+}
+
+// OauthClientID returns the value of the "oauth_client_id" field in the mutation.
+func (m *AppSettingMutation) OauthClientID() (r string, exists bool) {
+	v := m.oauth_client_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOauthClientID returns the old "oauth_client_id" field's value of the AppSetting entity.
+// If the AppSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AppSettingMutation) OldOauthClientID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOauthClientID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOauthClientID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOauthClientID: %w", err)
+	}
+	return oldValue.OauthClientID, nil
+}
+
+// ResetOauthClientID resets all changes to the "oauth_client_id" field.
+func (m *AppSettingMutation) ResetOauthClientID() {
+	m.oauth_client_id = nil
+}
+
 // SetOauthRelayCallbackURL sets the "oauth_relay_callback_url" field.
 func (m *AppSettingMutation) SetOauthRelayCallbackURL(s string) {
 	m.oauth_relay_callback_url = &s
@@ -1477,7 +1514,7 @@ func (m *AppSettingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AppSettingMutation) Fields() []string {
-	fields := make([]string, 0, 33)
+	fields := make([]string, 0, 34)
 	if m.key != nil {
 		fields = append(fields, appsetting.FieldKey)
 	}
@@ -1540,6 +1577,9 @@ func (m *AppSettingMutation) Fields() []string {
 	}
 	if m.mcp_enabled != nil {
 		fields = append(fields, appsetting.FieldMcpEnabled)
+	}
+	if m.oauth_client_id != nil {
+		fields = append(fields, appsetting.FieldOauthClientID)
 	}
 	if m.oauth_relay_callback_url != nil {
 		fields = append(fields, appsetting.FieldOauthRelayCallbackURL)
@@ -1627,6 +1667,8 @@ func (m *AppSettingMutation) Field(name string) (ent.Value, bool) {
 		return m.ActiveTunnelKey()
 	case appsetting.FieldMcpEnabled:
 		return m.McpEnabled()
+	case appsetting.FieldOauthClientID:
+		return m.OauthClientID()
 	case appsetting.FieldOauthRelayCallbackURL:
 		return m.OauthRelayCallbackURL()
 	case appsetting.FieldS3WebdavEnabled:
@@ -1702,6 +1744,8 @@ func (m *AppSettingMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldActiveTunnelKey(ctx)
 	case appsetting.FieldMcpEnabled:
 		return m.OldMcpEnabled(ctx)
+	case appsetting.FieldOauthClientID:
+		return m.OldOauthClientID(ctx)
 	case appsetting.FieldOauthRelayCallbackURL:
 		return m.OldOauthRelayCallbackURL(ctx)
 	case appsetting.FieldS3WebdavEnabled:
@@ -1881,6 +1925,13 @@ func (m *AppSettingMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetMcpEnabled(v)
+		return nil
+	case appsetting.FieldOauthClientID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOauthClientID(v)
 		return nil
 	case appsetting.FieldOauthRelayCallbackURL:
 		v, ok := value.(string)
@@ -2116,6 +2167,9 @@ func (m *AppSettingMutation) ResetField(name string) error {
 		return nil
 	case appsetting.FieldMcpEnabled:
 		m.ResetMcpEnabled()
+		return nil
+	case appsetting.FieldOauthClientID:
+		m.ResetOauthClientID()
 		return nil
 	case appsetting.FieldOauthRelayCallbackURL:
 		m.ResetOauthRelayCallbackURL()

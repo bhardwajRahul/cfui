@@ -36,6 +36,7 @@ func (AppSetting) Fields() []ent.Field {
 		field.String("extra_args").Default(""),
 		field.String("active_tunnel_key").Default("default"),
 		field.Bool("mcp_enabled").Default(false),
+		field.String("oauth_client_id").Default(""),
 		field.String("oauth_relay_callback_url").Default(""),
 		field.Bool("s3_webdav_enabled").Default(false),
 		field.String("s3_webdav_active_key").Default("default"),

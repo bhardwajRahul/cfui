@@ -136,6 +136,10 @@
                                 <span class="text" data-i18n="oauth_status_checking">Checking OAuth status...</span>
                             </div>
                             <div class="oauth-config-grid">
+                                <div class="oauth-config-item oauth-config-item--client">
+                                    <div class="meta-label" data-i18n="oauth_client_id">OAuth Client ID</div>
+                                    <div id="oauth-client-id" class="oauth-client-id-control"></div>
+                                </div>
                                 <div class="oauth-config-item oauth-config-item--relay">
                                     <div class="meta-label" data-i18n="oauth_relay_callback">OAuth redirect callback URL</div>
                                     <div id="oauth-relay-url" class="oauth-relay-control"></div>
@@ -1328,7 +1332,8 @@
                     <div class="oauth-worker-choice-list">
                         <div class="oauth-worker-choice oauth-worker-choice--provided">
                             <span data-i18n="oauth_worker_default_relay_label">Provided relay</span>
-                            <code class="mono">https://oauth.omarchy.qzz.io/oauth/callback</code>
+                            <code class="mono">https://cfoauth.pushcat.eu.org/oauth/callback</code>
+                            <code class="mono">Client ID: 27efa323c59c87976675dc75bcad907b</code>
                             <small data-i18n="oauth_worker_default_relay_desc">Recommended for the first setup. Use this address in both the Cloudflare OAuth app Redirect callback URL and the cfui input.</small>
                         </div>
                         <div class="oauth-worker-choice oauth-worker-choice--self-host">

@@ -182,9 +182,19 @@ func newOAuthService(cfgMgr *config.Manager) *cfoauth.Service {
 func oauthConfigFromManager(cfgMgr *config.Manager) cfoauth.Config {
 	cfg := cfoauth.ConfigFromEnv()
 	if cfgMgr != nil {
-		if relay := strings.TrimSpace(cfgMgr.Get().OAuthRelayCallbackURL); relay != "" {
+		appCfg := cfgMgr.Get()
+		if strings.TrimSpace(cfg.ClientID) == "" {
+			if clientID := strings.TrimSpace(appCfg.OAuthClientID); clientID != "" {
+				cfg.ClientID = clientID
+				cfg.ClientIDSource = "saved"
+			}
+		}
+		if relay := strings.TrimSpace(appCfg.OAuthRelayCallbackURL); relay != "" {
 			cfg.RelayCallbackURL = relay
 		}
+	}
+	if strings.TrimSpace(cfg.ClientID) == "" {
+		cfg.ClientIDSource = "unset"
 	}
 	cfg.Configured = strings.TrimSpace(cfg.ClientID) != "" && strings.TrimSpace(cfg.RelayCallbackURL) != ""
 	return cfg

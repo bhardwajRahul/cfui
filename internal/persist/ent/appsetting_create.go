@@ -306,6 +306,20 @@ func (_c *AppSettingCreate) SetNillableMcpEnabled(v *bool) *AppSettingCreate {
 	return _c
 }
 
+// SetOauthClientID sets the "oauth_client_id" field.
+func (_c *AppSettingCreate) SetOauthClientID(v string) *AppSettingCreate {
+	_c.mutation.SetOauthClientID(v)
+	return _c
+}
+
+// SetNillableOauthClientID sets the "oauth_client_id" field if the given value is not nil.
+func (_c *AppSettingCreate) SetNillableOauthClientID(v *string) *AppSettingCreate {
+	if v != nil {
+		_c.SetOauthClientID(*v)
+	}
+	return _c
+}
+
 // SetOauthRelayCallbackURL sets the "oauth_relay_callback_url" field.
 func (_c *AppSettingCreate) SetOauthRelayCallbackURL(v string) *AppSettingCreate {
 	_c.mutation.SetOauthRelayCallbackURL(v)
@@ -589,6 +603,10 @@ func (_c *AppSettingCreate) defaults() {
 		v := appsetting.DefaultMcpEnabled
 		_c.mutation.SetMcpEnabled(v)
 	}
+	if _, ok := _c.mutation.OauthClientID(); !ok {
+		v := appsetting.DefaultOauthClientID
+		_c.mutation.SetOauthClientID(v)
+	}
 	if _, ok := _c.mutation.OauthRelayCallbackURL(); !ok {
 		v := appsetting.DefaultOauthRelayCallbackURL
 		_c.mutation.SetOauthRelayCallbackURL(v)
@@ -708,6 +726,9 @@ func (_c *AppSettingCreate) check() error {
 	}
 	if _, ok := _c.mutation.McpEnabled(); !ok {
 		return &ValidationError{Name: "mcp_enabled", err: errors.New(`ent: missing required field "AppSetting.mcp_enabled"`)}
+	}
+	if _, ok := _c.mutation.OauthClientID(); !ok {
+		return &ValidationError{Name: "oauth_client_id", err: errors.New(`ent: missing required field "AppSetting.oauth_client_id"`)}
 	}
 	if _, ok := _c.mutation.OauthRelayCallbackURL(); !ok {
 		return &ValidationError{Name: "oauth_relay_callback_url", err: errors.New(`ent: missing required field "AppSetting.oauth_relay_callback_url"`)}
@@ -854,6 +875,10 @@ func (_c *AppSettingCreate) createSpec() (*AppSetting, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.McpEnabled(); ok {
 		_spec.SetField(appsetting.FieldMcpEnabled, field.TypeBool, value)
 		_node.McpEnabled = value
+	}
+	if value, ok := _c.mutation.OauthClientID(); ok {
+		_spec.SetField(appsetting.FieldOauthClientID, field.TypeString, value)
+		_node.OauthClientID = value
 	}
 	if value, ok := _c.mutation.OauthRelayCallbackURL(); ok {
 		_spec.SetField(appsetting.FieldOauthRelayCallbackURL, field.TypeString, value)

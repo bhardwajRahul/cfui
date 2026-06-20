@@ -33,6 +33,7 @@ var (
 		{Name: "extra_args", Type: field.TypeString, Default: ""},
 		{Name: "active_tunnel_key", Type: field.TypeString, Default: "default"},
 		{Name: "mcp_enabled", Type: field.TypeBool, Default: false},
+		{Name: "oauth_client_id", Type: field.TypeString, Default: ""},
 		{Name: "oauth_relay_callback_url", Type: field.TypeString, Default: ""},
 		{Name: "s3_webdav_enabled", Type: field.TypeBool, Default: false},
 		{Name: "s3_webdav_active_key", Type: field.TypeString, Default: "default"},

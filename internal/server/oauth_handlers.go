@@ -55,19 +55,30 @@ func (s *Server) handleOAuthConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		RelayCallbackURL string `json:"relay_callback_url"`
+		ClientID         *string `json:"client_id"`
+		RelayCallbackURL string  `json:"relay_callback_url"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&req); err != nil {
 		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
-	relayURL, err := cfoauth.NormalizeRelayCallbackURL(req.RelayCallbackURL)
-	if err != nil {
-		writeAPIError(w, http.StatusBadRequest, err)
-		return
-	}
 	cfg := s.cfgMgr.Get()
-	cfg.OAuthRelayCallbackURL = relayURL
+	if req.ClientID != nil {
+		clientID, err := cfoauth.NormalizeClientID(*req.ClientID)
+		if err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		cfg.OAuthClientID = clientID
+	}
+	if strings.TrimSpace(req.RelayCallbackURL) != "" {
+		relayURL, err := cfoauth.NormalizeRelayCallbackURL(req.RelayCallbackURL)
+		if err != nil {
+			writeAPIError(w, http.StatusBadRequest, err)
+			return
+		}
+		cfg.OAuthRelayCallbackURL = relayURL
+	}
 	if err := s.cfgMgr.Save(cfg); err != nil {
 		writeAPIError(w, http.StatusInternalServerError, err)
 		return

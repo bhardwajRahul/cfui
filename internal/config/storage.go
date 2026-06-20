@@ -140,6 +140,7 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 	cfg.ExtraArgs = settingsRow.ExtraArgs
 	cfg.ActiveTunnelKey = settingsRow.ActiveTunnelKey
 	cfg.MCPEnabled = settingsRow.McpEnabled
+	cfg.OAuthClientID = strings.TrimSpace(settingsRow.OauthClientID)
 	cfg.OAuthRelayCallbackURL = strings.TrimSpace(settingsRow.OauthRelayCallbackURL)
 	cfg.S3WebDAV.Enabled = settingsRow.S3WebdavEnabled
 	cfg.S3WebDAV.ActiveKey = settingsRow.S3WebdavActiveKey
@@ -315,6 +316,7 @@ func saveAppSetting(ctx context.Context, tx *ent.Tx, cfg Config) error {
 			SetExtraArgs(cfg.ExtraArgs).
 			SetActiveTunnelKey(cfg.ActiveTunnelKey).
 			SetMcpEnabled(cfg.MCPEnabled).
+			SetOauthClientID(strings.TrimSpace(cfg.OAuthClientID)).
 			SetOauthRelayCallbackURL(strings.TrimSpace(cfg.OAuthRelayCallbackURL)).
 			SetS3WebdavEnabled(s3Cfg.Enabled).
 			SetS3WebdavActiveKey(s3Cfg.ActiveKey).
@@ -353,6 +355,7 @@ func saveAppSetting(ctx context.Context, tx *ent.Tx, cfg Config) error {
 		SetExtraArgs(cfg.ExtraArgs).
 		SetActiveTunnelKey(cfg.ActiveTunnelKey).
 		SetMcpEnabled(cfg.MCPEnabled).
+		SetOauthClientID(strings.TrimSpace(cfg.OAuthClientID)).
 		SetOauthRelayCallbackURL(strings.TrimSpace(cfg.OAuthRelayCallbackURL)).
 		SetS3WebdavEnabled(s3Cfg.Enabled).
 		SetS3WebdavActiveKey(s3Cfg.ActiveKey).

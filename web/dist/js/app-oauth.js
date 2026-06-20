@@ -58,6 +58,8 @@
         smallButton,
         iconButton,
         copyOAuthText,
+        saveOAuthClientID,
+        saveOAuthDefaultConfig,
         saveOAuthRelayCallback,
         checkOAuthRelayCallback,
         minimumScopes: oauthMinimumSetupScopes,
@@ -96,6 +98,58 @@
             state.oauth.relayCheckError = '';
             renderOAuthStatus(status);
             toast.ok(t('oauth_relay_saved'));
+            return status;
+        } catch (err) {
+            toast.err(err.message);
+            return null;
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
+    async function saveOAuthClientID(clientID, button) {
+        clientID = String(clientID || '').trim();
+        if (!clientID) {
+            toast.err(t('oauth_client_id_required'));
+            return null;
+        }
+        setBusy(button, true, t('saving'));
+        try {
+            const status = await apiSend('/oauth/config', 'PATCH', { client_id: clientID });
+            state.oauth.status = status;
+            renderOAuthStatus(status);
+            toast.ok(t('oauth_client_id_saved'));
+            return status;
+        } catch (err) {
+            toast.err(err.message);
+            return null;
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
+    async function saveOAuthDefaultConfig(config, button) {
+        const clientID = String(config?.clientID || '').trim();
+        const relayURL = String(config?.relayCallbackURL || '').trim();
+        if (!clientID) {
+            toast.err(t('oauth_client_id_required'));
+            return null;
+        }
+        if (!relayURL) {
+            toast.err(t('oauth_relay_required'));
+            return null;
+        }
+        setBusy(button, true, t('saving'));
+        try {
+            const status = await apiSend('/oauth/config', 'PATCH', {
+                client_id: clientID,
+                relay_callback_url: relayURL,
+            });
+            state.oauth.status = status;
+            state.oauth.relayCheck = null;
+            state.oauth.relayCheckError = '';
+            renderOAuthStatus(status);
+            toast.ok(t('oauth_default_config_saved'));
             return status;
         } catch (err) {
             toast.err(err.message);
@@ -2565,6 +2619,11 @@
     }
 
     function renderOAuthStatus(status) {
+        const client = $('oauth-client-id');
+        if (client) {
+            client.innerHTML = '';
+            client.appendChild(oauthSetup.clientIDNode(status));
+        }
         const relay = $('oauth-relay-url');
         if (relay) {
             relay.innerHTML = '';
@@ -2592,7 +2651,16 @@
         }
 
         if (!status?.config?.configured) {
-            setOAuthStatus('warn', t('oauth_not_configured'));
+            setOAuthStatus('warn', t('oauth_not_configured'), {
+                label: t('oauth_status_configure'),
+                action: () => {
+                    if (!String(status?.config?.client_id || '').trim()) {
+                        oauthSetup.focusClientIDInput();
+                    } else {
+                        oauthSetup.focusRelayInput();
+                    }
+                },
+            });
         } else if (status.logged_in) {
             const label = status.current?.label || t('oauth_account');
             setOAuthStatus('ok', t('oauth_logged_in_as', { label }));
@@ -2605,12 +2673,21 @@
         updateOAuthResourceTabs();
     }
 
-    function setOAuthStatus(kind, text) {
+    function setOAuthStatus(kind, text, action) {
         const el = $('oauth-status');
         if (!el) return;
         el.setAttribute('data-state', kind);
         const textEl = el.querySelector('.text');
         if (textEl) textEl.textContent = text;
+        el.querySelectorAll('.oauth-status-action').forEach((node) => node.remove());
+        if (action?.label && typeof action.action === 'function') {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'oauth-status-action';
+            button.textContent = action.label;
+            button.addEventListener('click', action.action);
+            el.appendChild(button);
+        }
     }
 
     function copyOAuthText(value) {
