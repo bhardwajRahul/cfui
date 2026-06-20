@@ -107,8 +107,6 @@ func DefaultScopes() string {
 		"account-settings.read",
 		"zone.read",
 		"dns.read",
-		"dns.write",
-		"cloudflare-tunnel.read",
 	}, " ")
 }
 

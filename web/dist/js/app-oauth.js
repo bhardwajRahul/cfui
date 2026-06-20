@@ -2547,7 +2547,17 @@
     }
 
     function configuredOAuthScopeSet(status = state.oauth.status) {
-        return new Set(String(status?.config?.scopes || '').split(/\s+/).map((scope) => scope.trim().toLowerCase()).filter(Boolean));
+        return oauthScopeSet(status?.config?.scopes || '');
+    }
+
+    function oauthScopeSet(scopes) {
+        const items = Array.isArray(scopes) ? scopes : String(scopes || '').split(/\s+/);
+        return new Set(items.map((scope) => String(scope || '').trim().toLowerCase()).filter(Boolean));
+    }
+
+    function permissionDraftSource(status = state.oauth.status) {
+        if (!status?.config?.configured) return '';
+        return `minimum:${oauthMinimumSetupScopes.join(' ')}`;
     }
 
     function ensurePermissionDraft(status = state.oauth.status) {
@@ -2556,24 +2566,37 @@
             state.oauth.permissionDraftSource = '';
             return null;
         }
-        const source = String(status.config.scopes || '');
+        const source = permissionDraftSource(status);
         if (state.oauth.permissionDraft && state.oauth.permissionDraftSource === source) {
             return state.oauth.permissionDraft;
         }
-        const configured = configuredOAuthScopeSet(status);
+        const draft = permissionDraftFromScopes(oauthMinimumSetupScopes);
+        state.oauth.permissionDraft = draft;
+        state.oauth.permissionDraftSource = source;
+        return draft;
+    }
+
+    function permissionDraftFromScopes(scopes) {
+        const selected = oauthScopeSet(scopes);
         const draft = {};
         for (const definition of oauthPermissionDefinitions) {
-            const hasRead = definition.readScopes.some((scope) => configured.has(scope.toLowerCase()));
+            const hasRead = definition.readScopes.some((scope) => selected.has(scope.toLowerCase()));
             const writeScopes = definition.acceptedWriteScopes || definition.writeScopes;
-            const hasWrite = writeScopes.some((scope) => configured.has(scope.toLowerCase()));
+            const hasWrite = writeScopes.some((scope) => selected.has(scope.toLowerCase()));
             draft[definition.id] = {
                 enabled: !!definition.required || hasRead || hasWrite,
                 write: hasWrite,
             };
         }
-        state.oauth.permissionDraft = draft;
-        state.oauth.permissionDraftSource = source;
         return draft;
+    }
+
+    function applyPermissionScopePreset(scopes) {
+        const draft = permissionDraftFromScopes(scopes);
+        state.oauth.permissionDraft = draft;
+        state.oauth.permissionDraftSource = permissionDraftSource(state.oauth.status);
+        renderOAuthScopePanel(state.oauth.status);
+        renderOAuthScopeDialog(state.oauth.status);
     }
 
     function selectedOAuthScopes() {
@@ -2795,10 +2818,16 @@
         const count = document.createElement('div');
         count.className = 'oauth-badge';
         count.textContent = t('oauth_scope_count', { n: selectedOAuthScopes().length });
+        const minimum = smallButton(t('oauth_scope_use_minimum'), 'btn btn--sm btn--ghost', () => applyPermissionScopePreset(oauthMinimumSetupScopes));
+        minimum.title = t('oauth_scope_use_minimum_title');
+        minimum.setAttribute('aria-label', t('oauth_scope_use_minimum_title'));
+        const full = smallButton(t('oauth_scope_use_full'), 'btn btn--sm btn--ghost', () => applyPermissionScopePreset(oauthFullConsoleSetupScopes));
+        full.title = t('oauth_scope_use_full_title');
+        full.setAttribute('aria-label', t('oauth_scope_use_full_title'));
         const copyMatrix = smallButton(t('oauth_scope_copy_matrix'), 'btn btn--sm btn--ghost', () => copyOAuthText(scopeMatrixText(status)));
         copyMatrix.title = t('oauth_scope_copy_matrix_title');
         copyMatrix.setAttribute('aria-label', t('oauth_scope_copy_matrix_title'));
-        actions.append(count, copyMatrix);
+        actions.append(count, minimum, full, copyMatrix);
         header.append(copy, actions);
         section.appendChild(header);
 

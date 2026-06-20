@@ -1355,7 +1355,7 @@ other = "Cloudflare OAuth scope names match API token permissions. Start with th
 other = "The permissions selected in the Cloudflare OAuth app are the maximum allowlist for this client. The scopes shown in cfui are the scopes requested for one sign-in and must be a subset of that allowlist; Cloudflare does not merge the two lists."
 
 [oauth_setup_permissions_minimum]
-other = "Minimum: DNS + Tunnel"
+other = "Base read: Account + Zone + DNS"
 
 [oauth_setup_permissions_full]
 other = "Full workspace"
@@ -1370,7 +1370,7 @@ other = "Scopes ending in .write let cfui modify Cloudflare resources; skip writ
 other = "Authorization scopes"
 
 [oauth_authorization_scopes_hint]
-other = "Choose the Cloudflare modules to request for the next OAuth sign-in."
+other = "The default request uses only base read scopes. Switch to Full or select modules manually only after the Cloudflare OAuth client allows those scopes."
 
 [oauth_current_scopes]
 other = "Current identity scopes"
@@ -1383,6 +1383,18 @@ other = "Copy matrix"
 
 [oauth_scope_copy_matrix_title]
 other = "Copy the current OAuth scope and capability matrix. OAuth tokens are not included."
+
+[oauth_scope_use_minimum]
+other = "Base"
+
+[oauth_scope_use_minimum_title]
+other = "Select only base read scopes to maximize sign-in compatibility"
+
+[oauth_scope_use_full]
+other = "Full"
+
+[oauth_scope_use_full_title]
+other = "Select full workspace scopes; the Cloudflare OAuth client must allow them first"
 
 [oauth_no_scopes]
 other = "No scopes returned."
