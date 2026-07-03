@@ -38,20 +38,20 @@ func TestBuildArgsFull(t *testing.T) {
 		"cloudflared", "tunnel",
 		"--config", "/tmp/cfg.yaml",
 		"--no-autoupdate",
-		"run", "--token", "tok",
-		"--protocol", "http2",
 		"--grace-period", "10s",
 		"--region", "us",
 		"--retries", "3",
 		"--metrics", "localhost:60123",
 		"--loglevel", "debug",
 		"--logfile", "/tmp/t.log",
-		"--log-format", "json",
+		"--output", "json",
 		"--edge-ip-version", "4",
 		"--edge-bind-address", "192.0.2.1",
+		"--ha-connections", "8", "--tag", "a b",
+		"run", "--token", "tok",
+		"--protocol", "http2",
 		"--post-quantum",
 		"--no-tls-verify",
-		"--ha-connections", "8", "--tag", "a b",
 	}
 	if !reflect.DeepEqual(args, want) {
 		t.Fatalf("BuildArgs = %v, want %v", args, want)
@@ -76,7 +76,7 @@ func TestBuildArgsDefaultsOmitted(t *testing.T) {
 
 func TestBuildArgsUsesExplicitMetricsAddress(t *testing.T) {
 	args := BuildArgs(Options{Token: "tok", MetricsAddress: "127.0.0.1:34567"}, "", "")
-	want := []string{"cloudflared", "tunnel", "--no-autoupdate", "run", "--token", "tok", "--metrics", "127.0.0.1:34567"}
+	want := []string{"cloudflared", "tunnel", "--no-autoupdate", "--metrics", "127.0.0.1:34567", "run", "--token", "tok"}
 	if !reflect.DeepEqual(args, want) {
 		t.Fatalf("BuildArgs = %v, want %v", args, want)
 	}
@@ -92,12 +92,75 @@ func TestBuildArgsDoesNotDuplicateMetricsFromExtraArgs(t *testing.T) {
 	}
 	args := BuildArgs(opts, "", "")
 	want := []string{
-		"cloudflared", "tunnel", "--no-autoupdate", "run", "--token", "tok",
+		"cloudflared", "tunnel", "--no-autoupdate",
 		"--metrics", "localhost:45454", "--ha-connections", "2",
+		"run", "--token", "tok",
 	}
 	if !reflect.DeepEqual(args, want) {
 		t.Fatalf("BuildArgs = %v, want %v", args, want)
 	}
+}
+
+func TestBuildArgsPlacesTunnelCommandFlagsBeforeRun(t *testing.T) {
+	opts := Options{
+		Token:           "tok",
+		GracePeriod:     "10s",
+		Region:          "us",
+		Retries:         3,
+		MetricsEnable:   true,
+		MetricsPort:     60123,
+		LogLevel:        "debug",
+		LogFile:         "/tmp/t.log",
+		LogJSON:         true,
+		EdgeIPVersion:   "4",
+		EdgeBindAddress: "192.0.2.1",
+		ExtraArgs:       "--metrics localhost:45454 --tag custom=a --ha-connections=2",
+	}
+	args := BuildArgs(opts, "http2", "/tmp/cfg.yaml")
+
+	for _, flag := range []string{
+		"--config",
+		"--no-autoupdate",
+		"--grace-period",
+		"--region",
+		"--retries",
+		"--loglevel",
+		"--logfile",
+		"--output",
+		"--edge-ip-version",
+		"--edge-bind-address",
+		"--metrics",
+		"--tag",
+		"--ha-connections=2",
+	} {
+		if !argBefore(args, flag, "run") {
+			t.Fatalf("%s must be before run in %v", flag, args)
+		}
+	}
+	if !argAfter(args, "--protocol", "run") {
+		t.Fatalf("--protocol must remain a run subcommand flag in %v", args)
+	}
+}
+
+func argBefore(args []string, arg, marker string) bool {
+	argIdx := indexArg(args, arg)
+	markerIdx := indexArg(args, marker)
+	return argIdx >= 0 && markerIdx >= 0 && argIdx < markerIdx
+}
+
+func argAfter(args []string, arg, marker string) bool {
+	argIdx := indexArg(args, arg)
+	markerIdx := indexArg(args, marker)
+	return argIdx >= 0 && markerIdx >= 0 && argIdx > markerIdx
+}
+
+func indexArg(args []string, want string) int {
+	for idx, arg := range args {
+		if arg == want {
+			return idx
+		}
+	}
+	return -1
 }
 
 func TestParseExtraArgs(t *testing.T) {

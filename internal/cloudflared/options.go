@@ -45,10 +45,12 @@ func (o Options) Validate() error {
 // BuildArgs assembles the cloudflared CLI invocation for the given options.
 // protocol is the concrete protocol chosen by the fallback logic (may differ
 // from o.Protocol in auto mode); configFile is the optional temporary YAML
-// config path used for custom tags. --config must sit between "tunnel" and
-// "run" because it is a tunnel-command option, not a run option.
+// config path used for custom tags. cloudflared has two flag scopes here:
+// parent tunnel-command flags must sit before "run", and run subcommand flags
+// must sit after it.
 func BuildArgs(o Options, protocol, configFile string) []string {
 	args := []string{"cloudflared", "tunnel"}
+	extraParentArgs, extraRunArgs := splitExtraArgs(ParseExtraArgs(o.ExtraArgs))
 
 	if configFile != "" {
 		args = append(args, "--config", configFile)
@@ -56,11 +58,7 @@ func BuildArgs(o Options, protocol, configFile string) []string {
 	// Disable auto-update to prevent panics in embedded usage (the updater
 	// expects non-nil parameters that only exist in the real CLI).
 	args = append(args, "--no-autoupdate")
-	args = append(args, "run", "--token", o.Token)
 
-	if protocol != "" && protocol != "auto" {
-		args = append(args, "--protocol", protocol)
-	}
 	if o.GracePeriod != "" && o.GracePeriod != "30s" {
 		args = append(args, "--grace-period", o.GracePeriod)
 	}
@@ -84,7 +82,7 @@ func BuildArgs(o Options, protocol, configFile string) []string {
 		args = append(args, "--logfile", o.LogFile)
 	}
 	if o.LogJSON {
-		args = append(args, "--log-format", "json")
+		args = append(args, "--output", "json")
 	}
 	if o.EdgeIPVersion != "" && o.EdgeIPVersion != "auto" {
 		args = append(args, "--edge-ip-version", o.EdgeIPVersion)
@@ -92,16 +90,159 @@ func BuildArgs(o Options, protocol, configFile string) []string {
 	if o.EdgeBindAddress != "" {
 		args = append(args, "--edge-bind-address", o.EdgeBindAddress)
 	}
+	args = append(args, extraParentArgs...)
+
+	args = append(args, "run", "--token", o.Token)
+
+	if protocol != "" && protocol != "auto" {
+		args = append(args, "--protocol", protocol)
+	}
 	if o.PostQuantum {
 		args = append(args, "--post-quantum")
 	}
 	if o.NoTLSVerify {
 		args = append(args, "--no-tls-verify")
 	}
-	if o.ExtraArgs != "" {
-		args = append(args, ParseExtraArgs(o.ExtraArgs)...)
-	}
+	args = append(args, extraRunArgs...)
 	return args
+}
+
+var parentExtraFlags = flagSet(
+	"api-ca-key",
+	"api-email",
+	"api-key",
+	"api-url",
+	"autoupdate-freq",
+	"cacert",
+	"compression-quality",
+	"config",
+	"dial-edge-timeout",
+	"edge",
+	"edge-bind-address",
+	"edge-ip-version",
+	"grace-period",
+	"ha-connections",
+	"heartbeat-count",
+	"heartbeat-interval",
+	"hostname",
+	"id",
+	"is-autoupdated",
+	"label",
+	"lb-pool",
+	"log-directory",
+	"logfile",
+	"loglevel",
+	"management-diagnostics",
+	"max-edge-addr-retries",
+	"max-fetch-size",
+	"metrics",
+	"metrics-update-freq",
+	"name",
+	"no-autoupdate",
+	"no-prechecks",
+	"origincert",
+	"output",
+	"pidfile",
+	"prechecks",
+	"proto-loglevel",
+	"quick-service",
+	"quic-connection-level-flow-control-limit",
+	"quic-disable-pmtu-discovery",
+	"quic-stream-level-flow-control-limit",
+	"region",
+	"retries",
+	"rpc-timeout",
+	"stdin-control",
+	"tag",
+	"trace-output",
+	"transport-loglevel",
+	"ui",
+	"use-reconnect-token",
+	"write-stream-timeout",
+)
+
+var parentExtraFlagsWithValue = flagSet(
+	"api-ca-key",
+	"api-email",
+	"api-key",
+	"api-url",
+	"autoupdate-freq",
+	"cacert",
+	"compression-quality",
+	"config",
+	"dial-edge-timeout",
+	"edge",
+	"edge-bind-address",
+	"edge-ip-version",
+	"grace-period",
+	"ha-connections",
+	"heartbeat-count",
+	"heartbeat-interval",
+	"hostname",
+	"id",
+	"label",
+	"lb-pool",
+	"log-directory",
+	"logfile",
+	"loglevel",
+	"max-edge-addr-retries",
+	"max-fetch-size",
+	"metrics",
+	"metrics-update-freq",
+	"name",
+	"origincert",
+	"output",
+	"pidfile",
+	"proto-loglevel",
+	"quick-service",
+	"quic-connection-level-flow-control-limit",
+	"quic-stream-level-flow-control-limit",
+	"region",
+	"retries",
+	"rpc-timeout",
+	"tag",
+	"trace-output",
+	"transport-loglevel",
+	"write-stream-timeout",
+)
+
+func flagSet(flags ...string) map[string]bool {
+	set := make(map[string]bool, len(flags))
+	for _, flag := range flags {
+		set[flag] = true
+	}
+	return set
+}
+
+func splitExtraArgs(extraArgs []string) ([]string, []string) {
+	var parentArgs []string
+	var runArgs []string
+	for idx := 0; idx < len(extraArgs); idx++ {
+		arg := extraArgs[idx]
+		flag := flagName(arg)
+		if flag == "" || !parentExtraFlags[flag] {
+			runArgs = append(runArgs, arg)
+			continue
+		}
+
+		parentArgs = append(parentArgs, arg)
+		if strings.Contains(arg, "=") || !parentExtraFlagsWithValue[flag] || idx+1 >= len(extraArgs) {
+			continue
+		}
+		idx++
+		parentArgs = append(parentArgs, extraArgs[idx])
+	}
+	return parentArgs, runArgs
+}
+
+func flagName(arg string) string {
+	arg = strings.TrimSpace(arg)
+	arg = strings.TrimLeft(arg, "-")
+	if arg == "" {
+		return ""
+	}
+	name, _, _ := strings.Cut(arg, "=")
+	return name
 }
 
 // ParseExtraArgs splits a space-separated argument string, honoring double
