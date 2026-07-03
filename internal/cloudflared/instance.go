@@ -14,11 +14,6 @@ import (
 )
 
 const (
-	restartBackoffBaseDelay  = 5 * time.Second
-	restartBackoffMaxDelay   = 60 * time.Second
-	restartBackoffResetAfter = 5 * time.Minute
-	maxRestartAttempts       = 10
-
 	defaultStopTimeout = 30 * time.Second
 
 	maxProtocolFailuresBeforeSwitch = 3
@@ -57,6 +52,9 @@ type Instance struct {
 	lastError   error
 	configFile  string
 	stopTimeout time.Duration
+	// restartRequested is set when cfui cancels a run to recover a tunnel that
+	// is still running locally but no longer has active edge connections.
+	restartRequested bool
 
 	restartCount   int
 	lastRestart    time.Time
@@ -80,27 +78,6 @@ func NewInstance(name string, optsFn OptionsProvider) *Instance {
 		restartBackoff:   NewRestartBackoff(),
 		currentProtocol:  "auto",
 	}
-}
-
-// NewBackoff builds an exponential backoff helper; exposed for tests and for
-// future supervisors that want the same schedule.
-func NewBackoff(interval, max, decay time.Duration, noJitter bool) *backoff.Backoff {
-	var b *backoff.Backoff
-	if noJitter {
-		b = backoff.NewWithoutJitter(max, interval)
-	} else {
-		b = backoff.New(max, interval)
-	}
-	if decay > 0 {
-		b.SetDecay(decay)
-	}
-	return b
-}
-
-// NewRestartBackoff returns the standard tunnel restart schedule
-// (5s, 10s, 20s, 40s, 60s cap, reset after 5 minutes of stability).
-func NewRestartBackoff() *backoff.Backoff {
-	return NewBackoff(restartBackoffBaseDelay, restartBackoffMaxDelay, restartBackoffResetAfter, true)
 }
 
 // Name returns the instance name.
@@ -134,26 +111,29 @@ func (i *Instance) Start() (err error) {
 	}
 
 	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	if i.running {
+		i.mu.Unlock()
 		logWarnf("Attempted to start tunnel %q that is already running", i.name)
 		return ErrAlreadyRunning
 	}
 
-	// Cancel any leftover context (e.g. a pending auto-restart timer).
-	if i.cancel != nil {
-		i.cancel()
-	}
+	// Cancel any leftover context (e.g. a pending auto-restart timer) after
+	// publishing the new state so cancellation callbacks never run under i.mu.
+	oldCancel := i.cancel
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	i.ctx, i.cancel, i.done = ctx, cancel, done
 	i.running = true
 	i.lastError = nil
+	i.restartRequested = false
+	i.mu.Unlock()
 
 	logInfof("Starting cloudflared tunnel %q", i.name)
 	go i.runTunnel(ctx, opts, done)
+	if oldCancel != nil {
+		oldCancel()
+	}
 
 	return nil
 }
@@ -167,6 +147,7 @@ func (i *Instance) Stop() error {
 	if !i.running {
 		cancel := i.cancel
 		i.cancel = nil
+		i.restartRequested = false
 		i.mu.Unlock()
 		if cancel != nil {
 			cancel()
@@ -180,6 +161,7 @@ func (i *Instance) Stop() error {
 	logInfof("Initiating shutdown of tunnel %q", i.name)
 	cancel := i.cancel
 	i.cancel = nil
+	i.restartRequested = false
 	done := i.done
 	timeout := i.stopTimeout
 	i.mu.Unlock()
@@ -305,12 +287,21 @@ func (i *Instance) runTunnel(ctx context.Context, opts Options, done chan struct
 		i.cleanupConfigFile()
 
 		i.mu.Lock()
+		restartRequested := i.restartRequested
+		i.restartRequested = false
 		i.running = false
+		restartCtx := ctx
+		if restartRequested {
+			var restartCancel context.CancelFunc
+			restartCtx, restartCancel = context.WithCancel(context.Background())
+			i.ctx = restartCtx
+			i.cancel = restartCancel
+		}
 		i.mu.Unlock()
 
-		if ctx.Err() == nil && restartAllowed {
+		if shouldRestartAfterExit(ctx, restartAllowed, restartRequested) {
 			logWarnf("Tunnel %q exited unexpectedly, checking auto-restart policy", i.name)
-			i.maybeAutoRestart(ctx)
+			i.maybeAutoRestart(restartCtx)
 		}
 	}()
 
@@ -347,6 +338,7 @@ func (i *Instance) runTunnel(ctx context.Context, opts Options, done chan struct
 	}
 	i.mu.Unlock()
 
+	readinessURL := i.configureReadinessProbe(&opts)
 	args := BuildArgs(opts, selectedProtocol, configFile)
 
 	logInfof("Starting cloudflared tunnel %q with protocol=%s (selected), config_protocol=%s, region=%s, retries=%d",
@@ -355,13 +347,20 @@ func (i *Instance) runTunnel(ctx context.Context, opts Options, done chan struct
 	// The run we are about to launch registers an upstream signal watcher;
 	// schedule pulses that strip it (and any stale ones) again.
 	scheduleSignalReclaim()
+	if readinessURL != "" {
+		go i.monitorReadiness(ctx, readinessURL)
+	}
 
 	err := app.RunContext(ctx, args)
 	restartAllowed = shouldAutoRestartAfterRun(ctx, err)
 
 	// Context cancellation means a user-requested stop.
 	if ctx.Err() != nil {
-		logInfof("Tunnel %q stopped by user request", i.name)
+		if i.hasRestartRequest() {
+			logWarnf("Tunnel %q stopped by readiness watchdog for restart", i.name)
+		} else {
+			logInfof("Tunnel %q stopped by user request", i.name)
+		}
 		return
 	}
 
@@ -380,76 +379,6 @@ func (i *Instance) runTunnel(ctx context.Context, opts Options, done chan struct
 	} else {
 		i.recordProtocolSuccess()
 		logInfof("Tunnel %q exited cleanly", i.name)
-	}
-}
-
-func shouldAutoRestartAfterRun(ctx context.Context, err error) bool {
-	if ctx.Err() != nil {
-		return false
-	}
-	return err == nil || IsRetryableError(err)
-}
-
-// maybeAutoRestart re-reads the options and restarts the tunnel with
-// exponential backoff when auto-restart is enabled. ctx belongs to the run
-// that just ended; cancelling it (Stop) aborts the pending restart.
-func (i *Instance) maybeAutoRestart(ctx context.Context) {
-	if err := ctx.Err(); err != nil {
-		logDebugf("Tunnel %q auto-restart canceled: %v", i.name, err)
-		return
-	}
-
-	opts, err := i.optsFn()
-	if err != nil {
-		logWarnf("Tunnel %q auto-restart skipped: %v", i.name, err)
-		return
-	}
-	if !opts.AutoRestart {
-		logInfof("Tunnel %q: auto-restart is disabled, tunnel will not restart", i.name)
-		return
-	}
-
-	i.mu.Lock()
-	if i.restartBackoff == nil {
-		i.restartBackoff = NewRestartBackoff()
-	}
-
-	// Reset restart state if the last retry was long enough ago to consider
-	// the next failure a fresh incident.
-	if time.Since(i.lastRestart) > restartBackoffResetAfter {
-		i.restartCount = 0
-		i.restartBackoff.Reset()
-	}
-
-	if i.restartCount >= maxRestartAttempts {
-		logWarnf("Tunnel %q: maximum restart attempts reached (%d), stopping auto-restart", i.name, i.restartCount)
-		i.mu.Unlock()
-		return
-	}
-
-	delay := i.restartBackoff.Duration()
-	i.restartCount++
-	i.lastRestart = time.Now()
-	attemptNum := i.restartCount
-	i.mu.Unlock()
-
-	logInfof("Tunnel %q auto-restarting in %v (attempt %d)...", i.name, delay, attemptNum)
-	timer := time.NewTimer(delay)
-	defer timer.Stop()
-
-	select {
-	case <-ctx.Done():
-		logInfof("Tunnel %q auto-restart canceled before attempt %d: %v", i.name, attemptNum, ctx.Err())
-		return
-	case <-timer.C:
-	}
-
-	if err := ctx.Err(); err != nil {
-		logInfof("Tunnel %q auto-restart canceled before attempt %d: %v", i.name, attemptNum, err)
-		return
-	}
-	if err := i.Start(); err != nil {
-		logErrorf("Failed to restart tunnel %q: %v", i.name, err)
 	}
 }
 

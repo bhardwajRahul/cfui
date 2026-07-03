@@ -19,6 +19,7 @@ type Options struct {
 	Retries         int
 	MetricsEnable   bool
 	MetricsPort     int
+	MetricsAddress  string // explicit host:port, used by the readiness watchdog
 	LogLevel        string
 	LogFile         string
 	LogJSON         bool
@@ -69,8 +70,12 @@ func BuildArgs(o Options, protocol, configFile string) []string {
 	if o.Retries > 0 && o.Retries != 5 {
 		args = append(args, "--retries", fmt.Sprintf("%d", o.Retries))
 	}
-	if o.MetricsEnable {
-		args = append(args, "--metrics", fmt.Sprintf("localhost:%d", o.MetricsPort))
+	metricsAddress := strings.TrimSpace(o.MetricsAddress)
+	if metricsAddress == "" && o.MetricsEnable {
+		metricsAddress = fmt.Sprintf("localhost:%d", o.MetricsPort)
+	}
+	if metricsAddress != "" && metricsAddressFromExtraArgs(o.ExtraArgs) == "" {
+		args = append(args, "--metrics", metricsAddress)
 	}
 	if o.LogLevel != "" && o.LogLevel != "info" {
 		args = append(args, "--loglevel", o.LogLevel)

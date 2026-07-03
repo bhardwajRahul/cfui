@@ -74,6 +74,32 @@ func TestBuildArgsDefaultsOmitted(t *testing.T) {
 	}
 }
 
+func TestBuildArgsUsesExplicitMetricsAddress(t *testing.T) {
+	args := BuildArgs(Options{Token: "tok", MetricsAddress: "127.0.0.1:34567"}, "", "")
+	want := []string{"cloudflared", "tunnel", "--no-autoupdate", "run", "--token", "tok", "--metrics", "127.0.0.1:34567"}
+	if !reflect.DeepEqual(args, want) {
+		t.Fatalf("BuildArgs = %v, want %v", args, want)
+	}
+}
+
+func TestBuildArgsDoesNotDuplicateMetricsFromExtraArgs(t *testing.T) {
+	opts := Options{
+		Token:          "tok",
+		MetricsEnable:  true,
+		MetricsPort:    60123,
+		MetricsAddress: "127.0.0.1:34567",
+		ExtraArgs:      "--metrics localhost:45454 --ha-connections 2",
+	}
+	args := BuildArgs(opts, "", "")
+	want := []string{
+		"cloudflared", "tunnel", "--no-autoupdate", "run", "--token", "tok",
+		"--metrics", "localhost:45454", "--ha-connections", "2",
+	}
+	if !reflect.DeepEqual(args, want) {
+		t.Fatalf("BuildArgs = %v, want %v", args, want)
+	}
+}
+
 func TestParseExtraArgs(t *testing.T) {
 	cases := []struct {
 		in   string
