@@ -96,6 +96,20 @@ func (_c *S3WebDAVSettingCreate) SetNillableWebdavAuthEnabled(v *bool) *S3WebDAV
 	return _c
 }
 
+// SetMountType sets the "mount_type" field.
+func (_c *S3WebDAVSettingCreate) SetMountType(v string) *S3WebDAVSettingCreate {
+	_c.mutation.SetMountType(v)
+	return _c
+}
+
+// SetNillableMountType sets the "mount_type" field if the given value is not nil.
+func (_c *S3WebDAVSettingCreate) SetNillableMountType(v *string) *S3WebDAVSettingCreate {
+	if v != nil {
+		_c.SetMountType(*v)
+	}
+	return _c
+}
+
 // SetProvider sets the "provider" field.
 func (_c *S3WebDAVSettingCreate) SetProvider(v string) *S3WebDAVSettingCreate {
 	_c.mutation.SetProvider(v)
@@ -361,6 +375,10 @@ func (_c *S3WebDAVSettingCreate) defaults() {
 		v := s3webdavsetting.DefaultWebdavAuthEnabled
 		_c.mutation.SetWebdavAuthEnabled(v)
 	}
+	if _, ok := _c.mutation.MountType(); !ok {
+		v := s3webdavsetting.DefaultMountType
+		_c.mutation.SetMountType(v)
+	}
 	if _, ok := _c.mutation.Provider(); !ok {
 		v := s3webdavsetting.DefaultProvider
 		_c.mutation.SetProvider(v)
@@ -447,6 +465,9 @@ func (_c *S3WebDAVSettingCreate) check() error {
 	}
 	if _, ok := _c.mutation.WebdavAuthEnabled(); !ok {
 		return &ValidationError{Name: "webdav_auth_enabled", err: errors.New(`ent: missing required field "S3WebDAVSetting.webdav_auth_enabled"`)}
+	}
+	if _, ok := _c.mutation.MountType(); !ok {
+		return &ValidationError{Name: "mount_type", err: errors.New(`ent: missing required field "S3WebDAVSetting.mount_type"`)}
 	}
 	if _, ok := _c.mutation.Provider(); !ok {
 		return &ValidationError{Name: "provider", err: errors.New(`ent: missing required field "S3WebDAVSetting.provider"`)}
@@ -542,6 +563,10 @@ func (_c *S3WebDAVSettingCreate) createSpec() (*S3WebDAVSetting, *sqlgraph.Creat
 	if value, ok := _c.mutation.WebdavAuthEnabled(); ok {
 		_spec.SetField(s3webdavsetting.FieldWebdavAuthEnabled, field.TypeBool, value)
 		_node.WebdavAuthEnabled = value
+	}
+	if value, ok := _c.mutation.MountType(); ok {
+		_spec.SetField(s3webdavsetting.FieldMountType, field.TypeString, value)
+		_node.MountType = value
 	}
 	if value, ok := _c.mutation.Provider(); ok {
 		_spec.SetField(s3webdavsetting.FieldProvider, field.TypeString, value)

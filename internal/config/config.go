@@ -28,6 +28,11 @@ const (
 	S3WebDAVDomainModeTunnel = "tunnel"
 )
 
+const (
+	MountTypeS3           = "s3"
+	MountTypeWebDAVRemote = "webdav_remote"
+)
+
 const DefaultTunnelProfileKey = "default"
 
 func NormalizeDDNSRecordComment(comment string) string {
@@ -223,6 +228,7 @@ type S3WebDAVMountConfig struct {
 	Enabled            bool   `json:"enabled"`
 	WebDAVEnabled      bool   `json:"webdav_enabled"`
 	WebDAVAuthEnabled  bool   `json:"webdav_auth_enabled"`
+	MountType          string `json:"mount_type"`
 	Provider           string `json:"provider"`
 	EndpointURL        string `json:"endpoint_url"`
 	Region             string `json:"region"`
@@ -300,6 +306,7 @@ func DefaultS3WebDAVMountConfig() S3WebDAVMountConfig {
 		Enabled:           true,
 		WebDAVEnabled:     true,
 		WebDAVAuthEnabled: true,
+		MountType:         MountTypeS3,
 		Provider:          "generic_s3",
 		Region:            "auto",
 		PathStyle:         true,

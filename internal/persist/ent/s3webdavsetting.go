@@ -29,6 +29,8 @@ type S3WebDAVSetting struct {
 	WebdavEnabled bool `json:"webdav_enabled,omitempty"`
 	// WebdavAuthEnabled holds the value of the "webdav_auth_enabled" field.
 	WebdavAuthEnabled bool `json:"webdav_auth_enabled,omitempty"`
+	// MountType holds the value of the "mount_type" field.
+	MountType string `json:"mount_type,omitempty"`
 	// Provider holds the value of the "provider" field.
 	Provider string `json:"provider,omitempty"`
 	// EndpointURL holds the value of the "endpoint_url" field.
@@ -71,7 +73,7 @@ func (*S3WebDAVSetting) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case s3webdavsetting.FieldID, s3webdavsetting.FieldSortOrder:
 			values[i] = new(sql.NullInt64)
-		case s3webdavsetting.FieldKey, s3webdavsetting.FieldName, s3webdavsetting.FieldProvider, s3webdavsetting.FieldEndpointURL, s3webdavsetting.FieldRegion, s3webdavsetting.FieldAccountID, s3webdavsetting.FieldBucketName, s3webdavsetting.FieldRootPrefix, s3webdavsetting.FieldMountPath, s3webdavsetting.FieldJurisdiction, s3webdavsetting.FieldAccessKeyID, s3webdavsetting.FieldSecretAccessKey, s3webdavsetting.FieldWebdavUsername, s3webdavsetting.FieldWebdavPasswordHash:
+		case s3webdavsetting.FieldKey, s3webdavsetting.FieldName, s3webdavsetting.FieldMountType, s3webdavsetting.FieldProvider, s3webdavsetting.FieldEndpointURL, s3webdavsetting.FieldRegion, s3webdavsetting.FieldAccountID, s3webdavsetting.FieldBucketName, s3webdavsetting.FieldRootPrefix, s3webdavsetting.FieldMountPath, s3webdavsetting.FieldJurisdiction, s3webdavsetting.FieldAccessKeyID, s3webdavsetting.FieldSecretAccessKey, s3webdavsetting.FieldWebdavUsername, s3webdavsetting.FieldWebdavPasswordHash:
 			values[i] = new(sql.NullString)
 		case s3webdavsetting.FieldCreatedAt, s3webdavsetting.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -131,6 +133,12 @@ func (_m *S3WebDAVSetting) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field webdav_auth_enabled", values[i])
 			} else if value.Valid {
 				_m.WebdavAuthEnabled = value.Bool
+			}
+		case s3webdavsetting.FieldMountType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field mount_type", values[i])
+			} else if value.Valid {
+				_m.MountType = value.String
 			}
 		case s3webdavsetting.FieldProvider:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -275,6 +283,9 @@ func (_m *S3WebDAVSetting) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("webdav_auth_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WebdavAuthEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("mount_type=")
+	builder.WriteString(_m.MountType)
 	builder.WriteString(", ")
 	builder.WriteString("provider=")
 	builder.WriteString(_m.Provider)

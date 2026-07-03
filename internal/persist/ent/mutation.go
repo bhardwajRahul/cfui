@@ -7455,6 +7455,7 @@ type S3WebDAVSettingMutation struct {
 	enabled              *bool
 	webdav_enabled       *bool
 	webdav_auth_enabled  *bool
+	mount_type           *string
 	provider             *string
 	endpoint_url         *string
 	region               *string
@@ -7808,6 +7809,42 @@ func (m *S3WebDAVSettingMutation) OldWebdavAuthEnabled(ctx context.Context) (v b
 // ResetWebdavAuthEnabled resets all changes to the "webdav_auth_enabled" field.
 func (m *S3WebDAVSettingMutation) ResetWebdavAuthEnabled() {
 	m.webdav_auth_enabled = nil
+}
+
+// SetMountType sets the "mount_type" field.
+func (m *S3WebDAVSettingMutation) SetMountType(s string) {
+	m.mount_type = &s
+}
+
+// MountType returns the value of the "mount_type" field in the mutation.
+func (m *S3WebDAVSettingMutation) MountType() (r string, exists bool) {
+	v := m.mount_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMountType returns the old "mount_type" field's value of the S3WebDAVSetting entity.
+// If the S3WebDAVSetting object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *S3WebDAVSettingMutation) OldMountType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMountType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMountType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMountType: %w", err)
+	}
+	return oldValue.MountType, nil
+}
+
+// ResetMountType resets all changes to the "mount_type" field.
+func (m *S3WebDAVSettingMutation) ResetMountType() {
+	m.mount_type = nil
 }
 
 // SetProvider sets the "provider" field.
@@ -8384,7 +8421,7 @@ func (m *S3WebDAVSettingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *S3WebDAVSettingMutation) Fields() []string {
-	fields := make([]string, 0, 21)
+	fields := make([]string, 0, 22)
 	if m.key != nil {
 		fields = append(fields, s3webdavsetting.FieldKey)
 	}
@@ -8402,6 +8439,9 @@ func (m *S3WebDAVSettingMutation) Fields() []string {
 	}
 	if m.webdav_auth_enabled != nil {
 		fields = append(fields, s3webdavsetting.FieldWebdavAuthEnabled)
+	}
+	if m.mount_type != nil {
+		fields = append(fields, s3webdavsetting.FieldMountType)
 	}
 	if m.provider != nil {
 		fields = append(fields, s3webdavsetting.FieldProvider)
@@ -8468,6 +8508,8 @@ func (m *S3WebDAVSettingMutation) Field(name string) (ent.Value, bool) {
 		return m.WebdavEnabled()
 	case s3webdavsetting.FieldWebdavAuthEnabled:
 		return m.WebdavAuthEnabled()
+	case s3webdavsetting.FieldMountType:
+		return m.MountType()
 	case s3webdavsetting.FieldProvider:
 		return m.Provider()
 	case s3webdavsetting.FieldEndpointURL:
@@ -8519,6 +8561,8 @@ func (m *S3WebDAVSettingMutation) OldField(ctx context.Context, name string) (en
 		return m.OldWebdavEnabled(ctx)
 	case s3webdavsetting.FieldWebdavAuthEnabled:
 		return m.OldWebdavAuthEnabled(ctx)
+	case s3webdavsetting.FieldMountType:
+		return m.OldMountType(ctx)
 	case s3webdavsetting.FieldProvider:
 		return m.OldProvider(ctx)
 	case s3webdavsetting.FieldEndpointURL:
@@ -8599,6 +8643,13 @@ func (m *S3WebDAVSettingMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWebdavAuthEnabled(v)
+		return nil
+	case s3webdavsetting.FieldMountType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMountType(v)
 		return nil
 	case s3webdavsetting.FieldProvider:
 		v, ok := value.(string)
@@ -8786,6 +8837,9 @@ func (m *S3WebDAVSettingMutation) ResetField(name string) error {
 		return nil
 	case s3webdavsetting.FieldWebdavAuthEnabled:
 		m.ResetWebdavAuthEnabled()
+		return nil
+	case s3webdavsetting.FieldMountType:
+		m.ResetMountType()
 		return nil
 	case s3webdavsetting.FieldProvider:
 		m.ResetProvider()

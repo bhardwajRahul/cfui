@@ -23,6 +23,7 @@ type Service struct {
 	cfgMgr        *config.Manager
 	newClient     ClientFactory
 	newFS         FSFactory
+	newWebDAVFS   WebDAVFSFactory
 	webDAVLocksMu sync.Mutex
 	webDAVLocks   map[string]webdav.LockSystem
 	syncJobsMu    sync.RWMutex
@@ -34,18 +35,22 @@ func NewService(cfgMgr *config.Manager) *Service {
 		cfgMgr:      cfgMgr,
 		newClient:   defaultClientFactory,
 		newFS:       newS3FS,
+		newWebDAVFS: newWebDAVRemoteFS,
 		webDAVLocks: make(map[string]webdav.LockSystem),
 		syncJobs:    make(map[string]*syncJob),
 	}
 }
 
-func NewServiceForTest(cfgMgr *config.Manager, newClient ClientFactory, newFS FSFactory) *Service {
+func NewServiceForTest(cfgMgr *config.Manager, newClient ClientFactory, newFS FSFactory, newWebDAVFS ...WebDAVFSFactory) *Service {
 	s := NewService(cfgMgr)
 	if newClient != nil {
 		s.newClient = newClient
 	}
 	if newFS != nil {
 		s.newFS = newFS
+	}
+	if len(newWebDAVFS) > 0 && newWebDAVFS[0] != nil {
+		s.newWebDAVFS = newWebDAVFS[0]
 	}
 	return s
 }
@@ -204,34 +209,52 @@ func (s *Service) TestConnection(ctx context.Context, key string, req MountReque
 	}
 	fs, err := s.filesystemForMount(ctx, mount, false)
 	if err != nil {
+		label := "S3"
+		status := StatusS3FilesystemUnavailable
+		if mount.MountType == MountTypeWebDAVRemote {
+			label = "Remote WebDAV"
+			status = StatusRemoteWebDAVUnavailable
+		}
 		return TestConnectionResponse{
 			Success: false,
-			Message: "S3 connection failed: " + err.Error(),
+			Message: label + " connection failed: " + err.Error(),
 			Availability: Availability{
 				CanEnable: false,
-				Status:    StatusS3FilesystemUnavailable,
-				Message:   "S3 connection failed.",
+				Status:    status,
+				Message:   label + " connection failed.",
 			},
 		}, nil
 	}
 	if _, err := listFiles(fs, "/"); err != nil {
+		label := "S3"
+		status := StatusS3FilesystemUnavailable
+		if mount.MountType == MountTypeWebDAVRemote {
+			label = "Remote WebDAV"
+			status = StatusRemoteWebDAVUnavailable
+		}
 		return TestConnectionResponse{
 			Success: false,
-			Message: "S3 list failed: " + err.Error(),
+			Message: label + " list failed: " + err.Error(),
 			Availability: Availability{
 				CanEnable: false,
-				Status:    StatusS3FilesystemUnavailable,
-				Message:   "S3 list failed.",
+				Status:    status,
+				Message:   label + " list failed.",
 			},
 		}, nil
 	}
+	message := "S3 connection works."
+	availabilityMessage := "S3 WebDAV is ready."
+	if mount.MountType == MountTypeWebDAVRemote {
+		message = "Remote WebDAV connection works."
+		availabilityMessage = "Remote WebDAV storage is ready."
+	}
 	return TestConnectionResponse{
 		Success: true,
-		Message: "S3 connection works.",
+		Message: message,
 		Availability: Availability{
 			CanEnable: true,
 			Status:    StatusReady,
-			Message:   "S3 WebDAV is ready.",
+			Message:   availabilityMessage,
 		},
 	}, nil
 }
@@ -303,6 +326,15 @@ func (s *Service) Availability(_ context.Context, mount config.S3WebDAVMountConf
 	if _, err := NormalizeRootPrefix(mount.RootPrefix); err != nil {
 		return availability(StatusMountPathInvalid, err.Error(), nil)
 	}
+	if mount.MountType == MountTypeWebDAVRemote {
+		if strings.TrimSpace(mount.EndpointURL) == "" {
+			return availability(StatusRemoteWebDAVURLRequired, "Remote WebDAV URL is required.", nil)
+		}
+		if _, err := normalizeWebDAVEndpointURL(mount.EndpointURL); err != nil {
+			return availability(StatusRemoteWebDAVURLRequired, err.Error(), nil)
+		}
+		return Availability{CanEnable: true, Status: StatusReady, Message: "Remote WebDAV storage is ready."}
+	}
 	if strings.TrimSpace(mount.EndpointURL) == "" {
 		return availability(StatusEndpointRequired, "S3 endpoint is required.", nil)
 	}
@@ -335,7 +367,7 @@ func (s *Service) WebDAVAvailability(ctx context.Context, mount config.S3WebDAVM
 
 func (s *Service) R2Management(ctx context.Context, mount config.S3WebDAVMountConfig) R2Management {
 	mount = s.normalizeMount(mount)
-	if mount.Provider != ProviderCloudflareR2 {
+	if mount.MountType != MountTypeS3 || mount.Provider != ProviderCloudflareR2 {
 		return R2Management{Enabled: false, Status: "DISABLED", Message: "R2 bucket management is only available in Cloudflare R2 mode."}
 	}
 	if strings.TrimSpace(mount.AccountID) == "" {
@@ -407,7 +439,7 @@ func (s *Service) r2BucketClient(mountKey, accountID, jurisdiction string) (stri
 		if err != nil {
 			return "", nil, err
 		}
-		if mount.Provider != ProviderCloudflareR2 {
+		if mount.MountType != MountTypeS3 || mount.Provider != ProviderCloudflareR2 {
 			return "", nil, fmt.Errorf("bucket management is only available in Cloudflare R2 mode")
 		}
 		if accountID == "" {
@@ -498,6 +530,27 @@ func (s *Service) filesystemForMount(ctx context.Context, mount config.S3WebDAVM
 	}
 	if requireEnabled && !mount.Enabled {
 		return nil, fmt.Errorf("S3 mount is disabled")
+	}
+	if mount.MountType == MountTypeWebDAVRemote {
+		if strings.TrimSpace(mount.EndpointURL) == "" {
+			return nil, fmt.Errorf("remote WebDAV URL is required")
+		}
+		if _, err := normalizeWebDAVEndpointURL(mount.EndpointURL); err != nil {
+			return nil, err
+		}
+		if _, err := NormalizeMountPath(mount.MountPath); err != nil {
+			return nil, err
+		}
+		if _, err := NormalizeRootPrefix(mount.RootPrefix); err != nil {
+			return nil, err
+		}
+		return s.newWebDAVFS(ctx, WebDAVFSConfig{
+			EndpointURL: mount.EndpointURL,
+			RootPrefix:  mount.RootPrefix,
+		}, Credentials{
+			AccessKeyID:     mount.AccessKeyID,
+			SecretAccessKey: mount.SecretAccessKey,
+		})
 	}
 	if strings.TrimSpace(mount.EndpointURL) == "" {
 		return nil, fmt.Errorf("S3 endpoint is required")
@@ -601,18 +654,30 @@ func (s *Service) requestMount(req MountRequest, current config.S3WebDAVMountCon
 		next.WebDAVAuthEnabled = true
 	}
 	next.Provider = normalizeProvider(req.Provider)
+	if strings.TrimSpace(req.MountType) != "" || create {
+		next.MountType = normalizeMountType(req.MountType)
+	}
 	next.AccountID = strings.TrimSpace(req.AccountID)
-	if next.AccountID == "" && next.Provider == ProviderCloudflareR2 {
+	if next.MountType == MountTypeWebDAVRemote {
+		next.Provider = ProviderGenericS3
+		next.Region = "auto"
+		next.PathStyle = false
+		next.BucketName = ""
+		next.AccountID = ""
+		next.Jurisdiction = "default"
+	} else if next.AccountID == "" && next.Provider == ProviderCloudflareR2 {
 		next.AccountID = s.defaultCloudflareAccountID()
 	}
 	next.Jurisdiction = normalizeJurisdiction(req.Jurisdiction)
 	next.EndpointURL = strings.TrimSpace(req.EndpointURL)
-	if next.EndpointURL == "" && next.Provider == ProviderCloudflareR2 && next.AccountID != "" {
+	if next.MountType == MountTypeS3 && next.EndpointURL == "" && next.Provider == ProviderCloudflareR2 && next.AccountID != "" {
 		next.EndpointURL = endpointFor(next.AccountID, next.Jurisdiction)
 	}
-	next.Region = normalizeRegion(req.Region)
-	next.PathStyle = req.PathStyle
-	next.BucketName = strings.TrimSpace(req.BucketName)
+	if next.MountType == MountTypeS3 {
+		next.Region = normalizeRegion(req.Region)
+		next.PathStyle = req.PathStyle
+		next.BucketName = strings.TrimSpace(req.BucketName)
+	}
 
 	rootPrefix, err := NormalizeRootPrefix(req.RootPrefix)
 	if err != nil {
@@ -727,14 +792,22 @@ func (s *Service) normalizeMount(mount config.S3WebDAVMountConfig) config.S3WebD
 	if mount.Name == "" {
 		mount.Name = "S3 Mount"
 	}
+	mount.MountType = normalizeMountType(mount.MountType)
 	mount.Provider = normalizeProvider(mount.Provider)
 	mount.AccountID = strings.TrimSpace(mount.AccountID)
-	if mount.AccountID == "" && mount.Provider == ProviderCloudflareR2 {
+	if mount.MountType == MountTypeWebDAVRemote {
+		mount.Provider = ProviderGenericS3
+		mount.Region = "auto"
+		mount.PathStyle = false
+		mount.AccountID = ""
+		mount.BucketName = ""
+		mount.Jurisdiction = "default"
+	} else if mount.AccountID == "" && mount.Provider == ProviderCloudflareR2 {
 		mount.AccountID = s.defaultCloudflareAccountID()
 	}
 	mount.Jurisdiction = normalizeJurisdiction(mount.Jurisdiction)
 	mount.EndpointURL = strings.TrimSpace(mount.EndpointURL)
-	if mount.EndpointURL == "" && mount.Provider == ProviderCloudflareR2 && mount.AccountID != "" {
+	if mount.MountType == MountTypeS3 && mount.EndpointURL == "" && mount.Provider == ProviderCloudflareR2 && mount.AccountID != "" {
 		mount.EndpointURL = endpointFor(mount.AccountID, mount.Jurisdiction)
 	}
 	mount.Region = normalizeRegion(mount.Region)
@@ -796,6 +869,7 @@ func (s *Service) mountResponse(ctx context.Context, mount config.S3WebDAVMountC
 		Enabled:            mount.Enabled,
 		WebDAVEnabled:      mount.WebDAVEnabled,
 		WebDAVAuthEnabled:  mount.WebDAVAuthEnabled,
+		MountType:          mount.MountType,
 		Provider:           mount.Provider,
 		EndpointURL:        mount.EndpointURL,
 		Region:             mount.Region,

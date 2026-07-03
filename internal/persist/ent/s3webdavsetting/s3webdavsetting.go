@@ -25,6 +25,8 @@ const (
 	FieldWebdavEnabled = "webdav_enabled"
 	// FieldWebdavAuthEnabled holds the string denoting the webdav_auth_enabled field in the database.
 	FieldWebdavAuthEnabled = "webdav_auth_enabled"
+	// FieldMountType holds the string denoting the mount_type field in the database.
+	FieldMountType = "mount_type"
 	// FieldProvider holds the string denoting the provider field in the database.
 	FieldProvider = "provider"
 	// FieldEndpointURL holds the string denoting the endpoint_url field in the database.
@@ -68,6 +70,7 @@ var Columns = []string{
 	FieldEnabled,
 	FieldWebdavEnabled,
 	FieldWebdavAuthEnabled,
+	FieldMountType,
 	FieldProvider,
 	FieldEndpointURL,
 	FieldRegion,
@@ -108,6 +111,8 @@ var (
 	DefaultWebdavEnabled bool
 	// DefaultWebdavAuthEnabled holds the default value on creation for the "webdav_auth_enabled" field.
 	DefaultWebdavAuthEnabled bool
+	// DefaultMountType holds the default value on creation for the "mount_type" field.
+	DefaultMountType string
 	// DefaultProvider holds the default value on creation for the "provider" field.
 	DefaultProvider string
 	// DefaultEndpointURL holds the default value on creation for the "endpoint_url" field.
@@ -178,6 +183,11 @@ func ByWebdavEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByWebdavAuthEnabled orders the results by the webdav_auth_enabled field.
 func ByWebdavAuthEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWebdavAuthEnabled, opts...).ToFunc()
+}
+
+// ByMountType orders the results by the mount_type field.
+func ByMountType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMountType, opts...).ToFunc()
 }
 
 // ByProvider orders the results by the provider field.

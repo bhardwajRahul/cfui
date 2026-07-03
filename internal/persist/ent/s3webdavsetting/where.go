@@ -84,6 +84,11 @@ func WebdavAuthEnabled(v bool) predicate.S3WebDAVSetting {
 	return predicate.S3WebDAVSetting(sql.FieldEQ(FieldWebdavAuthEnabled, v))
 }
 
+// MountType applies equality check predicate on the "mount_type" field. It's identical to MountTypeEQ.
+func MountType(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldEQ(FieldMountType, v))
+}
+
 // Provider applies equality check predicate on the "provider" field. It's identical to ProviderEQ.
 func Provider(v string) predicate.S3WebDAVSetting {
 	return predicate.S3WebDAVSetting(sql.FieldEQ(FieldProvider, v))
@@ -357,6 +362,71 @@ func WebdavAuthEnabledEQ(v bool) predicate.S3WebDAVSetting {
 // WebdavAuthEnabledNEQ applies the NEQ predicate on the "webdav_auth_enabled" field.
 func WebdavAuthEnabledNEQ(v bool) predicate.S3WebDAVSetting {
 	return predicate.S3WebDAVSetting(sql.FieldNEQ(FieldWebdavAuthEnabled, v))
+}
+
+// MountTypeEQ applies the EQ predicate on the "mount_type" field.
+func MountTypeEQ(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldEQ(FieldMountType, v))
+}
+
+// MountTypeNEQ applies the NEQ predicate on the "mount_type" field.
+func MountTypeNEQ(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldNEQ(FieldMountType, v))
+}
+
+// MountTypeIn applies the In predicate on the "mount_type" field.
+func MountTypeIn(vs ...string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldIn(FieldMountType, vs...))
+}
+
+// MountTypeNotIn applies the NotIn predicate on the "mount_type" field.
+func MountTypeNotIn(vs ...string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldNotIn(FieldMountType, vs...))
+}
+
+// MountTypeGT applies the GT predicate on the "mount_type" field.
+func MountTypeGT(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldGT(FieldMountType, v))
+}
+
+// MountTypeGTE applies the GTE predicate on the "mount_type" field.
+func MountTypeGTE(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldGTE(FieldMountType, v))
+}
+
+// MountTypeLT applies the LT predicate on the "mount_type" field.
+func MountTypeLT(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldLT(FieldMountType, v))
+}
+
+// MountTypeLTE applies the LTE predicate on the "mount_type" field.
+func MountTypeLTE(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldLTE(FieldMountType, v))
+}
+
+// MountTypeContains applies the Contains predicate on the "mount_type" field.
+func MountTypeContains(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldContains(FieldMountType, v))
+}
+
+// MountTypeHasPrefix applies the HasPrefix predicate on the "mount_type" field.
+func MountTypeHasPrefix(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldHasPrefix(FieldMountType, v))
+}
+
+// MountTypeHasSuffix applies the HasSuffix predicate on the "mount_type" field.
+func MountTypeHasSuffix(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldHasSuffix(FieldMountType, v))
+}
+
+// MountTypeEqualFold applies the EqualFold predicate on the "mount_type" field.
+func MountTypeEqualFold(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldEqualFold(FieldMountType, v))
+}
+
+// MountTypeContainsFold applies the ContainsFold predicate on the "mount_type" field.
+func MountTypeContainsFold(v string) predicate.S3WebDAVSetting {
+	return predicate.S3WebDAVSetting(sql.FieldContainsFold(FieldMountType, v))
 }
 
 // ProviderEQ applies the EQ predicate on the "provider" field.

@@ -236,6 +236,7 @@ func (m *Manager) loadStructuredConfig(ctx context.Context) (Config, bool, error
 			Enabled:            row.Enabled,
 			WebDAVEnabled:      row.WebdavEnabled,
 			WebDAVAuthEnabled:  row.WebdavAuthEnabled,
+			MountType:          normalizeMountType(row.MountType),
 			Provider:           normalizeS3Provider(row.Provider),
 			EndpointURL:        row.EndpointURL,
 			Region:             normalizeS3Region(row.Region),
@@ -498,6 +499,7 @@ func saveS3WebDAVSettings(ctx context.Context, tx *ent.Tx, cfg S3WebDAVConfig) e
 			SetEnabled(mount.Enabled).
 			SetWebdavEnabled(mount.WebDAVEnabled).
 			SetWebdavAuthEnabled(mount.WebDAVAuthEnabled).
+			SetMountType(mount.MountType).
 			SetProvider(mount.Provider).
 			SetEndpointURL(mount.EndpointURL).
 			SetRegion(mount.Region).
@@ -611,6 +613,7 @@ func normalizeS3MountConfig(mount S3WebDAVMountConfig, index int) S3WebDAVMountC
 		mount.WebDAVAuthEnabled = true
 	}
 	mount.Provider = normalizeS3Provider(mount.Provider)
+	mount.MountType = normalizeMountType(mount.MountType)
 	mount.Region = normalizeS3Region(mount.Region)
 	mount.RootPrefix = normalizeS3RootPrefix(mount.RootPrefix)
 	mount.MountPath = normalizeS3MountPath(mount.MountPath)
@@ -653,6 +656,15 @@ func normalizeS3Provider(v string) string {
 		return v
 	default:
 		return "generic_s3"
+	}
+}
+
+func normalizeMountType(v string) string {
+	switch strings.TrimSpace(v) {
+	case MountTypeWebDAVRemote:
+		return MountTypeWebDAVRemote
+	default:
+		return MountTypeS3
 	}
 }
 

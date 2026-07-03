@@ -261,6 +261,71 @@ func TestAvailabilityRequiresS3Config(t *testing.T) {
 	}
 }
 
+func TestAvailabilityForRemoteWebDAVDoesNotRequireS3Fields(t *testing.T) {
+	svc := newTestService(t, fakeCloudflareClient{}, afero.NewMemMapFs())
+	mount := config.S3WebDAVMountConfig{
+		Enabled:   true,
+		MountType: MountTypeWebDAVRemote,
+		MountPath: "/webdav/remote/",
+	}
+	if got := svc.Availability(context.Background(), mount); got.Status != StatusRemoteWebDAVURLRequired {
+		t.Fatalf("expected remote URL status, got %#v", got)
+	}
+	mount.EndpointURL = "https://dav.example.com/files"
+	if got := svc.Availability(context.Background(), mount); !got.CanEnable || got.Status != StatusReady {
+		t.Fatalf("expected remote WebDAV ready status without S3 fields, got %#v", got)
+	}
+}
+
+func TestSaveRemoteWebDAVMountPersistsMountType(t *testing.T) {
+	svc := newTestService(t, fakeCloudflareClient{}, afero.NewMemMapFs())
+	req := validMountRequest()
+	req.MountType = MountTypeWebDAVRemote
+	req.Provider = ProviderCloudflareR2
+	req.EndpointURL = "https://dav.example.com/files"
+	req.RootPrefix = "photos"
+	req.BucketName = "ignored"
+	req.AccessKeyID = "dav-user"
+	req.SecretAccessKey = "dav-pass"
+
+	resp, err := svc.SaveMount(context.Background(), "default", req)
+	if err != nil {
+		t.Fatalf("SaveMount: %v", err)
+	}
+	mount := resp.Mounts[0]
+	if mount.MountType != MountTypeWebDAVRemote || mount.Provider != ProviderGenericS3 || mount.BucketName != "" {
+		t.Fatalf("unexpected remote WebDAV response: %#v", mount)
+	}
+	stored := svc.cfgMgr.Get().S3WebDAV.Mounts[0]
+	if stored.MountType != MountTypeWebDAVRemote || stored.Provider != ProviderGenericS3 || stored.BucketName != "" || stored.SecretAccessKey != "dav-pass" {
+		t.Fatalf("unexpected stored remote WebDAV mount: %#v", stored)
+	}
+}
+
+func TestSaveRemoteWebDAVMountPreservesTypeWhenUpdateOmitsMountType(t *testing.T) {
+	svc := newTestService(t, fakeCloudflareClient{}, afero.NewMemMapFs())
+	req := validMountRequest()
+	req.MountType = MountTypeWebDAVRemote
+	req.EndpointURL = "https://dav.example.com/files"
+	req.BucketName = ""
+	if _, err := svc.SaveMount(context.Background(), "default", req); err != nil {
+		t.Fatalf("SaveMount remote: %v", err)
+	}
+
+	update := validMountRequest()
+	update.MountType = ""
+	update.Name = "Renamed Remote"
+	update.EndpointURL = "https://dav.example.com/files"
+	update.BucketName = ""
+	resp, err := svc.SaveMount(context.Background(), "default", update)
+	if err != nil {
+		t.Fatalf("SaveMount update: %v", err)
+	}
+	if got := resp.Mounts[0]; got.MountType != MountTypeWebDAVRemote || got.Name != "Renamed Remote" {
+		t.Fatalf("unexpected updated mount: %#v", got)
+	}
+}
+
 func TestWebDAVAvailabilitySeparatesEndpointAndAuthState(t *testing.T) {
 	svc := newTestService(t, fakeCloudflareClient{}, afero.NewMemMapFs())
 	mount := config.S3WebDAVMountConfig{

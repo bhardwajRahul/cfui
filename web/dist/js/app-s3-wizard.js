@@ -6,14 +6,17 @@
     const { state, $, t, apiGet, apiSend, toast, setBusy, setTokenVisible } = window.cfui;
 
     const PROVIDER_R2 = 'cloudflare_r2';
+    const MOUNT_TYPE_S3 = 's3';
+    const MOUNT_TYPE_WEBDAV = 'webdav_remote';
     const DEFAULT_MOUNT = '/webdav/s3/';
     const steps = ['type', 'storage', 's3', 'webdav', 'review'];
-    const wizard = { mode: 'create', step: 0, mount: null, provider: 'generic_s3', buckets: [] };
+    const wizard = { mode: 'create', step: 0, mount: null, mountType: MOUNT_TYPE_S3, provider: 'generic_s3', buckets: [] };
 
     function openS3Wizard({ mode = 'create', mount = null } = {}) {
         wizard.mode = mode;
         wizard.step = 0;
         wizard.mount = mount;
+        wizard.mountType = mount?.mount_type === MOUNT_TYPE_WEBDAV ? MOUNT_TYPE_WEBDAV : MOUNT_TYPE_S3;
         wizard.provider = mount?.provider || 'generic_s3';
         wizard.buckets = [];
         fillWizard(mount);
@@ -25,6 +28,7 @@
         const isEdit = !!mount;
         setValue('s3-wizard-name', mount?.name || t('s3_new_mount_default'));
         $('s3-wizard-enabled').checked = mount?.enabled !== false;
+        setMountType(mount?.mount_type || MOUNT_TYPE_S3);
         setProvider(mount?.provider || 'generic_s3');
         setValue('s3-wizard-account-id', mount?.account_id || '');
         setValue('s3-wizard-jurisdiction', mount?.jurisdiction || 'default');
@@ -52,27 +56,56 @@
 
     function setProvider(provider) {
         wizard.provider = provider === PROVIDER_R2 ? PROVIDER_R2 : 'generic_s3';
-        document.querySelectorAll('.s3-provider-card').forEach((card) => {
+        document.querySelectorAll('#s3-wizard-provider-choice .s3-provider-card').forEach((card) => {
             const active = card.dataset.provider === wizard.provider;
             card.setAttribute('aria-checked', String(active));
         });
     }
 
+    function setMountType(type) {
+        wizard.mountType = type === MOUNT_TYPE_WEBDAV ? MOUNT_TYPE_WEBDAV : MOUNT_TYPE_S3;
+        document.querySelectorAll('.s3-mount-type-card').forEach((card) => {
+            const active = card.dataset.mountType === wizard.mountType;
+            card.setAttribute('aria-checked', String(active));
+        });
+    }
+
+    function isRemoteWebDAV() {
+        return wizard.mountType === MOUNT_TYPE_WEBDAV;
+    }
+
     function applyProviderDefaults() {
-        const isR2 = wizard.provider === PROVIDER_R2;
+        const remote = isRemoteWebDAV();
+        const isR2 = !remote && wizard.provider === PROVIDER_R2;
+        document.querySelectorAll('#s3-wizard-provider-choice .s3-provider-card').forEach((card) => { card.disabled = remote; });
+        $('s3-wizard-provider-choice').hidden = remote;
         $('s3-wizard-r2-guide').hidden = !isR2;
         $('s3-wizard-r2-account-row').hidden = !isR2;
+        $('s3-wizard-s3-region-row').hidden = remote;
+        $('s3-wizard-s3-bucket-field').hidden = remote;
         $('s3-wizard-r2-buckets').hidden = !isR2;
+        $('s3-wizard-path-style-row').hidden = remote;
         if (isR2) {
             if (!value('s3-wizard-region')) setValue('s3-wizard-region', 'auto');
             applyR2EndpointPreset(false);
         }
+        setText('s3-wizard-endpoint-label', remote ? t('s3_webdav_remote_url') : t('s3_endpoint_url'));
+        setText('s3-wizard-endpoint-help', remote ? t('s3_webdav_remote_url_help') : t('s3_endpoint_url_help'));
+        setText('s3-wizard-root-prefix-label', remote ? t('s3_webdav_remote_root') : t('s3_root_prefix'));
+        setText('s3-wizard-root-prefix-help', remote ? t('s3_webdav_remote_root_help') : t('s3_root_prefix_help'));
+        setText('s3-wizard-credentials-notice', remote ? t('s3_webdav_remote_credentials_help') : t('s3_s3_credentials_help'));
+        setText('s3-wizard-access-key-label', remote ? t('s3_webdav_remote_username') : t('s3_access_key_id'));
+        setText('s3-wizard-secret-label', remote ? t('s3_webdav_remote_password') : t('s3_secret_access_key'));
+        const secretState = $('s3-wizard-secret-state');
+        if (secretState) secretState.textContent = t(wizard.mode === 'edit' && wizard.mount?.secret_access_key_set ? (remote ? 's3_webdav_remote_password_set' : 's3_secret_set') : (remote ? 's3_webdav_remote_password_not_set' : 's3_secret_not_set'));
         renderR2TokenPath();
     }
 
     function renderWizard() {
         $('s3-wizard-title').textContent = wizard.mode === 'create' ? t('s3_wizard_create_title') : t('s3_wizard_edit_title');
         $('s3-wizard-subtitle').textContent = wizard.mode === 'create' ? t('s3_wizard_create_subtitle') : t('s3_wizard_edit_subtitle');
+        const credentialStep = document.querySelector('.s3-step[data-step="2"] .s3-step__label');
+        if (credentialStep) credentialStep.textContent = isRemoteWebDAV() ? t('s3_wizard_step_remote') : t('s3_wizard_step_s3');
         document.querySelectorAll('.s3-step').forEach((step) => {
             const idx = Number(step.dataset.step);
             step.dataset.state = idx === wizard.step ? 'active' : idx < wizard.step ? 'done' : 'todo';
@@ -120,22 +153,24 @@
     }
 
     function payload() {
-        const skipBucket = wizard.provider === PROVIDER_R2 && $('s3-wizard-skip-bucket').checked;
+        const remote = isRemoteWebDAV();
+        const skipBucket = !remote && wizard.provider === PROVIDER_R2 && $('s3-wizard-skip-bucket').checked;
         return {
             key: wizard.mount?.key || '',
             name: value('s3-wizard-name'),
             enabled: $('s3-wizard-enabled').checked,
             webdav_enabled: $('s3-wizard-webdav-enabled').checked,
             webdav_auth_enabled: $('s3-wizard-webdav-auth-enabled').checked,
-            provider: wizard.provider,
+            mount_type: wizard.mountType,
+            provider: remote ? 'generic_s3' : wizard.provider,
             endpoint_url: value('s3-wizard-endpoint-url'),
-            region: value('s3-wizard-region') || 'auto',
-            path_style: $('s3-wizard-path-style').checked,
-            account_id: value('s3-wizard-account-id'),
-            bucket_name: skipBucket ? '' : value('s3-wizard-bucket-name'),
+            region: remote ? 'auto' : value('s3-wizard-region') || 'auto',
+            path_style: remote ? false : $('s3-wizard-path-style').checked,
+            account_id: remote ? '' : value('s3-wizard-account-id'),
+            bucket_name: remote || skipBucket ? '' : value('s3-wizard-bucket-name'),
             root_prefix: value('s3-wizard-root-prefix'),
             mount_path: value('s3-wizard-mount-path') || DEFAULT_MOUNT,
-            jurisdiction: value('s3-wizard-jurisdiction') || 'default',
+            jurisdiction: remote ? 'default' : value('s3-wizard-jurisdiction') || 'default',
             access_key_id: value('s3-wizard-access-key-id'),
             secret_access_key: $('s3-wizard-secret-access-key').value,
             webdav_username: value('s3-wizard-webdav-username'),
@@ -191,7 +226,7 @@
     }
 
     async function loadBuckets() {
-        if (wizard.provider !== PROVIDER_R2) return;
+        if (isRemoteWebDAV() || wizard.provider !== PROVIDER_R2) return;
         const btn = $('s3-wizard-refresh-buckets');
         setBusy(btn, true);
         try {
@@ -276,7 +311,7 @@
     }
 
     function applyR2EndpointPreset(force) {
-        if (wizard.provider !== PROVIDER_R2) return;
+        if (isRemoteWebDAV() || wizard.provider !== PROVIDER_R2) return;
         const accountID = value('s3-wizard-account-id');
         const endpoint = $('s3-wizard-endpoint-url');
         if (!endpoint || !accountID) return;
@@ -340,10 +375,11 @@
         const body = payload();
         target.innerHTML = '';
         target.append(
-            reviewRow(t('s3_provider_label'), window.cfui.s3ProviderLabel?.(body.provider) || body.provider),
+            reviewRow(t('s3_mount_type'), body.mount_type === MOUNT_TYPE_WEBDAV ? t('s3_mount_type_webdav') : t('s3_mount_type_s3')),
+            reviewRow(t('s3_provider_label'), body.mount_type === MOUNT_TYPE_WEBDAV ? '-' : (window.cfui.s3ProviderLabel?.(body.provider) || body.provider)),
             reviewRow(t('s3_config_status'), body.enabled ? t('enabled') : t('disabled')),
-            reviewRow(t('s3_endpoint_url'), body.endpoint_url || t('s3_endpoint_required')),
-            reviewRow(t('s3_bucket_name'), body.bucket_name || t('s3_wizard_bucket_skipped')),
+            reviewRow(body.mount_type === MOUNT_TYPE_WEBDAV ? t('s3_webdav_remote_url') : t('s3_endpoint_url'), body.endpoint_url || (body.mount_type === MOUNT_TYPE_WEBDAV ? t('s3_webdav_remote_url_required') : t('s3_endpoint_required'))),
+            reviewRow(body.mount_type === MOUNT_TYPE_WEBDAV ? t('s3_webdav_remote_root') : t('s3_bucket_name'), body.mount_type === MOUNT_TYPE_WEBDAV ? (body.root_prefix || '/') : (body.bucket_name || t('s3_wizard_bucket_skipped'))),
             reviewRow(t('s3_webdav_status'), body.webdav_enabled ? t('enabled') : t('disabled')),
             reviewRow(t('s3_webdav_auth_status'), body.webdav_auth_enabled ? t('s3_webdav_auth_enabled') : t('s3_webdav_auth_disabled')),
             reviewRow(t('s3_webdav_endpoint'), window.cfui.s3WebDAVEndpointFor?.(body.mount_path) || body.mount_path),
@@ -354,7 +390,7 @@
     function renderTestButton() {
         const btn = $('s3-wizard-test');
         if (!btn) return;
-        const label = t(wizard.step >= 3 ? 's3_test_webdav' : 's3_test_s3');
+        const label = t(wizard.step >= 3 ? 's3_test_webdav' : isRemoteWebDAV() ? 's3_test_remote_webdav' : 's3_test_s3');
         const text = btn.querySelector('.text');
         if (text) text.textContent = label;
         btn.setAttribute('aria-label', label);
@@ -395,6 +431,11 @@
         if (el) el.value = val == null ? '' : String(val);
     }
 
+    function setText(id, text) {
+        const el = $(id);
+        if (el) el.textContent = text;
+    }
+
     function bindVisibility(buttonID, inputID) {
         const btn = $(buttonID);
         const input = $(inputID);
@@ -408,10 +449,18 @@
     function wireS3Wizard() {
         if (wireS3Wizard.done) return;
         wireS3Wizard.done = true;
-        document.querySelectorAll('.s3-provider-card').forEach((card) => {
+        document.querySelectorAll('#s3-wizard-provider-choice .s3-provider-card').forEach((card) => {
             card.addEventListener('click', () => {
                 setProvider(card.dataset.provider);
                 applyProviderDefaults();
+                clearAlert();
+            });
+        });
+        document.querySelectorAll('.s3-mount-type-card').forEach((card) => {
+            card.addEventListener('click', () => {
+                setMountType(card.dataset.mountType);
+                applyProviderDefaults();
+                renderTestButton();
                 clearAlert();
             });
         });

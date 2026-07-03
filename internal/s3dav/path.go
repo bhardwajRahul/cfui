@@ -121,6 +121,15 @@ func normalizeProvider(v string) string {
 	}
 }
 
+func normalizeMountType(v string) string {
+	switch strings.TrimSpace(v) {
+	case MountTypeWebDAVRemote:
+		return MountTypeWebDAVRemote
+	default:
+		return MountTypeS3
+	}
+}
+
 func normalizeRegion(v string) string {
 	v = strings.TrimSpace(v)
 	if v == "" {

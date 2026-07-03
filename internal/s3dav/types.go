@@ -5,8 +5,10 @@ import "time"
 const DefaultMountPath = "/webdav/s3/"
 
 const (
-	ProviderGenericS3    = "generic_s3"
-	ProviderCloudflareR2 = "cloudflare_r2"
+	MountTypeS3           = "s3"
+	MountTypeWebDAVRemote = "webdav_remote"
+	ProviderGenericS3     = "generic_s3"
+	ProviderCloudflareR2  = "cloudflare_r2"
 )
 
 const (
@@ -15,6 +17,8 @@ const (
 	StatusCredentialsRequired       = "S3_CREDENTIALS_REQUIRED"
 	StatusMountPathInvalid          = "S3_MOUNT_PATH_INVALID"
 	StatusBucketRequired            = "BUCKET_REQUIRED"
+	StatusRemoteWebDAVURLRequired   = "WEBDAV_REMOTE_URL_REQUIRED"
+	StatusRemoteWebDAVUnavailable   = "WEBDAV_REMOTE_UNAVAILABLE"
 	StatusWebDAVCredentialsRequired = "WEBDAV_CREDENTIALS_REQUIRED"
 	StatusWebDAVDisabled            = "WEBDAV_DISABLED"
 	StatusWebDAVAuthDisabled        = "WEBDAV_AUTH_DISABLED"
@@ -66,6 +70,7 @@ type MountRequest struct {
 	Enabled           *bool  `json:"enabled"`
 	WebDAVEnabled     *bool  `json:"webdav_enabled"`
 	WebDAVAuthEnabled *bool  `json:"webdav_auth_enabled"`
+	MountType         string `json:"mount_type"`
 	Provider          string `json:"provider"`
 	EndpointURL       string `json:"endpoint_url"`
 	Region            string `json:"region"`
@@ -87,6 +92,7 @@ type MountResponse struct {
 	Enabled            bool         `json:"enabled"`
 	WebDAVEnabled      bool         `json:"webdav_enabled"`
 	WebDAVAuthEnabled  bool         `json:"webdav_auth_enabled"`
+	MountType          string       `json:"mount_type"`
 	Provider           string       `json:"provider"`
 	EndpointURL        string       `json:"endpoint_url"`
 	Region             string       `json:"region"`
@@ -241,4 +247,9 @@ type FSConfig struct {
 	Region     string
 	PathStyle  bool
 	RootPrefix string
+}
+
+type WebDAVFSConfig struct {
+	EndpointURL string
+	RootPrefix  string
 }

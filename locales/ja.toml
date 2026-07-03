@@ -1132,7 +1132,7 @@ other = "S3 WebDAV"
 other = "S3 WebDAV"
 
 [s3_subtitle]
-other = "S3 互換 bucket のパスを WebDAV として公開し、この画面でファイルを管理します。"
+other = "S3 互換 bucket またはリモート WebDAV ディレクトリをマウントし、この画面でファイルを管理します。"
 
 [s3_status_setup]
 other = "設定が必要"
@@ -1150,7 +1150,7 @@ other = "ストレージサービス"
 other = "マウント設定"
 
 [s3_mounts_help]
-other = "各マウントは S3 認証情報、bucket パス、WebDAV パス、WebDAV ログインを個別に持ちます。"
+other = "各マウントはストレージ接続、WebDAV パス、WebDAV ログインを個別に持ちます。"
 
 [s3_access_mode]
 other = "WebDAV アクセス"
@@ -1186,7 +1186,7 @@ other = "別ポート待機中"
 other = "別ポート停止中"
 
 [s3_dedicated_waiting_feature]
-other = "先に S3 WebDAV を有効化"
+other = "先に WebDAV マウントを有効化"
 
 [s3_dedicated_failed]
 other = "別ポートの起動に失敗"
@@ -1303,28 +1303,28 @@ other = "マウント設定を左へスクロール"
 other = "マウント設定を右へスクロール"
 
 [s3_new_mount_default]
-other = "新しい S3 マウント"
+other = "新しいマウント"
 
 [s3_mount_created]
-other = "S3 マウントを作成しました"
+other = "マウントを作成しました"
 
 [s3_mount_create_failed]
-other = "S3 マウントの作成に失敗しました"
+other = "マウントの作成に失敗しました"
 
 [s3_delete_mount]
 other = "マウントを削除"
 
 [s3_delete_mount_title]
-other = "S3 マウントを削除しますか？"
+other = "マウントを削除しますか？"
 
 [s3_delete_mount_message]
-other = "{name} を削除しますか？cfui のマウント設定だけを削除し、bucket は削除しません。"
+other = "{name} を削除しますか？cfui のマウント設定だけを削除します。"
 
 [s3_mount_deleted]
-other = "S3 マウントを削除しました"
+other = "マウントを削除しました"
 
 [s3_mount_delete_failed]
-other = "S3 マウントの削除に失敗しました"
+other = "マウントの削除に失敗しました"
 
 [s3_mount_name]
 other = "マウント名"
@@ -1333,13 +1333,13 @@ other = "マウント名"
 other = "複数のマウントを見分けるために cfui 内だけで表示されます。"
 
 [s3_config_enabled]
-other = "S3 設定を有効化"
+other = "マウントを有効化"
 
 [s3_config_enabled_help]
 other = "オフにすると設定は保存されますが、ファイル閲覧と WebDAV 提供は使えません。"
 
 [s3_config_status]
-other = "S3 設定"
+other = "マウント設定"
 
 [s3_config_disabled]
 other = "このマウントは無効です。"
@@ -1349,6 +1349,21 @@ other = "多くのサービスでは汎用 S3 を選びます。cfui で R2 buck
 
 [s3_provider_label]
 other = "サービスタイプ"
+
+[s3_mount_type]
+other = "マウント種別"
+
+[s3_mount_type_s3]
+other = "S3 bucket"
+
+[s3_mount_type_s3_help]
+other = "S3 互換 bucket パスをマウントします。"
+
+[s3_mount_type_webdav]
+other = "リモート WebDAV"
+
+[s3_mount_type_webdav_help]
+other = "既存の WebDAV サーバーをソースまたはターゲットとしてマウントします。"
 
 [s3_provider_generic]
 other = "汎用 S3"
@@ -1473,6 +1488,42 @@ other = "Secret Access Key は保存済みです。"
 [s3_secret_not_set]
 other = "Secret Access Key は未保存です。"
 
+[s3_webdav_remote_url]
+other = "リモート WebDAV URL"
+
+[s3_webdav_remote_url_help]
+other = "リモート WebDAV ディレクトリの完全な URL。例: https://dav.example.com/files。"
+
+[s3_webdav_remote_root]
+other = "リモートサブパス"
+
+[s3_webdav_remote_root_help]
+other = "任意です。指定すると cfui はこのリモートディレクトリ配下だけを参照します。"
+
+[s3_webdav_remote_credentials_help]
+other = "cfui がリモート WebDAV サーバーへ接続するための認証情報です。ログイン不要なら両方空欄にします。"
+
+[s3_webdav_remote_username]
+other = "リモート WebDAV ユーザー名"
+
+[s3_webdav_remote_password]
+other = "リモート WebDAV パスワード"
+
+[s3_webdav_remote_password_set]
+other = "リモート WebDAV パスワードは保存済みです。"
+
+[s3_webdav_remote_password_not_set]
+other = "リモート WebDAV パスワードは未保存です。"
+
+[s3_webdav_remote_auth_optional]
+other = "リモートログイン任意"
+
+[s3_webdav_remote_login_ready]
+other = "リモートログイン設定済み"
+
+[s3_webdav_remote_login_missing]
+other = "リモートログイン未完了"
+
 [s3_webdav_credentials]
 other = "WebDAV ログイン"
 
@@ -1483,7 +1534,7 @@ other = "このアカウントは WebDAV クライアントが cfui に接続す
 other = "WebDAV endpoint を有効化"
 
 [s3_webdav_enabled_help]
-other = "オフにすると S3 ファイル管理は使えますが、WebDAV パスは公開されません。"
+other = "オフにするとファイル管理は使えますが、WebDAV パスは公開されません。"
 
 [s3_webdav_status]
 other = "WebDAV endpoint"
@@ -1545,6 +1596,9 @@ other = "S3 をテスト"
 [s3_test_webdav]
 other = "WebDAV をテスト"
 
+[s3_test_remote_webdav]
+other = "リモート WebDAV をテスト"
+
 [s3_save_settings]
 other = "設定を保存"
 
@@ -1552,19 +1606,19 @@ other = "設定を保存"
 other = "ファイル"
 
 [s3_files_help]
-other = "フォルダーはオブジェクト prefix に対応します。操作は設定した bucket サブパス内に適用されます。"
+other = "操作は設定したストレージサブパス内に適用されます。"
 
 [s3_files_disabled_title]
-other = "先に S3 設定を完了してください"
+other = "先にマウント設定を完了してください"
 
 [s3_files_disabled_help]
-other = "ファイル管理を使う前に endpoint、bucket、S3 認証情報を設定し、S3 設定を有効にしてください。"
+other = "ファイル管理を使う前にストレージ endpoint と認証情報を設定し、マウントを有効にしてください。"
 
 [s3_new_folder]
 other = "新規フォルダー"
 
 [s3_empty_mounts]
-other = "S3 WebDAV マウントはまだありません。設定ウィザードで作成してください。"
+other = "マウントはまだありません。設定ウィザードで作成してください。"
 
 [s3_mount_files]
 other = "ファイル"
@@ -1582,19 +1636,19 @@ other = "WebDAV ログイン設定済み"
 other = "WebDAV ログイン未設定"
 
 [s3_wizard_title]
-other = "S3 WebDAV 設定ウィザード"
+other = "マウント設定ウィザード"
 
 [s3_wizard_subtitle]
-other = "手順に沿って S3 WebDAV マウントを作成または編集します。"
+other = "手順に沿ってストレージマウントを作成または編集します。"
 
 [s3_wizard_create_title]
-other = "S3 WebDAV マウントを追加"
+other = "マウントを追加"
 
 [s3_wizard_create_subtitle]
-other = "サービス種別、bucket パス、WebDAV ログインを順に設定します。"
+other = "マウント種別、ストレージ接続、WebDAV ログインを順に設定します。"
 
 [s3_wizard_edit_title]
-other = "S3 WebDAV マウントを編集"
+other = "マウントを編集"
 
 [s3_wizard_edit_subtitle]
 other = "このマウントのストレージ、認証情報、WebDAV パスを更新します。"
@@ -1607,6 +1661,9 @@ other = "ストレージ"
 
 [s3_wizard_step_s3]
 other = "S3 キー"
+
+[s3_wizard_step_remote]
+other = "リモートログイン"
 
 [s3_wizard_step_webdav]
 other = "WebDAV"
@@ -1633,16 +1690,22 @@ other = "マウント名を入力してください。"
 other = "S3 WebDAV"
 
 [feature_s3_desc]
-other = "S3 互換 bucket のパスを WebDAV として公開します。Cloudflare R2 はサービスプリセットとして対応しています。"
+other = "S3 互換 bucket とリモート WebDAV ディレクトリを cfui WebDAV として公開します。"
 
 [s3_ready]
 other = "S3 WebDAV は準備完了です。"
 
 [s3_feature_can_enable]
-other = "有効化後に endpoint、bucket、S3 認証情報、WebDAV ログインを設定してください。"
+other = "有効化後にストレージ endpoint、認証情報、WebDAV ログインを設定してください。"
 
 [s3_endpoint_required]
 other = "S3 endpoint を入力してください。"
+
+[s3_webdav_remote_url_required]
+other = "リモート WebDAV URL を入力してください。"
+
+[s3_webdav_remote_unavailable]
+other = "リモート WebDAV を利用できません。"
 
 [s3_credentials_required]
 other = "Access Key ID と Secret Access Key を入力してください。"
@@ -1657,13 +1720,13 @@ other = "bucket 名を入力してください。"
 other = "WebDAV ユーザー名とパスワードを設定するか、WebDAV 認証をオフにしてください。"
 
 [s3_configuration_incomplete]
-other = "S3 WebDAV 設定がまだ完了していません。"
+other = "マウント設定がまだ完了していません。"
 
 [s3_filesystem_unavailable]
-other = "S3 ファイルシステムを利用できません。"
+other = "マウント済みファイルシステムを利用できません。"
 
 [s3_configure_first]
-other = "先に S3 WebDAV を設定してください。"
+other = "先にマウント設定をしてください。"
 
 [s3_buckets_loaded]
 other = "R2 bucket を読み込みました"
@@ -1681,10 +1744,10 @@ other = "R2 bucket を作成しました"
 other = "R2 bucket の作成に失敗しました"
 
 [s3_settings_saved]
-other = "S3 WebDAV 設定を保存しました"
+other = "マウント設定を保存しました"
 
 [s3_settings_save_failed]
-other = "S3 WebDAV 設定の保存に失敗しました"
+other = "マウント設定の保存に失敗しました"
 
 [s3_test_success]
 other = "S3 接続は利用できます。"
@@ -1702,16 +1765,16 @@ other = "WebDAV endpoint テストに失敗しました"
 other = "テスト中..."
 
 [s3_files_load_failed]
-other = "S3 ファイルの読み込みに失敗しました"
+other = "ファイルの読み込みに失敗しました"
 
 [s3_files_empty]
-other = "この bucket パスは空です。"
+other = "このパスは空です。"
 
 [s3_files_loading]
 other = "ファイルを読み込み中..."
 
 [s3_file_object]
-other = "オブジェクト"
+other = "ファイル"
 
 [s3_file_type]
 other = "種類"
@@ -1765,10 +1828,10 @@ other = "リネームしました"
 other = "リネーム失敗"
 
 [s3_delete_title]
-other = "オブジェクトを削除しますか？"
+other = "ファイルを削除しますか？"
 
 [s3_delete_message]
-other = "{name} を削除しますか？現在のマウント済み bucket パスから削除されます。"
+other = "{name} を削除しますか？現在のマウント済みストレージパスから削除されます。"
 
 [s3_deleted]
 other = "削除しました"
@@ -1780,10 +1843,10 @@ other = "削除失敗"
 other = "同期"
 
 [s3_sync_title]
-other = "S3 マウント間で同期"
+other = "マウント間で同期"
 
 [s3_sync_subtitle]
-other = "左で同期元オブジェクト、右で同期先フォルダーを選びます。方向は左から右で固定です。"
+other = "左で同期元ファイル、右で同期先フォルダーを選びます。方向は左から右で固定です。"
 
 [s3_sync_source]
 other = "同期元"
@@ -1900,7 +1963,7 @@ other = "一時停止中"
 other = "キャンセル済み"
 
 [s3_sync_current_idle]
-other = "現在コピー中のオブジェクトはありません"
+other = "現在コピー中のファイルはありません"
 
 [s3_sync_job_action_failed]
 other = "同期タスク操作に失敗しました"

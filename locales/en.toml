@@ -1132,7 +1132,7 @@ other = "S3 WebDAV"
 other = "S3 WebDAV"
 
 [s3_subtitle]
-other = "Mount one S3-compatible bucket path as WebDAV and manage files from this page."
+other = "Mount S3-compatible buckets or remote WebDAV directories, then manage files from this page."
 
 [s3_status_setup]
 other = "Setup required"
@@ -1150,7 +1150,7 @@ other = "Storage provider"
 other = "Mounts"
 
 [s3_mounts_help]
-other = "Each mount has its own S3 credentials, bucket path, WebDAV path, and WebDAV login."
+other = "Each mount has its own storage connection, WebDAV path, and WebDAV login."
 
 [s3_access_mode]
 other = "WebDAV access"
@@ -1186,7 +1186,7 @@ other = "Separate port pending"
 other = "Separate port stopped"
 
 [s3_dedicated_waiting_feature]
-other = "Enable S3 WebDAV first"
+other = "Enable WebDAV mounts first"
 
 [s3_dedicated_failed]
 other = "Separate port failed"
@@ -1303,28 +1303,28 @@ other = "Scroll mounts left"
 other = "Scroll mounts right"
 
 [s3_new_mount_default]
-other = "New S3 Mount"
+other = "New Mount"
 
 [s3_mount_created]
-other = "S3 mount created"
+other = "Mount created"
 
 [s3_mount_create_failed]
-other = "Failed to create S3 mount"
+other = "Failed to create mount"
 
 [s3_delete_mount]
 other = "Delete mount"
 
 [s3_delete_mount_title]
-other = "Delete S3 mount?"
+other = "Delete mount?"
 
 [s3_delete_mount_message]
-other = "Delete {name}? This removes the cfui mount configuration, not the bucket."
+other = "Delete {name}? This removes only the cfui mount configuration."
 
 [s3_mount_deleted]
-other = "S3 mount deleted"
+other = "Mount deleted"
 
 [s3_mount_delete_failed]
-other = "Failed to delete S3 mount"
+other = "Failed to delete mount"
 
 [s3_mount_name]
 other = "Mount name"
@@ -1333,13 +1333,13 @@ other = "Mount name"
 other = "Shown only inside cfui so you can tell multiple mounts apart."
 
 [s3_config_enabled]
-other = "Enable S3 config"
+other = "Enable mount"
 
 [s3_config_enabled_help]
 other = "When off, the config is saved but cannot browse files or serve WebDAV."
 
 [s3_config_status]
-other = "S3 config"
+other = "Mount config"
 
 [s3_config_disabled]
 other = "This mount is disabled."
@@ -1349,6 +1349,21 @@ other = "Use generic S3 for most services. Choose Cloudflare R2 only when you wa
 
 [s3_provider_label]
 other = "Provider"
+
+[s3_mount_type]
+other = "Mount type"
+
+[s3_mount_type_s3]
+other = "S3 bucket"
+
+[s3_mount_type_s3_help]
+other = "Mount an S3-compatible bucket path."
+
+[s3_mount_type_webdav]
+other = "Remote WebDAV"
+
+[s3_mount_type_webdav_help]
+other = "Mount an existing WebDAV server as a source or target."
 
 [s3_provider_generic]
 other = "Generic S3"
@@ -1473,6 +1488,42 @@ other = "Secret Access Key saved."
 [s3_secret_not_set]
 other = "No Secret Access Key saved."
 
+[s3_webdav_remote_url]
+other = "Remote WebDAV URL"
+
+[s3_webdav_remote_url_help]
+other = "Full URL of the remote WebDAV directory, for example https://dav.example.com/files."
+
+[s3_webdav_remote_root]
+other = "Remote subpath"
+
+[s3_webdav_remote_root_help]
+other = "Optional. cfui only sees files below this remote directory."
+
+[s3_webdav_remote_credentials_help]
+other = "These credentials are used by cfui to connect to the remote WebDAV server. Leave both blank if the server does not require login."
+
+[s3_webdav_remote_username]
+other = "Remote WebDAV username"
+
+[s3_webdav_remote_password]
+other = "Remote WebDAV password"
+
+[s3_webdav_remote_password_set]
+other = "Remote WebDAV password saved."
+
+[s3_webdav_remote_password_not_set]
+other = "No remote WebDAV password saved."
+
+[s3_webdav_remote_auth_optional]
+other = "Remote login optional"
+
+[s3_webdav_remote_login_ready]
+other = "Remote login set"
+
+[s3_webdav_remote_login_missing]
+other = "Remote login incomplete"
+
 [s3_webdav_credentials]
 other = "WebDAV login"
 
@@ -1483,7 +1534,7 @@ other = "These credentials are only for WebDAV clients connecting to cfui."
 other = "Enable WebDAV endpoint"
 
 [s3_webdav_enabled_help]
-other = "Turn this off to keep the S3 file manager available without exposing a WebDAV path."
+other = "Turn this off to keep the file manager available without exposing a WebDAV path."
 
 [s3_webdav_status]
 other = "WebDAV endpoint"
@@ -1545,6 +1596,9 @@ other = "Test S3"
 [s3_test_webdav]
 other = "Test WebDAV"
 
+[s3_test_remote_webdav]
+other = "Test remote WebDAV"
+
 [s3_save_settings]
 other = "Save settings"
 
@@ -1552,19 +1606,19 @@ other = "Save settings"
 other = "Files"
 
 [s3_files_help]
-other = "Folders map to object prefixes. Changes apply inside the configured bucket subpath."
+other = "Changes apply inside the configured storage subpath."
 
 [s3_files_disabled_title]
-other = "Complete S3 setup first"
+other = "Complete mount setup first"
 
 [s3_files_disabled_help]
-other = "Set endpoint, bucket, S3 credentials, and keep the S3 config enabled before using the file manager."
+other = "Set the storage endpoint, credentials, and keep the mount enabled before using the file manager."
 
 [s3_new_folder]
 other = "New Folder"
 
 [s3_empty_mounts]
-other = "No S3 WebDAV mounts yet. Create one with the setup wizard."
+other = "No mounts yet. Create one with the setup wizard."
 
 [s3_mount_files]
 other = "Files"
@@ -1582,19 +1636,19 @@ other = "WebDAV login set"
 other = "WebDAV login missing"
 
 [s3_wizard_title]
-other = "S3 WebDAV setup"
+other = "Mount setup"
 
 [s3_wizard_subtitle]
-other = "Follow the steps to create or edit one S3 WebDAV mount."
+other = "Follow the steps to create or edit one storage mount."
 
 [s3_wizard_create_title]
-other = "New S3 WebDAV mount"
+other = "New mount"
 
 [s3_wizard_create_subtitle]
-other = "Choose a provider, connect a bucket path, then set the WebDAV login."
+other = "Choose a mount type, connect storage, then set the WebDAV login."
 
 [s3_wizard_edit_title]
-other = "Edit S3 WebDAV mount"
+other = "Edit mount"
 
 [s3_wizard_edit_subtitle]
 other = "Update storage, credentials, or the WebDAV access path for this mount."
@@ -1607,6 +1661,9 @@ other = "Storage"
 
 [s3_wizard_step_s3]
 other = "S3 keys"
+
+[s3_wizard_step_remote]
+other = "Remote login"
 
 [s3_wizard_step_webdav]
 other = "WebDAV"
@@ -1633,16 +1690,22 @@ other = "Enter a mount name."
 other = "S3 WebDAV"
 
 [feature_s3_desc]
-other = "Expose one S3-compatible bucket path through WebDAV. Cloudflare R2 is supported as a provider preset."
+other = "Expose S3-compatible buckets and remote WebDAV directories through cfui WebDAV."
 
 [s3_ready]
 other = "S3 WebDAV is ready."
 
 [s3_feature_can_enable]
-other = "Enable this tab, then configure endpoint, bucket, S3 credentials, and WebDAV login."
+other = "Enable this tab, then configure a storage endpoint, credentials, and WebDAV login."
 
 [s3_endpoint_required]
 other = "Enter an S3 endpoint."
+
+[s3_webdav_remote_url_required]
+other = "Enter a remote WebDAV URL."
+
+[s3_webdav_remote_unavailable]
+other = "Remote WebDAV is not available."
 
 [s3_credentials_required]
 other = "Enter Access Key ID and Secret Access Key."
@@ -1657,13 +1720,13 @@ other = "Enter a bucket name."
 other = "Set a WebDAV username and password, or turn off WebDAV authentication."
 
 [s3_configuration_incomplete]
-other = "S3 WebDAV settings are incomplete."
+other = "Mount settings are incomplete."
 
 [s3_filesystem_unavailable]
-other = "S3 filesystem is not available."
+other = "Mounted filesystem is not available."
 
 [s3_configure_first]
-other = "Configure S3 WebDAV settings first."
+other = "Configure mount settings first."
 
 [s3_buckets_loaded]
 other = "R2 buckets loaded"
@@ -1681,10 +1744,10 @@ other = "R2 bucket created"
 other = "Failed to create R2 bucket"
 
 [s3_settings_saved]
-other = "S3 WebDAV settings saved"
+other = "Mount settings saved"
 
 [s3_settings_save_failed]
-other = "Failed to save S3 WebDAV settings"
+other = "Failed to save mount settings"
 
 [s3_test_success]
 other = "S3 connection works."
@@ -1702,16 +1765,16 @@ other = "WebDAV endpoint test failed"
 other = "Testing..."
 
 [s3_files_load_failed]
-other = "Failed to load S3 files"
+other = "Failed to load files"
 
 [s3_files_empty]
-other = "This bucket path is empty."
+other = "This path is empty."
 
 [s3_files_loading]
 other = "Loading files..."
 
 [s3_file_object]
-other = "Object"
+other = "File"
 
 [s3_file_type]
 other = "Type"
@@ -1765,10 +1828,10 @@ other = "Renamed"
 other = "Rename failed"
 
 [s3_delete_title]
-other = "Delete object?"
+other = "Delete file?"
 
 [s3_delete_message]
-other = "Delete {name}? This removes it from the mounted bucket path."
+other = "Delete {name}? This removes it from the mounted storage path."
 
 [s3_deleted]
 other = "Deleted"
@@ -1780,7 +1843,7 @@ other = "Delete failed"
 other = "Sync"
 
 [s3_sync_title]
-other = "Sync between S3 mounts"
+other = "Sync between mounts"
 
 [s3_sync_subtitle]
 other = "Choose a source object on the left and a target folder on the right. Direction is fixed left to right."
@@ -1900,7 +1963,7 @@ other = "Paused"
 other = "Canceled"
 
 [s3_sync_current_idle]
-other = "No object is being copied right now"
+other = "No file is being copied right now"
 
 [s3_sync_job_action_failed]
 other = "Sync task action failed"

@@ -791,7 +791,7 @@
                     <div class="card-header">
                         <div class="card-header-text">
                             <h2 class="card-title" data-i18n="s3_title">S3 WebDAV</h2>
-                            <p class="card-subtitle" data-i18n="s3_subtitle">Mount one S3-compatible bucket path as WebDAV and manage files from this page.</p>
+                            <p class="card-subtitle" data-i18n="s3_subtitle">Mount S3-compatible buckets or remote WebDAV directories, then manage files from this page.</p>
                         </div>
                         <span id="s3-status" class="pill" data-state="warn">
                             <span class="dot" aria-hidden="true"></span>
@@ -910,11 +910,11 @@
                             <div class="section-head">
                                 <div>
                                     <div class="section-title" data-i18n="s3_mounts">Mounts</div>
-                                    <div class="section-subtitle" data-i18n="s3_mounts_help">Each mount has its own S3 credentials, bucket path, WebDAV path, and WebDAV login.</div>
+                                    <div class="section-subtitle" data-i18n="s3_mounts_help">Each mount has its own storage connection, WebDAV path, and WebDAV login.</div>
                                 </div>
                                 <button id="s3-new-mount" type="button" class="btn btn--sm" data-i18n="s3_new_mount">New Mount</button>
                             </div>
-                            <div id="s3-mount-list" class="s3-mount-list" aria-label="S3 WebDAV mounts"></div>
+                            <div id="s3-mount-list" class="s3-mount-list" aria-label="Mounts"></div>
                             <input type="file" id="s3-upload-input" hidden>
                         </div>
                     </div>
@@ -926,8 +926,8 @@
                 <div class="modal modal--wide modal--sync-create">
                     <div class="modal-head">
                         <div>
-                            <h2 id="s3-sync-title" data-i18n="s3_sync_title">Sync between S3 mounts</h2>
-                            <p class="subtitle" data-i18n="s3_sync_subtitle">Choose a source object on the left and a target folder on the right.</p>
+                            <h2 id="s3-sync-title" data-i18n="s3_sync_title">Sync between mounts</h2>
+                            <p class="subtitle" data-i18n="s3_sync_subtitle">Choose a source file on the left and a target folder on the right.</p>
                         </div>
                         <button type="button" class="icon-btn" data-close-dialog aria-label="Close" title="Close" data-i18n-attr="aria-label|toast_close;title|toast_close">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
@@ -1013,8 +1013,8 @@
                 <div class="modal modal--wide">
                     <div class="modal-head">
                         <div>
-                            <h2 id="s3-wizard-title" data-i18n="s3_wizard_title">S3 WebDAV setup</h2>
-                            <p class="subtitle" id="s3-wizard-subtitle" data-i18n="s3_wizard_subtitle">Follow the steps to create or edit one S3 WebDAV mount.</p>
+                            <h2 id="s3-wizard-title" data-i18n="s3_wizard_title">Mount setup</h2>
+                            <p class="subtitle" id="s3-wizard-subtitle" data-i18n="s3_wizard_subtitle">Follow the steps to create or edit one storage mount.</p>
                         </div>
                         <button type="button" class="icon-btn" data-close-dialog aria-label="Close" title="Close" data-i18n-attr="aria-label|toast_close;title|toast_close">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
@@ -1043,11 +1043,21 @@
 	                                        <label class="toggle" for="s3-wizard-enabled">
 	                                            <input type="checkbox" id="s3-wizard-enabled">
 	                                            <span class="track"></span>
-	                                            <span class="label"><span data-i18n="s3_config_enabled">Enable S3 config</span><span class="hint" data-i18n="s3_config_enabled_help">Disabled configs are saved but cannot browse files or serve WebDAV.</span></span>
+	                                            <span class="label"><span data-i18n="s3_config_enabled">Enable mount</span><span class="hint" data-i18n="s3_config_enabled_help">Disabled configs are saved but cannot browse files or serve WebDAV.</span></span>
 	                                        </label>
 	                                    </div>
 	                                </div>
-                                <div class="s3-provider-choice" role="radiogroup" aria-label="Storage provider">
+                                <div class="s3-provider-choice" role="radiogroup" aria-label="Mount type" data-i18n-attr="aria-label|s3_mount_type">
+                                    <button type="button" class="s3-provider-card s3-mount-type-card" data-mount-type="s3" role="radio" aria-checked="true">
+                                        <span class="s3-provider-card__title" data-i18n="s3_mount_type_s3">S3 bucket</span>
+                                        <span class="s3-provider-card__text" data-i18n="s3_mount_type_s3_help">Mount an S3-compatible bucket path.</span>
+                                    </button>
+                                    <button type="button" class="s3-provider-card s3-mount-type-card" data-mount-type="webdav_remote" role="radio" aria-checked="false">
+                                        <span class="s3-provider-card__title" data-i18n="s3_mount_type_webdav">Remote WebDAV</span>
+                                        <span class="s3-provider-card__text" data-i18n="s3_mount_type_webdav_help">Mount an existing WebDAV server as a source or target.</span>
+                                    </button>
+                                </div>
+                                <div class="s3-provider-choice" id="s3-wizard-provider-choice" role="radiogroup" aria-label="Storage provider">
                                     <button type="button" class="s3-provider-card" data-provider="generic_s3" role="radio" aria-checked="true">
                                         <span class="s3-provider-card__title" data-i18n="s3_provider_generic">Generic S3</span>
                                         <span class="s3-provider-card__text" data-i18n="s3_wizard_generic_help">Use this for MinIO, Qiniu, AWS S3, and most S3-compatible services.</span>
@@ -1082,26 +1092,26 @@
                                 </div>
                                 <div class="form-row">
                                     <div class="form-field">
-                                        <label for="s3-wizard-endpoint-url" data-i18n="s3_endpoint_url">S3 endpoint</label>
+                                        <label id="s3-wizard-endpoint-label" for="s3-wizard-endpoint-url" data-i18n="s3_endpoint_url">S3 endpoint</label>
                                         <input type="url" id="s3-wizard-endpoint-url" class="input" spellcheck="false" autocomplete="off" placeholder="https://s3.example.com">
-                                        <p class="help-text" data-i18n="s3_endpoint_url_help">For R2, use https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com.</p>
+                                        <p class="help-text" id="s3-wizard-endpoint-help" data-i18n="s3_endpoint_url_help">For R2, use https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com.</p>
                                     </div>
-                                    <div class="form-field">
+                                    <div class="form-field" id="s3-wizard-s3-region-row">
                                         <label for="s3-wizard-region" data-i18n="s3_region">Region</label>
                                         <input type="text" id="s3-wizard-region" class="input" spellcheck="false" autocomplete="off" placeholder="auto">
                                         <p class="help-text" data-i18n="s3_region_help">Use auto for Cloudflare R2. Other S3 services usually require their documented region.</p>
                                     </div>
                                 </div>
                                 <div class="form-row">
-                                    <div class="form-field">
+                                    <div class="form-field" id="s3-wizard-s3-bucket-field">
                                         <label for="s3-wizard-bucket-name" data-i18n="s3_bucket_name">Bucket name</label>
                                         <input type="text" id="s3-wizard-bucket-name" class="input" spellcheck="false" autocomplete="off" placeholder="my-bucket">
                                         <p class="help-text" id="s3-wizard-bucket-help" data-i18n="s3_bucket_name_help">cfui mounts this bucket only. For generic S3, create the bucket outside cfui first.</p>
                                     </div>
                                     <div class="form-field">
-                                        <label for="s3-wizard-root-prefix" data-i18n="s3_root_prefix">Bucket subpath</label>
+                                        <label id="s3-wizard-root-prefix-label" for="s3-wizard-root-prefix" data-i18n="s3_root_prefix">Bucket subpath</label>
                                         <input type="text" id="s3-wizard-root-prefix" class="input" spellcheck="false" autocomplete="off" placeholder="backups/cfui">
-                                        <p class="help-text" data-i18n="s3_root_prefix_help">Optional. WebDAV will only see files under this prefix.</p>
+                                        <p class="help-text" id="s3-wizard-root-prefix-help" data-i18n="s3_root_prefix_help">Optional. WebDAV will only see files under this prefix.</p>
                                     </div>
                                 </div>
                                 <div id="s3-wizard-r2-buckets" class="form-row single-column" hidden>
@@ -1138,21 +1148,21 @@
                                         <p class="help-text" id="s3-wizard-r2-management-state" data-i18n="s3_r2_management_unavailable">Bucket list/create is optional and needs a Cloudflare API Token with Workers R2 Storage Edit.</p>
                                     </div>
                                 </div>
-                                <label class="checkbox-row" for="s3-wizard-path-style">
+                                <label class="checkbox-row" id="s3-wizard-path-style-row" for="s3-wizard-path-style">
                                     <input type="checkbox" id="s3-wizard-path-style">
                                     <span data-i18n="s3_path_style">Use path-style requests</span>
                                 </label>
                             </section>
 
                             <section class="s3-wizard-panel" data-panel="2" hidden>
-                                <div class="notice" data-state="warn" data-i18n="s3_s3_credentials_help">These credentials are used by cfui to read and write objects. They are separate from the WebDAV login below.</div>
+                                <div class="notice" id="s3-wizard-credentials-notice" data-state="warn" data-i18n="s3_s3_credentials_help">These credentials are used by cfui to read and write objects. They are separate from the WebDAV login below.</div>
                                 <div class="form-row">
                                     <div class="form-field">
-                                        <label for="s3-wizard-access-key-id" data-i18n="s3_access_key_id">Access Key ID</label>
+                                        <label id="s3-wizard-access-key-label" for="s3-wizard-access-key-id" data-i18n="s3_access_key_id">Access Key ID</label>
                                         <input type="text" id="s3-wizard-access-key-id" class="input" spellcheck="false" autocomplete="off">
                                     </div>
                                     <div class="form-field">
-                                        <label for="s3-wizard-secret-access-key" data-i18n="s3_secret_access_key">Secret Access Key</label>
+                                        <label id="s3-wizard-secret-label" for="s3-wizard-secret-access-key" data-i18n="s3_secret_access_key">Secret Access Key</label>
                                         <div class="secret-field">
                                             <input type="password" id="s3-wizard-secret-access-key" class="input" autocomplete="new-password" spellcheck="false" data-i18n-attr="placeholder|s3_secret_placeholder">
                                             <button id="s3-wizard-secret-toggle" class="icon-btn" type="button" aria-label="Show token" aria-pressed="false" data-i18n-attr="aria-label|token_show;title|token_show" title="Show token">
@@ -1170,7 +1180,7 @@
 	                                    <label class="toggle" for="s3-wizard-webdav-enabled">
 	                                        <input type="checkbox" id="s3-wizard-webdav-enabled">
 	                                        <span class="track"></span>
-	                                        <span class="label"><span data-i18n="s3_webdav_enabled">Enable WebDAV endpoint</span><span class="hint" data-i18n="s3_webdav_enabled_help">Turn this off to keep the S3 file manager available without exposing a WebDAV path.</span></span>
+	                                        <span class="label"><span data-i18n="s3_webdav_enabled">Enable WebDAV endpoint</span><span class="hint" data-i18n="s3_webdav_enabled_help">Turn this off to keep the file manager available without exposing a WebDAV path.</span></span>
 	                                    </label>
 	                                    <label class="toggle" for="s3-wizard-webdav-auth-enabled">
 	                                        <input type="checkbox" id="s3-wizard-webdav-auth-enabled">
@@ -1281,7 +1291,7 @@
                         <div class="feature-row" data-feature="s3_webdav">
                             <div>
                                 <div class="section-title" data-i18n="feature_s3_name">S3 WebDAV</div>
-                                <div class="section-subtitle" data-i18n="feature_s3_desc">Expose one S3-compatible bucket path through WebDAV. Cloudflare R2 is supported as a provider preset.</div>
+                                <div class="section-subtitle" data-i18n="feature_s3_desc">Expose S3-compatible buckets and remote WebDAV directories through cfui WebDAV.</div>
                                 <div class="feature-reason" id="feature-s3-reason"></div>
                             </div>
                             <label class="toggle">

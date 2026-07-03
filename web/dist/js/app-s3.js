@@ -6,6 +6,8 @@
     const { state, $, t, API_BASE, apiGet, apiSend, toast, setBusy } = window.cfui;
 
     const PROVIDER_R2 = 'cloudflare_r2';
+    const MOUNT_TYPE_S3 = 's3';
+    const MOUNT_TYPE_WEBDAV = 'webdav_remote';
     const DEFAULT_MOUNT = '/webdav/s3/';
     const ACCESS_MAIN = 'main';
     const ACCESS_DEDICATED = 'dedicated';
@@ -20,6 +22,8 @@
         S3_CREDENTIALS_REQUIRED: 's3_credentials_required',
         S3_MOUNT_PATH_INVALID: 's3_mount_path_invalid',
         BUCKET_REQUIRED: 's3_bucket_required',
+        WEBDAV_REMOTE_URL_REQUIRED: 's3_webdav_remote_url_required',
+        WEBDAV_REMOTE_UNAVAILABLE: 's3_webdav_remote_unavailable',
         WEBDAV_CREDENTIALS_REQUIRED: 's3_webdav_credentials_required',
         WEBDAV_DISABLED: 's3_webdav_disabled',
         WEBDAV_AUTH_DISABLED: 's3_webdav_auth_disabled',
@@ -143,7 +147,7 @@
         name.textContent = mount.name || mount.key;
         const meta = document.createElement('span');
         meta.className = 's3-mount-switch-meta';
-        meta.textContent = `${providerLabel(mount.provider)} · ${mount.bucket_name || t('s3_bucket_required')}`;
+        meta.textContent = mountSummary(mount);
         copy.append(name, meta);
         summary.append(copy, mountHealthDots(mount));
         item.appendChild(summary);
@@ -206,11 +210,11 @@
         identity.className = 's3-mount-identity';
         const provider = document.createElement('div');
         provider.className = 's3-mount-item__meta';
-        provider.textContent = `${providerLabel(mount.provider)} · ${mount.bucket_name || t('s3_bucket_required')}${mount.root_prefix ? '/' + mount.root_prefix : ''}`;
+        provider.textContent = mountSummary(mount);
         const badges = document.createElement('div');
         badges.className = 's3-mount-badges';
         badges.append(
-            badge(mount.access_key_id && mount.secret_access_key_set ? t('s3_s3_keys_ready') : t('s3_s3_keys_missing'), mount.access_key_id && mount.secret_access_key_set ? 'ok' : 'warn'),
+            badge(credentialsStatusLabel(mount), credentialsStatusState(mount)),
             badge(webDAVStatusLabel(mount), webDAVStatusState(mount))
         );
         identity.append(provider, badges);
@@ -590,6 +594,38 @@
         return provider === PROVIDER_R2 ? t('s3_provider_r2') : t('s3_provider_generic');
     }
 
+    function mountType(mount) {
+        return mount?.mount_type === MOUNT_TYPE_WEBDAV ? MOUNT_TYPE_WEBDAV : MOUNT_TYPE_S3;
+    }
+
+    function mountTypeLabel(mount) {
+        return mountType(mount) === MOUNT_TYPE_WEBDAV ? t('s3_mount_type_webdav') : t('s3_mount_type_s3');
+    }
+
+    function mountSummary(mount) {
+        if (mountType(mount) === MOUNT_TYPE_WEBDAV) {
+            const prefix = mount.root_prefix ? `/${mount.root_prefix}` : '';
+            return `${mountTypeLabel(mount)} · ${mount.endpoint_url || t('s3_webdav_remote_url_required')}${prefix}`;
+        }
+        return `${providerLabel(mount.provider)} · ${mount.bucket_name || t('s3_bucket_required')}${mount.root_prefix ? '/' + mount.root_prefix : ''}`;
+    }
+
+    function credentialsStatusLabel(mount) {
+        if (mountType(mount) === MOUNT_TYPE_WEBDAV) {
+            if (!mount.access_key_id && !mount.secret_access_key_set) return t('s3_webdav_remote_auth_optional');
+            return mount.access_key_id && mount.secret_access_key_set ? t('s3_webdav_remote_login_ready') : t('s3_webdav_remote_login_missing');
+        }
+        return mount.access_key_id && mount.secret_access_key_set ? t('s3_s3_keys_ready') : t('s3_s3_keys_missing');
+    }
+
+    function credentialsStatusState(mount) {
+        if (mountType(mount) === MOUNT_TYPE_WEBDAV) {
+            if (!mount.access_key_id && !mount.secret_access_key_set) return 'neutral';
+            return mount.access_key_id && mount.secret_access_key_set ? 'ok' : 'warn';
+        }
+        return mount.access_key_id && mount.secret_access_key_set ? 'ok' : 'warn';
+    }
+
     function webDAVStatusLabel(mount) {
         if (!mount.webdav_enabled) return t('s3_webdav_disabled');
         if (!mount.webdav_auth_enabled) return t('s3_webdav_auth_disabled');
@@ -654,6 +690,7 @@
             enabled: overrides.enabled ?? !!mount.enabled,
             webdav_enabled: overrides.webdav_enabled ?? !!mount.webdav_enabled,
             webdav_auth_enabled: overrides.webdav_auth_enabled ?? !!mount.webdav_auth_enabled,
+            mount_type: mountType(mount),
             provider: mount.provider || 'generic_s3',
             endpoint_url: mount.endpoint_url || '',
             region: mount.region || 'auto',

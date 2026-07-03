@@ -30,6 +30,7 @@ func (S3WebDAVSetting) Fields() []ent.Field {
 		field.Bool("enabled").Default(true),
 		field.Bool("webdav_enabled").Default(true),
 		field.Bool("webdav_auth_enabled").Default(true),
+		field.String("mount_type").Default("s3"),
 		field.String("provider").Default("generic_s3"),
 		field.String("endpoint_url").Default(""),
 		field.String("region").Default("auto"),
