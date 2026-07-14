@@ -114,6 +114,8 @@ type Server struct {
 	assets    embed.FS
 	locales   fs.FS
 
+	backupHooks configBackupRuntimeHooks
+
 	// shutdownC is closed by PrepareShutdown so long-lived connections
 	// (SSE log streams) exit promptly instead of stalling http.Server.Shutdown
 	// until its timeout.
@@ -213,6 +215,9 @@ func (s *Server) GetHandler() http.Handler {
 
 	// API Endpoints
 	mux.HandleFunc("/api/config", s.handleConfig)
+	mux.HandleFunc("/api/config-backup/export", s.handleConfigBackupExport)
+	mux.HandleFunc("/api/config-backup/inspect", s.handleConfigBackupInspect)
+	mux.HandleFunc("/api/config-backup/import", s.handleConfigBackupImport)
 	mux.HandleFunc("/api/status", s.handleStatus)
 	mux.HandleFunc("/api/control", s.handleControl)
 	mux.HandleFunc("/api/tunnels", s.handleTunnels)
