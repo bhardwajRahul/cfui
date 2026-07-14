@@ -10,7 +10,7 @@
             canLoadTunnelManagerZones, loadTunnelManagerConfig,
             fetchMCPStatus, refreshDDNS, fetchS3Settings,
             fetchOAuthStatus, loadOAuthOverview,
-            wireUI, wireTunnel, wireLogs, wireServices, wireS3, wireOAuth,
+            wireUI, wireTunnel, wireLogs, wireServices, wireBackup, wireS3, wireOAuth,
             disconnectLogStream, closeOAuthLiveStreams, toast } = window.cfui;
 
     let statusTimer = null;
@@ -63,6 +63,7 @@
         wireTunnel();
         wireLogs();
         wireServices();
+        wireBackup();
         wireS3();
         wireOAuth?.();
         await loadLanguage(state.currentLang);

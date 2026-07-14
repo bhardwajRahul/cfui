@@ -952,6 +952,159 @@ other = "不足している権限があります"
 [verify_permissions_unverified]
 other = "一部の書き込み権限を安全に確認できませんでした"
 
+[config_backup_title]
+other = "設定のバックアップと復元"
+
+[config_backup_subtitle]
+other = "選択したローカル設定をエクスポートするか、バックアップから選択した項目を置き換えます。"
+
+[config_backup_card_help]
+other = "パスワードは任意です。機密情報は明示的に選択しない限り含まれません。"
+
+[config_backup_export]
+other = "設定をエクスポート"
+
+[config_backup_import]
+other = "設定をインポート"
+
+[config_backup_export_title]
+other = "設定をエクスポート"
+
+[config_backup_export_hint]
+other = "バックアップに含めるローカル設定を選択します。"
+
+[config_backup_import_title]
+other = "設定をインポート"
+
+[config_backup_section_tunnels]
+other = "Tunnel 設定"
+
+[config_backup_section_remote]
+other = "Remote Tunnel Manager"
+
+[config_backup_section_ddns]
+other = "DDNS"
+
+[config_backup_section_s3]
+other = "S3 WebDAV"
+
+[config_backup_section_application]
+other = "アプリと OAuth の基本設定"
+
+[config_backup_section_sensitive]
+other = "機密情報"
+
+[config_backup_sensitive_default_off]
+other = "既定ではオフ"
+
+[config_backup_password_optional]
+other = "パスワード（任意）"
+
+[config_backup_password_help]
+other = "パスワードを入力すると、バックアップ全体を scrypt と AES-256-GCM で暗号化します。"
+
+[config_backup_plaintext_sensitive_title]
+other = "読み取り可能な認証情報をダウンロードしますか？"
+
+[config_backup_plaintext_sensitive_message]
+other = "パスワードを設定しない場合、選択した認証情報はダウンロードファイルから読み取れます。"
+
+[config_backup_choose_file]
+other = "cfui のバックアップファイルを選択してください。"
+
+[config_backup_password_required]
+other = "バックアップのパスワードが必要です"
+
+[config_backup_unlock]
+other = "ロック解除"
+
+[config_backup_created_at]
+other = "作成日時"
+
+[config_backup_source_version]
+other = "作成元バージョン"
+
+[config_backup_encryption]
+other = "暗号化"
+
+[config_backup_contents]
+other = "内容"
+
+[config_backup_encrypted]
+other = "暗号化済み"
+
+[config_backup_plaintext]
+other = "平文"
+
+[config_backup_tunnel_count]
+other = "Tunnel"
+
+[config_backup_ddns_source_count]
+other = "DDNS IP ソース"
+
+[config_backup_ddns_record_count]
+other = "DDNS レコード"
+
+[config_backup_s3_mount_count]
+other = "S3 マウント"
+
+[config_backup_contains_sensitive]
+other = "機密情報を含む"
+
+[config_backup_replace_warning]
+other = "選択した通常項目は現在の設定を置き換えます。未選択の項目は変更されません。"
+
+[config_backup_removed_tunnels]
+other = "削除される Tunnel 設定"
+
+[config_backup_restart_required]
+other = "再起動が必要な実行中の Tunnel"
+
+[config_backup_warnings]
+other = "警告"
+
+[config_backup_download]
+other = "バックアップをダウンロード"
+
+[config_backup_replace]
+other = "選択項目を置き換える"
+
+[config_backup_exporting]
+other = "バックアップを作成中..."
+
+[config_backup_exported]
+other = "設定バックアップをダウンロードしました"
+
+[config_backup_inspecting]
+other = "バックアップを確認中..."
+
+[config_backup_importing]
+other = "設定をインポート中..."
+
+[config_backup_imported]
+other = "選択した設定をインポートしました"
+
+[config_backup_invalid_password]
+other = "パスワードが正しくないか、バックアップが変更されています。"
+
+[config_backup_invalid_file]
+other = "選択したファイルは有効な cfui バックアップではありません。"
+
+[config_backup_unsupported_version]
+other = "このバックアップは、現在サポートされていない cfui バージョンで作成されています。"
+
+[config_backup_too_large]
+other = "バックアップファイルが 8 MiB の上限を超えています。"
+
+[config_backup_select_section]
+other = "利用可能な項目を1つ以上選択してください。"
+
+[config_backup_save_failed]
+other = "インポートした設定を保存できませんでした。"
+
+[config_backup_stop_requested]
+other = "非同期停止を要求しました"
+
 [manager_settings_save_failed]
 other = "トンネル管理設定の保存に失敗しました"
 

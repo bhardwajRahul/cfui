@@ -1741,6 +1741,169 @@ details.disclosure > .body {
 }
 
 /* ============================================================
+   Configuration backup and restore
+   ============================================================ */
+.config-backup-card {
+    margin-top: var(--gap-4);
+}
+
+.backup-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--gap-2);
+    margin-bottom: var(--gap-2);
+}
+
+.backup-option-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-2);
+}
+
+.backup-option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-2);
+    min-height: var(--tap);
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-control);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+    cursor: pointer;
+    transition-property: background-color, border-color;
+    transition-duration: 0.15s;
+}
+
+.backup-option input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 1px 0 0;
+    accent-color: var(--cf-orange);
+}
+
+.backup-option small {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+}
+
+.backup-option--sensitive {
+    border-color: color-mix(in srgb, var(--state-warn) 35%, var(--border));
+    background: var(--state-warn-soft);
+}
+
+@media (hover: hover) {
+    .backup-option:hover {
+        border-color: var(--border-strong);
+        background: var(--surface);
+    }
+}
+
+.backup-password-field {
+    margin-top: var(--gap-4);
+}
+
+.backup-password-action {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--gap-2);
+    align-items: center;
+}
+
+.backup-sensitive-warning,
+.backup-replace-warning {
+    margin-top: var(--gap-3);
+    padding: 10px 12px;
+    border-radius: var(--r-control);
+    background: var(--state-warn-soft);
+    color: var(--state-warn);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+
+.backup-meta-grid {
+    display: grid;
+    grid-template-columns: minmax(120px, auto) minmax(0, 1fr);
+    gap: 8px var(--gap-3);
+    padding: var(--gap-3);
+    border: 1px solid var(--border);
+    border-radius: var(--r-control);
+    background: var(--surface-2);
+    font-size: var(--fs-sm);
+}
+
+.backup-meta-grid > span {
+    color: var(--text-muted);
+}
+
+.backup-meta-grid > strong {
+    min-width: 0;
+    color: var(--text);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.backup-preview {
+    display: grid;
+    gap: var(--gap-3);
+    margin-top: var(--gap-4);
+}
+
+.backup-preview > div {
+    display: grid;
+    gap: 6px;
+    color: var(--text);
+    font-size: var(--fs-sm);
+}
+
+.backup-summary-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.backup-summary-list > span {
+    max-width: 100%;
+    padding: 4px 7px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-control);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+    .backup-option-list {
+        grid-template-columns: 1fr;
+    }
+
+    .backup-password-action {
+        grid-template-columns: 1fr;
+    }
+
+    .backup-password-action .btn {
+        justify-self: start;
+    }
+
+    .backup-meta-grid {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+
+    .backup-meta-grid > strong {
+        margin-bottom: 6px;
+    }
+}
+
+/* ============================================================
    Rules list (ingress rules, DDNS records, MCP tokens)
    ============================================================ */
 .rules {

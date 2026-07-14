@@ -1301,8 +1301,126 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card config-backup-card">
+                    <div class="card-header">
+                        <div class="card-header-text">
+                            <h2 class="card-title" data-i18n="config_backup_title">Configuration backup and restore</h2>
+                            <p class="card-subtitle" data-i18n="config_backup_subtitle">Export selected local settings or replace selected sections from a backup file.</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="backup-action-row">
+                            <button id="config-backup-export" type="button" class="btn">
+                                <span data-i18n="config_backup_export">Export configuration</span>
+                            </button>
+                            <button id="config-backup-import" type="button" class="btn btn--primary">
+                                <span data-i18n="config_backup_import">Import configuration</span>
+                            </button>
+                        </div>
+                        <p class="help-text" data-i18n="config_backup_card_help">Passwords are optional. Sensitive credentials stay excluded unless you select them.</p>
+                        <input id="config-backup-file" type="file" accept="application/json,.json" hidden>
+                    </div>
+                </div>
             </section>
         </main>
+    </div>
+
+    <!-- Configuration backup export dialog -->
+    <div id="config-backup-export-dialog" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="config-backup-export-title" hidden>
+        <div class="modal">
+            <div class="modal-head">
+                <div>
+                    <h2 id="config-backup-export-title" data-i18n="config_backup_export_title">Export configuration</h2>
+                    <p class="subtitle" data-i18n="config_backup_export_hint">Choose the local configuration sections to include.</p>
+                </div>
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close" title="Close" data-i18n-attr="aria-label|toast_close;title|toast_close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="backup-option-list" id="config-backup-export-options">
+                    <label class="backup-option"><input type="checkbox" value="tunnels" data-backup-export-section checked><span data-i18n="config_backup_section_tunnels">Tunnel configuration</span></label>
+                    <label class="backup-option"><input type="checkbox" value="remote_management" data-backup-export-section checked><span data-i18n="config_backup_section_remote">Remote Tunnel Manager</span></label>
+                    <label class="backup-option"><input type="checkbox" value="ddns" data-backup-export-section checked><span data-i18n="config_backup_section_ddns">DDNS</span></label>
+                    <label class="backup-option"><input type="checkbox" value="s3_webdav" data-backup-export-section checked><span data-i18n="config_backup_section_s3">S3 WebDAV</span></label>
+                    <label class="backup-option"><input type="checkbox" value="application" data-backup-export-section checked><span data-i18n="config_backup_section_application">Application and OAuth base settings</span></label>
+                    <label class="backup-option backup-option--sensitive"><input type="checkbox" value="sensitive" data-backup-export-section><span><span data-i18n="config_backup_section_sensitive">Sensitive credentials</span><small data-i18n="config_backup_sensitive_default_off">Off by default</small></span></label>
+                </div>
+                <div class="form-field backup-password-field">
+                    <label for="config-backup-export-password" data-i18n="config_backup_password_optional">Password (optional)</label>
+                    <input id="config-backup-export-password" type="password" class="input" autocomplete="new-password" maxlength="65536">
+                    <p class="help-text" data-i18n="config_backup_password_help">A password encrypts the complete backup with scrypt and AES-256-GCM.</p>
+                </div>
+                <div id="config-backup-export-warning" class="backup-sensitive-warning" role="status" hidden data-i18n="config_backup_plaintext_sensitive_message">Without a password, selected credentials will be readable in the downloaded file.</div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn--ghost" data-close-dialog data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn--primary" id="config-backup-download">
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span class="text" data-i18n="config_backup_download">Download backup</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration backup import dialog -->
+    <div id="config-backup-import-dialog" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="config-backup-import-title" hidden>
+        <div class="modal">
+            <div class="modal-head">
+                <div>
+                    <h2 id="config-backup-import-title" data-i18n="config_backup_import_title">Import configuration</h2>
+                    <p class="subtitle" id="config-backup-file-name" data-i18n="config_backup_choose_file">Choose a cfui backup file.</p>
+                </div>
+                <button type="button" class="icon-btn" data-close-dialog aria-label="Close" title="Close" data-i18n-attr="aria-label|toast_close;title|toast_close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="config-backup-import-password-field" class="form-field" hidden>
+                    <label for="config-backup-import-password" data-i18n="config_backup_password_required">Backup password</label>
+                    <div class="backup-password-action">
+                        <input id="config-backup-import-password" type="password" class="input" autocomplete="current-password" maxlength="65536">
+                        <button id="config-backup-inspect" type="button" class="btn">
+                            <span class="spinner" aria-hidden="true"></span>
+                            <span class="text" data-i18n="config_backup_unlock">Unlock</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="config-backup-import-details" hidden>
+                    <div class="backup-meta-grid">
+                        <span data-i18n="config_backup_created_at">Created</span><strong id="config-backup-created-at">-</strong>
+                        <span data-i18n="config_backup_source_version">Source version</span><strong id="config-backup-source-version">-</strong>
+                        <span data-i18n="config_backup_encryption">Encryption</span><strong id="config-backup-encryption">-</strong>
+                        <span data-i18n="config_backup_contents">Contents</span><strong id="config-backup-counts">-</strong>
+                    </div>
+
+                    <p class="backup-replace-warning" data-i18n="config_backup_replace_warning">Selected normal sections replace their current settings. Unselected sections remain unchanged.</p>
+                    <div class="backup-option-list" id="config-backup-import-options">
+                        <label class="backup-option" data-backup-import-option="tunnels" hidden><input type="checkbox" value="tunnels" data-backup-import-section><span data-i18n="config_backup_section_tunnels">Tunnel configuration</span></label>
+                        <label class="backup-option" data-backup-import-option="remote_management" hidden><input type="checkbox" value="remote_management" data-backup-import-section><span data-i18n="config_backup_section_remote">Remote Tunnel Manager</span></label>
+                        <label class="backup-option" data-backup-import-option="ddns" hidden><input type="checkbox" value="ddns" data-backup-import-section><span data-i18n="config_backup_section_ddns">DDNS</span></label>
+                        <label class="backup-option" data-backup-import-option="s3_webdav" hidden><input type="checkbox" value="s3_webdav" data-backup-import-section><span data-i18n="config_backup_section_s3">S3 WebDAV</span></label>
+                        <label class="backup-option" data-backup-import-option="application" hidden><input type="checkbox" value="application" data-backup-import-section><span data-i18n="config_backup_section_application">Application and OAuth base settings</span></label>
+                        <label class="backup-option backup-option--sensitive" data-backup-import-option="sensitive" hidden><input type="checkbox" value="sensitive" data-backup-import-section><span><span data-i18n="config_backup_section_sensitive">Sensitive credentials</span><small data-i18n="config_backup_sensitive_default_off">Off by default</small></span></label>
+                    </div>
+
+                    <div id="config-backup-preview" class="backup-preview" aria-live="polite">
+                        <div id="config-backup-removed-wrap" hidden><strong data-i18n="config_backup_removed_tunnels">Tunnel profiles to remove</strong><div id="config-backup-removed" class="backup-summary-list"></div></div>
+                        <div id="config-backup-restart-wrap" hidden><strong data-i18n="config_backup_restart_required">Running tunnels that require restart</strong><div id="config-backup-restart" class="backup-summary-list"></div></div>
+                        <div id="config-backup-warnings-wrap" hidden><strong data-i18n="config_backup_warnings">Warnings</strong><div id="config-backup-warnings" class="backup-summary-list"></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn--ghost" data-close-dialog data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn btn--danger" id="config-backup-replace" disabled>
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span class="text" data-i18n="config_backup_replace">Replace selected sections</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- OAuth scope dialog -->
@@ -1606,6 +1724,7 @@
     <script src="/js/app-tunnel.js"></script>
     <script src="/js/app-logs.js"></script>
     <script src="/js/app-services.js"></script>
+    <script src="/js/app-backup.js"></script>
     <script src="/js/app-oauth-data.js"></script>
     <script src="/js/app-oauth-setup.js"></script>
     <script src="/js/app-oauth.js"></script>

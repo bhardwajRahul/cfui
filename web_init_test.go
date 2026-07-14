@@ -38,3 +38,29 @@ func TestAppTunnelDoesNotFallbackProfileTokenToLegacyConfig(t *testing.T) {
 		t.Fatalf("app-tunnel.js is missing the profile-safe token form binding")
 	}
 }
+
+func TestBackupUIAssetsAreWired(t *testing.T) {
+	index, err := os.ReadFile("web/dist/index.html")
+	if err != nil {
+		t.Fatalf("read index: %v", err)
+	}
+	src := string(index)
+	for _, marker := range []string{
+		`id="config-backup-export"`,
+		`id="config-backup-import"`,
+		`id="config-backup-export-dialog"`,
+		`id="config-backup-import-dialog"`,
+		`src="/js/app-backup.js"`,
+	} {
+		if !strings.Contains(src, marker) {
+			t.Fatalf("index missing %s", marker)
+		}
+	}
+	initJS, err := os.ReadFile("web/dist/js/app-init.js")
+	if err != nil {
+		t.Fatalf("read app-init.js: %v", err)
+	}
+	if !strings.Contains(string(initJS), "wireBackup") {
+		t.Fatal("app-init.js does not wire backup UI")
+	}
+}

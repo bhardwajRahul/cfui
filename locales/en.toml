@@ -952,6 +952,159 @@ other = "Permission check found missing access"
 [verify_permissions_unverified]
 other = "Some write permissions could not be confirmed"
 
+[config_backup_title]
+other = "Configuration backup and restore"
+
+[config_backup_subtitle]
+other = "Export selected local settings or replace selected sections from a backup file."
+
+[config_backup_card_help]
+other = "Passwords are optional. Sensitive credentials stay excluded unless you select them."
+
+[config_backup_export]
+other = "Export configuration"
+
+[config_backup_import]
+other = "Import configuration"
+
+[config_backup_export_title]
+other = "Export configuration"
+
+[config_backup_export_hint]
+other = "Choose the local configuration sections to include."
+
+[config_backup_import_title]
+other = "Import configuration"
+
+[config_backup_section_tunnels]
+other = "Tunnel configuration"
+
+[config_backup_section_remote]
+other = "Remote Tunnel Manager"
+
+[config_backup_section_ddns]
+other = "DDNS"
+
+[config_backup_section_s3]
+other = "S3 WebDAV"
+
+[config_backup_section_application]
+other = "Application and OAuth base settings"
+
+[config_backup_section_sensitive]
+other = "Sensitive credentials"
+
+[config_backup_sensitive_default_off]
+other = "Off by default"
+
+[config_backup_password_optional]
+other = "Password (optional)"
+
+[config_backup_password_help]
+other = "A password encrypts the complete backup with scrypt and AES-256-GCM."
+
+[config_backup_plaintext_sensitive_title]
+other = "Download readable credentials?"
+
+[config_backup_plaintext_sensitive_message]
+other = "Without a password, selected credentials will be readable in the downloaded file."
+
+[config_backup_choose_file]
+other = "Choose a cfui backup file."
+
+[config_backup_password_required]
+other = "Backup password required"
+
+[config_backup_unlock]
+other = "Unlock"
+
+[config_backup_created_at]
+other = "Created"
+
+[config_backup_source_version]
+other = "Source version"
+
+[config_backup_encryption]
+other = "Encryption"
+
+[config_backup_contents]
+other = "Contents"
+
+[config_backup_encrypted]
+other = "Encrypted"
+
+[config_backup_plaintext]
+other = "Plaintext"
+
+[config_backup_tunnel_count]
+other = "Tunnels"
+
+[config_backup_ddns_source_count]
+other = "DDNS sources"
+
+[config_backup_ddns_record_count]
+other = "DDNS records"
+
+[config_backup_s3_mount_count]
+other = "S3 mounts"
+
+[config_backup_contains_sensitive]
+other = "Contains sensitive credentials"
+
+[config_backup_replace_warning]
+other = "Selected normal sections replace their current settings. Unselected sections remain unchanged."
+
+[config_backup_removed_tunnels]
+other = "Tunnel profiles to remove"
+
+[config_backup_restart_required]
+other = "Running tunnels that require restart"
+
+[config_backup_warnings]
+other = "Warnings"
+
+[config_backup_download]
+other = "Download backup"
+
+[config_backup_replace]
+other = "Replace selected sections"
+
+[config_backup_exporting]
+other = "Creating backup..."
+
+[config_backup_exported]
+other = "Configuration backup downloaded"
+
+[config_backup_inspecting]
+other = "Inspecting backup..."
+
+[config_backup_importing]
+other = "Importing configuration..."
+
+[config_backup_imported]
+other = "Selected configuration sections imported"
+
+[config_backup_invalid_password]
+other = "The password is incorrect or the backup was modified."
+
+[config_backup_invalid_file]
+other = "The selected file is not a valid cfui backup."
+
+[config_backup_unsupported_version]
+other = "This backup was created by an unsupported cfui version."
+
+[config_backup_too_large]
+other = "The backup file exceeds the 8 MiB limit."
+
+[config_backup_select_section]
+other = "Select at least one available section."
+
+[config_backup_save_failed]
+other = "The imported configuration could not be saved."
+
+[config_backup_stop_requested]
+other = "Asynchronous stop requested"
+
 [manager_settings_save_failed]
 other = "Failed to save tunnel manager settings"
 
