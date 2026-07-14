@@ -27,6 +27,10 @@ profile.cov
 go.work
 go.work.sum
 
+# Local agent workspaces and web research cache
+.worktrees/
+.firecrawl/
+
 # env file
 .env
 
