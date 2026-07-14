@@ -135,3 +135,7 @@ require (
 )
 
 replace github.com/urfave/cli/v2 => github.com/ipostelnik/cli/v2 v2.3.1-0.20210324024421-b6ea8234fe3d
+
+// Keep the embedded QUIC implementation aligned with cloudflared's go.mod.
+// Dependency-module replace directives are not inherited by the main module.
+replace github.com/quic-go/quic-go => github.com/chungthuang/quic-go v0.45.1-0.20250428085412-43229ad201fd
