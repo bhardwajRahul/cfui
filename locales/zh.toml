@@ -461,7 +461,7 @@ other = "隧道 UUID"
 other = "您的隧道 UUID。获取路径：Zero Trust → 网络 → 连接器 → Cloudflare Tunnels → 点击隧道名称 → 概览。修改此字段后会加载所选隧道配置。"
 
 [auth_help]
-other = "推荐使用 API Token。远程 Tunnel 管理需要：Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit。Workers R2 Storage · Edit 是可选项，只在需要让 cfui 列出或创建 R2 bucket 时使用。留空则保留已保存的值。"
+other = "推荐使用 API Token。远程 Tunnel 管理需要：账户 · Cloudflare Tunnel · 编辑、区域 · Zone · 读取、区域 · DNS · 编辑。Workers R2 Storage · Edit 是可选项，只在需要让 cfui 列出或创建 R2 bucket 时使用。留空则保留已保存的值。"
 
 [api_token_help]
 other = "在 Cloudflare 仪表板 → 我的个人资料 → API 令牌 → 创建令牌 中创建。这里勾选 Tunnel 管理所需权限即可。只有想让 cfui 列出或创建 R2 bucket 时，才额外勾选 Workers R2 Storage Edit。"
@@ -551,7 +551,7 @@ other = "加载域名失败"
 other = "所需 Cloudflare API 权限"
 
 [api_permission_tunnel]
-other = "Account · Argo Tunnel (Legacy) · Edit"
+other = "账户 · Cloudflare Tunnel · 编辑"
 
 [api_permission_zone]
 other = "Zone · Zone · Read"
@@ -657,6 +657,9 @@ other = "验证失败，请检查您的凭据。"
 
 [verify_token_status]
 other = "Token 状态"
+
+[verify_permission_unknown]
+other = "无法在不执行写操作的情况下确认"
 
 [verify_permission_tunnel_edit]
 other = "Tunnel:Edit"
@@ -945,6 +948,9 @@ other = "权限验证通过"
 
 [verify_permissions_failed]
 other = "权限验证发现缺失权限"
+
+[verify_permissions_unverified]
+other = "部分写权限无法安全确认"
 
 [manager_settings_save_failed]
 other = "保存隧道管理配置失败"

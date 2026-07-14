@@ -567,8 +567,10 @@
             const data = await apiSend('/tunnel-manager/verify-token' + tunnelManagerQuery(), 'POST', payload);
             result.innerHTML = '';
             if (data.token_status === 'inactive' || data.token_status === 'revoked') { const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', 'error'); s.textContent = t('verify_token_status') + ': ' + data.token_status; result.appendChild(s); return; }
-            for (const p of (data.permissions || [])) { const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', p.granted ? 'ok' : (p.required ? 'error' : 'warn')); const dot = document.createElement('span'); dot.className = 'dot'; const txt = document.createElement('span'); const key = permissionLabelKeys[p.name]; txt.textContent = ' ' + (key ? t(key) : p.description); s.append(dot, txt); result.appendChild(s); }
-            toast[data.valid ? 'ok' : 'err'](t(data.valid ? 'verify_permissions_passed' : 'verify_permissions_failed'));
+            let hasUnknown = false;
+            for (const p of (data.permissions || [])) { const status = p.status || (p.granted ? 'granted' : 'denied'); hasUnknown ||= p.required && status === 'unknown'; const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', status === 'granted' ? 'ok' : (status === 'unknown' ? 'warn' : (p.required ? 'error' : 'warn'))); const dot = document.createElement('span'); dot.className = 'dot'; const txt = document.createElement('span'); const key = permissionLabelKeys[p.name]; txt.textContent = ' ' + (key ? t(key) : p.description) + (status === 'unknown' ? ` · ${t('verify_permission_unknown')}` : ''); s.append(dot, txt); result.appendChild(s); }
+            const messageKey = data.valid ? 'verify_permissions_passed' : (hasUnknown ? 'verify_permissions_unverified' : 'verify_permissions_failed');
+            toast[data.valid ? 'ok' : 'err'](t(messageKey));
         } catch (err) { result.innerHTML = ''; const s = document.createElement('span'); s.className = 'pill'; s.setAttribute('data-state', 'error'); s.textContent = err.message; result.appendChild(s); toast.err(t('verify_failed') + ': ' + err.message); }
         finally { setBusy(btn, false); }
     }

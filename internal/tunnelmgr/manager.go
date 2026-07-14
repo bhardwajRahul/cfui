@@ -109,6 +109,7 @@ type PermissionCheck struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Granted     bool   `json:"granted"`
+	Status      string `json:"status"`
 	Required    bool   `json:"required"`
 }
 
@@ -123,15 +124,33 @@ type VerifyTokenRequest struct {
 // VerifyTokenResponse is the response from the verify-token endpoint.
 type VerifyTokenResponse struct {
 	Valid       bool              `json:"valid"`
+	TokenActive bool              `json:"token_active"`
 	TokenStatus string            `json:"token_status"`
 	Permissions []PermissionCheck `json:"permissions"`
 	Error       string            `json:"error,omitempty"`
 }
 
 const (
-	permTunnelEdit = "Argo Tunnel (Legacy)"
-	permZoneRead   = "Zone"
-	permDNSEdit    = "DNS"
+	permissionGranted = "granted"
+	permissionDenied  = "denied"
+	permissionUnknown = "unknown"
+	permTunnelEdit    = "Cloudflare Tunnel Write"
+	permZoneRead      = "Zone Read"
+	permDNSEdit       = "DNS Write"
+)
+
+var (
+	tunnelWritePermissionNames = []string{
+		"Cloudflare One Connectors Write",
+		"Cloudflare One Connectors Edit",
+		"Cloudflare One Connector: cloudflared Write",
+		"Cloudflare One Connector: cloudflared Edit",
+		permTunnelEdit,
+		"Cloudflare Tunnel Edit",
+		"Argo Tunnel (Legacy)",
+	}
+	zoneReadPermissionNames = []string{permZoneRead, "Zone"}
+	dnsWritePermissionNames = []string{permDNSEdit, "DNS Edit", "DNS"}
 )
 
 const (
@@ -262,7 +281,14 @@ func (m *Manager) VerifyPermissionsFor(ctx context.Context, tunnelKey string, re
 		}
 	}
 
-	client, err := newSDKClientFromRequest(req)
+	client, err := m.newClient(config.TunnelManagementConfig{
+		Enabled:   true,
+		AccountID: stored.AccountID,
+		TunnelID:  stored.TunnelID,
+		APIToken:  strings.TrimSpace(req.APIToken),
+		APIEmail:  strings.TrimSpace(req.APIEmail),
+		APIKey:    strings.TrimSpace(req.APIKey),
+	})
 	if err != nil {
 		return VerifyTokenResponse{Valid: false, Permissions: perms, Error: "Failed to create API client: " + err.Error()}
 	}
@@ -273,20 +299,14 @@ func (m *Manager) VerifyPermissionsFor(ctx context.Context, tunnelKey string, re
 	// API calls using the stored account ID.
 	verifyResp, err := client.VerifyAPIToken(ctx)
 	if err != nil {
-		return VerifyTokenResponse{
-			Valid:       true,
-			TokenStatus: "active",
-			Permissions: probePermissions(ctx, client, req, stored.AccountID, stored.TunnelID),
-		}
+		probed, authenticated := probePermissions(ctx, client, req.AuthMode, stored.AccountID, stored.TunnelID)
+		return permissionVerificationResponse(authenticated, "unknown", probed)
 	}
 
-	resp := VerifyTokenResponse{
-		Valid:       verifyResp.Status == "active",
-		TokenStatus: verifyResp.Status,
-		Permissions: perms,
-	}
+	tokenActive := strings.EqualFold(verifyResp.Status, "active")
+	resp := permissionVerificationResponse(tokenActive, verifyResp.Status, perms)
 
-	if !resp.Valid {
+	if !resp.TokenActive {
 		return resp
 	}
 
@@ -294,8 +314,9 @@ func (m *Manager) VerifyPermissionsFor(ctx context.Context, tunnelKey string, re
 		checkPermissionsFromToken(token.Policies, perms)
 		resp.Permissions = perms
 	} else {
-		resp.Permissions = probePermissions(ctx, client, req, stored.AccountID, stored.TunnelID)
+		resp.Permissions, _ = probePermissions(ctx, client, req.AuthMode, stored.AccountID, stored.TunnelID)
 	}
+	resp.Valid = allRequiredPermissionsGranted(resp.Permissions)
 
 	return resp
 }
@@ -307,58 +328,99 @@ func checkPermissionsFromToken(policies []cloudflare.APITokenPolicies, checks []
 			continue
 		}
 		for _, group := range policy.PermissionGroups {
-			granted[group.Name] = true
+			granted[strings.ToLower(strings.TrimSpace(group.Name))] = true
 		}
 	}
 
 	for i := range checks {
 		switch checks[i].Name {
 		case "account_tunnel_edit":
-			checks[i].Granted = granted[permTunnelEdit]
+			setPermissionStatus(&checks[i], permissionStatusForNames(granted, tunnelWritePermissionNames))
 		case "zone_read":
-			checks[i].Granted = granted[permZoneRead]
+			setPermissionStatus(&checks[i], permissionStatusForNames(granted, zoneReadPermissionNames))
 		case "zone_dns_edit":
-			checks[i].Granted = granted[permDNSEdit]
+			setPermissionStatus(&checks[i], permissionStatusForNames(granted, dnsWritePermissionNames))
 		}
 	}
 }
 
-func probePermissions(ctx context.Context, client cloudflareClient, req VerifyTokenRequest, accountID, tunnelID string) []PermissionCheck {
+func probePermissions(ctx context.Context, client cloudflareClient, authMode, accountID, tunnelID string) ([]PermissionCheck, bool) {
 	checks := defaultPermissionChecks()
+	authenticated := false
+	globalAPIKey := strings.EqualFold(strings.TrimSpace(authMode), "key")
 
-	// Probe Tunnel:Edit using the stored account / tunnel IDs when
-	// available, so account-scoped tokens are evaluated correctly.
+	// Reading the current tunnel configuration proves account/tunnel access,
+	// but it does not prove write access for an API token. A successful Global
+	// API Key request is different because that credential is not scope-limited.
 	if accountID != "" && tunnelID != "" {
-		cfg := config.TunnelManagementConfig{
-			Enabled:   true,
-			APIToken:  req.APIToken,
-			APIEmail:  req.APIEmail,
-			APIKey:    req.APIKey,
-			AccountID: accountID,
-			TunnelID:  tunnelID,
-		}
-		if c2, err := newSDKClient(cfg); err == nil {
-			_, err = c2.GetTunnelConfiguration(ctx, cloudflare.AccountIdentifier(accountID), tunnelID)
-			checks[0].Granted = !isPermissionError(err)
+		_, err := client.GetTunnelConfiguration(ctx, cloudflare.AccountIdentifier(accountID), tunnelID)
+		switch {
+		case err == nil:
+			authenticated = true
+			if globalAPIKey {
+				setPermissionStatus(&checks[0], permissionGranted)
+			}
+		case isPermissionError(err):
+			setPermissionStatus(&checks[0], permissionDenied)
 		}
 	}
 
 	// Probe Zone:Read by listing zones
 	_, err := client.ListZonesContext(ctx)
-	checks[1].Granted = !isPermissionError(err)
+	switch {
+	case err == nil:
+		authenticated = true
+		setPermissionStatus(&checks[1], permissionGranted)
+		if globalAPIKey {
+			setPermissionStatus(&checks[2], permissionGranted)
+		}
+	case isPermissionError(err):
+		setPermissionStatus(&checks[1], permissionDenied)
+	}
 
-	// DNS:Edit cannot be probed without side effects; use Zone:Read result.
-	checks[2].Granted = checks[1].Granted
-
-	return checks
+	// DNS write access cannot be verified without mutating a DNS record. Keep
+	// it unknown for scoped API tokens instead of inferring it from Zone Read.
+	return checks, authenticated
 }
 
 func defaultPermissionChecks() []PermissionCheck {
 	return []PermissionCheck{
-		{Name: "account_tunnel_edit", Description: "Account · Argo Tunnel (Legacy) · Edit", Required: true},
-		{Name: "zone_read", Description: "Zone · Zone · Read", Required: true},
-		{Name: "zone_dns_edit", Description: "Zone · DNS · Edit", Required: true},
+		{Name: "account_tunnel_edit", Description: "Account · Cloudflare Tunnel · Edit", Status: permissionUnknown, Required: true},
+		{Name: "zone_read", Description: "Zone · Zone · Read", Status: permissionUnknown, Required: true},
+		{Name: "zone_dns_edit", Description: "Zone · DNS · Edit", Status: permissionUnknown, Required: true},
 	}
+}
+
+func permissionVerificationResponse(tokenActive bool, tokenStatus string, permissions []PermissionCheck) VerifyTokenResponse {
+	return VerifyTokenResponse{
+		Valid:       tokenActive && allRequiredPermissionsGranted(permissions),
+		TokenActive: tokenActive,
+		TokenStatus: tokenStatus,
+		Permissions: permissions,
+	}
+}
+
+func allRequiredPermissionsGranted(checks []PermissionCheck) bool {
+	for _, check := range checks {
+		if check.Required && check.Status != permissionGranted {
+			return false
+		}
+	}
+	return true
+}
+
+func permissionStatusForNames(granted map[string]bool, names []string) string {
+	for _, name := range names {
+		if granted[strings.ToLower(name)] {
+			return permissionGranted
+		}
+	}
+	return permissionDenied
+}
+
+func setPermissionStatus(check *PermissionCheck, status string) {
+	check.Status = status
+	check.Granted = status == permissionGranted
 }
 
 func isPermissionError(err error) bool {
@@ -367,16 +429,6 @@ func isPermissionError(err error) bool {
 	}
 	var authErr *cloudflare.AuthenticationError
 	return stderrors.As(err, &authErr)
-}
-
-func newSDKClientFromRequest(req VerifyTokenRequest) (cloudflareClient, error) {
-	if req.AuthMode == "key" && strings.TrimSpace(req.APIEmail) != "" && strings.TrimSpace(req.APIKey) != "" {
-		return cloudflare.New(strings.TrimSpace(req.APIKey), strings.TrimSpace(req.APIEmail))
-	}
-	if strings.TrimSpace(req.APIToken) != "" {
-		return cloudflare.NewWithAPIToken(strings.TrimSpace(req.APIToken))
-	}
-	return nil, fmt.Errorf("no credentials provided")
 }
 
 func (m *Manager) Fetch(ctx context.Context) (ConfigurationResponse, error) {

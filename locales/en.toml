@@ -461,7 +461,7 @@ other = "Tunnel UUID"
 other = "Your tunnel's UUID. Find it at Zero Trust → Networks → Connectors → Cloudflare Tunnels → click your tunnel name → Overview. Changing this field loads the selected tunnel configuration."
 
 [auth_help]
-other = "API Token is recommended. Tunnel management requires: Account · Argo Tunnel (Legacy) · Edit, Zone · Zone · Read, Zone · DNS · Edit. Workers R2 Storage · Edit is optional and only for listing or creating R2 buckets. Blank fields keep saved values."
+other = "API Token is recommended. Tunnel management requires: Account · Cloudflare Tunnel · Edit, Zone · Zone · Read, Zone · DNS · Edit. Workers R2 Storage · Edit is optional and only for listing or creating R2 buckets. Blank fields keep saved values."
 
 [api_token_help]
 other = "Create at Cloudflare Dashboard → My Profile → API Tokens → Create Token. Select the tunnel permissions here. Add Workers R2 Storage Edit only if you want cfui to list or create R2 buckets."
@@ -551,7 +551,7 @@ other = "Failed to load domains"
 other = "Required Cloudflare API permissions"
 
 [api_permission_tunnel]
-other = "Account · Argo Tunnel (Legacy) · Edit"
+other = "Account · Cloudflare Tunnel · Edit"
 
 [api_permission_zone]
 other = "Zone · Zone · Read"
@@ -657,6 +657,9 @@ other = "Verification failed. Check your credentials."
 
 [verify_token_status]
 other = "Token status"
+
+[verify_permission_unknown]
+other = "Unable to confirm without a write operation"
 
 [verify_permission_tunnel_edit]
 other = "Tunnel:Edit"
@@ -945,6 +948,9 @@ other = "Permission check passed"
 
 [verify_permissions_failed]
 other = "Permission check found missing access"
+
+[verify_permissions_unverified]
+other = "Some write permissions could not be confirmed"
 
 [manager_settings_save_failed]
 other = "Failed to save tunnel manager settings"

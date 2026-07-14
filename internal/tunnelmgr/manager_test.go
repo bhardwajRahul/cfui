@@ -5,6 +5,7 @@ import (
 	"cfui/internal/logger"
 	"context"
 	"encoding/base64"
+	"errors"
 	"os"
 	"strings"
 	"sync"
@@ -16,10 +17,16 @@ import (
 var initLoggerOnce sync.Once
 
 type fakeCFClient struct {
-	config     cloudflare.TunnelConfigurationResult
-	tunnel     cloudflare.Tunnel
-	updates    []cloudflare.TunnelConfiguration
-	dnsRecords []cloudflare.DNSRecord
+	config          cloudflare.TunnelConfigurationResult
+	tunnel          cloudflare.Tunnel
+	updates         []cloudflare.TunnelConfiguration
+	dnsRecords      []cloudflare.DNSRecord
+	verifyResult    *cloudflare.APITokenVerifyBody
+	verifyErr       error
+	apiToken        *cloudflare.APIToken
+	apiTokenErr     error
+	listZonesErr    error
+	tunnelConfigErr error
 }
 
 func (f *fakeCFClient) GetTunnel(ctx context.Context, rc *cloudflare.ResourceContainer, tunnelID string) (cloudflare.Tunnel, error) {
@@ -27,6 +34,9 @@ func (f *fakeCFClient) GetTunnel(ctx context.Context, rc *cloudflare.ResourceCon
 }
 
 func (f *fakeCFClient) GetTunnelConfiguration(ctx context.Context, rc *cloudflare.ResourceContainer, tunnelID string) (cloudflare.TunnelConfigurationResult, error) {
+	if f.tunnelConfigErr != nil {
+		return cloudflare.TunnelConfigurationResult{}, f.tunnelConfigErr
+	}
 	return f.config, nil
 }
 
@@ -38,6 +48,9 @@ func (f *fakeCFClient) UpdateTunnelConfiguration(ctx context.Context, rc *cloudf
 }
 
 func (f *fakeCFClient) ListZonesContext(ctx context.Context, opts ...cloudflare.ReqOption) (cloudflare.ZonesResponse, error) {
+	if f.listZonesErr != nil {
+		return cloudflare.ZonesResponse{}, f.listZonesErr
+	}
 	return cloudflare.ZonesResponse{Result: []cloudflare.Zone{
 		{ID: "zone-1", Name: "example.com", Status: "active"},
 		{ID: "zone-2", Name: "example.net", Status: "pending"},
@@ -45,10 +58,22 @@ func (f *fakeCFClient) ListZonesContext(ctx context.Context, opts ...cloudflare.
 }
 
 func (f *fakeCFClient) VerifyAPIToken(ctx context.Context) (cloudflare.APITokenVerifyBody, error) {
+	if f.verifyErr != nil {
+		return cloudflare.APITokenVerifyBody{}, f.verifyErr
+	}
+	if f.verifyResult != nil {
+		return *f.verifyResult, nil
+	}
 	return cloudflare.APITokenVerifyBody{ID: "test-token-id", Status: "active"}, nil
 }
 
 func (f *fakeCFClient) GetAPIToken(ctx context.Context, tokenID string) (cloudflare.APIToken, error) {
+	if f.apiTokenErr != nil {
+		return cloudflare.APIToken{}, f.apiTokenErr
+	}
+	if f.apiToken != nil {
+		return *f.apiToken, nil
+	}
 	return cloudflare.APIToken{
 		ID:     tokenID,
 		Status: "active",
@@ -497,6 +522,100 @@ func TestCheckPermissionsFromTokenOnlyChecksTunnelAndDNS(t *testing.T) {
 			t.Fatalf("expected %s to be required: %#v", name, checks)
 		}
 	}
+}
+
+func TestVerifyPermissionsRequiresDNSWrite(t *testing.T) {
+	client := &fakeCFClient{apiToken: apiTokenWithPermissions(
+		"Cloudflare Tunnel Write",
+		"Zone Read",
+	)}
+	resp := newTestManager(t, client).VerifyPermissions(context.Background(), VerifyTokenRequest{
+		AuthMode: "token",
+		APIToken: "token-1",
+	})
+
+	if resp.Valid {
+		t.Fatal("permission verification passed without DNS Write")
+	}
+	if !resp.TokenActive {
+		t.Fatal("active token should remain distinguishable from complete permissions")
+	}
+	checks := permissionChecksByName(resp.Permissions)
+	if checks["zone_dns_edit"].Status != "denied" || checks["zone_dns_edit"].Granted {
+		t.Fatalf("DNS Write should be denied: %#v", checks["zone_dns_edit"])
+	}
+}
+
+func TestVerifyPermissionsAcceptsCurrentCloudflarePermissionNames(t *testing.T) {
+	client := &fakeCFClient{apiToken: apiTokenWithPermissions(
+		"Cloudflare One Connector: cloudflared Write",
+		"Zone Read",
+		"DNS Write",
+	)}
+	resp := newTestManager(t, client).VerifyPermissions(context.Background(), VerifyTokenRequest{
+		AuthMode: "token",
+		APIToken: "token-1",
+	})
+
+	if !resp.Valid || !resp.TokenActive {
+		t.Fatalf("expected current permission names to pass: %#v", resp)
+	}
+	for _, check := range resp.Permissions {
+		if check.Required && (check.Status != "granted" || !check.Granted) {
+			t.Fatalf("required permission not granted: %#v", check)
+		}
+	}
+}
+
+func TestVerifyPermissionsAcceptsLegacyPermissionNames(t *testing.T) {
+	client := &fakeCFClient{apiToken: apiTokenWithPermissions(
+		"Argo Tunnel (Legacy)",
+		"Zone",
+		"DNS",
+	)}
+	resp := newTestManager(t, client).VerifyPermissions(context.Background(), VerifyTokenRequest{
+		AuthMode: "token",
+		APIToken: "token-1",
+	})
+
+	if !resp.Valid {
+		t.Fatalf("expected legacy permission aliases to remain supported: %#v", resp)
+	}
+}
+
+func TestVerifyPermissionsProbeDoesNotAssumeDNSWrite(t *testing.T) {
+	client := &fakeCFClient{apiTokenErr: errors.New("token policies unavailable")}
+	resp := newTestManager(t, client).VerifyPermissions(context.Background(), VerifyTokenRequest{
+		AuthMode: "token",
+		APIToken: "token-1",
+	})
+
+	if resp.Valid {
+		t.Fatal("permission verification passed when DNS Write could not be confirmed")
+	}
+	checks := permissionChecksByName(resp.Permissions)
+	if checks["zone_dns_edit"].Status != "unknown" || checks["zone_dns_edit"].Granted {
+		t.Fatalf("DNS Write should remain unknown after read-only probes: %#v", checks["zone_dns_edit"])
+	}
+}
+
+func apiTokenWithPermissions(names ...string) *cloudflare.APIToken {
+	groups := make([]cloudflare.APITokenPermissionGroups, 0, len(names))
+	for _, name := range names {
+		groups = append(groups, cloudflare.APITokenPermissionGroups{Name: name})
+	}
+	return &cloudflare.APIToken{Policies: []cloudflare.APITokenPolicies{{
+		Effect:           "allow",
+		PermissionGroups: groups,
+	}}}
+}
+
+func permissionChecksByName(checks []PermissionCheck) map[string]PermissionCheck {
+	result := make(map[string]PermissionCheck, len(checks))
+	for _, check := range checks {
+		result[check.Name] = check
+	}
+	return result
 }
 
 func newTestManager(t *testing.T, client *fakeCFClient) *Manager {

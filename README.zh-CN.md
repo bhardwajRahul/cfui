@@ -178,9 +178,11 @@ cfui 可以保存多个 tunnel 配置。每个配置包含一个本地运行 tok
 
 远程 Tunnel 管理和 DDNS 需要：
 
-- `Account -> Argo Tunnel (Legacy) -> Edit`
+- `账户 -> Cloudflare Tunnel -> 编辑`
 - `Zone -> Zone -> Read`
 - `Zone -> DNS -> Edit`
+
+Cloudflare API 可能把第一项显示为 `Cloudflare Tunnel Write`、`Cloudflare One Connector: cloudflared Write` 或 `Cloudflare One Connectors Write`。cfui 同时兼容这些当前名称和旧别名，但会始终独立校验 `DNS Write`，不会再用 `Zone Read` 推断 DNS 编辑权限。
 
 R2 bucket 列表/创建的可选权限：
 

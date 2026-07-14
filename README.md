@@ -178,9 +178,11 @@ Remote Tunnel Manager and DDNS use Cloudflare API credentials. An API Token is r
 
 Required permissions for Remote Tunnel Manager and DDNS:
 
-- `Account -> Argo Tunnel (Legacy) -> Edit`
+- `Account -> Cloudflare Tunnel -> Edit`
 - `Zone -> Zone -> Read`
 - `Zone -> DNS -> Edit`
+
+Cloudflare's API may expose the first permission as `Cloudflare Tunnel Write`, `Cloudflare One Connector: cloudflared Write`, or `Cloudflare One Connectors Write`. cfui accepts those current names and the legacy aliases, but it always checks `DNS Write` independently from `Zone Read`.
 
 Optional permission for R2 bucket list/create:
 
