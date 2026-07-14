@@ -9,6 +9,11 @@ import (
 )
 
 func Apply(current config.Config, payload Payload, selected []Section) (ApplyResult, error) {
+	var err error
+	payload, err = canonicalizePayload(payload)
+	if err != nil {
+		return ApplyResult{}, err
+	}
 	if err := validatePayload(payload); err != nil {
 		return ApplyResult{}, err
 	}
@@ -80,7 +85,7 @@ func validateImportSelection(payload Payload, selected []Section) (map[Section]b
 func applyTunnelSection(current config.Config, imported TunnelSection) config.Config {
 	existing := make(map[string]config.TunnelProfileConfig, len(current.Tunnels))
 	for _, tunnel := range current.Tunnels {
-		existing[tunnel.Key] = tunnel
+		existing[config.NormalizeTunnelKey(tunnel.Key)] = tunnel
 	}
 	profiles := make([]config.TunnelProfileConfig, 0, len(imported.Profiles))
 	for _, profile := range imported.Profiles {
@@ -101,7 +106,7 @@ func applyTunnelSection(current config.Config, imported TunnelSection) config.Co
 func applyRemoteSection(cfg config.Config, imported RemoteManagementSection) (config.Config, []string) {
 	indexes := make(map[string]int, len(cfg.Tunnels))
 	for i, tunnel := range cfg.Tunnels {
-		indexes[tunnel.Key] = i
+		indexes[config.NormalizeTunnelKey(tunnel.Key)] = i
 	}
 	var warnings []string
 	for _, profile := range imported.Profiles {
@@ -121,7 +126,7 @@ func applyRemoteSection(cfg config.Config, imported RemoteManagementSection) (co
 func applyS3Section(current config.Config, imported S3WebDAVSection) config.Config {
 	existing := make(map[string]config.S3WebDAVMountConfig, len(current.S3WebDAV.Mounts))
 	for _, mount := range current.S3WebDAV.Mounts {
-		existing[mount.Key] = mount
+		existing[config.NormalizeS3MountKey(mount.Key)] = mount
 	}
 	mounts := make([]config.S3WebDAVMountConfig, 0, len(imported.Mounts))
 	for _, importedMount := range imported.Mounts {
@@ -151,7 +156,7 @@ func applyS3Section(current config.Config, imported S3WebDAVSection) config.Conf
 func applySensitive(cfg config.Config, imported SensitiveSection, owners map[Section]bool) (config.Config, []string) {
 	tunnelIndexes := make(map[string]int, len(cfg.Tunnels))
 	for i, tunnel := range cfg.Tunnels {
-		tunnelIndexes[tunnel.Key] = i
+		tunnelIndexes[config.NormalizeTunnelKey(tunnel.Key)] = i
 	}
 	var warnings []string
 	if owners[SectionTunnels] {
@@ -171,7 +176,7 @@ func applySensitive(cfg config.Config, imported SensitiveSection, owners map[Sec
 
 	mountIndexes := make(map[string]int, len(cfg.S3WebDAV.Mounts))
 	for i, mount := range cfg.S3WebDAV.Mounts {
-		mountIndexes[mount.Key] = i
+		mountIndexes[config.NormalizeS3MountKey(mount.Key)] = i
 	}
 	if owners[SectionS3WebDAV] {
 		for key, credentials := range imported.S3 {

@@ -497,13 +497,17 @@ func TestCheckPermissionsFromTokenOnlyChecksTunnelAndDNS(t *testing.T) {
 	checkPermissionsFromToken([]cloudflare.APITokenPolicies{
 		{
 			Effect: "allow",
+			Resources: map[string]interface{}{
+				"com.cloudflare.api.account.account-1":   "*",
+				"com.cloudflare.api.account.zone.zone-1": "*",
+			},
 			PermissionGroups: []cloudflare.APITokenPermissionGroups{
 				{Name: permTunnelEdit},
 				{Name: permZoneRead},
 				{Name: permDNSEdit},
 			},
 		},
-	}, checks)
+	}, checks, "account-1", []string{"zone-1"})
 
 	granted := map[string]bool{}
 	required := map[string]bool{}
@@ -543,6 +547,44 @@ func TestVerifyPermissionsRequiresDNSWrite(t *testing.T) {
 	checks := permissionChecksByName(resp.Permissions)
 	if checks["zone_dns_edit"].Status != "denied" || checks["zone_dns_edit"].Granted {
 		t.Fatalf("DNS Write should be denied: %#v", checks["zone_dns_edit"])
+	}
+}
+
+func TestVerifyPermissionsRequiresResourcesForConfiguredAccountAndZones(t *testing.T) {
+	client := &fakeCFClient{apiToken: &cloudflare.APIToken{Policies: []cloudflare.APITokenPolicies{
+		{
+			Effect: "allow",
+			Resources: map[string]interface{}{
+				"com.cloudflare.api.account.other-account":   "*",
+				"com.cloudflare.api.account.zone.other-zone": "*",
+			},
+			PermissionGroups: []cloudflare.APITokenPermissionGroups{
+				{Name: "Cloudflare Tunnel Write"},
+				{Name: "Zone Read"},
+				{Name: "DNS Write"},
+			},
+		},
+	}}}
+	mgr := newTestManager(t, client)
+	cfg := mgr.cfgMgr.Get()
+	cfg.DDNS.Records = []config.DDNSRecord{{
+		Name: "app.example.com", ZoneID: "zone-1", ZoneName: "example.com",
+		Type: "A", Value: "{IPV4}", TTL: 1,
+	}}
+	if err := mgr.cfgMgr.Save(cfg); err != nil {
+		t.Fatalf("Save DDNS zone: %v", err)
+	}
+
+	resp := mgr.VerifyPermissions(context.Background(), VerifyTokenRequest{AuthMode: "token", APIToken: "token-1"})
+
+	if resp.Valid {
+		t.Fatalf("permission verification passed for unrelated resources: %#v", resp)
+	}
+	checks := permissionChecksByName(resp.Permissions)
+	for _, name := range []string{"account_tunnel_edit", "zone_read", "zone_dns_edit"} {
+		if checks[name].Status == "granted" || checks[name].Granted {
+			t.Fatalf("%s should not be granted for unrelated resources: %#v", name, checks[name])
+		}
 	}
 }
 
@@ -605,7 +647,11 @@ func apiTokenWithPermissions(names ...string) *cloudflare.APIToken {
 		groups = append(groups, cloudflare.APITokenPermissionGroups{Name: name})
 	}
 	return &cloudflare.APIToken{Policies: []cloudflare.APITokenPolicies{{
-		Effect:           "allow",
+		Effect: "allow",
+		Resources: map[string]interface{}{
+			"com.cloudflare.api.account.*":      "*",
+			"com.cloudflare.api.account.zone.*": "*",
+		},
 		PermissionGroups: groups,
 	}}}
 }

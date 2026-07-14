@@ -35,6 +35,7 @@ var (
 	ErrPasswordRequired          = errors.New("backup password required")
 	ErrInvalidPasswordOrTampered = errors.New("invalid password or tampered backup")
 	ErrInvalidSelection          = errors.New("invalid backup section selection")
+	ErrTooLarge                  = errors.New("backup exceeds size limit")
 )
 
 type Envelope struct {

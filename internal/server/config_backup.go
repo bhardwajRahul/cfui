@@ -2,9 +2,11 @@ package server
 
 import (
 	"bytes"
+	"cfui/internal/cfoauth"
 	"cfui/internal/cloudflared"
 	"cfui/internal/config"
 	"cfui/internal/configbackup"
+	"cfui/internal/ddns"
 	"cfui/internal/logger"
 	"cfui/version"
 	"context"
@@ -15,6 +17,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"net/url"
 	"reflect"
 	"slices"
 	"strings"
@@ -34,7 +37,7 @@ type configBackupRuntimeHooks struct {
 	removeProfile func(string) error
 	profileStatus func(string) (cloudflared.Status, bool)
 	restartDDNS   func()
-	restartS3     func(context.Context)
+	restartS3     func(context.Context) error
 	resetOAuth    func()
 }
 
@@ -69,6 +72,9 @@ func (s *Server) handleConfigBackupExport(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !requireConfigBackupSameOrigin(w, r) {
+		return
+	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxBackupExportRequestBytes)
 	var request configBackupExportRequest
 	if err := decodeStrictJSON(r.Body, &request); err != nil {
@@ -93,6 +99,10 @@ func (s *Server) handleConfigBackupExport(w http.ResponseWriter, r *http.Request
 	}
 	data, err := configbackup.Encode(payload, request.Password, rand.Reader)
 	if err != nil {
+		if errors.Is(err, configbackup.ErrTooLarge) {
+			writeConfigBackupMappedError(w, err)
+			return
+		}
 		writeConfigBackupError(w, http.StatusInternalServerError, "export_failed")
 		return
 	}
@@ -107,6 +117,9 @@ func (s *Server) handleConfigBackupExport(w http.ResponseWriter, r *http.Request
 func (s *Server) handleConfigBackupInspect(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !requireConfigBackupSameOrigin(w, r) {
 		return
 	}
 	request, err := readConfigBackupMultipart(w, r)
@@ -126,6 +139,11 @@ func (s *Server) handleConfigBackupInspect(w http.ResponseWriter, r *http.Reques
 			writeConfigBackupMappedError(w, err)
 			return
 		}
+		preview.Config, err = s.validateConfigBackupCandidate(preview.Config)
+		if err != nil {
+			writeConfigBackupMappedError(w, configbackup.ErrInvalidBackup)
+			return
+		}
 		inspection.Warnings = preview.Warnings
 		inspection.RemovedTunnels = preview.RemovedTunnelKeys
 		inspection.RestartRequired = runningTunnelKeys(s.configBackupRuntime().profileStatus, preview.ChangedTunnelKeys)
@@ -136,6 +154,9 @@ func (s *Server) handleConfigBackupInspect(w http.ResponseWriter, r *http.Reques
 func (s *Server) handleConfigBackupImport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !requireConfigBackupSameOrigin(w, r) {
 		return
 	}
 	request, err := readConfigBackupMultipart(w, r)
@@ -156,6 +177,11 @@ func (s *Server) handleConfigBackupImport(w http.ResponseWriter, r *http.Request
 	result, err := configbackup.Apply(before, decoded.Payload, request.Sections)
 	if err != nil {
 		writeConfigBackupMappedError(w, err)
+		return
+	}
+	result.Config, err = s.validateConfigBackupCandidate(result.Config)
+	if err != nil {
+		writeConfigBackupMappedError(w, configbackup.ErrInvalidBackup)
 		return
 	}
 	hooks := s.configBackupRuntime()
@@ -179,8 +205,14 @@ func (s *Server) handleConfigBackupImport(w http.ResponseWriter, r *http.Request
 	if !reflect.DeepEqual(before.DDNS, saved.DDNS) {
 		hooks.restartDDNS()
 	}
+	warnings := append([]string(nil), result.Warnings...)
 	if !reflect.DeepEqual(before.S3WebDAV, saved.S3WebDAV) {
-		hooks.restartS3(context.Background())
+		if err := hooks.restartS3(context.Background()); err != nil {
+			warnings = append(warnings, "S3 WebDAV runtime reconciliation failed")
+			if logger.Sugar != nil {
+				logger.Sugar.Warnf("Failed to reconcile S3 WebDAV after configuration import: %v", err)
+			}
+		}
 	}
 	if before.OAuthClientID != saved.OAuthClientID || before.OAuthRelayCallbackURL != saved.OAuthRelayCallbackURL {
 		hooks.resetOAuth()
@@ -188,7 +220,7 @@ func (s *Server) handleConfigBackupImport(w http.ResponseWriter, r *http.Request
 
 	writeJSON(w, configBackupImportResponse{
 		ChangedSections: result.ChangedSections,
-		Warnings:        result.Warnings,
+		Warnings:        warnings,
 		StopRequested:   diff.RemovedKeys,
 		RestartRequired: restartRequired,
 	})
@@ -223,18 +255,58 @@ func (s *Server) configBackupRuntime() configBackupRuntimeHooks {
 		}
 	}
 	if hooks.restartS3 == nil {
-		hooks.restartS3 = func(ctx context.Context) {
+		hooks.restartS3 = func(ctx context.Context) error {
 			if s.s3WebDAV != nil && s.s3WebDAV.isRunning() {
-				s.restartS3WebDAVDedicated(ctx)
-				return
+				return s.restartS3WebDAVDedicated(ctx)
 			}
-			s.reconcileS3WebDAVDedicated(ctx, false)
+			return s.reconcileS3WebDAVDedicated(ctx, false)
 		}
 	}
 	if hooks.resetOAuth == nil {
 		hooks.resetOAuth = func() { s.resetOAuthService() }
 	}
 	return hooks
+}
+
+func (s *Server) validateConfigBackupCandidate(cfg config.Config) (config.Config, error) {
+	if cfg.DDNS.Enabled && !cfg.ActiveTunnelProfile().RemoteManagementEnabled {
+		return config.Config{}, errors.New("DDNS requires Remote Tunnel Manager to be enabled")
+	}
+	if cfg.DDNS.IntervalMins < 1 {
+		cfg.DDNS.IntervalMins = 1
+	} else if cfg.DDNS.IntervalMins > 60 {
+		cfg.DDNS.IntervalMins = 60
+	}
+	if cfg.DDNS.MaxRetries < 1 {
+		cfg.DDNS.MaxRetries = 1
+	} else if cfg.DDNS.MaxRetries > 10 {
+		cfg.DDNS.MaxRetries = 10
+	}
+	cfg.DDNS.Records = ddns.NormalizeRecords(cfg.DDNS.Records)
+	for i := range cfg.DDNS.Records {
+		value, err := ddns.ValidateRecordValue(cfg.DDNS.Records[i].Type, cfg.DDNS.Records[i].Value)
+		if err != nil {
+			return config.Config{}, fmt.Errorf("DDNS record %d: %w", i, err)
+		}
+		cfg.DDNS.Records[i].Value = value
+	}
+	clientID, err := cfoauth.NormalizeClientID(cfg.OAuthClientID)
+	if err != nil {
+		return config.Config{}, err
+	}
+	cfg.OAuthClientID = clientID
+	if strings.TrimSpace(cfg.OAuthRelayCallbackURL) != "" {
+		relayURL, err := cfoauth.NormalizeRelayCallbackURL(cfg.OAuthRelayCallbackURL)
+		if err != nil {
+			return config.Config{}, err
+		}
+		cfg.OAuthRelayCallbackURL = relayURL
+	}
+	cfg.S3WebDAV, err = s.s3Svc.ValidateConfig(cfg.S3WebDAV)
+	if err != nil {
+		return config.Config{}, err
+	}
+	return cfg, nil
 }
 
 func readConfigBackupMultipart(w http.ResponseWriter, r *http.Request) (configBackupMultipart, error) {
@@ -326,6 +398,38 @@ func decodeStrictJSON(reader io.Reader, target any) error {
 	return nil
 }
 
+func requireConfigBackupSameOrigin(w http.ResponseWriter, r *http.Request) bool {
+	if strings.EqualFold(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")), "cross-site") {
+		writeConfigBackupError(w, http.StatusForbidden, "cross_site_request")
+		return false
+	}
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin == "" {
+		return true
+	}
+	parsed, err := url.Parse(origin)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" ||
+		!strings.EqualFold(parsed.Scheme, configBackupRequestScheme(r)) ||
+		!strings.EqualFold(parsed.Host, strings.TrimSpace(r.Host)) {
+		writeConfigBackupError(w, http.StatusForbidden, "cross_site_request")
+		return false
+	}
+	return true
+}
+
+func configBackupRequestScheme(r *http.Request) string {
+	if r.TLS != nil {
+		return "https"
+	}
+	if scheme := strings.ToLower(strings.TrimSpace(r.URL.Scheme)); scheme == "http" || scheme == "https" {
+		return scheme
+	}
+	if forwarded := strings.TrimSpace(strings.Split(r.Header.Get("X-Forwarded-Proto"), ",")[0]); strings.EqualFold(forwarded, "https") {
+		return "https"
+	}
+	return "http"
+}
+
 func isMaxBytesError(err error) bool {
 	var maxBytesError *http.MaxBytesError
 	return errors.As(err, &maxBytesError)
@@ -334,6 +438,8 @@ func isMaxBytesError(err error) bool {
 func writeConfigBackupMappedError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, errConfigBackupTooLarge):
+		writeConfigBackupError(w, http.StatusRequestEntityTooLarge, "too_large")
+	case errors.Is(err, configbackup.ErrTooLarge):
 		writeConfigBackupError(w, http.StatusRequestEntityTooLarge, "too_large")
 	case errors.Is(err, configbackup.ErrUnsupportedVersion):
 		writeConfigBackupError(w, http.StatusBadRequest, "unsupported_version")
@@ -359,6 +465,7 @@ func writeConfigBackupError(w http.ResponseWriter, status int, code string) {
 		"invalid_selection":                         "Select at least one available backup section.",
 		"save_failed":                               "The imported configuration could not be saved.",
 		"export_failed":                             "The configuration backup could not be created.",
+		"cross_site_request":                        "Cross-site configuration backup requests are not allowed.",
 	}
 	message := messages[code]
 	if strings.TrimSpace(message) == "" {

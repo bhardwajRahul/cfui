@@ -46,6 +46,10 @@ func Build(cfg config.Config, options ExportOptions, appVersion string, now time
 		payload.Sections = append(payload.Sections, SectionSensitive)
 		payload.Sensitive = sensitiveSection(cfg, selected)
 	}
+	payload, err = canonicalizePayload(payload)
+	if err != nil {
+		return Payload{}, err
+	}
 	if err := validatePayload(payload); err != nil {
 		return Payload{}, err
 	}

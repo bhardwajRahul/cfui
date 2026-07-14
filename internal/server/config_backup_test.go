@@ -44,6 +44,43 @@ func TestConfigBackupExportRequiresSelectionAndPlaintextSensitiveConfirmation(t 
 	assertBackupErrorCode(t, sensitiveRec, http.StatusBadRequest, "plaintext_sensitive_confirmation_required")
 }
 
+func TestConfigBackupRejectsCrossSiteRequests(t *testing.T) {
+	s := newServerTestServer(t)
+	endpoints := []struct {
+		name    string
+		target  string
+		handler http.HandlerFunc
+	}{
+		{name: "export", target: "/api/config-backup/export", handler: s.handleConfigBackupExport},
+		{name: "inspect", target: "/api/config-backup/inspect", handler: s.handleConfigBackupInspect},
+		{name: "import", target: "/api/config-backup/import", handler: s.handleConfigBackupImport},
+	}
+	attacks := []struct {
+		name    string
+		headers map[string]string
+	}{
+		{name: "origin", headers: map[string]string{"Origin": "https://evil.example"}},
+		{name: "fetch metadata", headers: map[string]string{"Sec-Fetch-Site": "cross-site"}},
+		{name: "scheme", headers: map[string]string{"Origin": "http://cfui.example.internal", "X-Forwarded-Proto": "https"}},
+	}
+	for _, endpoint := range endpoints {
+		for _, attack := range attacks {
+			t.Run(endpoint.name+"/"+attack.name, func(t *testing.T) {
+				req := httptest.NewRequest(http.MethodPost, endpoint.target, strings.NewReader("ignored"))
+				req.Host = "cfui.example.internal"
+				for name, value := range attack.headers {
+					req.Header.Set(name, value)
+				}
+				rec := httptest.NewRecorder()
+
+				endpoint.handler(rec, req)
+
+				assertBackupErrorCode(t, rec, http.StatusForbidden, "cross_site_request")
+			})
+		}
+	}
+}
+
 func TestConfigBackupExportOmitsSecretsByDefaultAndEncryptsWhenRequested(t *testing.T) {
 	s := newServerTestServer(t)
 	cfg := s.cfgMgr.Get()
@@ -134,6 +171,11 @@ func TestConfigBackupInspectRejectsOversizedFile(t *testing.T) {
 func TestConfigBackupImportReplacesSelectedSectionAndRunsOnlyMatchingHook(t *testing.T) {
 	s := newServerTestServer(t)
 	before := s.cfgMgr.Get()
+	before.TunnelManagement.Enabled = true
+	if err := s.cfgMgr.Save(before); err != nil {
+		t.Fatalf("enable tunnel manager: %v", err)
+	}
+	before = s.cfgMgr.Get()
 	imported := before
 	imported.DDNS = config.DDNSConfig{
 		Enabled: true, IntervalMins: 11, MaxRetries: 4,
@@ -144,7 +186,7 @@ func TestConfigBackupImportReplacesSelectedSectionAndRunsOnlyMatchingHook(t *tes
 
 	var ddnsRestarts, s3Restarts, oauthResets int
 	s.backupHooks.restartDDNS = func() { ddnsRestarts++ }
-	s.backupHooks.restartS3 = func(_ context.Context) { s3Restarts++ }
+	s.backupHooks.restartS3 = func(_ context.Context) error { s3Restarts++; return nil }
 	s.backupHooks.resetOAuth = func() { oauthResets++ }
 	req := multipartBackupRequest(t, "/api/config-backup/import", backup, "", []configbackup.Section{configbackup.SectionDDNS})
 	rec := httptest.NewRecorder()
@@ -164,9 +206,112 @@ func TestConfigBackupImportReplacesSelectedSectionAndRunsOnlyMatchingHook(t *tes
 	}
 }
 
+func TestConfigBackupImportRejectsInvalidSemanticConfiguration(t *testing.T) {
+	tests := []struct {
+		name     string
+		sections []configbackup.Section
+		mutate   func(*config.Config)
+	}{
+		{
+			name:     "DDNS requires tunnel manager",
+			sections: []configbackup.Section{configbackup.SectionDDNS},
+			mutate: func(cfg *config.Config) {
+				cfg.TunnelManagement.Enabled = false
+				cfg.DDNS.Enabled = true
+			},
+		},
+		{
+			name:     "invalid OAuth relay URL",
+			sections: []configbackup.Section{configbackup.SectionApplication},
+			mutate: func(cfg *config.Config) {
+				cfg.OAuthRelayCallbackURL = "javascript:alert(1)"
+			},
+		},
+		{
+			name:     "invalid S3 dedicated port",
+			sections: []configbackup.Section{configbackup.SectionS3WebDAV},
+			mutate: func(cfg *config.Config) {
+				cfg.S3WebDAV.DedicatedPort = 70000
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s := newServerTestServer(t)
+			before := s.cfgMgr.Get()
+			imported := before
+			test.mutate(&imported)
+			backup := encodeConfigBackup(t, imported, test.sections, false, "")
+			req := multipartBackupRequest(t, "/api/config-backup/import", backup, "", test.sections)
+			rec := httptest.NewRecorder()
+
+			s.handleConfigBackupImport(rec, req)
+
+			assertBackupErrorCode(t, rec, http.StatusBadRequest, "invalid_backup")
+			if !reflect.DeepEqual(s.cfgMgr.Get(), before) {
+				t.Fatal("invalid import changed persisted configuration")
+			}
+		})
+	}
+}
+
+func TestValidateConfigBackupCandidateUsesActiveProfileRemoteState(t *testing.T) {
+	s := newServerTestServer(t)
+	cfg := s.cfgMgr.Get()
+	cfg.DDNS.Enabled = true
+
+	cfg.TunnelManagement.Enabled = false
+	cfg.Tunnels[0].RemoteManagementEnabled = true
+	if _, err := s.validateConfigBackupCandidate(cfg); err != nil {
+		t.Fatalf("active profile enables Remote Tunnel Manager: %v", err)
+	}
+
+	cfg.TunnelManagement.Enabled = true
+	cfg.Tunnels[0].RemoteManagementEnabled = false
+	if _, err := s.validateConfigBackupCandidate(cfg); err == nil {
+		t.Fatal("stale top-level Remote Tunnel Manager state bypassed DDNS dependency validation")
+	}
+}
+
+func TestConfigBackupImportWarnsWhenS3RuntimeReconciliationFails(t *testing.T) {
+	s := newServerTestServer(t)
+	before := s.cfgMgr.Get()
+	imported := before
+	imported.S3WebDAV.Enabled = !before.S3WebDAV.Enabled
+	backup := encodeConfigBackup(t, imported, []configbackup.Section{configbackup.SectionS3WebDAV}, false, "")
+
+	s.backupHooks.restartS3 = func(context.Context) error {
+		return errors.New("runtime unavailable")
+	}
+	req := multipartBackupRequest(t, "/api/config-backup/import", backup, "", []configbackup.Section{configbackup.SectionS3WebDAV})
+	rec := httptest.NewRecorder()
+
+	s.handleConfigBackupImport(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("import status %d: %s", rec.Code, rec.Body.String())
+	}
+	var response configBackupImportResponse
+	if err := json.NewDecoder(rec.Body).Decode(&response); err != nil {
+		t.Fatalf("Decode response: %v", err)
+	}
+	if !slices.Contains(response.Warnings, "S3 WebDAV runtime reconciliation failed") {
+		t.Fatalf("runtime warning missing: %#v", response.Warnings)
+	}
+	if reflect.DeepEqual(s.cfgMgr.Get().S3WebDAV, before.S3WebDAV) {
+		t.Fatal("S3 WebDAV configuration was not persisted")
+	}
+}
+
 func TestConfigBackupImportDoesNotRunHooksWhenSaveFails(t *testing.T) {
 	s := newServerTestServer(t)
 	before := s.cfgMgr.Get()
+	before.TunnelManagement.Enabled = true
+	if err := s.cfgMgr.Save(before); err != nil {
+		t.Fatalf("enable tunnel manager: %v", err)
+	}
+	before = s.cfgMgr.Get()
 	imported := before
 	imported.DDNS.Enabled = !before.DDNS.Enabled
 	backup := encodeConfigBackup(t, imported, []configbackup.Section{configbackup.SectionDDNS}, false, "")

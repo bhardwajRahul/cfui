@@ -269,7 +269,8 @@ func (m *Manager) VerifyPermissionsFor(ctx context.Context, tunnelKey string, re
 
 	// Fall back to stored credentials when the request has none.
 	// Frontend never sees saved secrets, so blank fields mean "use what's saved".
-	stored, _, _ := effectiveWithTokenIdentityFor(m.cfgMgr.Get(), tunnelKey)
+	appCfg := m.cfgMgr.Get()
+	stored, _, _ := effectiveWithTokenIdentityFor(appCfg, tunnelKey)
 	if strings.TrimSpace(req.APIToken) == "" && strings.TrimSpace(req.APIKey) == "" {
 		if req.AuthMode == "key" {
 			if req.APIEmail == "" {
@@ -311,7 +312,7 @@ func (m *Manager) VerifyPermissionsFor(ctx context.Context, tunnelKey string, re
 	}
 
 	if token, err := client.GetAPIToken(ctx, verifyResp.ID); err == nil {
-		checkPermissionsFromToken(token.Policies, perms)
+		checkPermissionsFromToken(token.Policies, perms, stored.AccountID, configuredDDNSZoneIDs(appCfg))
 		resp.Permissions = perms
 	} else {
 		resp.Permissions, _ = probePermissions(ctx, client, req.AuthMode, stored.AccountID, stored.TunnelID)
@@ -321,27 +322,126 @@ func (m *Manager) VerifyPermissionsFor(ctx context.Context, tunnelKey string, re
 	return resp
 }
 
-func checkPermissionsFromToken(policies []cloudflare.APITokenPolicies, checks []PermissionCheck) {
-	granted := make(map[string]bool)
-	for _, policy := range policies {
-		if !strings.EqualFold(policy.Effect, "allow") {
-			continue
-		}
-		for _, group := range policy.PermissionGroups {
-			granted[strings.ToLower(strings.TrimSpace(group.Name))] = true
-		}
-	}
-
+func checkPermissionsFromToken(policies []cloudflare.APITokenPolicies, checks []PermissionCheck, accountID string, zoneIDs []string) {
 	for i := range checks {
 		switch checks[i].Name {
 		case "account_tunnel_edit":
-			setPermissionStatus(&checks[i], permissionStatusForNames(granted, tunnelWritePermissionNames))
+			setPermissionStatus(&checks[i], permissionStatusForPolicies(policies, tunnelWritePermissionNames, "account", []string{accountID}))
 		case "zone_read":
-			setPermissionStatus(&checks[i], permissionStatusForNames(granted, zoneReadPermissionNames))
+			setPermissionStatus(&checks[i], permissionStatusForPolicies(policies, zoneReadPermissionNames, "zone", zoneIDs))
 		case "zone_dns_edit":
-			setPermissionStatus(&checks[i], permissionStatusForNames(granted, dnsWritePermissionNames))
+			setPermissionStatus(&checks[i], permissionStatusForPolicies(policies, dnsWritePermissionNames, "zone", zoneIDs))
 		}
 	}
+}
+
+func permissionStatusForPolicies(policies []cloudflare.APITokenPolicies, names []string, resourceKind string, targets []string) string {
+	wantedNames := make(map[string]bool, len(names))
+	for _, name := range names {
+		wantedNames[strings.ToLower(strings.TrimSpace(name))] = true
+	}
+	wantedTargets := make(map[string]bool, len(targets))
+	for _, target := range targets {
+		if target = strings.TrimSpace(target); target != "" {
+			wantedTargets[target] = true
+		}
+	}
+	hasPermission := false
+	hasRecognizedResource := false
+	coveredTargets := make(map[string]bool, len(wantedTargets))
+	wildcard := false
+	for _, policy := range policies {
+		if !strings.EqualFold(policy.Effect, "allow") || !policyHasPermission(policy, wantedNames) {
+			continue
+		}
+		hasPermission = true
+		for resource := range policy.Resources {
+			recognized, all, target := parsePermissionResource(resourceKind, resource)
+			if !recognized {
+				continue
+			}
+			hasRecognizedResource = true
+			if all {
+				wildcard = true
+				continue
+			}
+			if len(wantedTargets) == 0 || wantedTargets[target] {
+				coveredTargets[target] = true
+			}
+		}
+	}
+	if !hasPermission {
+		return permissionDenied
+	}
+	if !hasRecognizedResource {
+		return permissionUnknown
+	}
+	if wildcard || len(wantedTargets) == 0 {
+		return permissionGranted
+	}
+	for target := range wantedTargets {
+		if !coveredTargets[target] {
+			return permissionDenied
+		}
+	}
+	return permissionGranted
+}
+
+func policyHasPermission(policy cloudflare.APITokenPolicies, wanted map[string]bool) bool {
+	for _, group := range policy.PermissionGroups {
+		if wanted[strings.ToLower(strings.TrimSpace(group.Name))] {
+			return true
+		}
+	}
+	return false
+}
+
+func parsePermissionResource(kind, resource string) (recognized, wildcard bool, target string) {
+	resource = strings.TrimSpace(resource)
+	switch kind {
+	case "account":
+		const prefix = "com.cloudflare.api.account."
+		if !strings.HasPrefix(resource, prefix) {
+			return false, false, ""
+		}
+		target = strings.TrimPrefix(resource, prefix)
+		if target == "" || strings.HasPrefix(target, "zone.") {
+			return false, false, ""
+		}
+		if target == "*" {
+			return true, true, ""
+		}
+		if index := strings.IndexByte(target, '.'); index >= 0 {
+			target = target[:index]
+		}
+		return true, false, target
+	case "zone":
+		const prefix = "com.cloudflare.api.account.zone."
+		if !strings.HasPrefix(resource, prefix) {
+			return false, false, ""
+		}
+		target = strings.TrimPrefix(resource, prefix)
+		if target == "" {
+			return false, false, ""
+		}
+		return true, target == "*", target
+	default:
+		return false, false, ""
+	}
+}
+
+func configuredDDNSZoneIDs(cfg config.Config) []string {
+	seen := make(map[string]bool)
+	zoneIDs := make([]string, 0, len(cfg.DDNS.Records))
+	for _, record := range cfg.DDNS.Records {
+		zoneID := strings.TrimSpace(record.ZoneID)
+		if zoneID == "" || seen[zoneID] {
+			continue
+		}
+		seen[zoneID] = true
+		zoneIDs = append(zoneIDs, zoneID)
+	}
+	return zoneIDs
 }
 
 func probePermissions(ctx context.Context, client cloudflareClient, authMode, accountID, tunnelID string) ([]PermissionCheck, bool) {
@@ -407,15 +507,6 @@ func allRequiredPermissionsGranted(checks []PermissionCheck) bool {
 		}
 	}
 	return true
-}
-
-func permissionStatusForNames(granted map[string]bool, names []string) string {
-	for _, name := range names {
-		if granted[strings.ToLower(name)] {
-			return permissionGranted
-		}
-	}
-	return permissionDenied
 }
 
 func setPermissionStatus(check *PermissionCheck, status string) {

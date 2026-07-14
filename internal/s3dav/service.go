@@ -116,6 +116,53 @@ func (s *Service) SaveSettings(ctx context.Context, req SettingsRequest) (Settin
 	return s.Settings(ctx), nil
 }
 
+// ValidateConfig validates and canonicalizes a complete S3 WebDAV configuration
+// without persisting it or starting any runtime services.
+func (s *Service) ValidateConfig(cfg config.S3WebDAVConfig) (config.S3WebDAVConfig, error) {
+	switch strings.TrimSpace(cfg.WebDAVAccessMode) {
+	case config.S3WebDAVAccessModeMain, config.S3WebDAVAccessModeDedicated:
+	default:
+		return config.S3WebDAVConfig{}, fmt.Errorf("WebDAV access mode must be %q or %q", config.S3WebDAVAccessModeMain, config.S3WebDAVAccessModeDedicated)
+	}
+	if cfg.DedicatedPort < 1 || cfg.DedicatedPort > 65535 {
+		return config.S3WebDAVConfig{}, fmt.Errorf("dedicated WebDAV port must be between 1 and 65535")
+	}
+	switch strings.TrimSpace(cfg.DedicatedDomainMode) {
+	case config.S3WebDAVDomainModeNone, config.S3WebDAVDomainModeCustom, config.S3WebDAVDomainModeTunnel:
+	default:
+		return config.S3WebDAVConfig{}, fmt.Errorf("dedicated WebDAV domain mode must be %q, %q, or %q", config.S3WebDAVDomainModeNone, config.S3WebDAVDomainModeCustom, config.S3WebDAVDomainModeTunnel)
+	}
+	customDomain, err := normalizePublicBaseURL(cfg.DedicatedCustomDomain)
+	if err != nil {
+		return config.S3WebDAVConfig{}, err
+	}
+	cfg.DedicatedCustomDomain = customDomain
+	cfg.DedicatedTunnelHostname = normalizeHostname(cfg.DedicatedTunnelHostname)
+	for i := range cfg.Mounts {
+		switch strings.TrimSpace(cfg.Mounts[i].MountType) {
+		case MountTypeS3, MountTypeWebDAVRemote:
+		default:
+			return config.S3WebDAVConfig{}, fmt.Errorf("S3 mount %q has an invalid mount type", cfg.Mounts[i].Key)
+		}
+		if _, err := NormalizeRootPrefix(cfg.Mounts[i].RootPrefix); err != nil {
+			return config.S3WebDAVConfig{}, fmt.Errorf("S3 mount %q: %w", cfg.Mounts[i].Key, err)
+		}
+		if _, err := NormalizeMountPath(cfg.Mounts[i].MountPath); err != nil {
+			return config.S3WebDAVConfig{}, fmt.Errorf("S3 mount %q: %w", cfg.Mounts[i].Key, err)
+		}
+		if cfg.Mounts[i].MountType == MountTypeWebDAVRemote {
+			if _, err := normalizeWebDAVEndpointURL(cfg.Mounts[i].EndpointURL); err != nil {
+				return config.S3WebDAVConfig{}, fmt.Errorf("S3 mount %q: %w", cfg.Mounts[i].Key, err)
+			}
+		}
+	}
+	cfg = s.normalizeConfig(cfg)
+	if err := validateMounts(cfg.Mounts); err != nil {
+		return config.S3WebDAVConfig{}, err
+	}
+	return cfg, nil
+}
+
 func (s *Service) CreateMount(ctx context.Context, req MountRequest) (SettingsResponse, error) {
 	appCfg := s.cfgMgr.Get()
 	cfg := s.normalizeConfig(appCfg.S3WebDAV)

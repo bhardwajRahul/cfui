@@ -29,16 +29,21 @@ const (
 var backupAdditionalData = []byte("cfui-config-backup:v1")
 
 func Encode(payload Payload, password string, random io.Reader) ([]byte, error) {
+	var err error
+	payload, err = canonicalizePayload(payload)
+	if err != nil {
+		return nil, err
+	}
 	if err := validatePayload(payload); err != nil {
 		return nil, err
 	}
 	if password == "" {
-		return json.MarshalIndent(Envelope{
+		return encodeEnvelope(Envelope{
 			Format:    Format,
 			Version:   EnvelopeVersion,
 			Encrypted: false,
 			Payload:   &payload,
-		}, "", "  ")
+		})
 	}
 
 	plain, err := json.Marshal(payload)
@@ -77,7 +82,18 @@ func Encode(payload Payload, password string, random io.Reader) ([]byte, error) 
 		},
 		Ciphertext: base64.StdEncoding.EncodeToString(ciphertext),
 	}
-	return json.MarshalIndent(envelope, "", "  ")
+	return encodeEnvelope(envelope)
+}
+
+func encodeEnvelope(envelope Envelope) ([]byte, error) {
+	data, err := json.MarshalIndent(envelope, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("%w: encode envelope", ErrInvalidBackup)
+	}
+	if len(data) > MaxBackupBytes {
+		return nil, ErrTooLarge
+	}
+	return data, nil
 }
 
 func Decode(data []byte, password string) (Decoded, error) {
@@ -102,10 +118,14 @@ func Decode(data []byte, password string) (Decoded, error) {
 		if envelope.Payload == nil || envelope.Encryption != nil || envelope.Ciphertext != "" {
 			return Decoded{}, ErrInvalidBackup
 		}
-		if err := validatePayload(*envelope.Payload); err != nil {
+		payload, err := canonicalizePayload(*envelope.Payload)
+		if err != nil {
 			return Decoded{}, err
 		}
-		return Decoded{Payload: *envelope.Payload}, nil
+		if err := validatePayload(payload); err != nil {
+			return Decoded{}, err
+		}
+		return Decoded{Payload: payload}, nil
 	}
 
 	if envelope.Payload != nil || envelope.Encryption == nil || envelope.Ciphertext == "" {
@@ -148,6 +168,10 @@ func Decode(data []byte, password string) (Decoded, error) {
 	var payload Payload
 	if err := decodeStrict(plain, &payload); err != nil {
 		return Decoded{}, fmt.Errorf("%w: decode payload", ErrInvalidBackup)
+	}
+	payload, err = canonicalizePayload(payload)
+	if err != nil {
+		return Decoded{}, err
 	}
 	if err := validatePayload(payload); err != nil {
 		return Decoded{}, err

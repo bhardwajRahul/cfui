@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -129,6 +130,23 @@ func TestEncodeRejectsOversizedString(t *testing.T) {
 	}
 }
 
+func TestEncodeRejectsPlaintextEnvelopeOverLimit(t *testing.T) {
+	payload := payloadWithCompactSize(t, MaxBackupBytes-1)
+	if _, err := Encode(payload, "", bytes.NewReader(nil)); !errors.Is(err, ErrTooLarge) {
+		t.Fatalf("expected oversized envelope error, got %v", err)
+	}
+}
+
+func TestEncodeRejectsEncryptedEnvelopeOverLimit(t *testing.T) {
+	payload := payloadWithCompactSize(t, MaxBackupBytes*3/4)
+	if _, err := Encode(payload, "", bytes.NewReader(nil)); err != nil {
+		t.Fatalf("plaintext envelope should fit: %v", err)
+	}
+	if _, err := Encode(payload, "password", bytes.NewReader(bytes.Repeat([]byte{4}, 64))); !errors.Is(err, ErrTooLarge) {
+		t.Fatalf("expected oversized encrypted envelope error, got %v", err)
+	}
+}
+
 func TestInspectReportsAvailableContent(t *testing.T) {
 	payload := testPayload()
 	payload.Sections = []Section{SectionTunnels, SectionDDNS, SectionS3WebDAV, SectionApplication, SectionSensitive}
@@ -147,4 +165,40 @@ func payloadEqual(a, b Payload) bool {
 	aJSON, _ := json.Marshal(a)
 	bJSON, _ := json.Marshal(b)
 	return bytes.Equal(aJSON, bJSON)
+}
+
+func payloadWithCompactSize(t *testing.T, target int) Payload {
+	t.Helper()
+	profiles := make([]TunnelProfile, MaxTunnelProfiles)
+	for i := range profiles {
+		profiles[i].Key = fmt.Sprintf("tunnel-%d", i)
+	}
+	payload := Payload{
+		SchemaVersion: PayloadVersion,
+		CreatedAt:     time.Date(2026, 7, 14, 12, 0, 0, 0, time.UTC),
+		AppVersion:    "test",
+		Sections:      []Section{SectionTunnels},
+		Tunnels:       &TunnelSection{ActiveKey: profiles[0].Key, Profiles: profiles},
+	}
+	base, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal base payload: %v", err)
+	}
+	remaining := target - len(base)
+	if remaining < 0 || remaining > len(profiles)*MaxStringBytes {
+		t.Fatalf("target compact size %d is unavailable from base size %d", target, len(base))
+	}
+	for i := range profiles {
+		length := min(remaining, MaxStringBytes)
+		profiles[i].ExtraArgs = strings.Repeat("x", length)
+		remaining -= length
+	}
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal sized payload: %v", err)
+	}
+	if len(encoded) != target {
+		t.Fatalf("compact payload size = %d, want %d", len(encoded), target)
+	}
+	return payload
 }

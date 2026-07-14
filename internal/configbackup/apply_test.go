@@ -2,6 +2,7 @@ package configbackup
 
 import (
 	"cfui/internal/config"
+	"errors"
 	"reflect"
 	"slices"
 	"strings"
@@ -81,6 +82,44 @@ func TestApplyTunnelSectionPreservesUnselectedCredentialsAndRemoteFields(t *test
 	three := tunnelByKey(t, result.Config, "three")
 	if three.Token != "" || three.AccountID != "" || three.TunnelID != "" || three.RemoteManagementEnabled {
 		t.Fatalf("new tunnel inherited credentials or remote fields: %#v", three)
+	}
+}
+
+func TestApplyCanonicalizesKeysBeforePreservingCredentials(t *testing.T) {
+	current := backupFixtureConfig()
+	current.ActiveTunnelKey = "foo"
+	current.Tunnels = []config.TunnelProfileConfig{{
+		Key: "foo", Name: "Existing", Token: "preserved-token", LocalEnabled: true,
+		SoftwareName: "cfui", Protocol: "auto", GracePeriod: "30s", Retries: 5,
+		MetricsPort: 60123, LogLevel: "info", EdgeIPVersion: "auto",
+	}}
+	payload := validPayload(
+		[]Section{SectionTunnels},
+		&TunnelSection{ActiveKey: " Foo ", Profiles: []TunnelProfile{{Key: " Foo ", Name: "Imported"}}},
+		nil, nil, nil, nil, nil,
+	)
+
+	result, err := Apply(current, payload, []Section{SectionTunnels})
+	if err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	if len(result.Config.Tunnels) != 1 || result.Config.Tunnels[0].Key != "foo" || result.Config.Tunnels[0].Token != "preserved-token" {
+		t.Fatalf("canonical credential preservation failed: %#v", result.Config.Tunnels)
+	}
+}
+
+func TestApplyRejectsCanonicalKeyCollisions(t *testing.T) {
+	payload := validPayload(
+		[]Section{SectionTunnels},
+		&TunnelSection{
+			ActiveKey: "Prod_A",
+			Profiles:  []TunnelProfile{{Key: "Prod_A"}, {Key: "prod-a"}},
+		},
+		nil, nil, nil, nil, nil,
+	)
+
+	if _, err := Apply(backupFixtureConfig(), payload, []Section{SectionTunnels}); !errors.Is(err, ErrInvalidBackup) {
+		t.Fatalf("expected canonical collision rejection, got %v", err)
 	}
 }
 

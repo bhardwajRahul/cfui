@@ -68,32 +68,42 @@ func (s *Server) dedicatedWebDAVHandler() http.Handler {
 	})
 }
 
-func (s *Server) restartS3WebDAVDedicated(ctx context.Context) {
-	s.reconcileS3WebDAVDedicated(ctx, true)
+func (s *Server) restartS3WebDAVDedicated(ctx context.Context) error {
+	return s.reconcileS3WebDAVDedicated(ctx, true)
 }
 
-func (s *Server) reconcileS3WebDAVDedicated(ctx context.Context, keepRunning bool) {
+func (s *Server) reconcileS3WebDAVDedicated(ctx context.Context, keepRunning bool) error {
 	if s.s3WebDAV == nil {
 		s.s3WebDAV = newS3DedicatedServer()
 	}
 	cfg := s.cfgMgr.Get().S3WebDAV
 	if !cfg.Enabled || normalizeS3WebDAVAccessMode(cfg.WebDAVAccessMode) != config.S3WebDAVAccessModeDedicated {
-		if err := s.s3WebDAV.stop(ctx, ""); err != nil && logger.Sugar != nil {
-			logger.Sugar.Warnf("Failed to stop dedicated S3 WebDAV server: %v", err)
+		if err := s.s3WebDAV.stop(ctx, ""); err != nil {
+			if logger.Sugar != nil {
+				logger.Sugar.Warnf("Failed to stop dedicated S3 WebDAV server: %v", err)
+			}
+			return err
 		}
-		return
+		return nil
 	}
 	shouldStart := (!keepRunning && cfg.DedicatedAutoStart) || (keepRunning && s.s3WebDAV.isRunning())
 	if !shouldStart {
-		if err := s.s3WebDAV.stop(ctx, ""); err != nil && logger.Sugar != nil {
-			logger.Sugar.Warnf("Failed to stop dedicated S3 WebDAV server: %v", err)
+		if err := s.s3WebDAV.stop(ctx, ""); err != nil {
+			if logger.Sugar != nil {
+				logger.Sugar.Warnf("Failed to stop dedicated S3 WebDAV server: %v", err)
+			}
+			return err
 		}
-		return
+		return nil
 	}
-	if err := s.startS3WebDAVDedicated(ctx); err != nil && logger.Sugar != nil {
+	if err := s.startS3WebDAVDedicated(ctx); err != nil {
 		addr, _ := s3DedicatedAddr(cfg)
-		logger.Sugar.Warnf("Failed to start dedicated S3 WebDAV server on %s: %v", addr, err)
+		if logger.Sugar != nil {
+			logger.Sugar.Warnf("Failed to start dedicated S3 WebDAV server on %s: %v", addr, err)
+		}
+		return err
 	}
+	return nil
 }
 
 func (s *Server) startS3WebDAVDedicated(ctx context.Context) error {

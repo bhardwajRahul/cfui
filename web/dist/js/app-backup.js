@@ -13,6 +13,7 @@
 
     let importFile = null;
     let importInspection = null;
+    let inspectedSelection = '';
     let inspectSequence = 0;
     let exportObjectURL = '';
 
@@ -32,6 +33,11 @@
         return checkedValues('[data-backup-import-section]');
     }
 
+    function selectionFingerprint(sections) {
+        const selected = new Set(sections);
+        return SECTION_ORDER.filter((section) => selected.has(section)).join('\n');
+    }
+
     function resetExportDialog() {
         $$('[data-backup-export-section]').forEach((input) => {
             input.checked = input.value !== 'sensitive';
@@ -48,6 +54,7 @@
         inspectSequence++;
         importFile = null;
         importInspection = null;
+        inspectedSelection = '';
         if ($('config-backup-file')) $('config-backup-file').value = '';
         if ($('config-backup-import-password')) $('config-backup-import-password').value = '';
         if ($('config-backup-import-password-field')) $('config-backup-import-password-field').hidden = true;
@@ -181,8 +188,10 @@
     async function inspectBackup(initialize) {
         if (!importFile) return;
         const selected = initialize ? null : importSelection();
+        const fingerprint = selected ? selectionFingerprint(selected) : '';
+        $('config-backup-replace').disabled = true;
         if (!initialize && !selected.length) {
-            $('config-backup-replace').disabled = true;
+            inspectedSelection = '';
             renderPreview({ removed_tunnels: [], restart_required: [], warnings: [] });
             return;
         }
@@ -209,10 +218,12 @@
                 await inspectBackup(false);
                 return;
             }
+            inspectedSelection = fingerprint;
             renderInspection(inspection);
-            $('config-backup-replace').disabled = !importSelection().length;
+            $('config-backup-replace').disabled = fingerprint !== selectionFingerprint(importSelection());
         } catch (error) {
             if (sequence !== inspectSequence) return;
+            inspectedSelection = '';
             if (error.code === 'password_required' || error.code === 'invalid_password_or_tampered') {
                 $('config-backup-import-password-field').hidden = false;
                 $('config-backup-import-details').hidden = true;
@@ -280,6 +291,10 @@
         const selected = importSelection();
         if (!selected.length) {
             toast.err(t('config_backup_select_section'));
+            return;
+        }
+        if (selectionFingerprint(selected) !== inspectedSelection) {
+            await inspectBackup(false);
             return;
         }
         const details = [t('config_backup_replace_warning')];

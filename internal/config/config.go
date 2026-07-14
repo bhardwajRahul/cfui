@@ -772,6 +772,16 @@ func normalizeTunnelKey(v string) string {
 	return strings.Trim(b.String(), "-")
 }
 
+// NormalizeTunnelKey returns the canonical key used for persisted tunnel profiles.
+func NormalizeTunnelKey(v string) string {
+	return normalizeTunnelKey(v)
+}
+
+// NormalizeS3MountKey returns the canonical key used for persisted S3 WebDAV mounts.
+func NormalizeS3MountKey(v string) string {
+	return normalizeS3Key(v)
+}
+
 func tunnelProfileExists(tunnels []TunnelProfileConfig, key string) bool {
 	for _, tunnel := range tunnels {
 		if tunnel.Key == key {
