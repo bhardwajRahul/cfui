@@ -6,7 +6,7 @@ Date: 2026-07-14
 
 Add a safe, versioned configuration export and import workflow to cfui. Users can choose which configuration sections to export or replace during import. Backup encryption is optional, and sensitive credentials are never included unless explicitly selected.
 
-The same delivery batch will also review and merge all currently open Dependabot pull requests and update github.com/cloudflare/cloudflared to the latest compatible revision. Those dependency operations are implementation and release tasks rather than part of the backup file format.
+The same delivery batch will also review and merge all currently open Dependabot pull requests, update github.com/cloudflare/cloudflared to the latest compatible revision, and correct Cloudflare API Token verification so Zone Read never substitutes for DNS Write. Those dependency and verification operations are implementation and release tasks rather than part of the backup file format.
 
 ## Decisions
 
@@ -17,7 +17,7 @@ The same delivery batch will also review and merge all currently open Dependabot
 - Sensitive credentials are a separate, default-off option.
 - Plaintext export containing sensitive credentials requires an explicit second confirmation.
 - OAuth sessions, OAuth PKCE state, MCP access tokens, OAuth validation reports, logs, and runtime state are never exported.
-- Existing running tunnels are not automatically restarted after import. Removed tunnel profiles are stopped and forgotten. Surviving affected tunnels are reported as requiring restart.
+- Existing running tunnels are not automatically restarted after import. Removed tunnel profiles receive an asynchronous stop-and-forget request. Surviving affected tunnels are reported as requiring restart.
 
 ## Alternatives Considered
 

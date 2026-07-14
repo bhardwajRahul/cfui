@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Merge the four open dependency PRs, update the embedded cloudflared module, and add selectable, optionally encrypted configuration export and replacement import.
+**Goal:** Merge the four open dependency PRs, update the embedded cloudflared module, correct Cloudflare API Token permission verification, and add selectable, optionally encrypted configuration export and replacement import.
 
 **Architecture:** Keep backup parsing and section application in a pure `internal/configbackup` package. The HTTP server owns bounded upload/download endpoints and runtime reconciliation, while a dedicated browser module renders the backup dialogs in the Features panel. Existing `config.Manager.Save` remains the only persistence boundary so selected imports commit atomically through the current SQLite transaction.
 
@@ -21,6 +21,7 @@
 - Surviving running tunnels are not restarted automatically; deleted profiles receive an asynchronous stop request.
 - Keep English, Chinese, and Japanese locale keys in parity.
 - Merge commits are the repository’s established PR strategy.
+- API Token verification requires `DNS Write` independently from `Zone Read`; read-only probes return an unknown write-permission state instead of a false grant.
 
 ---
 
@@ -43,6 +44,7 @@
 - Modify `web_init_test.go` and `i18n_parity_test.go`: embedded asset and locale parity assertions.
 - Modify `README.md` and `README.zh-CN.md`: user-facing backup and restore documentation.
 - Modify `go.mod` and `go.sum`: merged dependency PR results and cloudflared update.
+- Modify `internal/tunnelmgr/manager.go`, its tests, UI copy, and documentation: accept current Cloudflare permission names, require DNS Write independently, and distinguish active credentials from complete permission verification.
 
 ---
 

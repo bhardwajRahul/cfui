@@ -59,6 +59,11 @@ Web UI 已内置在二进制文件中。配置保存在数据目录下的本地 
   - 未启用的功能不会显示对应 Tab。
   - DDNS 依赖远程 Tunnel 管理，因为它复用同一套 Cloudflare API 凭据。
 
+- **配置备份与恢复**
+  - 在功能页按模块导出或导入本地配置。
+  - 密码可选，敏感凭据默认不包含。
+  - 导入只替换选中的模块，未选模块保持不变。
+
 - **Cloudflare OAuth 控制台**
   - 可选运行模式，用 Cloudflare OAuth access token 管理 Cloudflare 账号资源。
   - 根据已授权 scope 显示账号、带套餐/名称服务器详情的 Zone、DNS 记录、Cloudflare Tunnel 控制面记录、Workers、R2、D1、KV、Snippets、WAF、Cloudflare 官方状态和部分 Zone 设置。
@@ -189,6 +194,25 @@ R2 bucket 列表/创建的可选权限：
 - `Account -> Workers R2 Storage -> Edit`
 
 S3 WebDAV 的文件访问不使用 Cloudflare API token。它使用 S3 WebDAV 页面里配置的 S3 Access Key ID 和 Secret Access Key。
+
+## 配置备份与恢复
+
+打开 **功能** Tab，在 **配置备份与恢复** 卡片中操作。导出和导入都会显示模块选项列表：
+
+- Tunnel 配置
+- 远程 Tunnel 管理
+- DDNS
+- S3 WebDAV
+- 应用与 OAuth 基础设置
+- 敏感凭据
+
+敏感凭据默认不选。选择后，只会包含备份中对应普通模块的凭据，例如 Tunnel token、Cloudflare API 凭据、S3 access key 和 WebDAV 密码哈希。OAuth session、OAuth PKCE state、MCP Token、验证报告、日志、运行状态和 Cloudflare 远程资源始终不会导出。
+
+备份密码可选。填写密码时，完整 payload 会使用 scrypt 和 AES-256-GCM 加密；不填写时，备份是可直接读取的 JSON。若在无密码情况下选择敏感凭据，下载前必须再次确认，因为文件中会包含可读取的凭据。
+
+导入会先检查文件，再让你从备份包含的模块中选择。每个选中的普通模块会整体替换当前对应配置；未选模块保持不变。单独选择敏感凭据时，只更新匹配的 Tunnel 或挂载凭据。上传限制为 8 MiB。
+
+导入成功后，只有 DDNS、S3 WebDAV 或 OAuth 的有效配置发生变化时才会重载对应服务。被移除的 Tunnel 配置会收到异步停止并移除实例的请求；仍然存在且正在运行的 Tunnel 不会自动重启，cfui 会列出需要重启才能应用新运行参数或 token 的配置。
 
 ## Cloudflare OAuth 模式
 

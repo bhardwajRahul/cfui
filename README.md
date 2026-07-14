@@ -59,6 +59,11 @@ The web UI is built into the binary. Configuration is stored in a local SQLite d
   - Disabled features stay hidden in the UI.
   - DDNS depends on Remote Tunnel Manager because it reuses the same Cloudflare API credentials.
 
+- **Configuration backup and restore**
+  - Export or import selected local configuration sections from the Features tab.
+  - Password protection is optional, and sensitive credentials are excluded by default.
+  - Import replaces only the selected sections and keeps all unselected sections unchanged.
+
 - **Cloudflare OAuth console**
   - Optional run mode for managing Cloudflare account resources with a Cloudflare OAuth access token.
   - Lists accounts, zones with plan/name-server detail, DNS records, Cloudflare Tunnel control-plane records, Workers, R2, D1, KV, Snippets, WAF, Cloudflare public status, and selected zone settings when the granted scopes allow it.
@@ -189,6 +194,25 @@ Optional permission for R2 bucket list/create:
 - `Account -> Workers R2 Storage -> Edit`
 
 S3 WebDAV file access does not use the Cloudflare API token. It uses the S3-compatible Access Key ID and Secret Access Key configured on the S3 WebDAV page.
+
+## Configuration Backup and Restore
+
+Open the **Features** tab and use the **Configuration backup and restore** card. Both export and import provide a section list:
+
+- Tunnel configuration
+- Remote Tunnel Manager
+- DDNS
+- S3 WebDAV
+- Application and OAuth base settings
+- Sensitive credentials
+
+Sensitive credentials are off by default. When selected, they include credentials only for the normal sections present in the backup, such as tunnel tokens, Cloudflare API credentials, S3 access keys, and WebDAV password hashes. OAuth sessions, OAuth PKCE state, MCP tokens, validation reports, logs, runtime status, and remote Cloudflare resources are never included.
+
+A backup password is optional. A non-empty password encrypts the complete payload with scrypt and AES-256-GCM. Without a password, the backup is readable JSON. Exporting sensitive credentials without a password requires a second confirmation because the downloaded file will contain readable credentials.
+
+Import inspects the file before saving and lets you select only sections available in that backup. Each selected normal section replaces its current local counterpart; unselected sections remain unchanged. Selecting Sensitive credentials updates matching tunnel or mount credentials. The upload limit is 8 MiB.
+
+After a successful import, cfui reloads DDNS, S3 WebDAV, and OAuth services only when their effective settings changed. Removed tunnel profiles receive an asynchronous stop-and-forget request. Surviving running tunnels are not restarted automatically; cfui lists the profiles that need a restart for new runner settings or tokens to take effect.
 
 ## Cloudflare OAuth Mode
 
