@@ -50,7 +50,7 @@ The export dialog contains these options:
 
 At least one non-sensitive section must be selected for export. During export, Sensitive credentials are additive: selecting them includes credentials belonging to the selected sections only.
 
-The dialog also contains an optional password field. When it is empty, the downloaded envelope contains a plaintext payload. When it is non-empty, the complete payload is encrypted. If sensitive credentials are selected without a password, a confirmation dialog explains that Tunnel tokens, Cloudflare API credentials, or storage credentials will be written to a readable local file.
+The dialog also contains an optional password field. When it is empty, the downloaded envelope contains a plaintext payload. When it is non-empty, the complete payload is encrypted. If sensitive credentials are selected without a password, a confirmation dialog explains that Tunnel tokens, Cloudflare API credentials, or storage credentials will be written to a readable local file. The export request carries an explicit plaintext-sensitive acknowledgement only after that confirmation; the server rejects sensitive plaintext export without it.
 
 The downloaded filename is cfui-backup-YYYYMMDDTHHMMSSZ.json.
 
@@ -67,9 +67,11 @@ After successful inspection, the dialog shows:
 - whether sensitive credentials are present;
 - a checklist containing only sections present in the file.
 
-All available non-sensitive sections are selected by default. Sensitive credentials remain unselected by default. During import, the credential section may be selected by itself to update matching objects already present in cfui. Before import, the UI states that selected normal sections will replace their current counterparts and that the credential section only updates matching credential fields. If running or removed tunnel profiles are affected, the confirmation also states which profiles will stop or require restart.
+The inspection endpoint accepts the currently selected import sections and returns a replacement preview. The frontend repeats inspection after the selection changes so the confirmation can name removed profiles and running profiles that will require restart.
 
-After import, the UI refreshes configuration and feature state and displays the changed sections, warnings, stopped profiles, and profiles that require restart.
+All available non-sensitive sections are selected by default. Sensitive credentials remain unselected by default. During import, the credential section may be selected by itself to update matching objects already present in cfui. Before import, the UI states that selected normal sections will replace their current counterparts and that the credential section only updates matching credential fields. If running or removed tunnel profiles are affected, the confirmation also states which profiles will receive an asynchronous stop request or require restart.
+
+After import, the UI refreshes configuration and feature state and displays the changed sections, warnings, profiles whose asynchronous stop was requested, and profiles that require restart.
 
 ## Section Ownership
 
@@ -158,15 +160,15 @@ Add these local API endpoints:
 
 ### POST /api/config-backup/export
 
-Accepts a JSON request containing selected sections, include-sensitive flag, and optional password. Returns the JSON envelope as an attachment.
+Accepts a JSON request containing selected sections, include-sensitive flag, optional password, and an explicit plaintext-sensitive acknowledgement. The acknowledgement is required only when sensitive credentials are selected and the password is empty. Returns the JSON envelope as an attachment.
 
 ### POST /api/config-backup/inspect
 
-Accepts multipart form data containing the file and optional password. Returns envelope metadata, available sections, counts, encryption state, sensitive-data presence, and import warnings. It never writes the uploaded file to the data directory.
+Accepts multipart form data containing the file, optional password, and optional selected section list. Returns envelope metadata, available sections, counts, encryption state, sensitive-data presence, import warnings, removed profile keys, and running profile keys that require restart for the supplied selection. It never writes the uploaded file to the data directory.
 
 ### POST /api/config-backup/import
 
-Accepts the file, optional password, and selected section list as multipart form data. It reparses and revalidates the file rather than trusting the inspection response. On success it returns changed sections, warnings, removed and stopped tunnel keys, and tunnel keys requiring restart.
+Accepts the file, optional password, and selected section list as multipart form data. It reparses and revalidates the file rather than trusting the inspection response. On success it returns changed sections, warnings, tunnel keys whose asynchronous stop was requested, and tunnel keys requiring restart.
 
 All three endpoints allow only POST. Import and inspection use http.MaxBytesReader with an 8 MiB limit.
 
@@ -198,7 +200,7 @@ The import service follows this order:
 5. Run normalization and cross-section validation.
 6. Save through config.Manager.Save, which writes the structured configuration in one SQLite transaction.
 7. Compare the saved configuration with the pre-import snapshot.
-8. Stop and forget removed tunnel instances through Runner.RemoveProfile.
+8. Start asynchronous stop-and-forget operations for removed tunnel instances through Runner.RemoveProfile so an import performed through the affected tunnel can return its HTTP response.
 9. Restart DDNS when the DDNS section changed.
 10. Restart the dedicated S3 WebDAV service when the S3 section changed.
 11. Reset the OAuth service when application and OAuth base settings changed.
