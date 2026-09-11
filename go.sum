@@ -61,8 +61,8 @@ github.com/cloudflare/backoff v0.0.0-20240920015135-e46b80a3a7d0 h1:pRcxfaAlK0vR
 github.com/cloudflare/backoff v0.0.0-20240920015135-e46b80a3a7d0/go.mod h1:rzgs2ZOiguV6/NpiDgADjRLPNyZlApIWxKpkT+X8SdY=
 github.com/cloudflare/cloudflare-go v0.117.0 h1:y00E0XCvxuZGplL+gkoMRIhWpfNqIgyBFS6UUWC4s0c=
 github.com/cloudflare/cloudflare-go v0.117.0/go.mod h1:Ds6urDwn/TF2uIU24mu7H91xkKP8gSAHxQ44DSZgVmU=
-github.com/cloudflare/cloudflared v0.0.0-20260814112252-733bfb939963 h1:bDpUfzzz9W6u6C9deKDAjpLwyiCV/DdOoJaEzG6I3RQ=
-github.com/cloudflare/cloudflared v0.0.0-20260814112252-733bfb939963/go.mod h1:v97UyAHiewwyRGcpkuzO3d1Jbv4I8OBPuEjOAK5mZ08=
+github.com/cloudflare/cloudflared v0.0.0-20260909155505-b749dfd998f4 h1:YikYkvds6C02XeYqrKUB9pPcb97NN2U0L91wE2j1p8g=
+github.com/cloudflare/cloudflared v0.0.0-20260909155505-b749dfd998f4/go.mod h1:o49m6fKE5JPF2NEy4BURyC4Q/6tcL3K+9vCO/UJ/O9U=
 github.com/coreos/go-oidc/v3 v3.17.0 h1:hWBGaQfbi0iVviX4ibC7bk8OKT5qNr4klBaCHVNvehc=
 github.com/coreos/go-oidc/v3 v3.17.0/go.mod h1:wqPbKFrVnE90vty060SB40FCJ8fTHTxSwyXJqZH+sI8=
 github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
@@ -144,8 +144,8 @@ github.com/google/pprof v0.0.0-20250418163039-24c5476c6587 h1:b/8HpQhvKLSNzH5oTX
 github.com/google/pprof v0.0.0-20250418163039-24c5476c6587/go.mod h1:boTsfXsheKC2y+lKOCMpSfarhxDeIzfZG1jqGcPl3cA=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
-github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
+github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 h1:HWRh5R2+9EifMyIHV7ZV+MIZqgz+PMpZ14Jynv3O2Zs=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0/go.mod h1:JfhWUomR1baixubs02l85lZYYOm7LV6om4ceouMv45c=
 github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=

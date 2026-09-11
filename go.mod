@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.107.1
 	github.com/cloudflare/backoff v0.0.0-20240920015135-e46b80a3a7d0
 	github.com/cloudflare/cloudflare-go v0.117.0
-	github.com/cloudflare/cloudflared v0.0.0-20260814112252-733bfb939963
+	github.com/cloudflare/cloudflared v0.0.0-20260909155505-b749dfd998f4
 	github.com/fclairamb/afero-s3 v0.5.0
 	github.com/lib-x/aferodav v0.2.0
 	github.com/lib-x/entsqlite v0.2.3
@@ -67,7 +67,7 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/pprof v0.0.0-20250418163039-24c5476c6587 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.18.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
